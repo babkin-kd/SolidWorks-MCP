@@ -547,6 +547,42 @@ under-defined. Verified API facts, each from a live spike:
   centreline's ends plus one end arc's diameter; the slot's own relations do the
   rest.
 
+### Hole Wizard ✅ (2026-09-27)
+The earlier "locale-fragile" verdict (3D-print features, above) was wrong:
+`IFeatureManager.HoleWizard5` takes enums (hole type, standard, fastener type)
+and standard size strings (`M3`); only the feature names it generates are
+localized, and nothing depends on them. `add_hole_wizard` uses it for ISO holes.
+Verified facts:
+- Placement: select the face at the model point, `SelectByID2("", "FACE", x, y, z)`
+  (SolidWorks' own example). The hole lands ~0.04 mm off the point, in a position
+  sketch (a sub-feature with one point) that is under-defined. Edit that sketch
+  and dimension the point from the origin with the exact target values.
+- The feature walk (`FirstFeature`/`GetNextFeature`) does not visit that sketch;
+  check sub-features too (`_under_defined_sketches` does now).
+- Value1..Value12 (-1 = the standard's value) are fragile per type: a plain hole
+  through all fails unless the unused values are 0; a tapped hole given zeros
+  cuts garbage (3345 mm^3 for an M3). Screw fit (close/normal/loose = 0/1/2) is
+  Value1 for a plain hole, Value4 for counterbore/countersink.
+- Tapped holes: CosmeticThreadType 0 (none) mills the threaded length at the
+  MAJOR diameter ("remove thread"); 1 keeps the tap drill. `Diameter` overrides
+  the tap drill, which lets a modeled Thread feature follow at the ISO minor.
+- The Hole Wizard has no modeled thread (API: only cosmetic types; the docs list
+  tap drill / cosmetic thread / remove thread).
+- Standard values (ISO, SolidWorks tables): M3 clearance 3.2/3.4/3.6; counterbore
+  for ISO 4762 Ø6.5 x 3.4; countersink for ISO 10642 Ø6.72 x 90°; tap drill 2.5,
+  thread depth 2 x D; blind holes end in a 118° point, depth from the surface.
+- Thread feature ends: the groove matches ISO exactly per mm, but its ends vary
+  by up to ~0.5 mm^3 for M4 (a thread run out of a through hole loses 0.34).
+
+### Mesh tools ✅ (2026-09-27)
+`mesh_tools.py` (pure Python) reads binary/ASCII STL and 3MF (component files and
+transforms, units; `frame='build'` adds the build-item placement) and slices it
+into closed loops. Checked on the Bosch adapter's MakerWorld 3MF: the socket
+section at y = -10 is 1158.1 mm^2 in the object frame and at z = 50 in the build
+frame, as the adapter's own check found. `compare_with_mesh` exports the part as a
+fine STL with `swSTLDontTranslateToPositive` (toggle 71) set, so it stays in model
+coordinates, and restores the preference.
+
 ## Next
 
 - **Mirror**: crack InsertMirrorFeature2 (or use a definition object). The offset
