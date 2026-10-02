@@ -634,6 +634,17 @@ the fully defined polygon. Verified facts:
   property accuracy level, although its sketch is exact and a boss from the same
   profile on the Front plane measures exactly.
 
+### STEP / Parasolid import ✅ (2026-10-02)
+`open_part` imports neutral files with `ISldWorks.LoadFile4(path, "r",
+GetImportFileData(path), 0)`, which returns (document, errors). Verified:
+- With 3D Interconnect on (the default here) the import is one feature of type
+  `MBimport` named `<file>.step<1>`, linked to the file; tools add features on
+  top of it, fully defined, and volumes come out exact.
+- No dialog appears: import diagnostics run automatically
+  (swImportAutoRunImportDiagnostics = True here).
+- An assembly STEP opens as an assembly plus one `<name>.step.sldprt` document
+  per component; `CloseDoc` on the assembly closes them all.
+
 ### Selftest ✅ (2026-10-02)
 `solidworks-mcp --selftest` runs `selftest.CHECKS` on the COM worker, each on a
 document of its own. Facts found on the way:
