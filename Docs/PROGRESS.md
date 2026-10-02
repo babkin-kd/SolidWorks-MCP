@@ -665,6 +665,15 @@ GetImportFileData(path), 0)`, which returns (document, errors). Verified:
   in a fallback (here Arial): checked against `win32gui.EnumFontFamilies`.
 - Engraving and embossing the same text cut and add the same letter area
   (32.86 mm^2 for 'V1.2', 8 mm, within 0.005).
+- Orientation (box faces, read from outside, measured by the letter tops): the
+  text runs along the face sketch's +u. Upright on +z (along +x, up +y) and -y
+  (along +x, up +z); on +x it runs down (-z), on -x up (+z), on +y it is upside
+  down. Three ways to turn it failed: `ITextFormat.Escapement` (radians, read
+  back as set) moves and merges the letters unpredictably at +/-90 deg; text
+  inserted with a construction line selected keeps the sketch's direction (the
+  line does make the sketch fully defined); `IModelDocExtension.RotateOrCopy`
+  with the text segment selected leaves it unchanged. Open: upright text on
+  any face.
 
 ### Selftest ✅ (2026-10-02)
 `solidworks-mcp --selftest` runs `selftest.CHECKS` on the COM worker, each on a
