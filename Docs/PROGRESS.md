@@ -613,6 +613,27 @@ coordinates, and restores the preference.
 - `IsSuppressed2(1, None)` returns a one-element tuple, `GetErrorCode2()` a
   (code, is_warning) pair. An empty or fully suppressed part measures volume 0.
 
+### Rounded polygon corners ✅ (2026-10-02)
+`corner_radii_mm` on the polygon tools uses SolidWorks' own sketch fillets on
+the fully defined polygon. Verified facts:
+- `ISketchManager.CreateFillet(radius, swConstrainedCornerKeepGeometry = 1)`
+  with the corner points (or the two lines) selected: the corner stays as a
+  virtual sharp, so its dimensions and relations stay and the sketch stays fully
+  defined. With DeleteGeometry (2) the corner dimensions go and it is
+  under-defined.
+- Each call adds a driving radius dimension (a RADIUS relation, type 3, whose
+  `ISketchRelation.GetDisplayDimension` gives it) and two TANGENT relations per
+  arc. Several corners selected in ONE call get one radius dimension plus EQUAL
+  relations (type 14), like the UI. A radius dimension added on top of that is
+  only driven (reference), so `set_dimension` would do nothing.
+- A radius too big for its edges returns None and leaves the sketch untouched;
+  the tool checks the setbacks (r / tan(angle / 2)) itself first, for a message
+  naming the edge.
+- A rounded window cut through all from the Right or Top plane measures
+  0.0007 mm^2 per mm of depth short of the hand calculation, at every mass
+  property accuracy level, although its sketch is exact and a boss from the same
+  profile on the Front plane measures exactly.
+
 ### Selftest ✅ (2026-10-02)
 `solidworks-mcp --selftest` runs `selftest.CHECKS` on the COM worker, each on a
 document of its own. Facts found on the way:
