@@ -645,6 +645,21 @@ GetImportFileData(path), 0)`, which returns (document, errors). Verified:
 - An assembly STEP opens as an assembly plus one `<name>.step.sldprt` document
   per component; `CloseDoc` on the assembly closes them all.
 
+### Text on a face ✅ (2026-10-02)
+`add_text_on_face` (the emboss/engrave text deferred in June). Verified facts:
+- `IModelDoc2.InsertSketchText(x, y, 0, text, swTextJustificationLeft = 1, 0, 0,
+  100, 100)` in the open face sketch returns the ISketchText; its point is the
+  text's lower-left corner. The format comes from `GetTextFormat` (default
+  Century Gothic, 3.5 mm here): set `CharHeight` / `TypeFaceName`, then
+  `SetTextFormat(False, format)`.
+- The sketch then holds one point, the insertion point, and is under-defined;
+  dimensioning that point from the origin (SketchDefiner.place_point) makes it
+  fully defined, and changing that dimension moves the text.
+- An unknown font name is kept and read back as given, but the letters come out
+  in a fallback (here Arial): checked against `win32gui.EnumFontFamilies`.
+- Engraving and embossing the same text cut and add the same letter area
+  (32.86 mm^2 for 'V1.2', 8 mm, within 0.005).
+
 ### Selftest ✅ (2026-10-02)
 `solidworks-mcp --selftest` runs `selftest.CHECKS` on the COM worker, each on a
 document of its own. Facts found on the way:
