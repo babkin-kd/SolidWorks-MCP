@@ -644,6 +644,12 @@ GetImportFileData(path), 0)`, which returns (document, errors). Verified:
   (swImportAutoRunImportDiagnostics = True here).
 - An assembly STEP opens as an assembly plus one `<name>.step.sldprt` document
   per component; `CloseDoc` on the assembly closes them all.
+- With 3D Interconnect on, an imported assembly has ONE top-level component: a
+  wrapped sub-assembly `<name>.step` holding the parts, so list_components and
+  add_mate cannot reach them. swImportDissolveTopLevelAssemblyOnOpen (701) does
+  not change that; switching swMultiCAD_Enable3DInterconnect (691) off for the
+  call gives a classic import with the parts as top-level components in place.
+  `open_assembly` does that and restores the setting.
 
 ### Text on a face ✅ (2026-10-02)
 `add_text_on_face` (the emboss/engrave text deferred in June). Verified facts:
