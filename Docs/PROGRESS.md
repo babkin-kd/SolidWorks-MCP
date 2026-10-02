@@ -583,6 +583,27 @@ frame, as the adapter's own check found. `compare_with_mesh` exports the part as
 fine STL with `swSTLDontTranslateToPositive` (toggle 71) set, so it stays in model
 coordinates, and restores the preference.
 
+### Feature history ✅ (2026-10-02)
+`list_features`, `delete_feature` and `suppress_feature`. Verified facts:
+- The feature walk starts with the folders (CommentsFolder, DocsFolder,
+  SurfaceBodyFolder, SolidBodyFolder, EnvFolder, DetailCabinet, EqnFolder,
+  MaterialFolder), the three default RefPlanes and the OriginProfileFeature;
+  everything after the origin is the modelling history. A sketch is visited just
+  before the feature that absorbs it, and again as that feature's sub-feature.
+- `FeatureByName` lives on IPartDoc, not on the early-bound IModelDoc2.
+- `IFeature.GetChildren()` gives the direct dependents: a block's are the sketch on
+  its face, the cut and the fillet; an absorbed sketch's child is its feature.
+- `IModelDocExtension.DeleteSelection2`: swDelete_Absorbed (2) takes the absorbed
+  sketch along, swDelete_Children (1) every dependent. Without Children the
+  dependents stay, broken: the cut's sketch shows a warning and the cut an error
+  (`GetErrorCode2()` = (1, warning), swFeatureErrorUnknown), and SolidWorks dropped
+  the fillet entirely.
+- `SetSuppression2(swSuppressFeature=0, swThisConfiguration=1, None)` suppresses
+  the dependents too (absorbed sketches stay unsuppressed). swUnSuppressFeature (1)
+  brings back only the feature; swUnSuppressDependent (2) its dependents too.
+- `IsSuppressed2(1, None)` returns a one-element tuple, `GetErrorCode2()` a
+  (code, is_warning) pair. An empty or fully suppressed part measures volume 0.
+
 ## Next
 
 - **Mirror**: crack InsertMirrorFeature2 (or use a definition object). The offset
@@ -590,7 +611,8 @@ coordinates, and restores the preference.
 - Assemblies: component patterns, in-context features and configurations are all
   still out of scope; mates are limited to planar faces (concentric/tangent need
   a cylindrical selection the face picker cannot produce).
-- Richer rebuild-error reporting (which feature failed, not just a flag).
+- Rebuild errors: `list_features` names the failing feature, but SolidWorks mostly
+  reports code 1 (unknown), so a readable cause is still missing.
 - Drawings and Simulation (FEA) remain untouched.
 
 ## Notes
