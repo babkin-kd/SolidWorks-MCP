@@ -371,7 +371,7 @@ Two gotchas: (1) **InsertRefPlane's return is a generic dispatch without Select2
 grab the new plane from the tree (`_last_ref_plane`) instead. (2) circles are
 already covered by revolve/cone, so loft's niche is NON-rotational transitions.
 Unlike mirror, loft works on this 3DEXPERIENCE build (the blocker there was the
-mirror-body API, not ref geometry). Added `_iter_features` generator (DRY for the
+mirror-body API, not ref geometry; later found wrong, see Mirror below). Added `_iter_features` generator (DRY for the
 new tree walks: `_profile_feature_names`, `_last_ref_plane`).
 
 ### Review-hardening pass (2026-06-26)
@@ -506,16 +506,25 @@ the mirror dead end stands.
   trapezoid fails for every option tried (cut/boss, merge, turns, twist, path
   alignment, helix radius); cause not found. The native Thread feature replaced it.
 
-### Mirror — SHELVED (both routes blocked on this build)
-Offset reference plane creation works (InsertRefPlane, Distance constraint=8,
-metres, after selecting the Nth ref plane: order Front/Top/Right). But:
-1. `InsertMirrorFeature`/`2` return None across all mark (0/1/2/4) and flip combos
-   despite plane + seed both selecting True — the CALL is the snag, not selection.
-2. The definition-object route also fails: `IFeatureManager.CreateDefinition`
-   returns None for EVERY type id tried (4/7/12/98) on this 3DEXPERIENCE build.
-Conclusion: shelved. It's a convenience an AI works around by placing features
-symmetrically itself (compute mirrored coords + add_hole/add_hole_on_face) or via
-a pattern. Revisit only if a macro-recorded sequence reveals a working path.
+### Mirror ✅ (2026-10-02; shelved 2026-06 on a wrong diagnosis)
+The June verdict ("InsertMirrorFeature2 returns None, the call is the snag") was
+wrong. `IFeatureManager.InsertMirrorFeature2(BMirrorBody, False, BMerge, False,
+swFeatureScope_AllBodies = 0)` works, with selection marks features = 1, mirror
+plane = 2, body = 256 (via ISelectData); SelectByID2 or IFeature.Select2, in
+either order. The old IPartDoc.MirrorFeature / InsertMirrorFeature do nothing.
+What really goes wrong, verified:
+- A copy that lands outside the part (an add_box spans x 0..w, so mirroring
+  about the Right plane puts the copy at negative x) still gives a Mirror
+  feature, with warning 1 and no geometry; rebuild reports success. A seed on
+  the plane, whose copy lies on itself, gives the same warning.
+- A body mirror whose copy does not touch the original returns None.
+- Offset planes: InsertRefPlane(Distance = 8, |offset|) goes along the base
+  plane's normal (+z / +y / +x for Front / Top / Right); OptionFlip (256) for a
+  negative offset. Its distance is the dimension D1@PlaneN, drivable by an
+  equation, e.g. half the block's width.
+- Mirrored copies follow their seeds: a resized seed hole resizes its copy.
+- `IFeatureManager.CreateDefinition` still returns None for the mirror ids
+  (swFmMirrorSolid = 4, swFmMirrorPattern = 7); it is not the route.
 
 ### Fully defined sketches ✅
 Every tool constrains its sketch (`sketch_constraints.py`: a pure planner plus a
@@ -620,8 +629,6 @@ document of its own. Facts found on the way:
 
 ## Next
 
-- **Mirror**: crack InsertMirrorFeature2 (or use a definition object). The offset
-  reference plane half already works.
 - Assemblies: component patterns, in-context features and configurations are all
   still out of scope; mates are limited to planar faces (concentric/tangent need
   a cylindrical selection the face picker cannot produce).
