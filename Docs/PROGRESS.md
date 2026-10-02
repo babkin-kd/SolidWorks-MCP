@@ -604,6 +604,20 @@ coordinates, and restores the preference.
 - `IsSuppressed2(1, None)` returns a one-element tuple, `GetErrorCode2()` a
   (code, is_warning) pair. An empty or fully suppressed part measures volume 0.
 
+### Selftest ✅ (2026-10-02)
+`solidworks-mcp --selftest` runs `selftest.CHECKS` on the COM worker, each on a
+document of its own. Facts found on the way:
+- On 3DEXPERIENCE R2026x the default part template preference is the name
+  `~BLANK_PART_TEMPLATE.prtdot`, not a file, so `new_part` falls back to
+  `NewPart()`; the assembly template is a real file under
+  `%LOCALAPPDATA%\DassaultSystemes\CATTemp\...\Templates\3DEXPERIENCE`.
+- `ISldWorks.GetCurrentLanguage()` gives e.g. `english`; a document's length
+  unit is `IModelDocExtension.GetUserPreferenceInteger(swUnitsLinear = 47, 0)`
+  (swLengthUnit_e). Tools work in SI, but equations are typed in these units.
+- An editable install keeps the package metadata of the version it was
+  installed at (here 0.1.0, without Project-URLs): reinstall it after changing
+  `[project]` in pyproject.toml.
+
 ## Next
 
 - **Mirror**: crack InsertMirrorFeature2 (or use a definition object). The offset
