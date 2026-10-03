@@ -720,6 +720,26 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
 - `CreateCornerRectangle` adds two construction diagonals on this install (a
   user setting), so sketch readers must skip construction geometry.
 
+### Joints: concentric and angle mates, check_motion ✅ (2026-10-03)
+
+- `AddMate5` with swMateCONCENTRIC (1) on two cylindrical faces lines up the
+  axes and leaves the turn and the slide free; swMateANGLE (6) takes the angle
+  in radians in Angle and both limits. `flip` picks the turning direction
+  (+60 or -60); the angle between the face normals is the mate value either
+  way.
+- The angle mate's dimension is `D1@Angle1` (`IMate2.DisplayDimension2(0)`),
+  `IDimension.GetType()` 1 = angular (radians), 0 = linear. Driving it turns
+  the joint; 270 continues the turn (= -90). `IMate2` does not answer as an
+  `IFeature` (its Name read "2"): find mates as the MateGroup's sub-features.
+- An over-defining mate comes back with status 5 (OverDefinedAssembly) but IS
+  added, in error 47, and the mate it fights gets warning 46. Without an undo
+  it stays and fights every next attempt.
+- After `ForceRebuild3` a component's face objects are dead ("object
+  disconnected"); after `EditRebuild` they still work. Fetch faces again after
+  driving a dimension.
+- `set_dimension` wrote every value through mm_to_m: an angle of 180 landed as
+  0.18 rad. It now converts by the dimension's type.
+
 ## Next
 
 - Assemblies: component patterns, in-context features and configurations are all
