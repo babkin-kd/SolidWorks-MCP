@@ -740,6 +740,18 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
 - `set_dimension` wrote every value through mm_to_m: an angle of 180 landed as
   0.18 rad. It now converts by the dimension's type.
 
+### Offset pockets, keep-inside cuts ✅ (2026-10-03)
+
+- `IModelDoc2.SketchOffsetEntities2(offset, both, chain)` on the selected
+  edges of a face's outer loop, in a sketch on that face: a NEGATIVE offset
+  runs inwards. The result is fully defined, tied to the edges by one
+  dimension (renamed 'rim'), and follows arcs. It returns False when the rim
+  does not fit (11 mm on a 20 mm face).
+- `FeatureCut4`'s second argument (Flip) cuts away the outside of the profile.
+- `CreateFillet` with radii whose arcs meet merges them: four R10 corners on a
+  40 x 20 rectangle give two arcs, on a 20 x 20 square one. The corner
+  bookkeeping (one arc per corner) cannot keep that, so it stays refused.
+
 ## Next
 
 - Assemblies: component patterns, in-context features and configurations are all
