@@ -700,6 +700,11 @@ document of its own. Facts found on the way:
 
 ## Notes
 
+- `OpenDoc6` on a document that is already open returns it but leaves the
+  active window as it was. Sketching in a document that is not the active one
+  fails at the first relation (`AddRelation` returns None). `_require_model`
+  therefore activates the current document (`ActivateDoc3`,
+  swDontRebuildActiveDoc) when SolidWorks shows another one.
 - Standalone scripts run single-threaded (no COM worker needed); the server
   pins COM to one worker thread.
 - Repeated `--keep-open` runs leave untitled parts (Part1, Part2, …) open in
