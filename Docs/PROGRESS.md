@@ -689,6 +689,37 @@ document of its own. Facts found on the way:
   installed at (here 0.1.0, without Project-URLs): reinstall it after changing
   `[project]` in pyproject.toml.
 
+### Quadruped wishes, round 1 ✅ (2026-10-03)
+
+Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
+`read_sketch`, `extrude_sketch` / `cut_sketch`, and planes by name. Verified:
+
+- `IComponent2.GetBox` and `IAssemblyDoc.GetBox` are the component's own box
+  turned with it: a 20 mm disc turned 45 degrees about Z reads 28.28 wide.
+  `IBody2.GetExtremePoint(dx, dy, dz)` returns `(True, x, y, z)` in part
+  coordinates; six calls per body give the exact box.
+- A part inside a sub-assembly has a `Transform2` relative to the TOP assembly.
+  `GetChildren()` is `()` for a part; a sub-assembly and a suppressed component
+  have no `GetBodies2`. Setting a component lightweight is refused while its
+  part is loaded (`SetSuppression2` leaves state 2), so that path has a unit
+  test with a fake instead.
+- `IMeasure` on two selected components gives `Distance` (m); when they touch
+  or overlap it gives `Distance = -1` and `IsIntersect = True`.
+- `ISurface.EvaluateAtPoint` returns the normal first. It points INTO the
+  material when `IFace2.FaceInSurfaceSense()` is True, out of it when False
+  (8 probes: planes and cylinders, a disc and a hole, both senses).
+- `ShowNamedView2("", id)`: front 1, back 2, left 3, right 4, top 5, bottom 6,
+  iso 7. `IModelView.Orientation3` maps model to view: the axis facing the
+  viewer maps to (0, 0, 1). `ViewZoomTo2` takes two corners in metres;
+  `Scale2` grows accordingly (40 mm part fitted 1.51, a 10 mm box 21.6).
+- `FeatureExtrusion3`'s Dir flips a boss; `FeatureCut4` with Dir False cuts
+  AGAINST the sketch normal: into the part from a face, away from a box
+  standing on the Front plane (there it needs Dir True).
+- `ISketch.ModelToSketchTransform.Inverse()` maps sketch points back to model
+  coordinates; checked on a circle on the +x face.
+- `CreateCornerRectangle` adds two construction diagonals on this install (a
+  user setting), so sketch readers must skip construction geometry.
+
 ## Next
 
 - Assemblies: component patterns, in-context features and configurations are all
