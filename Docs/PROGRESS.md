@@ -752,6 +752,26 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   40 x 20 rectangle give two arcs, on a 20 x 20 square one. The corner
   bookkeeping (one arc per corner) cannot keep that, so it stays refused.
 
+### Printability and drawings ✅ (2026-10-03)
+
+- `IFace2.GetTessTriangles(True)` gives 9 floats per triangle (metres) and
+  `GetTessNorms` the three vertex normals, outward; a flat rectangle is two
+  triangles. That mesh measures overhang area exactly on flat faces.
+- `IModelDoc2.RayIntersections(bodies, points, vectors, NORMALS | ENTRY_EXIT,
+  0, 0)` then `GetRayIntersectionsPoints()`: 9 doubles per hit (body, ray, hit
+  type, x y z, nx ny nz). From a point just inside a face, shooting along the
+  inward normal, the hit is where the wall ends. One batch of 28 rays took a
+  few milliseconds.
+- Wall samples at triangle centres miss thin spots on big faces (a top face is
+  two triangles); subdividing each triangle to the minimum wall finds them.
+- Drawings: `swDefaultTemplateDrawing` (10) is a real .drwdot on this
+  3DEXPERIENCE install; `NewDocument(template, A4 = 6, 0, 0)`,
+  `Create1stAngleViews2(part path)` (needs the saved file) picks the sheet scale
+  (1:1 for a 50 mm part, 1:5 for 200 mm). `InsertModelAnnotations3` with
+  DuplicateDims False repeats every dimension in two views; True shows each
+  once. A view from `CreateDrawViewFromModelView3` has its own scale until
+  `UseSheetScale = True`. `SaveAs3` writes the PDF.
+
 ## Next
 
 - Assemblies: component patterns, in-context features and configurations are all
