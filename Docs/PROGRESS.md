@@ -799,6 +799,26 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
 - In an assembly, `Insert3DSketch` + `CreateLine` + `IMeasure` with the component
   measures to a line (20.0 mm exactly); the 3D sketch is deleted afterwards.
 
+### Drafts, round lofts, smooth pipes, several bodies ✅ (2026-10-04)
+
+- `FeatureExtrusion3` drafts with Dchk1=True, the angle Dang1 in radians;
+  Ddir1=False leans the walls inwards. The angle is one of the feature's
+  dimensions (an angle). Merge=False makes a separate body, named after the
+  feature.
+- A loft starts each profile at the point nearest where it was selected:
+  `SelectByID2` at (0, 0, 0) started a shifted circle on the side facing the
+  origin, a 90 degree twist that lost 28% of a frustum's volume. Selecting each
+  profile on +x of its circle (or at its first vertex) lines them up. A steep
+  oblique loft between circles still comes out ~0.7% fuller than the frustum.
+- A circle drawn without AddToDB in the second loft sketch snapped its centre
+  onto the first sketch's circle nearby (over-defined once dimensioned).
+- `CreateSpline2` (AddToDB) + `InsertProtrusionSwept4` with a circular profile
+  sweeps along a spline: pi r^2 L to 3e-4.
+- `InsertCombineFeature(type, main, bodies)`: add and common fail (None)
+  unless the list holds the main body too; subtract works either way.
+- `PreSplitBody` with a plane selected returns the pieces; `PostSplitBody(pieces,
+  False, one None origin and one "" path per piece)` keeps them in the part.
+
 ## Next
 
 - Assemblies: component patterns, in-context features and configurations are all
