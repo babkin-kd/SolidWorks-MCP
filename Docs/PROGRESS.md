@@ -819,6 +819,22 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
 - `PreSplitBody` with a plane selected returns the pieces; `PostSplitBody(pieces,
   False, one None origin and one "" path per piece)` keeps them in the part.
 
+### Variable fillets and full rounds ✅ (2026-10-04)
+
+- `FeatureFillet3` with Ftyp 1 (VariableRadius) takes one radius per edge end
+  in `Radii`: edge by edge as selected, start before end, each end once (a
+  shared corner counts once; one value too many and it returns None).
+- Options 4 (swFeatureFilletVarRadiusType) runs the radius straight from end
+  to end: 7888.38 against a hand calculation of 7888.41 for R2 -> R5 along a
+  40 mm edge. Without it the transition is smooth (7885.44).
+- The radii become dimensions D0, D01, D02, ..., D010, D011 in that order; no
+  annotation points at its vertex. `IVariableFilletFeatureData2.GetRadius(vertex)`
+  after `AccessSelections` reads each end's radius back.
+- Full round: Ftyp 3 with side face 1 at mark 2, the centre face at mark 512
+  and side face 2 at mark 4. No dimension; 7570.7963 exactly for a rib 10 wide.
+- `ISurface.PlaneParams` gives a plane's normal, then a point on it; a planar
+  face's box centre only lies in the plane when the face is square to an axis.
+
 ## Next
 
 - Assemblies: component patterns, in-context features and configurations are all
