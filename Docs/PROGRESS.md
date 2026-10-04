@@ -785,6 +785,20 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   .sldasm. Its parts' faces, taken from the parts' bodies, select for mates in
   the top assembly, and each part's own (root-relative) Transform2 places them.
 
+### Planes at an angle, turned profiles, distance to an axis ✅ (2026-10-04)
+
+- `IModelDoc2.InsertAxis2(True)` with two planes selected makes the axis where
+  they meet (Front x Right = the Y axis).
+- `InsertRefPlane(Angle, angle, Coincident, 0, 0, 0)` with the plane selected at
+  mark 0 and the axis at mark 1 makes a turned plane whose angle is a dimension.
+  SolidWorks turns Front +30 degrees about Y to the normal (-0.5, 0, 0.866):
+  against the right-hand rule. add_plane checks the normal and builds the plane
+  with OptionFlip when it came out the other way, deleting the first try.
+- A plane's frame comes from a sketch opened on it: the inverse of
+  ModelToSketchTransform; the empty sketch is dropped again on close.
+- In an assembly, `Insert3DSketch` + `CreateLine` + `IMeasure` with the component
+  measures to a line (20.0 mm exactly); the 3D sketch is deleted afterwards.
+
 ## Next
 
 - Assemblies: component patterns, in-context features and configurations are all
