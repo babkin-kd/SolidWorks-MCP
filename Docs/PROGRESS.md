@@ -772,6 +772,19 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   once. A view from `CreateDrawViewFromModelView3` has its own scale until
   `UseSheetScale = True`. `SaveAs3` writes the PDF.
 
+### Any revolve axis, feature edges, sub-assemblies ✅ (2026-10-04)
+
+- `FeatureRevolve2` turns about the sketch's one centerline wherever it lies
+  and at any angle (exact Pappus volumes on a slanted line). It fails (None)
+  when the profile meets the axis in a single point, even mid-axis: the solid
+  would pinch there. A whole edge on the axis (a cone) is fine.
+- `IFeature.GetFaces()` gives the faces a feature made; their edges include
+  where it meets the part. An edge shared by two of its faces comes twice:
+  `GetPersistReference3` (bytes) tells them apart.
+- `OpenDoc6(path, swDocASSEMBLY, silent)` then `AddComponent5` inserts a
+  .sldasm. Its parts' faces, taken from the parts' bodies, select for mates in
+  the top assembly, and each part's own (root-relative) Transform2 places them.
+
 ## Next
 
 - Assemblies: component patterns, in-context features and configurations are all
