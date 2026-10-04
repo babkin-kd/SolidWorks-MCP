@@ -835,6 +835,23 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
 - `ISurface.PlaneParams` gives a plane's normal, then a point on it; a planar
   face's box centre only lies in the plane when the face is square to an axis.
 
+### Free sketches ✅ (2026-10-04)
+
+- Lines, arcs (`CreateArc(centre, start, end, 1)` = counterclockwise) and
+  splines drawn one after another with AddToDB share their end points, the
+  spline's ends too.
+- A spline is fully defined once its through points (`ISketchSpline.GetPoints2`)
+  are; its handles add no freedom until someone drags them.
+- `AddRelation(..., swConstraintType_TANGENT = 6)` takes a line and an arc, or
+  two arcs; two lines that continue each other take COLINEAR (27).
+- `AddRadialDimension2` on an arc that is already determined does not
+  over-define the sketch (its status stays fully defined): SolidWorks quietly
+  adds it, so the constrained status cannot tell a redundant dimension. The
+  free-sketch planner therefore counts degrees of freedom itself, by the rank
+  of the constraints' gradients, and leaves out what would repeat the rest.
+- A sketch on the Top plane has u = x and v = -z; on the Right plane u = -z
+  and v = y.
+
 ## Next
 
 - Assemblies: component patterns, in-context features and configurations are all
