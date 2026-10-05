@@ -901,6 +901,12 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
 - `ViewZoomTo2` reads its two corners along the screen's axes, not the model's;
   only the front view has them equal. `Orientation3`'s columns are the
   screen's x, y and z in model space: turn the region's 8 corners with them.
+- `SetMaterialPropertyName2` finds a .sldmat only in the folders of
+  swFileLocationsMaterialDatabases (string preference 28); a file elsewhere,
+  even a copy of a working one, is ignored without an error. A folder added
+  for the moment and taken out again works, and a minimal UTF-8 file with
+  one material holding only DENS is enough. The part keeps the material's
+  name and density after the file is gone, also when saved and reopened.
 
 ## Next
 
