@@ -873,6 +873,27 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
 - `DeleteSelection2(swDelete_Absorbed)` on a selected component removes it and
   the mates that hold it.
 
+### Speed, edges, refused fillets, mates ✅ (2026-10-05)
+
+- `ISldWorks.CommandInProgress = True` stops SolidWorks redrawing between the
+  calls of an outside program: 144 `GetCurveParams2` calls took 1.5 s, with it
+  0.01 s; `list_edges` 17.9 s against 0.6 s; dimensioning 40 points 15 s
+  against 5 s. It counts: every True needs its own False, so a tool call sets
+  it only when it is off and undoes only that; a screenshot turns it off, as
+  the view must redraw.
+- `IEdge.GetCurveParams2()` gives start xyz, end xyz (m) and the parameter
+  range in one array; `ICurve.GetLength3(t0, t1)` the length; `ICurve.Identity()`
+  3001 = line, 3002 = circle.
+- A refused fillet can be taken apart: each trial fillet deleted again leaves
+  the part as it was. On a 0.5 mm wall two R1 rounds each fit alone, not together.
+- A mate whose face was deleted with its feature reports error 48
+  (swFeatureErrorMateBroken); one whose face was replaced in the same plane (a
+  shell opening it) finds the new face and reports nothing.
+- `AddMate5` returns an IMate2, which has no name: the mate's feature is the
+  new one in the MateGroup. `SetSuppression2` and `DeleteSelection2` work on it.
+- `swSTLComponentsIntoOneFile` (user toggle 72) decides whether an assembly's
+  STL is one file or one per component.
+
 ## Next
 
 - Assemblies: component patterns, in-context features and configurations are all
