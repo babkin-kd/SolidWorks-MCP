@@ -689,7 +689,7 @@ document of its own. Facts found on the way:
   installed at (here 0.1.0, without Project-URLs): reinstall it after changing
   `[project]` in pyproject.toml.
 
-### Quadruped wishes, round 1 ✅ (2026-10-03)
+### Views, exact boxes, distances, a person's sketches ✅ (2026-10-03)
 
 Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
 `read_sketch`, `extrude_sketch` / `cut_sketch`, and planes by name. Verified:
