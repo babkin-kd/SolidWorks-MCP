@@ -852,6 +852,27 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
 - A sketch on the Top plane has u = x and v = -z; on the Right plane u = -z
   and v = y.
 
+### Equations, centres, documents, tight boxes ✅ (2026-10-05)
+
+- `IEquationMgr.Add2` returns -1 for a name that is already set, in any case
+  (global variables are case-insensitive). `SetEquation(index, text)` replaces
+  one in place and returns nothing; a refused text (bad expression, unknown
+  name) leaves the old one silently, so the tools read it back. `Add2(..., False)`
+  plus one `ForceRebuild3` applies a whole list. An equation whose dimension's
+  feature was deleted stays, unchanged, and `Status` turns -1;
+  `IModelDoc2.Parameter(name)` returns None for that dimension.
+- A circle drawn without AddToDB snaps its centre onto a nearby axis: a hole
+  0.75 mm below the x axis landed on it (and 0.3 mm above), then got an
+  on-axis relation instead of a y dimension.
+- SolidWorks merges sketch points that close: 1e-5 mm apart they became one
+  point, 1e-4 mm apart they stayed two. Arc centres from rounded through
+  points land that close, so the free sketch merges them first. An arc whose
+  end lies a little off its start's circle keeps both points where asked.
+- `IPartDoc.GetPartBox(True)` is loose round curved faces (10.004 for a loft
+  that ends at 10); the bodies' extreme points give the exact box.
+- `DeleteSelection2(swDelete_Absorbed)` on a selected component removes it and
+  the mates that hold it.
+
 ## Next
 
 - Assemblies: component patterns, in-context features and configurations are all
