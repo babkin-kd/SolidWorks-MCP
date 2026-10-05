@@ -893,6 +893,14 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   new one in the MateGroup. `SetSuppression2` and `DeleteSelection2` work on it.
 - `swSTLComponentsIntoOneFile` (user toggle 72) decides whether an assembly's
   STL is one file or one per component.
+- `SelectByID2("", "FACE", x, y, z)` picks what the current view shows first
+  at that point: on one part the same point gave the +z face in front, back
+  and iso, a fillet in top and left, and nothing in right and bottom. A
+  screenshot leaves its view behind. `SelectByRay` from just above the point
+  along the face normal picks the face itself, at that exact point, in every view.
+- `ViewZoomTo2` reads its two corners along the screen's axes, not the model's;
+  only the front view has them equal. `Orientation3`'s columns are the
+  screen's x, y and z in model space: turn the region's 8 corners with them.
 
 ## Next
 
