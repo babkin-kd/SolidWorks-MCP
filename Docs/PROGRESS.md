@@ -914,6 +914,10 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   chords shared a bisector (to the inputs' 4 decimals) held their centre by a
   rank residual of 2e-6, and SolidWorks saw it free. The planner counts a row
   only above 1e-4.
+- After a SolidWorks restart the old ISldWorks link raises RPC_S_SERVER_UNAVAILABLE
+  (0x800706BA) on every call; RPC_S_CALL_FAILED (0x800706BE) and
+  RPC_E_DISCONNECTED (0x80010108) mean the same. GetActiveObject attaches to
+  the new instance; `run_guarded` does that before each call.
 
 ## Next
 
