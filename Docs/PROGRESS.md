@@ -910,6 +910,10 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
 - The box centre of a planar face lies on its plane only when the face is
   symmetric: on a drafted wedge's slanted face it was 0.87 mm off.
   `ISurface.PlaneParams[3:6]` is a root point on the plane itself.
+- SolidWorks' "fully defined" has its own tolerance: two concentric arcs whose
+  chords shared a bisector (to the inputs' 4 decimals) held their centre by a
+  rank residual of 2e-6, and SolidWorks saw it free. The planner counts a row
+  only above 1e-4.
 
 ## Next
 
