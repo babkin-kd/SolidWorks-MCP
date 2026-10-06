@@ -907,6 +907,9 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   for the moment and taken out again works, and a minimal UTF-8 file with
   one material holding only DENS is enough. The part keeps the material's
   name and density after the file is gone, also when saved and reopened.
+- The box centre of a planar face lies on its plane only when the face is
+  symmetric: on a drafted wedge's slanted face it was 0.87 mm off.
+  `ISurface.PlaneParams[3:6]` is a root point on the plane itself.
 
 ## Next
 
