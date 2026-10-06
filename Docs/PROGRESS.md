@@ -935,6 +935,8 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   by path ("Leg-1/Thigh-1"), and the top assembly's Parameter reaches a
   sub-assembly's mate dimension as "D1@Angle1@Leg-1"; setting it moves the
   parts inside, not the sub-assembly component.
+- A mate whose face was deleted (and made again) reports error 48 after a
+  rebuild; its IMateEntity2.Reference is None.
 
 ## Next
 
