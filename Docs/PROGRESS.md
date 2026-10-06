@@ -923,6 +923,13 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   down; 19 668 rays took 13 s. Each hit's type carries swRayPtsResultsENTER
   (16) or EXIT (32): a sample on a concave face's facet starts in the air, so
   its first hit is an entry a chord's sag away.
+- A new part has `IEquationMgr.AutomaticSolveOrder` False: equations solve as
+  listed, and one above the line that sets its variable makes the Equations
+  folder warn (error 1) and lags a rebuild. True clears it.
+- A sketch point's coordinate dimension (display type 11 horizontal / 12
+  vertical, attached to the point, swSelSKETCHPOINTS 11, and the origin,
+  swSelEXTSKETCHPOINTS 25) is a distance: a negative value moves the point
+  across the origin and reads back positive; a positive value keeps its side.
 
 ## Next
 
