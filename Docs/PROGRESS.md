@@ -918,6 +918,11 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   (0x800706BA) on every call; RPC_S_CALL_FAILED (0x800706BE) and
   RPC_E_DISCONNECTED (0x80010108) mean the same. GetActiveObject attaches to
   the new instance; `run_guarded` does that before each call.
+- `RayIntersections` with 1 088 823 rays (a spline cover's facet slivers,
+  sampled by their longest edge squared) never came back and took SolidWorks
+  down; 19 668 rays took 13 s. Each hit's type carries swRayPtsResultsENTER
+  (16) or EXIT (32): a sample on a concave face's facet starts in the air, so
+  its first hit is an entry a chord's sag away.
 
 ## Next
 
