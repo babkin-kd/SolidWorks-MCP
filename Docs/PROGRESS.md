@@ -930,6 +930,11 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   vertical, attached to the point, swSelSKETCHPOINTS 11, and the origin,
   swSelEXTSKETCHPOINTS 25) is a distance: a negative value moves the point
   across the origin and reads back positive; a positive value keeps its side.
+- IMeasure between a whole sub-assembly component and another fails; between
+  their part components it works. Components inside a sub-assembly are named
+  by path ("Leg-1/Thigh-1"), and the top assembly's Parameter reaches a
+  sub-assembly's mate dimension as "D1@Angle1@Leg-1"; setting it moves the
+  parts inside, not the sub-assembly component.
 
 ## Next
 
