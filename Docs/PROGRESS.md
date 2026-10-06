@@ -940,6 +940,11 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   parts inside, not the sub-assembly component.
 - A mate whose face was deleted (and made again) reports error 48 after a
   rebuild; its IMateEntity2.Reference is None.
+- IDimension.SystemValue ignores a value it does not take without an error:
+  a dimension an equation drives, a size of 0, a negative revolve angle. It
+  reads the old value back, yet a width of 0 left its sketch "invalid
+  solution"; writing the old value again and rebuilding clears that. A
+  revolve angle of 0 or 400 degrees is taken and fails the rebuild.
 
 ## Next
 
