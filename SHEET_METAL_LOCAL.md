@@ -1,6 +1,8 @@
 # Local sheet-metal extension
 
-Development port in this fork: `0.14.0+sheetmetal.3`, based on upstream 0.14.0.
+Legacy development port in this fork: `0.14.0+sheetmetal.3`, based on upstream 0.14.0.
+The new `2.0.0.dev1` entry point currently exposes the v2 job contract; these
+legacy CAD tools have not yet been migrated into its catalog.
 The verification described below applies to the preserved v1 installation.
 Native validation of the new port is pending. Application API v2 is planned
 in [PLAN.md](PLAN.md); this intermediate port still exposes the legacy tools.
