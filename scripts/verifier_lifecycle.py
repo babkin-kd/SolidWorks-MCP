@@ -192,6 +192,8 @@ class VerifierSupervisor:
         spec = self.tool_specs[name]
         if self._readonly_restart and spec.mutates:
             raise RuntimeError('A historical restart cannot dispatch mutations.')
+        if spec.mutates and self._tainted:
+            raise RuntimeError('Unconfirmed effects prohibit further mutating dispatch.')
         exact = json.loads(_json(arguments))
         request_id = exact.get('request_id')
         if not isinstance(request_id, str) or not request_id:
@@ -208,6 +210,10 @@ class VerifierSupervisor:
         # Earlier rejected attempts cannot certify this later one as unsent.
         request.not_dispatched = False
         request.attempt_arguments.append(json.loads(_json(exact)))
+        # A previous coherent snapshot cannot authorize cleanup of a new RPC.
+        # Revoke before handing it to the transport, without tainting normal work.
+        self._approved_snapshot = None
+        self.cleanup_gate.decision = CleanupDecision(False, False, ('durable dispatch awaiting fresh proof',))
         try:
             raw = await self._client.call_tool(name, json.loads(_json(exact)), **kwargs)
             if self.preenqueue_rejection is not None and self.preenqueue_rejection(name, exact, raw) is True:

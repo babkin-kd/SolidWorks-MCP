@@ -8,6 +8,7 @@ Waiting timeout is not cancellation. Only terminal jobs permit native readback.
 
 import argparse
 import asyncio
+from contextlib import asynccontextmanager
 from importlib import resources
 import json
 import math
@@ -16,6 +17,7 @@ from pathlib import Path
 import sys
 import uuid
 
+import anyio
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 import pythoncom
@@ -26,10 +28,86 @@ from solidworks_mcp.build_info import source_digest
 from verify_document_reads import native_snapshot
 from verify_export_operations import application_preferences, exact_solid, native_extrema_m, ui_snapshot, user_file_metadata
 from verify_geometry_reads import fixtures
+from verifier_lifecycle import ToolSpec, open_supervised_session
 
 
 TOOLS = {'dimension_list', 'dimension_get', 'dimension_set_value'}
 GUARD = {'original_state': 0, 'locked_state': 2, 'released_state': 0}
+TOOL_SPECS = {
+    'document_list': ToolSpec('document.list', False),
+    'dimension_list': ToolSpec('dimension.list', False, argument_defaults={'limit': 100, 'cursor': ''}),
+    'dimension_get': ToolSpec('dimension.get', False),
+    'dimension_set_value': ToolSpec('dimension.set_value', True, float_arguments=frozenset({'value'}),
+        prewrite_failure_codes=frozenset({'object_reference_not_found', 'dimension_unit_mismatch',
+            'invalid_dimension_unit', 'unsupported_signed_dimension', 'dimension_not_writable',
+            'document_not_active', 'stale_revision'})),
+}
+
+
+class SessionCleanupGate:
+    """Only metadata can fail before an owner exists; all later owners must prove safety."""
+    def __init__(self):
+        self.owners = []
+
+    def add(self, owner):
+        self.owners.append(owner)
+
+    def can_cleanup(self):
+        return all(owner.cleanup_gate.can_cleanup() is True for owner in self.owners)
+
+
+@asynccontextmanager
+async def metadata_session(params, provenance, metadata):
+    """No durable/CAD tool dispatch before the supervisor is installed."""
+    async with stdio_client(params) as (read, write):
+        async with ClientSession(read, write) as raw:
+            await raw.initialize()
+            info = succeeded(await response(raw, 'system_get_info', {}))
+            assert info['build_matches_source'] is True and info['build']['source_dirty'] is False
+            assert info['package_version'] == provenance['package_version']
+            assert info['build']['git_sha'] == provenance['git_sha']
+            assert info['source_digest'] == provenance['installed_source_digest']
+            assert info['build']['source_digest'] == provenance['installed_source_digest']
+            assert 'dimension.set_value' in info['implemented_mutations']
+            tools = (await raw.list_tools()).tools
+            assert TOOLS <= {tool.name for tool in tools}, 'Dimension tools are not published yet.'
+            assert all(tool.outputSchema for tool in tools)
+            metadata.update(info=info, tools=tools)
+            yield raw
+
+
+async def require_native_cleanup(owner, aggregate):
+    """A cached earlier gate never authorizes a later native read/activation."""
+    with anyio.CancelScope(shield=True):
+        decision = await owner.observe_once()
+    if not decision.child_can_close or not aggregate.can_cleanup():
+        raise RuntimeError('Unconfirmed job state: retain owned fixtures without native readback/activation.')
+
+
+@asynccontextmanager
+async def inactive_owned_document(owner, aggregate, activate_other, restore_target):
+    await require_native_cleanup(owner, aggregate)
+    try:
+        activate_other()
+        yield
+    except BaseException as original:
+        # Lost acknowledgement may still mean queued/running COM. Drain keeps
+        # the SDK owner alive, then only positive fixture proof allows Activate.
+        await owner.drain()
+        if aggregate.can_cleanup():
+            try:
+                restore_target()
+            except BaseException as restoration_error:
+                owner.retain('owned activation restoration failed')
+                original.add_note(f'Owned activation restoration failed: {type(restoration_error).__name__}')
+        raise
+    else:
+        await require_native_cleanup(owner, aggregate)
+        try:
+            restore_target()
+        except BaseException:
+            owner.retain('owned activation restoration failed')
+            raise
 
 
 async def response(client, tool, arguments):
@@ -110,7 +188,10 @@ async def check(state, internal_report):
     report = {**provenance, 'public_mcp_dimension_acceptance': False}
     params = StdioServerParameters(command=str(Path(sys.executable).with_name('solidworks-mcp-v2.exe')),
                                    args=['--state-dir', str(state)])
-    with fixtures() as (_, owned, _):
+    cleanup = SessionCleanupGate()
+    metadata = {}
+    session_factory = lambda: metadata_session(params, provenance, metadata)
+    with fixtures(cleanup_gate=cleanup.can_cleanup) as (_, owned, _):
         model = owned[1]
         assert not model.GetPathName(), 'Only an unsaved owned fixture may be changed.'
         assert tuple(model.GetConfigurationNames()) == ('Основная',)
@@ -137,121 +218,124 @@ async def check(state, internal_report):
             assert application_preferences(sw) == setup_preferences
             return {'dimensions_mm': size, 'volume_mm3': volume}
 
-        async with stdio_client(params) as (read, write):
-            async with ClientSession(read, write) as client:
-                await client.initialize()
-                info = succeeded(await call(client, 'system_get_info'))
-                assert info['build_matches_source'] is True and info['build']['source_dirty'] is False
-                assert info['package_version'] == provenance['package_version']
-                assert info['build']['git_sha'] == provenance['git_sha']
-                assert info['source_digest'] == provenance['installed_source_digest']
-                assert info['build']['source_digest'] == provenance['installed_source_digest']
-                assert 'dimension.set_value' in info['implemented_mutations']
-                tools = (await client.list_tools()).tools
-                assert TOOLS <= {tool.name for tool in tools}, 'Dimension tools are not published yet.'
-                assert all(tool.outputSchema for tool in tools)
-                docs = succeeded(await call(client, 'document_list'))['documents']
-                other, target_document = [next(row for row in docs if row['title'] == title) for title in titles]
-                context = {'document_id': target_document['document_id'], 'configuration': 'Основная'}
-                page = succeeded(await call(client, 'dimension_list', **context, limit=200))
-                assert page['revision_scope'] == 'part_dimension_values_v1' and page['total_count'] == 3
-                assert all(math.isclose(actual, expected, abs_tol=1e-8) for actual, expected in
-                           zip(sorted(row['values']['Основная'] for row in page['items']), [5., 6., 7.]))
-                assert all(row['object_id'] and row['persistent_reference_supported']
-                           and row['reference_anchor']['strategy'] == 'display_dimension_v1' for row in page['items'])
-                target = next(row for row in page['items'] if row['owner']['feature_type'] == 'Extrusion')
-                assert not target['write_blockers']
-                sketches = [row for row in page['items'] if row['owner']['feature_type'] == 'ProfileFeature']
-                assert len(sketches) == 2
-                assert all('sketch_geometry_snapshot_not_implemented' in row['write_blockers'] for row in sketches)
-                initial_refs = {row['object_id'] for row in page['items']}
-                assert succeeded(await call(client, 'dimension_list', **context))['revision'] == page['revision']
-                short = succeeded(await call(client, 'dimension_list', **context, limit=1))
-                paged_ids = [row['object_id'] for row in short['items']]
-                while short['next_cursor']:
-                    short = succeeded(await call(client, 'dimension_list', **context, limit=1, cursor=short['next_cursor']))
-                    paged_ids.extend(row['object_id'] for row in short['items'])
-                assert len(paged_ids) == 3 and set(paged_ids) == initial_refs
-                args = {**context, 'object_id': target['object_id'], 'expected_revision': page['revision'],
-                        'value': 9., 'unit': 'mm'}
-                failed(await call(client, 'dimension_set_value', **{**args, 'document_id': other['document_id']}),
-                       'object_reference_not_found')
-                # Test inactive configuration independently of a foreign ID:
-                # namespace rejection is intentionally earlier for mutations.
-                failed(await call(client, 'dimension_list', document_id=other['document_id'],
-                       configuration='Вариант'), 'configuration_not_active')
-                failed(await call(client, 'dimension_set_value', **{**args, 'unit': 'deg'}), 'dimension_unit_mismatch')
-                failed(await call(client, 'dimension_set_value', **{**args, 'unit': 'inch'}), 'invalid_dimension_unit')
-                failed(await call(client, 'dimension_set_value', **{**args, 'value': -9.}), 'unsupported_signed_dimension')
-                failed(await call(client, 'dimension_set_value', **{**args, 'object_id': sketches[0]['object_id']}),
-                       'dimension_not_writable')
-                physical(7.)
+        async def physical_proven(owner, depth):
+            await require_native_cleanup(owner, cleanup)
+            try:
+                return physical(depth)
+            except BaseException:
+                owner.retain('independent geometry/UI verification failed')
+                raise
 
-                # Activate only another exact owned document, then restore our
-                # owned target before any later setter/native physical reads.
-                activated, _ = sw.ActivateDoc3(titles[0], False, 1, 0)
+        async with open_supervised_session(session_factory, tool_specs=TOOL_SPECS,
+                journal_path=state / 'jobs.sqlite') as client:
+            cleanup.add(client)
+            info, tools = metadata['info'], metadata['tools']
+            docs = succeeded(await call(client, 'document_list'))['documents']
+            other, target_document = [next(row for row in docs if row['title'] == title) for title in titles]
+            context = {'document_id': target_document['document_id'], 'configuration': 'Основная'}
+            page = succeeded(await call(client, 'dimension_list', **context, limit=200))
+            assert page['revision_scope'] == 'part_dimension_values_v1' and page['total_count'] == 3
+            assert all(math.isclose(actual, expected, abs_tol=1e-8) for actual, expected in
+                       zip(sorted(row['values']['Основная'] for row in page['items']), [5., 6., 7.]))
+            assert all(row['object_id'] and row['persistent_reference_supported']
+                       and row['reference_anchor']['strategy'] == 'display_dimension_v1' for row in page['items'])
+            target = next(row for row in page['items'] if row['owner']['feature_type'] == 'Extrusion')
+            assert not target['write_blockers']
+            sketches = [row for row in page['items'] if row['owner']['feature_type'] == 'ProfileFeature']
+            assert len(sketches) == 2
+            assert all('sketch_geometry_snapshot_not_implemented' in row['write_blockers'] for row in sketches)
+            initial_refs = {row['object_id'] for row in page['items']}
+            assert succeeded(await call(client, 'dimension_list', **context))['revision'] == page['revision']
+            short = succeeded(await call(client, 'dimension_list', **context, limit=1))
+            paged_ids = [row['object_id'] for row in short['items']]
+            while short['next_cursor']:
+                short = succeeded(await call(client, 'dimension_list', **context, limit=1, cursor=short['next_cursor']))
+                paged_ids.extend(row['object_id'] for row in short['items'])
+            assert len(paged_ids) == 3 and set(paged_ids) == initial_refs
+            args = {**context, 'object_id': target['object_id'], 'expected_revision': page['revision'],
+                    'value': 9., 'unit': 'mm'}
+            failed(await call(client, 'dimension_set_value', **{**args, 'document_id': other['document_id']}),
+                   'object_reference_not_found')
+            # Test inactive configuration independently of a foreign ID:
+            # namespace rejection is intentionally earlier for mutations.
+            failed(await call(client, 'dimension_list', document_id=other['document_id'],
+                   configuration='Вариант'), 'configuration_not_active')
+            failed(await call(client, 'dimension_set_value', **{**args, 'unit': 'deg'}), 'dimension_unit_mismatch')
+            failed(await call(client, 'dimension_set_value', **{**args, 'unit': 'inch'}), 'invalid_dimension_unit')
+            failed(await call(client, 'dimension_set_value', **{**args, 'value': -9.}), 'unsupported_signed_dimension')
+            failed(await call(client, 'dimension_set_value', **{**args, 'object_id': sketches[0]['object_id']}),
+                   'dimension_not_writable')
+            await physical_proven(client, 7.)
+
+            # Activate only another exact owned document, then restore our
+            # owned target before any later setter/native physical reads.
+            def activate_owned(title):
+                activated, _ = sw.ActivateDoc3(title, False, 1, 0)
                 assert activated is not None
-                try:
-                    failed(await call(client, 'dimension_set_value', **args), 'document_not_active')
-                finally:
-                    activated, _ = sw.ActivateDoc3(titles[1], False, 1, 0)
-                    assert activated is not None
-                physical(7.)
-                fresh = succeeded(await call(client, 'dimension_list', **context))
-                write_args = {**args, 'expected_revision': fresh['revision'],
-                              'request_id': 'owned-native-dimension-depth', 'timeout_s': 0}
-                pending = await response(client, 'dimension_set_value', write_args)
-                repeated = await response(client, 'dimension_set_value', write_args)
-                assert repeated['operation_id'] == pending['operation_id']
-                finished = await terminal_job(client, pending['operation_id'])
-                proof = succeeded(finished)
-                assert proof['mutation']['phase'] == 'committed' and proof['result']['verified'] is True
-                assert math.isclose(proof['mutation']['before_state']['value_si'], .007, abs_tol=1e-10)
-                assert proof['mutation']['before_state']['_mutation_effect_scope'] == 'application'
-                assert proof['result']['execution_guard'] == GUARD
-                assert proof['mutation']['verification']['evidence']['execution_guard'] == GUARD
-                assert proof['result']['value']['native_status'] == 0
-                report['changed_geometry'] = physical(9.)
-                after = succeeded(await call(client, 'dimension_list', **context))
-                assert {row['object_id'] for row in after['items']} == initial_refs
-                readback = succeeded(await call(client, 'dimension_get', **context, object_id=target['object_id']))
-                assert math.isclose(readback['dimension']['values']['Основная'], 9., abs_tol=1e-8)
-                failed(await call(client, 'dimension_set_value', **{**args, 'value': 11.}), 'stale_revision')
-                replay = await response(client, 'dimension_set_value', write_args)
-                assert replay['operation_id'] == pending['operation_id']
-                replay_job = await terminal_job(client, replay['operation_id'])
-                assert succeeded(replay_job) == proof
-                journal = succeeded(await response(client, 'job_list', {'limit': 1000}))
-                assert journal['next_cursor'] is None
-                matches = [job for job in journal['items'] if job['request_id'] == write_args['request_id']]
-                assert len(matches) == 1 and matches[0]['operation_id'] == pending['operation_id']
-                assert succeeded(await call(client, 'dimension_list', **context))['revision'] == after['revision']
-                physical(9.)
-                report.update(package_version=info['package_version'], git_sha=info['build']['git_sha'],
-                    source_dirty=False, build_matches_source=True, solidworks_revision=original[0], tool_count=len(tools),
-                    timeout_zero_initial_status=pending['status'], native_status=0,
-                    compound_reference_survives_rebuild=True, sketch_dimensions_read_only=True,
-                    independent_geometry_verified=True, same_request_does_not_duplicate_write=True,
-                    stale_wrong_document_inactive_and_unit_errors_rejected=True,
-                    durable_application_checkpoint_and_guard_release=True)
+            async with inactive_owned_document(client, cleanup,
+                    lambda: activate_owned(titles[0]), lambda: activate_owned(titles[1])):
+                failed(await call(client, 'dimension_set_value', **args), 'document_not_active')
+            await physical_proven(client, 7.)
+            fresh = succeeded(await call(client, 'dimension_list', **context))
+            write_args = {**args, 'expected_revision': fresh['revision'],
+                          'request_id': 'owned-native-dimension-depth', 'timeout_s': 0}
+            pending = await response(client, 'dimension_set_value', write_args)
+            repeated = await response(client, 'dimension_set_value', write_args)
+            assert repeated['operation_id'] == pending['operation_id']
+            finished = await terminal_job(client, pending['operation_id'])
+            proof = succeeded(finished)
+            assert proof['mutation']['phase'] == 'committed' and proof['result']['verified'] is True
+            assert math.isclose(proof['mutation']['before_state']['value_si'], .007, abs_tol=1e-10)
+            assert proof['mutation']['before_state']['_mutation_effect_scope'] == 'application'
+            assert proof['result']['execution_guard'] == GUARD
+            assert proof['mutation']['verification']['evidence']['execution_guard'] == GUARD
+            assert proof['result']['value']['native_status'] == 0
+            report['changed_geometry'] = await physical_proven(client, 9.)
+            after = succeeded(await call(client, 'dimension_list', **context))
+            assert {row['object_id'] for row in after['items']} == initial_refs
+            readback = succeeded(await call(client, 'dimension_get', **context, object_id=target['object_id']))
+            assert math.isclose(readback['dimension']['values']['Основная'], 9., abs_tol=1e-8)
+            assert readback['dimension']['reference_anchor'] == target['reference_anchor']
+            assert readback['dimension']['native_incarnation'] == target['native_incarnation']
+            failed(await call(client, 'dimension_set_value', **{**args, 'value': 11.}), 'stale_revision')
+            replay = await response(client, 'dimension_set_value', write_args)
+            assert replay['operation_id'] == pending['operation_id']
+            replay_job = await terminal_job(client, replay['operation_id'])
+            assert succeeded(replay_job) == proof
+            journal = succeeded(await response(client, 'job_list', {'limit': 1000}))
+            assert journal['next_cursor'] is None
+            matches = [job for job in journal['items'] if job['request_id'] == write_args['request_id']]
+            assert len(matches) == 1 and matches[0]['operation_id'] == pending['operation_id']
+            assert succeeded(await call(client, 'dimension_list', **context))['revision'] == after['revision']
+            await physical_proven(client, 9.)
+            report.update(package_version=info['package_version'], git_sha=info['build']['git_sha'],
+                source_dirty=False, build_matches_source=True, solidworks_revision=original[0], tool_count=len(tools),
+                timeout_zero_initial_status=pending['status'], native_status=0,
+                compound_reference_survives_rebuild=True, sketch_dimensions_read_only=True,
+                independent_geometry_verified=True, same_request_does_not_duplicate_write=True,
+                stale_wrong_document_inactive_and_unit_errors_rejected=True,
+                durable_application_checkpoint_and_guard_release=True)
+
+        history = client.history_seed()
 
         # Restart validates durable proof without trying to resume/repeat COM.
-        async with stdio_client(params) as (read, write):
-            async with ClientSession(read, write) as client:
-                await client.initialize()
-                assert succeeded(await terminal_job(client, pending['operation_id'])) == proof
-                reopened = succeeded(await call(client, 'document_list'))['documents']
-                new_document = next(row for row in reopened if row['title'] == titles[1])
-                assert new_document['document_id'] != context['document_id']
-                failed(await call(client, 'dimension_get', **context, object_id=target['object_id']), 'document_not_open')
-                new_page = succeeded(await call(client, 'dimension_list', document_id=new_document['document_id'],
-                                                configuration='Основная'))
-                assert initial_refs.isdisjoint({row['object_id'] for row in new_page['items']})
-                failed(await call(client, 'dimension_get', document_id=new_document['document_id'],
-                       configuration='Основная', object_id=target['object_id']), 'object_reference_not_found')
-                physical(9.)
+        async with open_supervised_session(session_factory, tool_specs=TOOL_SPECS,
+                journal_path=state / 'jobs.sqlite', trusted_history=history, readonly_restart=True) as client:
+            cleanup.add(client)
+            assert succeeded(await terminal_job(client, pending['operation_id'])) == proof
+            reopened = succeeded(await call(client, 'document_list'))['documents']
+            new_document = next(row for row in reopened if row['title'] == titles[1])
+            assert new_document['document_id'] != context['document_id']
+            failed(await call(client, 'dimension_get', **context, object_id=target['object_id']), 'document_not_open')
+            new_page = succeeded(await call(client, 'dimension_list', document_id=new_document['document_id'],
+                                            configuration='Основная'))
+            assert initial_refs.isdisjoint({row['object_id'] for row in new_page['items']})
+            failed(await call(client, 'dimension_get', document_id=new_document['document_id'],
+                   configuration='Основная', object_id=target['object_id']), 'object_reference_not_found')
+            await physical_proven(client, 9.)
         report.update(historical_job_survives_restart=True, restart_invalidates_document_and_dimension_ids=True)
 
+    assert cleanup.can_cleanup(), 'Retain fixtures without original native baseline reads.'
     assert native_snapshot() == original
     assert ui_snapshot(sw, module) == original_ui
     assert application_preferences(sw) == original_preferences

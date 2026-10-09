@@ -103,6 +103,56 @@ def terminal(client, *, status='succeeded', phase='committed'):
         row['mutation'] = job(status=status, phase=phase)['mutation']
 
 
+def test_new_dispatch_revokes_previous_cleanup_and_history_before_transport():
+    async def scenario():
+        class Client(FakeClient):
+            async def call_tool(self, name, arguments=None, **kwargs):
+                if name not in helper.DIRECT_QUERIES:
+                    assert not self.owner.cleanup_gate.can_cleanup()
+                    assert not self.owner.cleanup_gate.decision.child_can_close
+                    assert self.owner._approved_snapshot is None
+                    with pytest.raises(RuntimeError):
+                        self.owner.history_seed()
+                return await super().call_tool(name, arguments, **kwargs)
+        client = Client()
+        owner = owner_for(client)
+        async with owner.inside_live_session():
+            await owner.call_tool('dimension_set_value', ARGS)
+            terminal(client)
+            assert (await owner.observe_once()).fixture_can_cleanup
+            earlier = deepcopy(client.rows)
+            later_args = {**ARGS, 'request_id': 'later-owned-request'}
+            client.mode = 'cancel-before-row'
+            with anyio.move_on_after(.01):
+                await owner.call_tool('dimension_set_value', later_args)
+            assert client.rows == earlier  # Existing durable history remains intact.
+            assert not (await owner.observe_once()).child_can_close
+            assert not owner.cleanup_gate.can_cleanup()
+            later = job(later_args, status='succeeded', phase='committed')
+            later['operation_id'] = 'later-operation'
+            client.rows.append(later)
+            assert (await owner.observe_once()).fixture_can_cleanup
+        assert owner.history_seed()
+    anyio.run(scenario)
+
+
+@pytest.mark.parametrize('reason', ['terminal unknown retains fixtures', 'transport lost'])
+def test_tainted_owner_denies_further_mutation_before_send_but_allows_read_observation(reason):
+    async def scenario():
+        client = FakeClient()
+        owner = owner_for(client)
+        async with owner.inside_live_session():
+            owner.retain(reason)
+            with pytest.raises(RuntimeError, match='Unconfirmed effects'):
+                await owner.call_tool('dimension_set_value', ARGS)
+            assert not client.calls
+            await owner.call_tool('document_list', {'request_id': 'read'})
+            terminal(client)
+        assert owner.cleanup_gate.decision.child_can_close
+        assert not owner.cleanup_gate.can_cleanup()
+    anyio.run(scenario)
+
+
 @pytest.mark.parametrize('mutates,status,phase', [
     (False, 'succeeded', None), (False, 'failed', None),
     (True, 'succeeded', 'committed'), (True, 'failed', 'rolled_back'),

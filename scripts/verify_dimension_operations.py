@@ -7,6 +7,7 @@ same initialized apartment; independent extrema/volume verify the known box.
 
 import argparse
 from concurrent.futures import Future
+from contextlib import closing
 from importlib import resources
 import json
 import math
@@ -25,6 +26,7 @@ from solidworks_mcp.jobs import JobRunner, JobStore
 from verify_document_reads import native_snapshot
 from verify_geometry_reads import fixtures
 from verify_export_operations import exact_solid, native_extrema_m, ui_snapshot
+from verifier_fixture_cleanup import InlineFixtureCleanupGate, guarded_inline_submit
 
 
 class Adapter(SolidWorksDocuments):
@@ -75,20 +77,56 @@ class Worker:
         return future
 
 
-def check(state):
+def require_inline_cleanup(gate):
+    if gate.can_cleanup() is not True:
+        raise RuntimeError('Retain owned fixtures without further native reads: job outcome or UI release is unconfirmed.')
+
+
+def failure_baseline(gate, baseline):
+    """Held outcomes are reported from Python only, never by further CAD getters."""
+    if gate.can_cleanup() is not True:
+        return None
+    return native_snapshot() == baseline
+
+
+def close_inline_resources(documents, store, gate, original):
+    """Attempt both closures; failed cleanup never replaces the operation error."""
+    errors = []
+    for resource in (documents, store):
+        try:
+            resource.close()
+        except BaseException as error:
+            gate.retain()
+            errors.append(error)
+    if original is not None:
+        for error in errors:
+            original.add_note(f'Verifier resource cleanup failed: {type(error).__name__}')
+    elif errors:
+        for error in errors[1:]:
+            errors[0].add_note(f'Additional resource cleanup failed: {type(error).__name__}')
+        raise errors[0]
+
+
+def check(state, *, cleanup_gate=None, failure_report=None):
+    cleanup_gate = cleanup_gate if cleanup_gate is not None else InlineFixtureCleanupGate()
     assert 'site-packages' in solidworks_mcp.__file__
-    original = native_snapshot()
     package = Path(solidworks_mcp.__file__).resolve().parent
     build = json.loads(resources.files('solidworks_mcp').joinpath('build_info.json').read_text(encoding='utf8'))
     assert build['package_version'] == solidworks_mcp.__version__
     assert build['source_digest'] == source_digest(package)
+    assert build['source_dirty'] is False
+    assert isinstance(build['git_sha'], str) and len(build['git_sha']) == 40
+    original = native_snapshot()
     report = {'package_version': solidworks_mcp.__version__, 'public_mcp_dimension_acceptance': False,
               'git_sha': build['git_sha'], 'source_dirty': build['source_dirty'],
               'installed_source_digest': build['source_digest'], 'installed_build_matches_package': True}
-    with fixtures() as (_, owned, _):
+    if failure_report is not None:
+        failure_report.update(report)
+    with fixtures(cleanup_gate=cleanup_gate.can_cleanup) as (_, owned, _):
         adapter = Adapter()
         documents = DocumentCatalog(adapter)
         store = JobStore(state / 'jobs.sqlite')
+        primary_error = None
         try:
             model = owned[1]
             sw, module = adapter._sw, binding.module()
@@ -110,21 +148,28 @@ def check(state):
             def submit(request, revision, value):
                 args = {'document_id': doc['document_id'], 'configuration': 'Основная',
                         'object_id': target['object_id'], 'expected_revision': revision, 'value': value, 'unit': 'mm'}
-                return runner.submit(request, 'dimension.set_value', args,
+                job = guarded_inline_submit(cleanup_gate, runner, store, request, 'dimension.set_value', args,
                     lambda operation_id: catalog.set_value(operation_id, **args),
                     context={key: args[key] for key in ('document_id', 'configuration', 'expected_revision')},
                     mutates=True, pass_operation_id=True, verify=lambda result: result['verified'] is True)
+                require_inline_cleanup(cleanup_gate)
+                return job
 
             def physical(depth):
-                body = exact_solid(model, module)
-                bounds = native_extrema_m(body)
-                size = [1000 * (b - a) for a, b in zip(bounds['min'], bounds['max'])]
-                assert all(math.isclose(a, b, abs_tol=1e-7) for a, b in zip(size, [5., 6., depth])), size
-                volume = float(body.GetMassProperties(1.)[3]) * 1e9
-                assert math.isclose(volume, 5 * 6 * depth, abs_tol=1e-5), volume
-                assert ui_snapshot(sw, module) == source_ui
-                assert adapter.snapshot(owned[0]) == other_metadata
-                return {'dimensions_mm': size, 'volume_mm3': volume}
+                require_inline_cleanup(cleanup_gate)
+                try:
+                    body = exact_solid(model, module)
+                    bounds = native_extrema_m(body)
+                    size = [1000 * (b - a) for a, b in zip(bounds['min'], bounds['max'])]
+                    assert all(math.isclose(a, b, abs_tol=1e-7) for a, b in zip(size, [5., 6., depth])), size
+                    volume = float(body.GetMassProperties(1.)[3]) * 1e9
+                    assert math.isclose(volume, 5 * 6 * depth, abs_tol=1e-5), volume
+                    assert ui_snapshot(sw, module) == source_ui
+                    assert adapter.snapshot(owned[0]) == other_metadata
+                    return {'dimensions_mm': size, 'volume_mm3': volume}
+                except BaseException:
+                    cleanup_gate.retain()
+                    raise
 
             physical(7.)
             changed = submit('change', page['revision'], 9.)
@@ -160,9 +205,20 @@ def check(state):
                 actual_native_write_count=adapter.native_write_count,
                 actual_native_rebuild_count=adapter.native_rebuild_count,
                 complete_capture_seconds=catalog.capture_seconds)
+        except BaseException as error:
+            primary_error = error
+            raise
         finally:
-            documents.close()
-            store.close()
+            try:
+                close_inline_resources(documents, store, cleanup_gate, primary_error)
+            finally:
+                if failure_report is not None:
+                    failure_report.update(owned_fixtures_retained=not cleanup_gate.can_cleanup(),
+                        retained_owned_fixture_count=len(owned) if not cleanup_gate.can_cleanup() else 0,
+                        actual_native_write_count=adapter.native_write_count,
+                        actual_native_rebuild_count=adapter.native_rebuild_count,
+                        complete_capture_seconds=catalog.capture_seconds if 'catalog' in locals() else [])
+    require_inline_cleanup(cleanup_gate)
     assert native_snapshot() == original
     report['original_document_baseline_restored'] = True
     return report
@@ -178,25 +234,30 @@ def main():
     pythoncom.CoInitialize()
     try:
         baseline = native_snapshot()
+        cleanup_gate = InlineFixtureCleanupGate()
+        failure_context = {}
         try:
-            result = check(args.state_dir)
-        except Exception as exc:
+            result = check(args.state_dir, cleanup_gate=cleanup_gate, failure_report=failure_context)
+        except BaseException as exc:
             # Inspect, never reopen/recover with JobStore or replay a failed job.
             journal = args.state_dir / 'jobs.sqlite'
             jobs = []
-            if journal.exists():
-                with sqlite3.connect(journal.resolve().as_uri() + '?mode=ro', uri=True) as db:
-                    jobs = [{'request_id': request, 'status': status, 'mutation_phase': phase,
-                             'error': json.loads(error) if error else None}
-                            for request, status, phase, error in db.execute(
-                                'SELECT j.request_id,j.status,m.phase,j.error FROM jobs j '
-                                'LEFT JOIN mutations m USING(operation_id) ORDER BY j.created_at')]
-            failure = {'package_version': solidworks_mcp.__version__, 'accepted': False,
-                'public_mcp_dimension_acceptance': False, 'error_type': type(exc).__name__,
-                'jobs': jobs, 'original_document_baseline_restored': native_snapshot() == baseline,
-                'private_journal_preserved': True, 'automatic_replay_attempted': False}
-            args.report.write_text(json.dumps(failure, indent=2) + '\n', encoding='utf8')
-            print(json.dumps(failure, indent=2), flush=True)
+            try:
+                if journal.exists():
+                    with closing(sqlite3.connect(journal.resolve().as_uri() + '?mode=ro', uri=True)) as db:
+                        jobs = [{'request_id': request, 'status': status, 'mutation_phase': phase,
+                                 'error': json.loads(error) if error else None}
+                                for request, status, phase, error in db.execute(
+                                    'SELECT j.request_id,j.status,m.phase,j.error FROM jobs j '
+                                    'LEFT JOIN mutations m USING(operation_id) ORDER BY j.created_at')]
+                failure = {'package_version': solidworks_mcp.__version__, 'accepted': False,
+                    'public_mcp_dimension_acceptance': False, 'error_type': type(exc).__name__,
+                    'jobs': jobs, 'original_document_baseline_restored': failure_baseline(cleanup_gate, baseline),
+                    **failure_context, 'private_journal_preserved': True, 'automatic_replay_attempted': False}
+                args.report.write_text(json.dumps(failure, indent=2) + '\n', encoding='utf8')
+                print(json.dumps(failure, indent=2), flush=True)
+            except BaseException as report_error:
+                exc.add_note(f'Failure reporting failed: {type(report_error).__name__}; private journal retained.')
             raise
         result['accepted'] = True
         args.report.write_text(json.dumps(result, indent=2) + '\n', encoding='utf8')
