@@ -44,7 +44,7 @@ class PreferenceApplication:
                 if self.on_set:
                     return self.on_set(name, value)
                 self.state[name] = value
-                return True
+                return None if setters[method] == 'Toggle' else True
             return set_value
         raise AttributeError(method)
 

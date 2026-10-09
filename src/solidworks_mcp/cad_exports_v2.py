@@ -137,7 +137,12 @@ class CadExportsAdapter:
         kind, code = PREFERENCES[name]
         method = {'String': 'SetUserPreferenceStringValue', 'Integer': 'SetUserPreferenceIntegerValue',
                   'Toggle': 'SetUserPreferenceToggle', 'Double': 'SetUserPreferenceDoubleValue'}[kind]
-        if getattr(self._sw, method)(code, value) is not True or self._get_preference(name) != value:
+        result = getattr(self._sw, method)(code, value)
+        # ISldWorks.SetUserPreferenceToggle is VOID (typed Python returns None),
+        # while the String/Integer/Double setters return BOOL. Both contracts
+        # still require exact readback; a BOOL failure is never confirmation.
+        confirmed = result is None if kind == 'Toggle' else result is True
+        if not confirmed or self._get_preference(name) != value:
             raise rejected('export_preference_write_failed', f'Native preference {name} was not confirmed.')
 
     def export_preferences(self, options):

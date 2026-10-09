@@ -1,11 +1,16 @@
-# Fork validation. Native SolidWorks/PDM/Simulation acceptance runs separately.
+# Unit/build validation only; no native CAD/PDM/Simulation acceptance.
 name: Checks
 
 on:
   push:
-    branches: [main, stage-1-fixes, stage-2-core, stage-3-extensions]
+    branches: [main]
   pull_request:
+    branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
