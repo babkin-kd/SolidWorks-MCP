@@ -2,7 +2,7 @@
 
 No public tools are registered here. The runtime supplies a durable mutating job
 and an approved, local output directory owned by the server/operator. Export
-revisions cover serialized solid bodies and declared export settings; they are
+revisions cover complete supported analytical boundaries and export settings; they are
 not feature-rename revisions or assertions about every add-in's metadata.
 """
 
@@ -218,8 +218,8 @@ class ExportCatalog:
         options = ExportOptions(format, filename, units).checked()
         destination = self._destination(options)
         entry, revision, semantic, _ = self._state(document_id, configuration, options)
-        # Serialization must be stable for an unchanged native source. Fail
-        # closed if a particular release/body cannot provide a repeatable BREP.
+        # Full supported analytical boundary and native metadata must remain
+        # stable. Native Copy/Save byte streams are not canonical geometry.
         if self._state(document_id, configuration, options)[1] != revision:
             raise rejected('export_revision_unstable', 'Export source serialization is not repeatable; no write is allowed.')
         return {'document_id': document_id, 'configuration': configuration, 'revision': revision,

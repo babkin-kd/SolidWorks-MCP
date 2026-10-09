@@ -23,6 +23,58 @@ class Worker:
         return True
 
 
+def test_export_without_trusted_directory_does_not_start_worker_or_record_job(tmp_path):
+    store = JobStore(tmp_path / 'jobs.sqlite')
+    runtime = Runtime(store, worker_factory=lambda: pytest.fail('No worker before trusted output root.'))
+    try:
+        with pytest.raises(JobError) as failure:
+            asyncio.run(runtime.read('r', 'export.prepare', {'document_id': 'doc', 'configuration': 'Основная'}))
+        assert failure.value.code == 'export_output_not_configured'
+        assert store.list()['items'] == []
+    finally:
+        runtime.shutdown()
+
+
+def test_internal_dimension_runtime_routes_durable_write_and_releases_on_sta(tmp_path):
+    from solidworks_mcp.documents import DocumentCatalog
+    from test_dimension_domain_v2 import Adapter, dimension, feature, model
+
+    adapter = Adapter()
+    adapter.mutation_guard = adapter.guard
+    owned = model(title='Проверка размера')
+    owned.features = [feature(1)]
+    owned.dimensions = [dimension(1)]
+    adapter.models = [owned]
+    store = JobStore(tmp_path / 'jobs.sqlite')
+    runtime = Runtime(store, worker_factory=Worker, catalog_factory=lambda: DocumentCatalog(adapter))
+
+    async def exercise():
+        documents = await runtime.read('docs', 'document.list', {})
+        doc_id = documents['result']['documents'][0]['document_id']
+        context = {'document_id': doc_id, 'configuration': 'Основная'}
+        page = await runtime.read('dims', 'dimension.list', context)
+        assert page['status'] == 'succeeded'
+        args = {**context, 'object_id': page['result']['items'][0]['object_id'],
+                'expected_revision': page['result']['revision'], 'value': 25., 'unit': 'mm'}
+        changed = await runtime.mutate('change', 'dimension.set_value', args)
+        assert changed['status'] == 'succeeded'
+        assert changed['mutation']['phase'] == 'committed'
+        assert changed['mutation']['before_state']['_mutation_effect_scope'] == 'application'
+        duplicate = await runtime.mutate('change', 'dimension.set_value', args)
+        assert duplicate['operation_id'] == changed['operation_id']
+        readback = await runtime.read('readback', 'dimension.get', {**context, 'object_id': args['object_id']})
+        assert readback['result']['dimension']['values']['Основная'] == 25.
+        assert len(adapter.dimension_writes) == adapter.guard_entries == 1
+        assert runtime._dimensions is not None
+
+    try:
+        asyncio.run(exercise())
+    finally:
+        assert runtime.shutdown()
+    assert runtime._dimensions is None and runtime._exports is None
+    assert all(watch.closed for watch in adapter.watches.values())
+
+
 def test_read_timeout_duplicate_late_result_and_release_in_owning_thread(tmp_path):
     store = JobStore(tmp_path / 'jobs.sqlite')
     entered, release = threading.Event(), threading.Event()

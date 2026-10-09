@@ -21,6 +21,7 @@ import solidworks_mcp
 from solidworks_mcp import binding
 from verify_document_reads import native_snapshot
 from verify_geometry_reads import fixtures
+from verify_export_operations import ui_snapshot
 
 
 def native_features(model):
@@ -35,9 +36,13 @@ def native_features(model):
 async def check(state):
     assert 'site-packages' in solidworks_mcp.__file__, 'Use the installed wheel without PYTHONPATH.'
     original = native_snapshot()
+    sw = binding.connect(show=False)
+    module = binding.module()
+    original_ui = ui_snapshot(sw, module)
     report = {}
     with fixtures() as (_, owned, _):
         setup = native_snapshot()
+        setup_ui = ui_snapshot(sw, module)
         titles = [str(model.GetTitle()) for model in owned]
         first_native = next(f for f in native_features(owned[0]) if f.Name == 'Контрольный блок 1')
         second_names = [(int(f.GetID()), str(f.Name)) for f in native_features(owned[1])]
@@ -107,6 +112,11 @@ async def check(state):
                     proof = finished['data']
                     assert proof['mutation']['phase'] == 'committed'
                     assert proof['mutation']['before_state']['name'] == 'Ручное русское имя'
+                    assert proof['mutation']['before_state']['_mutation_effect_scope'] == 'application'
+                    guard_evidence = {'original_state': 0, 'locked_state': 2, 'released_state': 0}
+                    assert proof['result']['execution_guard'] == guard_evidence
+                    assert proof['mutation']['verification']['evidence']['execution_guard'] == guard_evidence
+                    assert ui_snapshot(sw, module) == setup_ui, 'MCP changed blocking/selection state.'
                     assert first_native.Name == 'Основание механизма'
                     readback = success(await call(client, 'feature_get', **context, object_id=target['object_id']))
                     assert readback['feature']['native_id'] == target['native_id']
@@ -133,12 +143,15 @@ async def check(state):
                         'native_mcp_feature_rename': True, 'persistent_reference_survives_rename': True,
                         'same_request_does_not_duplicate_write': True, 'timeout_zero_initial_status': pending['status'],
                         'durable_before_after_and_committed_hold': True, 'foreign_and_inactive_target_rejected': True,
+                        'native_ui_guard_release_verified_and_durable': True,
+                        'original_ui_blocking_and_selection_unchanged': True,
                         'manual_name_edit_rejects_stale_revision': True,
                         'manual_name_edit_update_stamp_changed': manual_stamp_changed,
                         'second_document_features_unchanged': True, 'active_document_unchanged': True,
                         'deleted_reference_rejected': True, 'deleted_reference_error': deleted['error']['code'],
                         'revision_scope': 'part_feature_tree_v1', 'scope_not_all_cad_metadata': True}
     assert native_snapshot() == original
+    assert ui_snapshot(sw, module) == original_ui
     report['original_document_baseline_restored'] = True
     return report
 

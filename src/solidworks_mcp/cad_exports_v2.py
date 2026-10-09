@@ -6,13 +6,12 @@ handoff notes. No document activation, configuration switch, ClearSelection,
 rebuild, save-original, or generic Undo is performed.
 """
 
-import hashlib
 import math
-
-import pythoncom
 
 from . import binding
 from .documents import rejected
+from .jobs import _json
+from .cad_planar_brep import PlanarBrepError, planar_body_snapshot, planar_snapshot_digest
 
 
 # (application preference kind, SW 2023 swconst enum value). Document-property
@@ -93,27 +92,14 @@ class CadExportsAdapter:
     def _body_fingerprint(self, body):
         if int(body.GetType()) != 0 or body.IsMeshBody() or not bool(body.Visible):
             raise rejected('unsupported_export_body', 'Initial export supports visible native solid BREP bodies only.')
-        clone = binding.wrap(body.Copy(), self._module.IBody2)
-        if clone is None or not clone.IsTemporaryBody():
-            raise rejected('export_fingerprint_unavailable', 'A read-only temporary body copy could not be obtained.')
-        # Body.Save accepts IUnknown/IStream and returns void. Serializing the
-        # temporary copy avoids writing 3rd-party storage into the CAD document.
-        stream = pythoncom.CreateStreamOnHGlobal()
-        clone.Save(stream)
-        size = int(stream.Seek(0, 2))
-        if not 0 < size <= 256 * 1024 * 1024:
-            raise rejected('export_fingerprint_unavailable', 'Serialized body is empty or exceeds the fingerprint budget.')
-        stream.Seek(0, 0)
-        digest = hashlib.sha256()
-        remaining = size
-        while remaining:
-            block = stream.Read(min(remaining, 1024 * 1024))
-            if not block:
-                raise rejected('export_fingerprint_unavailable', 'Body stream ended before its reported length.')
-            digest.update(block)
-            remaining -= len(block)
+        try:
+            snapshot = planar_body_snapshot(body, identity=self.identity,
+                wrap=lambda raw, name: binding.wrap(raw, getattr(self._module, name)))
+        except PlanarBrepError as exc:
+            raise rejected(exc.code, str(exc)) from exc
         return {'name': str(body.Name), 'type': 'solid', 'visible': True,
-                'serialized_body_sha256': digest.hexdigest(), 'serialized_body_bytes': size}
+                'boundary_snapshot_sha256': planar_snapshot_digest(snapshot),
+                'boundary_snapshot': snapshot}
 
     def export_source_snapshot(self, model):
         self._preflight(model)
@@ -121,16 +107,17 @@ class CadExportsAdapter:
         bodies = self.bodies(model, 'all')
         if not 1 <= len(bodies) <= 256:
             raise rejected('unsupported_export_body_count', 'Export requires 1–256 visible native solid bodies.')
-        # Hash complete serialized temporary BREP bodies, not a bounding box,
-        # mass property, feature name, or a coarse tessellation approximation.
+        # Complete analytical boundary/topology for supported planar solids.
+        # Native Copy/Save streams are not canonical geometry fingerprints.
         fingerprints = []
         serialized_bytes = 0
         for body in bodies:
             fingerprint = self._body_fingerprint(body)
-            serialized_bytes += fingerprint['serialized_body_bytes']
-            if serialized_bytes > 1024 * 1024 * 1024:
+            serialized_bytes += len(_json(fingerprint).encode('utf8'))
+            if serialized_bytes > 64 * 1024 * 1024:
                 raise rejected('export_fingerprint_budget_exceeded', 'Total serialized bodies exceed the fingerprint budget.')
             fingerprints.append(fingerprint)
+        fingerprints.sort(key=_json)
         features = [self.feature_summary(feature) for feature in self.features(model)]
         self._preflight(model)
         if self.snapshot(model) != metadata:

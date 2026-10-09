@@ -7,6 +7,8 @@ import uuid
 from .documents import DocumentCatalog, rejected
 from .geometry import GeometryCatalog
 from .features import FeatureCatalog
+from .dimensions import DimensionCatalog
+from .exports_v2 import ExportCatalog
 from .jobs import JobError, JobRunner, _json
 
 
@@ -28,7 +30,8 @@ def _catalog_factory():
 
 
 class Runtime:
-    def __init__(self, store, *, worker_factory=_worker_factory, catalog_factory=_catalog_factory):
+    def __init__(self, store, *, worker_factory=_worker_factory, catalog_factory=_catalog_factory,
+                 approved_output_root=None):
         self.store = store
         self._worker_factory = worker_factory
         self._catalog_factory = catalog_factory
@@ -36,6 +39,9 @@ class Runtime:
         self._catalog = None
         self._geometry = None
         self._features = None
+        self._dimensions = None
+        self._exports = None
+        self._approved_output_root = approved_output_root
         self._connection_epoch = None
         self._lock = threading.RLock()
         self._closed = False
@@ -45,7 +51,7 @@ class Runtime:
             try:
                 self._catalog = self._catalog_factory()  # Always called on the STA.
             except Exception as exc:
-                if operation == 'feature.rename':
+                if operation in ('feature.rename', 'dimension.set_value', 'export.execute'):
                     raise rejected(getattr(exc, 'code', 'cad_connection_failed'), str(exc)) from exc
                 raise
             self._connection_epoch = 'connection_' + uuid.uuid4().hex
@@ -69,6 +75,24 @@ class Runtime:
                 return self._features.get(**arguments)
             if operation == 'feature.rename':
                 return self._features.rename(operation_id, **arguments)
+            if operation.startswith('dimension.') and self._dimensions is None:
+                self._dimensions = DimensionCatalog(self._catalog, self.store, self._connection_epoch,
+                    mutation_guard=getattr(self._catalog.adapter, 'mutation_guard', None))
+            if operation == 'dimension.list':
+                return self._dimensions.list(**arguments)
+            if operation == 'dimension.get':
+                return self._dimensions.get(**arguments)
+            if operation == 'dimension.set_value':
+                return self._dimensions.set_value(operation_id, **arguments)
+            if operation.startswith('export.') and self._exports is None:
+                from .cad_exports_v2 import CadExportsAdapter
+                self._exports = ExportCatalog(self._catalog, self.store, self._connection_epoch,
+                    self._approved_output_root, adapter=CadExportsAdapter(self._catalog.adapter),
+                    mutation_guard=getattr(self._catalog.adapter, 'mutation_guard', None))
+            if operation == 'export.prepare':
+                return self._exports.prepare(**arguments)
+            if operation == 'export.execute':
+                return self._exports.execute(operation_id, **arguments)
             raise rejected('unsupported_operation', 'No domain implementation for this operation.')
         except Exception as exc:
             # Domain rejections retain identities. Unexpected native failures
@@ -87,10 +111,13 @@ class Runtime:
         # Validate before recording/dispatch. A bad timeout must not start CAD.
         if isinstance(timeout_s, bool) or not isinstance(timeout_s, (int, float)) or not 0 <= timeout_s <= 120:
             raise JobError('invalid_timeout', 'timeout_s must be finite and between 0 and 120.')
-        allowed = ('feature.rename',) if mutates else (
-            'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get')
+        allowed = ('feature.rename', 'dimension.set_value', 'export.execute') if mutates else (
+            'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get',
+            'dimension.list', 'dimension.get', 'export.prepare')
         if operation not in allowed:
             raise JobError('unsupported_operation', 'No domain implementation for this operation.')
+        if operation.startswith('export.') and self._approved_output_root is None:
+            raise JobError('export_output_not_configured', 'A server-owned export output directory is required.')
         arguments = json.loads(_json(arguments))
         with self._lock:
             if self._closed:
@@ -114,6 +141,8 @@ class Runtime:
         catalog, self._catalog = self._catalog, None
         self._geometry = None
         self._features = None
+        self._dimensions = None
+        self._exports = None
         self._connection_epoch = None
         if catalog is not None:
             catalog.close()

@@ -6,7 +6,7 @@ or non-deterministic; native acceptance is required before MCP publication.
 """
 
 from dataclasses import dataclass, field
-import hashlib
+import json
 import math
 
 import pythoncom
@@ -14,6 +14,7 @@ import win32com.client
 
 from . import binding
 from .documents import rejected
+from .cad_planar_brep import PLANAR_BREP_SCOPE, PlanarBrepError, planar_body_snapshot
 
 
 @dataclass
@@ -21,6 +22,10 @@ class NativeDimension:
     dimension: object
     owner: object
     displays: list = field(default_factory=list)
+    display_slots: list = field(default_factory=list)
+    # Canonical owner identity proven against this enumeration's full feature
+    # snapshot. None deliberately means no proof, including manual records.
+    owner_tree_identity: object = None
 
 
 class CadDimensionsMixin:
@@ -34,12 +39,98 @@ class CadDimensionsMixin:
     def dimension_object(record):
         return record.dimension
 
-    def resolve_dimension_id(self, model, persistent_id):
-        raw, status = self._extension(model).GetObjectByPersistReference3(self._persistent_variant(persistent_id))
+    def _resolve_dimension_anchor_object(self, model, persistent_hex, cls):
+        raw, status = self._extension(model).GetObjectByPersistReference3(
+            self._persistent_variant(bytes.fromhex(persistent_hex)))
         if status != 0 or raw is None:
             code = ('object_deleted' if status & 4 else 'object_suppressed' if status & 2 else 'object_reference_invalid')
             raise rejected(code, f'Native dimension persistent-reference state is {status}.')
-        return binding.wrap(raw, self._module.IDimension)
+        return binding.wrap(raw, cls)
+
+    def _dimension_anchor_parts(self, model, anchor):
+        if anchor['strategy'] == 'direct_dimension_v1':
+            dimension = self._resolve_dimension_anchor_object(model, anchor['dimension_pid_hex'], self._module.IDimension)
+            return dimension, None
+        if anchor['strategy'] != 'display_dimension_v1':
+            raise rejected('object_reference_invalid', 'Unsupported native dimension reference strategy.')
+        display = self._resolve_dimension_anchor_object(model, anchor['display_pid_hex'], self._module.IDisplayDimension)
+        index = anchor['dimension_index']
+        display_type = int(display.GetType())
+        if (type(index) is not int or index not in (0, 1)
+                or display_type != anchor['display_type'] or (display_type != 10 and index != 0)):
+            raise rejected('object_reference_invalid', 'Display type/parameter slot changed; no ordinal fallback.')
+        dimension = binding.wrap(display.GetDimension2(index), self._module.IDimension)
+        if dimension is None:
+            raise rejected('object_reference_invalid', 'Persistent display no longer supplies this dimension slot.')
+        owner = self._resolve_dimension_anchor_object(model, anchor['owner_pid_hex'], self._module.IFeature)
+        actual_owner = binding.wrap(dimension.GetFeatureOwner(), self._module.IFeature)
+        if actual_owner is None or self.identity(owner) != self.identity(actual_owner):
+            raise rejected('persistent_reference_mismatch', 'Dimension no longer belongs to the persistent owner feature.')
+        return dimension, display
+
+    def resolve_dimension_id(self, model, anchor):
+        return self._dimension_anchor_parts(model, anchor)[0]
+
+    def dimension_persistent_id(self, model, record):
+        """Explicit direct or compound native anchor; never resolve by a name.
+
+        SW2023 can return no PID for IDimension, while its IDisplayDimension
+        supports a native PID. A display slot is a documented API parameter,
+        not the dimension's position in a traversal.
+        """
+        if (record.owner is None or record.owner_tree_identity is None
+                or self.identity(record.owner) != record.owner_tree_identity):
+            return None
+        dimension = record.dimension
+        direct = self.persistent_id(model, dimension)
+        if direct:
+            anchor = {'strategy': 'direct_dimension_v1', 'dimension_pid_hex': direct.hex()}
+            if self.identity(self.resolve_dimension_id(model, anchor)) != self.identity(dimension):
+                raise rejected('persistent_reference_mismatch', 'Direct dimension PID resolves to another native object.')
+            return anchor
+        owner = record.owner
+        owner_pid = self.persistent_id(model, owner) if owner is not None else b''
+        if not owner_pid:
+            return None
+        for display, index in record.display_slots:
+            display_pid = self.persistent_id(model, display)
+            if not display_pid:
+                continue
+            anchor = {'strategy': 'display_dimension_v1', 'display_pid_hex': display_pid.hex(),
+                      'dimension_index': index, 'display_type': int(display.GetType()),
+                      'owner_pid_hex': owner_pid.hex()}
+            resolved_dimension, resolved_display = self._dimension_anchor_parts(model, anchor)
+            if (self.identity(resolved_dimension) != self.identity(dimension)
+                    or self.identity(resolved_display) != self.identity(display)):
+                raise rejected('persistent_reference_mismatch', 'Compound dimension PID does not roundtrip to its native display and dimension.')
+            return anchor
+        return None
+
+    def dimension_same_persistent_id(self, model, left, right):
+        if left['strategy'] != right['strategy']:
+            return False
+        if left['strategy'] == 'direct_dimension_v1':
+            return self.same_persistent_id(model, bytes.fromhex(left['dimension_pid_hex']), bytes.fromhex(right['dimension_pid_hex']))
+        if left['strategy'] != 'display_dimension_v1':
+            return False
+        return (left['dimension_index'] == right['dimension_index'] and left['display_type'] == right['display_type']
+                and self.same_persistent_id(model, bytes.fromhex(left['display_pid_hex']), bytes.fromhex(right['display_pid_hex']))
+                and self.same_persistent_id(model, bytes.fromhex(left['owner_pid_hex']), bytes.fromhex(right['owner_pid_hex'])))
+
+    def dimension_reference_is_current(self, model, record, anchor):
+        if (record.owner is None or record.owner_tree_identity is None
+                or self.identity(record.owner) != record.owner_tree_identity):
+            return False
+        dimension, display = self._dimension_anchor_parts(model, anchor)
+        if self.identity(dimension) != self.identity(record.dimension):
+            return False
+        owner = binding.wrap(dimension.GetFeatureOwner(), self._module.IFeature)
+        if owner is None or self.identity(owner) != record.owner_tree_identity:
+            return False
+        if display is None:
+            return True
+        return any(index == anchor['dimension_index'] and self.identity(current) == self.identity(display)
+                   for current, index in record.display_slots)
 
     def dimensions(self, model, features):
         """Enumerate all feature/subfeature dimensions; include both chamfer values.
@@ -48,6 +139,11 @@ class CadDimensionsMixin:
         dimension identity deduplicates absorbed-feature/display aliases; names
         and enumeration indices never resolve a client reference.
         """
+        # The caller already supplied the complete bounded feature traversal.
+        # Cache canonical identities once; PyIUnknown only needs equality, not
+        # hashing. Never repeat COM feature traversal for every reference.
+        features = tuple(features)
+        feature_identities = tuple(self.identity(feature) for feature in features)
         result, visits = [], 0
         for feature in features:
             display = binding.wrap(feature.GetFirstDisplayDimension(), self._module.IDisplayDimension)
@@ -72,9 +168,15 @@ class CadDimensionsMixin:
                             raise rejected('dimension_budget_exceeded', 'Dimension enumeration budget exhausted.')
                         owner = binding.wrap(dimension.GetFeatureOwner(), self._module.IFeature)
                         prior = NativeDimension(dimension, owner)
+                        if owner is not None:
+                            owner_identity = self.identity(owner)
+                            if any(owner_identity == candidate for candidate in feature_identities):
+                                prior.owner_tree_identity = owner_identity
                         result.append(prior)
                     if not any(self.identity(d) == display_identity for d in prior.displays):
                         prior.displays.append(display)
+                    if not any(slot == index and self.identity(d) == display_identity for d, slot in prior.display_slots):
+                        prior.display_slots.append((display, index))
                 display = binding.wrap(feature.GetNextDisplayDimension(display), self._module.IDisplayDimension)
         return result
 
@@ -180,35 +282,30 @@ class CadDimensionsMixin:
                 'unsafe_feature_types': unsafe}
 
     def dimension_geometry_snapshot(self, model):
-        """Hash exact in-memory native body streams; never save the CAD document.
+        """Read the complete supported analytical boundary, without Copy/Save.
 
-        The stream hash is deliberately stricter than mass/bounds sampling.
-        Failure/non-determinism rejects a snapshot or restoration; no approximate
-        bounding box is mislabeled as complete geometric rollback evidence.
+        Native serialization of a NEW copy is not canonical on SW2023. Curved
+        or unsupported topology is refused until its full scope is implemented.
         """
         bodies = self.bodies(model, 'all')
         if len(bodies) > 500:
             raise rejected('geometry_budget_exceeded', 'Dimension scope supports at most 500 native bodies.')
         result, total = [], 0
         for body in bodies:
-            temporary = binding.wrap(body.Copy(), self._module.IBody2)
-            if (temporary is None or not temporary.IsTemporaryBody()
-                    or self.identity(temporary) == self.identity(body)):
-                raise rejected('geometry_snapshot_unavailable', 'Body snapshot requires a distinct native temporary copy.')
-            stream = pythoncom.CreateStreamOnHGlobal()
-            temporary.Save(stream)
-            size = stream.Seek(0, 2)
+            try:
+                snapshot = planar_body_snapshot(body, identity=self.identity,
+                    wrap=lambda raw, name: binding.wrap(raw, getattr(self._module, name)))
+            except PlanarBrepError as exc:
+                raise rejected(exc.code, str(exc)) from exc
+            serialized = json.dumps(snapshot, sort_keys=True, ensure_ascii=False,
+                allow_nan=False, separators=(',', ':'))
+            size = len(serialized.encode('utf8'))
             total += size
             if size <= 0 or size > 64 * 1024 * 1024 or total > 128 * 1024 * 1024:
-                raise rejected('geometry_snapshot_unavailable', 'Native body-stream snapshot is empty or exceeds the bounded budget.')
-            stream.Seek(0, 0)
-            raw = stream.Read(size)
-            if len(raw) != size:
-                raise rejected('geometry_snapshot_unavailable', 'Native body-stream snapshot is incomplete.')
-            result.append({'body_type': int(temporary.GetType()), 'bytes': size,
-                           'sha256': hashlib.sha256(raw).hexdigest()})
-        result.sort(key=lambda row: (row['body_type'], row['sha256'], row['bytes']))
-        return {'representation': 'native_body_stream_sha256_v1', 'bodies': result}
+                raise rejected('geometry_snapshot_unavailable', 'Analytical boundary snapshot exceeds the bounded budget.')
+            result.append((serialized, snapshot))
+        result.sort(key=lambda row: row[0])
+        return {'representation': PLANAR_BREP_SCOPE, 'bodies': [row[1] for row in result]}
 
     @staticmethod
     def set_dimension_value(record, value_si, configuration):

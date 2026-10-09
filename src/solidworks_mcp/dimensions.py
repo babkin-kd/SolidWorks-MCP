@@ -3,7 +3,7 @@
 This is an internal candidate domain. Native acceptance and an owning-STA
 mutation guard are required before publishing tools. Its revision extends the
 feature scope with all enumerated dimension values, control flags, all named
-configuration incarnations and exact body-stream fingerprints. It is not a
+configuration incarnations and complete supported analytical boundaries. It is not a
 universal revision of arbitrary add-in data or a full document rollback.
 """
 
@@ -49,7 +49,8 @@ class DimensionReference:
     object_id: str
     configuration: str
     configuration_identity: object
-    persistent_id: bytes
+    persistent_id: dict
+    native_identity: object
 
 
 class DimensionCatalog:
@@ -76,19 +77,24 @@ class DimensionCatalog:
         identities = entry.features.setdefault('dimensions', {}).setdefault('native_identities', [])
         for item, row in zip(native, rows):
             dimension = self.adapter.dimension_object(item)
-            persistent = self.adapter.persistent_id(entry.model, dimension)
-            row['persistent_id_hex'] = persistent.hex() if persistent else None
+            try:
+                anchor = self.adapter.dimension_persistent_id(entry.model, item)
+            except Exception as exc:
+                if getattr(exc, 'code', None) not in ('persistent_reference_unavailable', 'persistent_reference_mismatch',
+                        'object_reference_invalid', 'object_deleted', 'object_suppressed'):
+                    raise
+                anchor = None  # Read-only row; registration will expose the reason.
+            row['reference_anchor'] = anchor
             # Even an unsupported/read-only native dimension must invalidate
             # the full revision when replaced by an identical-looking object.
-            if not persistent:
-                identity = self.adapter.identity(dimension)
-                prior = next((old for old in identities if old[0] == identity), None)
-                if prior is None:
-                    if len(identities) >= 10000:
-                        raise rejected('reference_budget_exceeded', 'Unreferenced native dimension incarnation budget exhausted.')
-                    prior = (identity, 'native_dim_' + uuid.uuid4().hex)
-                    identities.append(prior)
-                row['native_incarnation'] = prior[1]
+            identity = self.adapter.identity(dimension)
+            prior = next((old for old in identities if old[0] == identity), None)
+            if prior is None:
+                if len(identities) >= 10000:
+                    raise rejected('reference_budget_exceeded', 'Native dimension incarnation budget exhausted.')
+                prior = (identity, 'native_dim_' + uuid.uuid4().hex)
+                identities.append(prior)
+            row['native_incarnation'] = prior[1]
         # finite JSON is a protocol requirement, including adapter-provided values.
         _json(rows)
         return native, rows
@@ -129,23 +135,34 @@ class DimensionCatalog:
 
     def _register(self, entry, configuration, identity, native):
         dimension = self.adapter.dimension_object(native)
-        persistent = self.adapter.persistent_id(entry.model, dimension)
+        persistent = self.adapter.dimension_persistent_id(entry.model, native)
         if not persistent:
             raise rejected('persistent_reference_unavailable', 'Native dimension has no persistent reference.')
         resolved = self.adapter.resolve_dimension_id(entry.model, persistent)
-        if self.adapter.identity(resolved) != self.adapter.identity(dimension):
+        if (self.adapter.identity(resolved) != self.adapter.identity(dimension)
+                or not self.adapter.dimension_reference_is_current(entry.model, native, persistent)):
             raise rejected('persistent_reference_mismatch', 'Persistent dimension reference resolves to another native object.')
         cache = entry.features.setdefault('dimensions', {})
         refs = cache.setdefault('references', {})
         index = cache.setdefault('reference_index', {})
-        ref = index.get((configuration, persistent))
-        if ref is not None and ref.configuration_identity == identity and self.adapter.same_persistent_id(entry.model, persistent, ref.persistent_id):
+        native_identity = self.adapter.identity(dimension)
+        key = (configuration, _json(persistent))
+        ref = index.get(key)
+        if ref is None:
+            # Native byte representations may change across rebuilds. Equality
+            # is the native PID comparison, never JSON/hex/name equality alone.
+            ref = next((old for old in refs.values() if old.configuration == configuration
+                        and old.configuration_identity == identity and old.native_identity == native_identity
+                        and self.adapter.dimension_same_persistent_id(entry.model, persistent, old.persistent_id)), None)
+        if (ref is not None and ref.configuration_identity == identity and ref.native_identity == native_identity
+                and self.adapter.dimension_same_persistent_id(entry.model, persistent, ref.persistent_id)):
+            index[key] = ref
             return ref
         if len(refs) >= 10000:
             raise rejected('reference_budget_exceeded', 'Dimension reference budget exhausted.')
-        ref = DimensionReference('dim_' + uuid.uuid4().hex, configuration, identity, persistent)
+        ref = DimensionReference('dim_' + uuid.uuid4().hex, configuration, identity, deepcopy(persistent), native_identity)
         refs[ref.object_id] = ref
-        index[(configuration, persistent)] = ref
+        index[key] = ref
         return ref
 
     def _resolve(self, entry, configuration, identity, objects, object_id):
@@ -155,8 +172,10 @@ class DimensionCatalog:
         if ref.configuration != configuration or ref.configuration_identity != identity:
             raise rejected('object_configuration_mismatch', 'Dimension belongs to another configuration/incarnation.')
         resolved = self.adapter.resolve_dimension_id(entry.model, ref.persistent_id)
+        if self.adapter.identity(resolved) != ref.native_identity:
+            raise rejected('persistent_reference_mismatch', 'Dimension anchor was retargeted to another native dimension; re-list it.')
         current = next((obj for obj in objects if self.adapter.identity(self.adapter.dimension_object(obj)) == self.adapter.identity(resolved)), None)
-        if current is None:
+        if current is None or not self.adapter.dimension_reference_is_current(entry.model, current, ref.persistent_id):
             raise rejected('dimension_not_current', 'Persistent dimension is not in the current bounded dimension enumeration.')
         return current, ref
 
@@ -257,7 +276,7 @@ class DimensionCatalog:
             self._writable(semantic, row, unit)
             target.update(entry=entry, identity=identity, native=native)
             return PreparedMutation(revision, {'scope': SCOPE, 'object_id': object_id,
-                'persistent_id_hex': ref.persistent_id.hex(), 'full_name': row['full_name'],
+                'reference_anchor': ref.persistent_id, 'full_name': row['full_name'],
                 'value_si': row['values_si'][configuration], 'semantic': semantic})
         def validate(prepared):
             entry, identity, objects, semantic, revision = self._state(document_id, configuration)

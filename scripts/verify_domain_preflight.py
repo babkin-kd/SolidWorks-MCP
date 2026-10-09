@@ -14,7 +14,6 @@ import pythoncom
 import win32com.client
 import solidworks_mcp
 from solidworks_mcp.cad_documents import SolidWorksDocuments
-from solidworks_mcp.cad_dimensions import CadDimensionsMixin
 from solidworks_mcp.cad_exports_v2 import CadExportsAdapter
 from solidworks_mcp.documents import DocumentCatalog
 from solidworks_mcp.ui_guard import ModelUiGuard
@@ -22,7 +21,7 @@ from verify_document_reads import native_snapshot
 from verify_geometry_reads import fixtures
 
 
-class DimensionsAdapter(CadDimensionsMixin, SolidWorksDocuments):
+class DimensionsAdapter(SolidWorksDocuments):
     pass
 
 
@@ -58,17 +57,39 @@ def check(focus='all'):
             def dimension_rows():
                 native = adapter.dimensions(model, adapter.features(model))
                 rows = []
+                anchors = []
                 for record in native:
                     value = adapter.dimension_summary(record, ['Основная'])
                     persistent = adapter.persistent_id(model, record.dimension)
-                    assert persistent
-                    restored = adapter.resolve_dimension_id(model, persistent)
-                    assert adapter.identity(restored) == adapter.identity(record.dimension)
+                    anchor = adapter.dimension_persistent_id(model, record)
+                    roundtrip = False
+                    if anchor:
+                        restored = adapter.resolve_dimension_id(model, anchor)
+                        assert adapter.identity(restored) == adapter.identity(record.dimension), 'Dimension PID resolves a different native object.'
+                        assert adapter.dimension_reference_is_current(model, record, anchor)
+                        roundtrip = True
+                    displays = []
+                    for display in record.displays:
+                        display_pid = adapter.persistent_id(model, display)
+                        display_identity_matches = False
+                        if display_pid:
+                            raw, status = adapter._extension(model).GetObjectByPersistReference3(adapter._persistent_variant(display_pid))
+                            display_identity_matches = status == 0 and raw is not None and adapter.identity(raw) == adapter.identity(display)
+                        displays.append({'pid_bytes': len(display_pid), 'native_identity_matches': display_identity_matches})
                     rows.append({'parameter_type': value['parameter_type'], 'unit': value['unit'],
                         'value': value['values']['Основная'], 'owner_type': value['owner']['feature_type'] if value['owner'] else None,
-                        'write_blockers': value['write_blockers'], 'native_pid_roundtrip': True})
+                        'write_blockers': value['write_blockers'], 'native_pid_roundtrip': roundtrip,
+                        'dimension_pid_bytes': len(persistent), 'reference_strategy': anchor['strategy'] if anchor else None,
+                        'display_reference_diagnostics': displays})
+                    if anchor:
+                        anchors.append((record, anchor))
                 assert rows, 'Fixture dimensions were not enumerated.'
-                return rows
+                time.sleep(1.2)
+                for record, anchor in anchors:
+                    assert adapter.identity(adapter.resolve_dimension_id(model, anchor)) == adapter.identity(record.dimension), 'Dimension identity changed across delayed anchor resolution.'
+                return {'dimensions': rows, 'writable_dimension_native_reference_confirmed':
+                    any(row['native_pid_roundtrip'] and not row['write_blockers'] for row in rows),
+                    'dimension_identity_stable_after_delay': bool(anchors)}
 
             def body_streams():
                 first = adapter.dimension_geometry_snapshot(model)
@@ -81,9 +102,10 @@ def check(focus='all'):
             def export_snapshot():
                 first = exports.export_source_snapshot(model)
                 second = exports.export_source_snapshot(model)
-                assert first == second, 'Export temporary BREP serialization is not repeatable.'
-                return {'body_count': len(first['bodies']), 'brep_repeatable': True,
-                        'serialized_bytes': sum(b['serialized_body_bytes'] for b in first['bodies'])}
+                changed = [key for key in first if first[key] != second.get(key)]
+                assert first == second, 'Export snapshot is not repeatable; changed fields: ' + ', '.join(changed)
+                return {'body_count': len(first['bodies']), 'analytical_boundary_repeatable': True,
+                        'geometry_scope': first['bodies'][0]['boundary_snapshot']['scope']}
 
             def named_values_diagnostic():
                 values = []
