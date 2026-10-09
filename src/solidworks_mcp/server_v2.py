@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 import sqlite3
 import sys
+from typing import Literal
 
 from mcp.server.fastmcp import FastMCP
 
@@ -44,7 +45,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
         'Only advertised tools are available. Jobs survive timeouts; poll their operation_id. '
         'An unknown outcome requires reconciliation before retrying an operation. '
         'Names of new CAD objects must be meaningful Russian names; standard components '
-        'must come from approved libraries. Only read-only document metadata is available '
+        'must come from approved libraries. Read-only document metadata and part geometry are available '
         'for CAD in this candidate; observation revisions are not yet mutation guards.'
     ))
 
@@ -70,6 +71,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
             'platform': sys.platform, 'development_candidate': True,
             'capabilities': {'job_journal': True, 'job_query': True, 'queued_job_cancellation': True,
                              'cad_documents': True, 'cad_mutations': False,
+                             'part_geometry_reads': True, 'persistent_geometry_references': True,
                              'pdm': False, 'simulation': False},
             'journal_schema_version': 1,
         })
@@ -131,6 +133,54 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
         """
         return await read_document(request_id, 'document.get',
                                    {'document_id': document_id, 'configuration': configuration}, timeout_s)
+
+    @app.tool()
+    async def body_list(request_id: str, document_id: str, configuration: str,
+                        expected_observation_revision: str, body_type: Literal['all', 'solid', 'surface'] = 'all',
+                        limit: int = 100, cursor: str = '', timeout_s: float = 10) -> ResponseEnvelope:
+        """Page native solid/surface bodies of an explicit part's active configuration.
+
+        Pass the current observation_revision from document_get/list. No automatic
+        activation or rebuild. IDs are opaque persistent references, never indices.
+        Bounding boxes are approximate and remain in the model coordinate frame.
+        """
+        return await read_document(request_id, 'geometry.list', {
+            'document_id': document_id, 'configuration': configuration,
+            'expected_observation_revision': expected_observation_revision, 'kind': 'body',
+            'body_type': body_type, 'limit': limit, 'cursor': cursor}, timeout_s)
+
+    @app.tool()
+    async def face_list(request_id: str, document_id: str, configuration: str,
+                        expected_observation_revision: str, body_id: str, limit: int = 100,
+                        cursor: str = '', timeout_s: float = 10) -> ResponseEnvelope:
+        """Page faces of an explicit solid/surface body; areas are mm², IDs are opaque."""
+        return await read_document(request_id, 'geometry.list', {
+            'document_id': document_id, 'configuration': configuration,
+            'expected_observation_revision': expected_observation_revision, 'kind': 'face',
+            'body_id': body_id, 'limit': limit, 'cursor': cursor}, timeout_s)
+
+    @app.tool()
+    async def edge_list(request_id: str, document_id: str, configuration: str,
+                        expected_observation_revision: str, body_id: str, limit: int = 100,
+                        cursor: str = '', timeout_s: float = 10) -> ResponseEnvelope:
+        """Page edges of an explicit solid/surface body; lengths/endpoints are mm."""
+        return await read_document(request_id, 'geometry.list', {
+            'document_id': document_id, 'configuration': configuration,
+            'expected_observation_revision': expected_observation_revision, 'kind': 'edge',
+            'body_id': body_id, 'limit': limit, 'cursor': cursor}, timeout_s)
+
+    @app.tool()
+    async def geometry_get(request_id: str, document_id: str, configuration: str,
+                           expected_observation_revision: str, object_id: str,
+                           timeout_s: float = 10) -> ResponseEnvelope:
+        """Resolve an opaque body/face/edge reference in its original document/configuration.
+
+        Revalidates the native persistent reference and parent body. Deleted,
+        suppressed, foreign or obsolete references fail without a fallback.
+        """
+        return await read_document(request_id, 'geometry.get', {
+            'document_id': document_id, 'configuration': configuration,
+            'expected_observation_revision': expected_observation_revision, 'object_id': object_id}, timeout_s)
 
     return app
 

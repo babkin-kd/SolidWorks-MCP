@@ -4,6 +4,7 @@ import threading
 import json
 
 from .documents import DocumentCatalog, rejected
+from .geometry import GeometryCatalog
 from .jobs import JobError, JobRunner, _json
 
 
@@ -31,6 +32,7 @@ class Runtime:
         self._catalog_factory = catalog_factory
         self._runner = None
         self._catalog = None
+        self._geometry = None
         self._lock = threading.RLock()
         self._closed = False
 
@@ -42,6 +44,12 @@ class Runtime:
                 return self._catalog.list()
             if operation == 'document.get':
                 return self._catalog.get(**arguments)
+            if operation in ('geometry.list', 'geometry.get') and self._geometry is None:
+                self._geometry = GeometryCatalog(self._catalog)
+            if operation == 'geometry.list':
+                return self._geometry.list(**arguments)
+            if operation == 'geometry.get':
+                return self._geometry.get(**arguments)
             raise rejected('unsupported_operation', 'No domain implementation for this operation.')
         except Exception as exc:
             # Domain rejections retain identities. Unexpected native failures
@@ -54,7 +62,7 @@ class Runtime:
         # Validate before recording/dispatch. A bad timeout must not start CAD.
         if isinstance(timeout_s, bool) or not isinstance(timeout_s, (int, float)) or not 0 <= timeout_s <= 120:
             raise JobError('invalid_timeout', 'timeout_s must be finite and between 0 and 120.')
-        if operation not in ('document.list', 'document.get'):
+        if operation not in ('document.list', 'document.get', 'geometry.list', 'geometry.get'):
             raise JobError('unsupported_operation', 'No domain implementation for this operation.')
         arguments = json.loads(_json(arguments))
         with self._lock:
@@ -63,7 +71,8 @@ class Runtime:
             if self._runner is None:
                 self._runner = JobRunner(self.store, self._worker_factory())
             runner = self._runner
-            context = {key: arguments[key] for key in ('document_id', 'configuration') if key in arguments}
+            context = {key: arguments[key] for key in ('document_id', 'configuration',
+                       'expected_observation_revision', 'body_id', 'object_id') if key in arguments}
             job = runner.submit(request_id, operation, arguments,
                                 lambda: self._execute(operation, arguments), context=context)
         return await runner.wait(job['operation_id'], timeout_s=timeout_s)
@@ -72,6 +81,7 @@ class Runtime:
         if self._catalog is not None:
             self._catalog.close()
             self._catalog = None
+            self._geometry = None
 
     def shutdown(self, timeout_s=5):
         with self._lock:

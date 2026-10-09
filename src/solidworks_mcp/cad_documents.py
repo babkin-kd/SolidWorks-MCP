@@ -3,11 +3,12 @@
 import pythoncom
 
 from . import binding
+from .cad_geometry import CadGeometryMixin
 from .documents import rejected
 from .errors import SolidWorksError
 
 
-class SolidWorksDocuments:
+class SolidWorksDocuments(CadGeometryMixin):
     def __init__(self):
         try:
             self._sw = binding.connect(show=False)

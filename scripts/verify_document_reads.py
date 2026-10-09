@@ -61,7 +61,8 @@ async def check(state):
                 await client.initialize()
                 tools = (await client.list_tools()).tools
                 assert {tool.name for tool in tools} == {
-                    'system_get_info', 'job_get', 'job_list', 'job_cancel', 'document_list', 'document_get'}
+                    'system_get_info', 'job_get', 'job_list', 'job_cancel', 'document_list', 'document_get',
+                    'body_list', 'face_list', 'edge_list', 'geometry_get'}
                 assert all(tool.outputSchema for tool in tools)
                 info = (await client.call_tool('system_get_info')).structuredContent['data']
                 assert info['build_matches_source'] is True

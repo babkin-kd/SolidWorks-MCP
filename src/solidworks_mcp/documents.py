@@ -6,7 +6,7 @@ tokens cover document metadata and update stamps, not arbitrary CAD properties;
 they are not yet the complete mutation revision gate required by the plan.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from copy import deepcopy
 import hashlib
 import json
@@ -27,6 +27,7 @@ class _Entry:
     model: object
     observed: dict | None = None
     sequence: int = 0
+    geometry: dict = field(default_factory=dict)
 
 
 class DocumentCatalog:
@@ -75,7 +76,8 @@ class DocumentCatalog:
                 'solidworks_revision': self.adapter.revision,
                 'revision_scope': 'update_stamp_and_document_metadata'}
 
-    def get(self, document_id: str, configuration: str):
+    def resolve(self, document_id: str, configuration: str):
+        """Internal STA-only target resolution; callers must never export entry.model."""
         self._refresh()
         entry = next((entry for entry in self._entries if entry.document_id == document_id), None)
         if entry is None:
@@ -84,6 +86,10 @@ class DocumentCatalog:
         configurations = observed['configurations']
         if configuration not in configurations and not (not configurations and configuration == ''):
             raise rejected('configuration_not_found', 'The explicit configuration does not exist in this document.')
+        return entry, observed
+
+    def get(self, document_id: str, configuration: str):
+        entry, observed = self.resolve(document_id, configuration)
         # Metadata can be read without activating either the document or the
         # configuration. This tool makes no promise of inactive geometry access.
         return {**observed, 'configuration': configuration,
