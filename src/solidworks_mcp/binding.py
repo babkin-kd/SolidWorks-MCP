@@ -65,11 +65,16 @@ def _load_module(revision):
 def wrap(obj, cls):
     """Re-wrap a raw or dynamic dispatch as an early-bound generated class.
 
-    Idempotent. Returns None unchanged so callers can guard on falsy COM returns
-    (many SolidWorks methods return None/False on failure without raising).
+    Idempotent for an object of the exact requested generated class. This is
+    not a native liveness or identity check; subclasses/other interfaces still
+    pass through their requested constructor. Returns None unchanged so callers
+    can guard on falsy COM returns (many SolidWorks methods return None/False on
+    failure without raising).
     """
     if obj is None:
         return None
+    if type(obj) is cls:
+        return obj
     oleobj = getattr(obj, "_oleobj_", obj)
     return cls(oleobj)
 

@@ -64,8 +64,13 @@ class FeatureCatalog:
         features = [self.adapter.feature_summary(feature) for feature in native]
         pending = self.adapter.pending_rebuild(entry.model)
         current, after = self.documents.resolve(document_id, configuration)
-        if (current is not entry or observed != after or watch.poll() != event_sequence
-                or self.adapter.configuration_identity(entry.model, configuration) != identity):
+        if current is not entry or observed != after:
+            raise rejected('document_changed_during_read', 'Document changed during feature-tree collection; read again.')
+        # Configuration lookup can dispatch notifications itself. Read it before
+        # the final poll, so no native getter follows the closing event check.
+        closing_identity = self.adapter.configuration_identity(entry.model, configuration)
+        closing_sequence = watch.poll()
+        if closing_identity != identity or closing_sequence != event_sequence:
             raise rejected('document_changed_during_read', 'Document changed during feature-tree collection; read again.')
         semantic = {'document': {key: observed[key] for key in ('title', 'path', 'document_type',
                     'configurations', 'active_configuration', 'update_stamp')},

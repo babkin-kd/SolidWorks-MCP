@@ -1,8 +1,8 @@
 """Native dimension adapter candidate; construct/call/release only on the STA.
 
-Registered SOLIDWORKS 2023 interfaces ground these signatures. The exact body
-stream fingerprints deliberately fail closed if serialization is unavailable
-or non-deterministic; native acceptance is required before MCP publication.
+Registered SOLIDWORKS 2023 interfaces ground these signatures. Full supported
+analytical boundaries fail closed for unsupported geometry; native acceptance
+is required before MCP publication.
 """
 
 from dataclasses import dataclass, field
@@ -316,4 +316,8 @@ class CadDimensionsMixin:
         active = binding.wrap(self._sw.ActiveDoc, self._module.IModelDoc2)
         if active is None or self.identity(active) != self.identity(model):
             raise rejected('document_not_active', 'Explicit dimension document stopped being active before rebuild.')
-        return bool(model.EditRebuild3())
+        # SW2023 EditRebuild3 can return True after SetSystemValue3 while the
+        # body remains unchanged and NeedsRebuild2 stays set. Recompute this
+        # explicit active part, then confirm the pending flag is cleared.
+        rebuilt = model.ForceRebuild3(False)
+        return rebuilt is True and self.pending_rebuild(model) is False

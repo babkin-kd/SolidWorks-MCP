@@ -10,6 +10,7 @@ from concurrent.futures import Future
 import json
 import math
 from pathlib import Path
+import sqlite3
 
 import pythoncom
 import solidworks_mcp
@@ -133,7 +134,28 @@ def main():
     args.state_dir.mkdir(parents=True)
     pythoncom.CoInitialize()
     try:
-        result = check(args.state_dir)
+        baseline = native_snapshot()
+        try:
+            result = check(args.state_dir)
+        except Exception as exc:
+            # Inspect, never reopen/recover with JobStore or replay a failed job.
+            journal = args.state_dir / 'jobs.sqlite'
+            jobs = []
+            if journal.exists():
+                with sqlite3.connect(journal.resolve().as_uri() + '?mode=ro', uri=True) as db:
+                    jobs = [{'request_id': request, 'status': status, 'mutation_phase': phase,
+                             'error': json.loads(error) if error else None}
+                            for request, status, phase, error in db.execute(
+                                'SELECT j.request_id,j.status,m.phase,j.error FROM jobs j '
+                                'LEFT JOIN mutations m USING(operation_id) ORDER BY j.created_at')]
+            failure = {'package_version': solidworks_mcp.__version__, 'accepted': False,
+                'public_mcp_dimension_acceptance': False, 'error_type': type(exc).__name__,
+                'jobs': jobs, 'original_document_baseline_restored': native_snapshot() == baseline,
+                'private_journal_preserved': True, 'automatic_replay_attempted': False}
+            args.report.write_text(json.dumps(failure, indent=2) + '\n', encoding='utf8')
+            print(json.dumps(failure, indent=2), flush=True)
+            raise
+        result['accepted'] = True
         args.report.write_text(json.dumps(result, indent=2) + '\n', encoding='utf8')
         print(json.dumps(result, indent=2))
     finally:

@@ -53,6 +53,15 @@ class DimensionReference:
     native_identity: object
 
 
+@dataclass
+class _DimensionCapture:
+    # Keep strong canonical native identities in the owning STA, outside the
+    # JSON revision payload. Equality alone is required; no IUnknown hashing.
+    state: tuple
+    feature_identities: tuple
+    dimension_memberships: tuple
+
+
 class DimensionCatalog:
     def __init__(self, documents, store, connection_epoch, *, mutation_guard=None):
         self.documents = documents
@@ -99,31 +108,54 @@ class DimensionCatalog:
         _json(rows)
         return native, rows
 
-    def _state(self, document_id, configuration):
+    def _capture(self, document_id, configuration):
+        """One complete capture, bracketed by feature/event/config checks.
+
+        This is not a reusable cached geometry result. Two full captures must
+        agree before any public read or mutation state can be accepted.
+        """
         entry, identity, features, tree, feature_revision, feature_payload = self.features._state(document_id, configuration)
+        feature_identities = tuple(self.adapter.identity(feature) for feature in features)
         configurations = tree['document']['configurations']
         cache = entry.features.setdefault('dimensions', {})
         config_cache = cache.setdefault('configurations', {})
-        epochs = {}
+        epochs, configuration_identities = {}, {}
         for name in configurations:
             current = self.adapter.configuration_identity(entry.model, name)
+            configuration_identities[name] = current
             old = config_cache.get(name)
             if old is None or old[0] != current:
                 old = (current, 'cfg_' + uuid.uuid4().hex)
                 config_cache[name] = old
             epochs[name] = old[1]
         native, rows = self._collect(entry, features, configurations)
+        dimension_memberships = tuple((
+            self.adapter.identity(self.adapter.dimension_object(record)),
+            self.adapter.identity(record.owner) if getattr(record, 'owner', None) is not None else None,
+            tuple((self.adapter.identity(display), slot) for display, slot in getattr(record, 'display_slots', ())))
+            for record in native)
         context = self.adapter.dimension_context(entry.model)
         geometry = self.adapter.dimension_geometry_snapshot(entry.model)
+        if any(self.adapter.configuration_identity(entry.model, name) != original
+               for name, original in configuration_identities.items()):
+            raise rejected('document_changed_during_read', 'Configuration incarnation changed during dimension capture.')
+        # Keep the complete feature/event close after all named-configuration
+        # identity reads: those native calls may pump notifications themselves.
         second = self.features._state(document_id, configuration)
-        if second[0] is not entry or second[4] != feature_revision:
-            raise rejected('document_changed_during_read', 'Document changed during dimension collection.')
-        _, after_rows = self._collect(entry, second[2], configurations)
-        if (rows != after_rows or context != self.adapter.dimension_context(entry.model)
-                or geometry != self.adapter.dimension_geometry_snapshot(entry.model)
-                or any(self.adapter.configuration_identity(entry.model, n) != config_cache[n][0] for n in configurations)
-                or self.features._state(document_id, configuration)[4] != feature_revision):
-            raise rejected('document_changed_during_read', 'Dimension/control/geometry state changed during collection.')
+        closing_feature_identities = tuple(self.adapter.identity(feature) for feature in second[2])
+        # QueryInterface for the strong identities above is itself native work.
+        # Bracket it with a cheap final observation/configuration check, then
+        # poll events LAST. No native work follows that poll in this capture.
+        closing_entry, closing_observed = self.documents.resolve(document_id, configuration)
+        closing_configurations = tuple(self.adapter.configuration_identity(entry.model, name)
+                                       for name in configuration_identities)
+        final_event_sequence = entry.features['watch'].poll()
+        if (second[0] is not entry or second[1] != identity or second[4] != feature_revision
+                or closing_feature_identities != feature_identities
+                or closing_entry is not entry or closing_observed != second[5]['observed']
+                or closing_configurations != tuple(configuration_identities.values())
+                or final_event_sequence != second[5]['event_sequence']):
+            raise rejected('document_changed_during_read', 'Feature/event/configuration state changed during dimension capture.')
         semantic = {'tree': tree, 'configuration_epochs': epochs, 'dimensions': rows,
                     'context': context, 'geometry': geometry}
         payload = {'scope': SCOPE, 'connection_epoch': self.connection_epoch,
@@ -131,7 +163,24 @@ class DimensionCatalog:
                    'feature_revision': feature_revision, 'semantic': semantic,
                    'mutation_sequence': cache.get('mutation_sequence', 0)}
         revision = 'rev_' + hashlib.sha256(_json(payload).encode('utf-8')).hexdigest()
-        return entry, identity, native, semantic, revision
+        return _DimensionCapture((entry, identity, native, semantic, revision),
+                                 feature_identities, dimension_memberships)
+
+    @staticmethod
+    def _same_capture(first, second):
+        return (first.state[0] is second.state[0] and first.state[1] == second.state[1]
+                and first.state[3:] == second.state[3:]
+                and first.feature_identities == second.feature_identities
+                and first.dimension_memberships == second.dimension_memberships)
+
+    def _state(self, document_id, configuration):
+        # Mutations continue to require a complete paired consistency check at
+        # every prepare/validate/inspect stage, including both full BREP reads.
+        first = self._capture(document_id, configuration)
+        second = self._capture(document_id, configuration)
+        if not self._same_capture(first, second):
+            raise rejected('document_changed_during_read', 'Dimension/control/geometry state changed during collection.')
+        return first.state
 
     def _register(self, entry, configuration, identity, native):
         dimension = self.adapter.dimension_object(native)
@@ -179,10 +228,21 @@ class DimensionCatalog:
             raise rejected('dimension_not_current', 'Persistent dimension is not in the current bounded dimension enumeration.')
         return current, ref
 
+    @staticmethod
+    def _captured_row(objects, semantic, native):
+        # _resolve has already proven the canonical native identity and current
+        # membership. Bind the exact record it returned to its captured row in
+        # local Python; no name, client ordinal or additional COM read is used.
+        index = next((index for index, record in enumerate(objects) if record is native), None)
+        if index is None:
+            raise rejected('dimension_not_current', 'Resolved dimension has no row in this complete capture.')
+        return deepcopy(semantic['dimensions'][index])
+
     def list(self, document_id, configuration, limit=100, cursor=''):
         if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 200:
             raise rejected('invalid_limit', 'limit must be an integer between 1 and 200.')
-        entry, identity, objects, semantic, revision = self._state(document_id, configuration)
+        captured = self._capture(document_id, configuration)
+        entry, identity, objects, semantic, revision = captured.state
         cache = entry.features['dimensions']
         cursors = cache.setdefault('cursors', {})
         offset = 0
@@ -203,7 +263,7 @@ class DimensionCatalog:
                 error = {'code': exc.code, 'message': str(exc)}
             items.append({**row, 'object_id': ref.object_id if ref else None,
                           'persistent_reference_supported': ref is not None, 'reference_error': error})
-        if self._state(document_id, configuration)[4] != revision:
+        if not self._same_capture(captured, self._capture(document_id, configuration)):
             raise rejected('document_changed_during_read', 'Dimension state changed while references were registered.')
         for key in list(cursors):
             if cursors[key]['revision'] != revision:
@@ -218,10 +278,11 @@ class DimensionCatalog:
                 'revision_scope': SCOPE, 'items': items, 'total_count': len(objects), 'next_cursor': next_cursor}
 
     def get(self, document_id, configuration, object_id):
-        entry, identity, objects, semantic, revision = self._state(document_id, configuration)
+        captured = self._capture(document_id, configuration)
+        entry, identity, objects, semantic, revision = captured.state
         native, _ = self._resolve(entry, configuration, identity, objects, object_id)
-        summary = self.adapter.dimension_summary(native, semantic['tree']['document']['configurations'])
-        if self._state(document_id, configuration)[4] != revision:
+        summary = self._captured_row(objects, semantic, native)
+        if not self._same_capture(captured, self._capture(document_id, configuration)):
             raise rejected('document_changed_during_read', 'Dimension changed while its reference was resolved.')
         return {'document_id': document_id, 'configuration': configuration, 'revision': revision,
                 'revision_scope': SCOPE, 'dimension': {**summary, 'object_id': object_id}}
@@ -272,7 +333,7 @@ class DimensionCatalog:
         def prepare():
             entry, identity, objects, semantic, revision = self._state(document_id, configuration)
             native, ref = self._resolve(entry, configuration, identity, objects, object_id)
-            row = self.adapter.dimension_summary(native, semantic['tree']['document']['configurations'])
+            row = self._captured_row(objects, semantic, native)
             self._writable(semantic, row, unit)
             target.update(entry=entry, identity=identity, native=native)
             return PreparedMutation(revision, {'scope': SCOPE, 'object_id': object_id,
@@ -281,7 +342,7 @@ class DimensionCatalog:
         def validate(prepared):
             entry, identity, objects, semantic, revision = self._state(document_id, configuration)
             native, _ = self._resolve(entry, configuration, identity, objects, object_id)
-            row = self.adapter.dimension_summary(native, semantic['tree']['document']['configurations'])
+            row = self._captured_row(objects, semantic, native)
             self._writable(semantic, row, unit)
             return (entry is target['entry'] and revision == prepared.revision
                     and self.adapter.identity(self.adapter.dimension_object(native)) == self.adapter.identity(self.adapter.dimension_object(target['native'])))
@@ -298,7 +359,7 @@ class DimensionCatalog:
         def inspect(prepared):
             entry, identity, objects, semantic, revision = self._state(document_id, configuration)
             native, _ = self._resolve(entry, configuration, identity, objects, object_id)
-            row = self.adapter.dimension_summary(native, semantic['tree']['document']['configurations'])
+            row = self._captured_row(objects, semantic, native)
             return {'scope': SCOPE, 'value_si': row['values_si'][configuration], 'semantic': semantic, 'revision': revision}
         def verify(before, after, result):
             expected = self._comparable(before['semantic'], ignore_geometry=True)
@@ -313,7 +374,7 @@ class DimensionCatalog:
         def restore(before, prepared):
             entry, identity, objects, semantic, _ = self._state(document_id, configuration)
             native, _ = self._resolve(entry, configuration, identity, objects, object_id)
-            row = self.adapter.dimension_summary(native, semantic['tree']['document']['configurations'])
+            row = self._captured_row(objects, semantic, native)
             current = row['values_si'][configuration]
             if not (close_value(current, requested) or close_value(current, before['value_si'])):
                 raise rejected('concurrent_edit_during_rollback', 'Target dimension has an unrelated value; reconciliation is required.')
