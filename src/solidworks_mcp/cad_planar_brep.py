@@ -127,6 +127,7 @@ class _Reader:
         self.wrap = wrap or (lambda obj, interface: obj)
         self.limits = limits
         self.identities = []  # Keep canonical IUnknowns alive, without hashing.
+        self.role_keys = {}  # Hints contain only already proven GLOBAL integer keys.
         self.identity_comparisons = 0
         self.polygon_comparisons = 0
 
@@ -170,18 +171,31 @@ class _Reader:
         except Exception as exc:
             raise PlanarBrepError('planar_brep_native_read_failed', f'Cannot wrap {interface}.') from exc
 
-    def key(self, obj):
+    def key(self, obj, interface=None):
         try:
             identity = self.identity(obj)
             if identity is None:
                 _fail('planar_brep_incomplete', 'Missing canonical native identity.')
-            for index, known in enumerate(self.identities):
-                self.identity_comparisons += 1
-                if self.identity_comparisons > self.limits.max_identity_comparisons:
-                    _fail('planar_brep_budget_exceeded', 'Native identity comparison budget exceeded.')
-                if identity == known:
-                    return index
+            candidates = self.role_keys.get(interface, ()) if interface is not None else ()
+            compared = set()  # Local integer keys only, never native identity hashes.
+            # Typed candidates are priority hints, not disjoint namespaces.
+            # A miss retains the complete global search, without comparing a
+            # candidate twice. Every lookup still acquires a fresh identity.
+            for indices in (candidates, range(len(self.identities))):
+                for index in indices:
+                    if index in compared:
+                        continue
+                    compared.add(index)
+                    self.identity_comparisons += 1
+                    if self.identity_comparisons > self.limits.max_identity_comparisons:
+                        _fail('planar_brep_budget_exceeded', 'Native identity comparison budget exceeded.')
+                    if identity == self.identities[index]:
+                        if interface is not None and index not in candidates:
+                            self.role_keys.setdefault(interface, []).append(index)
+                        return index
             self.identities.append(identity)
+            if interface is not None:
+                self.role_keys.setdefault(interface, []).append(len(self.identities) - 1)
             return len(self.identities) - 1
         except PlanarBrepError:
             raise
@@ -210,7 +224,7 @@ class _Reader:
         if count is not None and len(raw) != count:
             _fail('planar_brep_incomplete', f'{getter} length disagrees with native count.')
         result = [self.obj(item, interface) for item in raw]
-        keys = [self.key(item) for item in result]
+        keys = [self.key(item, interface) for item in result]
         if len(set(keys)) != len(keys):
             _fail('planar_brep_ambiguous', f'{getter} contains repeated native entities.')
         return result, keys
@@ -300,7 +314,7 @@ def planar_body_snapshot(body, *, identity, wrap=None, limits=None):
     """
     r = _Reader(identity, wrap, limits or PlanarBrepLimits())
     body = r.obj(body, 'IBody2')
-    body_key = r.key(body)
+    body_key = r.key(body, 'IBody2')
     body_type = r.call(body, 'GetType')
     if type(body_type) is not int or body_type != 0:
         _fail('planar_brep_unsupported', 'Only native solid bodies are supported.')
@@ -327,7 +341,7 @@ def planar_body_snapshot(body, *, identity, wrap=None, limits=None):
     vertex_incidence = {key: set() for key in vertex_keys}
     for edge, key in zip(edges, edge_keys):
         tolerance = r.tolerance(edge)
-        if r.key(r.obj(r.call(edge, 'GetBody'), 'IBody2')) != body_key:
+        if r.key(r.obj(r.call(edge, 'GetBody'), 'IBody2'), 'IBody2') != body_key:
             _fail('planar_brep_incomplete', 'Edge belongs to another body.')
         curve = r.obj(r.call(edge, 'GetCurve'), 'ICurve')
         if not r.flag(r.call(curve, 'IsLine'), 'IsLine'):
@@ -335,8 +349,8 @@ def planar_body_snapshot(body, *, identity, wrap=None, limits=None):
         line = r.numbers(r.prop(curve, 'LineParams'), 6, 'line parameters')
         if not any(line[3:]):
             _fail('planar_brep_degenerate', 'Zero line direction.')
-        start = r.key(r.obj(r.call(edge, 'GetStartVertex'), 'IVertex'))
-        end = r.key(r.obj(r.call(edge, 'GetEndVertex'), 'IVertex'))
+        start = r.key(r.obj(r.call(edge, 'GetStartVertex'), 'IVertex'), 'IVertex')
+        end = r.key(r.obj(r.call(edge, 'GetEndVertex'), 'IVertex'), 'IVertex')
         if start not in points or end not in points or start == end:
             _fail('planar_brep_incomplete', 'Missing, foreign or collapsed edge endpoints.')
         for point in (points[start], points[end]):
@@ -385,7 +399,7 @@ def planar_body_snapshot(body, *, identity, wrap=None, limits=None):
     loop_data = {}
     coedge_data = {}
     for face, face_key in zip(faces, face_keys):
-        if r.key(r.obj(r.call(face, 'GetBody'), 'IBody2')) != body_key:
+        if r.key(r.obj(r.call(face, 'GetBody'), 'IBody2'), 'IBody2') != body_key:
             _fail('planar_brep_incomplete', 'Face belongs to another body.')
         surface = r.obj(r.call(face, 'GetSurface'), 'ISurface')
         if not r.flag(r.call(surface, 'IsPlane'), 'IsPlane'):
@@ -402,7 +416,7 @@ def planar_body_snapshot(body, *, identity, wrap=None, limits=None):
         next_loop = r.obj(r.call(face, 'GetFirstLoop'), 'ILoop2')
         traversed = []
         while next_loop is not None:
-            next_key = r.key(next_loop)
+            next_key = r.key(next_loop, 'ILoop2')
             if next_key in traversed or len(traversed) >= count:
                 _fail('planar_brep_incomplete', 'Face loop traversal is cyclic or overlong.')
             traversed.append(next_key)
@@ -413,7 +427,7 @@ def planar_body_snapshot(body, *, identity, wrap=None, limits=None):
         face_edges = set()
         face_loops = []
         for loop, loop_key in zip(loops, loop_keys):
-            if loop_key in loop_data or r.key(r.obj(r.call(loop, 'GetFace'), 'IFace2')) != face_key:
+            if loop_key in loop_data or r.key(r.obj(r.call(loop, 'GetFace'), 'IFace2'), 'IFace2') != face_key:
                 _fail('planar_brep_incomplete', 'Loop ownership is inconsistent.')
             if r.flag(r.call(loop, 'IsSingular'), 'IsSingular'):
                 _fail('planar_brep_degenerate', 'Singular loops are unsupported.')
@@ -423,32 +437,32 @@ def planar_body_snapshot(body, *, identity, wrap=None, limits=None):
                 _fail('planar_brep_budget_exceeded', 'Total coedge budget exceeded.')
             _, declared = r.array(loop, 'GetCoEdges', 'ICoEdge', count)
             first = r.obj(r.call(loop, 'GetFirstCoEdge'), 'ICoEdge')
-            first_key = r.key(first)
+            first_key = r.key(first, 'ICoEdge')
             current, ordered = first, []
             for _ in range(count):
-                coedge_key = r.key(current)
+                coedge_key = r.key(current, 'ICoEdge')
                 if coedge_key in coedge_data or coedge_key in ordered:
                     _fail('planar_brep_incomplete', 'Coedge traversal closes early or shares an entity.')
-                if r.key(r.obj(r.call(current, 'GetLoop'), 'ILoop2')) != loop_key:
+                if r.key(r.obj(r.call(current, 'GetLoop'), 'ILoop2'), 'ILoop2') != loop_key:
                     _fail('planar_brep_incomplete', 'Coedge belongs to another loop.')
                 # A separate coedge curve denotes imprecise sewing; reject it.
                 if r.call(current, 'GetCurve') is not None:
                     _fail('planar_brep_unsupported', 'Imprecisely sewn coedges are unsupported.')
-                edge_key = r.key(r.obj(r.call(current, 'GetEdge'), 'IEdge'))
+                edge_key = r.key(r.obj(r.call(current, 'GetEdge'), 'IEdge'), 'IEdge')
                 if edge_key not in edge_data or edge_key in face_edges:
                     _fail('planar_brep_incomplete', 'Foreign or repeated edge in face loops.')
                 face_edges.add(edge_key)
                 coedge_sense = r.flag(r.call(current, 'GetSense'), 'GetSense')
                 edge = edge_data[edge_key]
                 start, end = (edge['start'], edge['end']) if coedge_sense else (edge['end'], edge['start'])
-                partner = r.key(r.obj(r.call(current, 'GetPartner'), 'ICoEdge'))
+                partner = r.key(r.obj(r.call(current, 'GetPartner'), 'ICoEdge'), 'ICoEdge')
                 record = {'edge': edge_key, 'face': face_key, 'loop': loop_key, 'sense': coedge_sense,
                           'start': start, 'end': end, 'partner': partner}
                 coedge_data[coedge_key] = record
                 edge['uses'].append(coedge_key)
                 ordered.append(coedge_key)
                 current = r.obj(r.call(current, 'GetNext'), 'ICoEdge')
-            if r.key(current) != first_key or set(ordered) != set(declared):
+            if r.key(current, 'ICoEdge') != first_key or set(ordered) != set(declared):
                 _fail('planar_brep_incomplete', 'Coedge cycle is incomplete or disagrees with enumeration.')
             for a, b in zip(ordered, ordered[1:] + ordered[:1]):
                 if coedge_data[a]['end'] != coedge_data[b]['start']:
