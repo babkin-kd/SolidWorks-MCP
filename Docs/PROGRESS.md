@@ -945,6 +945,10 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   reads the old value back, yet a width of 0 left its sketch "invalid
   solution"; writing the old value again and rebuilding clears that. A
   revolve angle of 0 or 400 degrees is taken and fails the rebuild.
+- IFeature.GetChildren gives one level. The first body feature lists every
+  later feature as its child (they all merge into its body); a feature in the
+  middle lists only what is built on its faces, and DeleteSelection2 with
+  swDelete_Children also takes their children: walk GetChildren to the end.
 
 ## Next
 
