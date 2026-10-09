@@ -18,7 +18,7 @@ from mcp.server.fastmcp import FastMCP
 from . import __version__
 from .build_info import source_digest
 from .contracts import ResponseEnvelope
-from .jobs import JobError, JobStore
+from .jobs import JOURNAL_SCHEMA_VERSION, JobError, JobStore
 from .runtime_v2 import Runtime
 
 
@@ -73,7 +73,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
                              'cad_documents': True, 'cad_mutations': False,
                              'part_geometry_reads': True, 'persistent_geometry_references': True,
                              'pdm': False, 'simulation': False},
-            'journal_schema_version': 1,
+            'journal_schema_version': JOURNAL_SCHEMA_VERSION,
         })
 
     @app.tool()
