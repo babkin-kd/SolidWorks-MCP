@@ -13,10 +13,9 @@ The worker blocks on a queue (event-driven, no polling) and runs one job at a
 time, which also serialises calls exactly as the stateful SolidWorks API wants.
 
 Design constraints to be aware of:
-- Non-pumping STA: the loop only blocks on the queue; it never calls
-  PumpWaitingMessages. That is fine for a purely outbound, out-of-process client
-  that registers NO COM event sinks (the current usage). Do not register event
-  sinks on this thread without adding a message pump.
+- Event sinks require pump_messages=True. The v2 CAD runtime enables the STA
+  message pump; legacy outbound-only clients can keep it disabled. Callbacks
+  must only invalidate state, never perform reentrant CAD operations.
 - No in-flight cancellation: a COM call cannot be force-aborted once started, so
   `call` enforces a timeout on the *await* (surfacing a readable error) but the
   worker thread itself stays on the blocked call until SolidWorks returns.
@@ -42,13 +41,16 @@ class ComWorker:
 
     _STOP = object()
 
-    def __init__(self, call_timeout_s: float = DEFAULT_CALL_TIMEOUT_S) -> None:
+    def __init__(self, call_timeout_s: float = DEFAULT_CALL_TIMEOUT_S, *, pump_messages: bool = False) -> None:
         self._call_timeout_s = call_timeout_s
+        self._pump_messages = pump_messages
         self._queue: "queue.Queue" = queue.Queue()
         self._ready = threading.Event()
         self._shutting_down = False
         self._state_lock = threading.Lock()
         self._startup_error = None
+        self._finalizers = []
+        self._shutdown_errors = []
         self._thread = threading.Thread(target=self._run, name="solidworks-com", daemon=True)
         self._thread.start()
         if not self._ready.wait(timeout=10):
@@ -68,7 +70,13 @@ class ComWorker:
         self._ready.set()
         try:
             while True:
-                job = self._queue.get()
+                if self._pump_messages:
+                    if pythoncom.PumpWaitingMessages():
+                        raise SolidWorksError('The COM apartment received WM_QUIT.')
+                try:
+                    job = self._queue.get(timeout=0.05 if self._pump_messages else None)
+                except queue.Empty:
+                    continue
                 if job is self._STOP:
                     break
                 fn, fut = job
@@ -78,8 +86,37 @@ class ComWorker:
                     fut.set_result(fn())
                 except BaseException as exc:  # noqa: BLE001 - relay to the caller
                     fut.set_exception(exc)
+        except BaseException as exc:
+            self._shutdown_errors.append(str(exc))
         finally:
+            with self._state_lock:
+                self._shutting_down = True
+            # Failed apartment/pump: these queued functions have never run. Fail
+            # their futures instead of leaving durable jobs queued indefinitely.
+            while True:
+                try:
+                    pending = self._queue.get_nowait()
+                except queue.Empty:
+                    break
+                if pending is self._STOP:
+                    continue
+                _, future = pending
+                if future.set_running_or_notify_cancel():
+                    future.set_exception(SolidWorksError('COM apartment stopped before queued execution.'))
+            for finalizer in self._finalizers:
+                try:
+                    finalizer()
+                except BaseException as exc:
+                    self._shutdown_errors.append(str(exc))
+            self._finalizers.clear()
             pythoncom.CoUninitialize()
+
+    def add_finalizer(self, function):
+        """Server-owned cleanup, guaranteed before CoUninitialize even after pump failure."""
+        with self._state_lock:
+            if self._shutting_down:
+                raise SolidWorksError('The COM worker is shut down.')
+            self._finalizers.append(function)
 
     def submit(self, fn) -> "concurrent.futures.Future":
         with self._state_lock:

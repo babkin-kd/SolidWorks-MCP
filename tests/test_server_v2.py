@@ -17,7 +17,7 @@ from solidworks_mcp.server_v2 import create_app
 ROOT = Path(__file__).resolve().parents[1]
 FIELDS = {'status', 'operation_id', 'context', 'data', 'diagnostics', 'error'}
 TOOLS = {'system_get_info', 'job_get', 'job_list', 'job_cancel', 'document_list', 'document_get',
-         'body_list', 'face_list', 'edge_list', 'geometry_get'}
+         'body_list', 'face_list', 'edge_list', 'geometry_get', 'feature_list', 'feature_get', 'feature_rename'}
 
 
 def test_v2_stdio_discovery_unicode_guide_and_journal_survive_restart(tmp_path):
@@ -43,7 +43,8 @@ def test_v2_stdio_discovery_unicode_guide_and_journal_survive_restart(tmp_path):
                     assert info['data']['api_version'] == 2
                     assert info['data']['package_version'] == __version__
                     assert len(info['data']['schema_hash']) == 64
-                    assert info['data']['capabilities']['cad_mutations'] is False
+                    assert info['data']['capabilities']['cad_mutations'] is True
+                    assert info['data']['implemented_mutations'] == ['feature.rename']
                     guide = await client.read_resource('solidworks://guide/v2')
                     assert 'русские названия' in guide.contents[0].text
                     old = (await client.call_tool('job_get', {'operation_id': queued['operation_id']})).structuredContent

@@ -45,8 +45,9 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
         'Only advertised tools are available. Jobs survive timeouts; poll their operation_id. '
         'An unknown outcome requires reconciliation before retrying an operation. '
         'Names of new CAD objects must be meaningful Russian names; standard components '
-        'must come from approved libraries. Read-only document metadata and part geometry are available '
-        'for CAD in this candidate; observation revisions are not yet mutation guards.'
+        'must come from approved libraries. Document/part geometry reads and guarded part feature '
+        'renaming are available. Feature-tree revisions cover this declared operation scope; '
+        'observation revisions are not mutation guards.'
     ))
 
     @app.resource('solidworks://guide/v2')
@@ -70,9 +71,11 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
             'build': build, 'source_digest': actual_digest, 'build_matches_source': verified,
             'platform': sys.platform, 'development_candidate': True,
             'capabilities': {'job_journal': True, 'job_query': True, 'queued_job_cancellation': True,
-                             'cad_documents': True, 'cad_mutations': False,
+                             'cad_documents': True, 'cad_mutations': True,
                              'part_geometry_reads': True, 'persistent_geometry_references': True,
+                             'part_feature_reads': True, 'part_feature_rename': True,
                              'pdm': False, 'simulation': False},
+            'implemented_mutations': ['feature.rename'], 'mutation_revision_scopes': ['part_feature_tree_v1'],
             'journal_schema_version': JOURNAL_SCHEMA_VERSION,
         })
 
@@ -181,6 +184,47 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
         return await read_document(request_id, 'geometry.get', {
             'document_id': document_id, 'configuration': configuration,
             'expected_observation_revision': expected_observation_revision, 'object_id': object_id}, timeout_s)
+
+    @app.tool()
+    async def feature_list(request_id: str, document_id: str, configuration: str,
+                           limit: int = 100, cursor: str = '', timeout_s: float = 10) -> ResponseEnvelope:
+        """Read a part's complete scoped feature-tree revision and a page of native features.
+
+        Explicit active configuration; no activation/rebuild. Includes absorbed
+        subfeatures. Opaque IDs use native persistent references, never names/indices.
+        Unsupported built-in nodes have object_id=null. The revision scope is
+        part_feature_tree_v1 for feature.rename, not arbitrary CAD/plugin state.
+        """
+        return await read_document(request_id, 'feature.list', {'document_id': document_id,
+            'configuration': configuration, 'limit': limit, 'cursor': cursor}, timeout_s)
+
+    @app.tool()
+    async def feature_get(request_id: str, document_id: str, configuration: str,
+                          object_id: str, timeout_s: float = 10) -> ResponseEnvelope:
+        """Resolve a persistent feature ID in its original part/configuration and read its revision."""
+        return await read_document(request_id, 'feature.get', {'document_id': document_id,
+            'configuration': configuration, 'object_id': object_id}, timeout_s)
+
+    @app.tool()
+    async def feature_rename(request_id: str, document_id: str, configuration: str, object_id: str,
+                             expected_revision: str, name: str, timeout_s: float = 10) -> ResponseEnvelope:
+        """Rename one explicitly referenced part feature to a Russian name with durable verification.
+
+        Obtain expected_revision from feature_list/get (part_feature_tree_v1).
+        Rechecks document/configuration/reference/revision on the STA immediately
+        before writing. Rejects suppressed targets, duplicate names and pending
+        rebuilds. Checkpoints before-state, verifies only the requested name changes
+        and no new feature defects appear; scoped restoration on failure. No save,
+        activation or implicit rebuild. An uncertain restoration holds the document.
+        """
+        try:
+            job = await runtime.mutate(request_id, 'feature.rename', {'document_id': document_id,
+                'configuration': configuration, 'object_id': object_id, 'expected_revision': expected_revision,
+                'name': name}, timeout_s=timeout_s)
+            return response(status=job['status'], operation_id=job['operation_id'],
+                context=job['payload']['context'], data=job['result'], error=job['error'])
+        except (JobError, sqlite3.Error) as exc:
+            return failure(exc)
 
     return app
 

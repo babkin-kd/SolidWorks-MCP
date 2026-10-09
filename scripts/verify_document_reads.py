@@ -62,12 +62,12 @@ async def check(state):
                 tools = (await client.list_tools()).tools
                 assert {tool.name for tool in tools} == {
                     'system_get_info', 'job_get', 'job_list', 'job_cancel', 'document_list', 'document_get',
-                    'body_list', 'face_list', 'edge_list', 'geometry_get'}
+                    'body_list', 'face_list', 'edge_list', 'geometry_get', 'feature_list', 'feature_get', 'feature_rename'}
                 assert all(tool.outputSchema for tool in tools)
                 info = (await client.call_tool('system_get_info')).structuredContent['data']
                 assert info['build_matches_source'] is True
                 assert info['capabilities']['cad_documents'] is True
-                assert info['capabilities']['cad_mutations'] is False
+                assert info['implemented_mutations'] == ['feature.rename']
                 request_id = uuid.uuid4().hex
                 listed = await call(client, 'document_list', {'request_id': request_id, 'timeout_s': 0})
                 assert listed['status'] == 'succeeded', listed['error']

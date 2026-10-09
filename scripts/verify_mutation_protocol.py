@@ -140,7 +140,7 @@ def check(state_dir):
                 return response['data']
             build = asyncio.run(info())
             assert build['build_matches_source'] is True
-            assert build['capabilities']['cad_mutations'] is False
+            assert build['implemented_mutations'] == ['feature.rename']
             report = {'package_version': build['package_version'], 'git_sha': build['build']['git_sha'],
                 'source_dirty': build['build']['source_dirty'], 'build_matches_source': True,
                 'journal_schema_version': build['journal_schema_version'], 'solidworks_revision': original[0],

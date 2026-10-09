@@ -127,8 +127,8 @@ async def check(state):
                     await client.initialize()
                     info = (await client.call_tool('system_get_info')).structuredContent['data']
                     tools = (await client.list_tools()).tools
-                    assert len(tools) == 10 and all(tool.outputSchema for tool in tools)
-                    assert info['build_matches_source'] is True and info['capabilities']['cad_mutations'] is False
+                    assert len(tools) == 13 and all(tool.outputSchema for tool in tools)
+                    assert info['build_matches_source'] is True and info['implemented_mutations'] == ['feature.rename']
                     documents = success(await call(client, 'document_list'))['documents']
                     a, b = [next(d for d in documents if d['title'] == title) for title in titles]
                     context = {'document_id': a['document_id'], 'configuration': 'Основная',

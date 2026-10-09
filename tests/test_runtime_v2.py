@@ -198,3 +198,56 @@ def test_native_connection_failure_retires_ids_without_replaying_job(tmp_path):
         assert events == ['connect', 'read', 'close'] * 2
     finally:
         runtime.shutdown()
+
+
+def test_mutation_connection_failure_before_execution_does_not_create_uncertain_hold(tmp_path):
+    store = JobStore(tmp_path / 'jobs.sqlite')
+    def unavailable():
+        raise JobError('cad_unavailable', 'CAD is not running.')
+    runtime = Runtime(store, worker_factory=Worker, catalog_factory=unavailable)
+    try:
+        result = asyncio.run(runtime.mutate('r', 'feature.rename', {
+            'document_id': 'doc_a', 'configuration': 'Основная', 'object_id': 'feat_a',
+            'expected_revision': 'rev_a', 'name': 'Деталь'}))
+        assert result['status'] == 'failed'
+        assert result['error']['code'] == 'cad_unavailable'
+        assert store.mutation_blockers('connection', 'doc_a') == []
+    finally:
+        runtime.shutdown()
+
+
+def test_actual_mcp_feature_tools_use_worker_and_real_durable_protocol(tmp_path):
+    from solidworks_mcp.documents import DocumentCatalog
+    from test_feature_domain_v2 import Adapter, feature, model
+    adapter = Adapter()
+    first, second = model(title='Первая'), model(title='Вторая')
+    first.features, second.features = [feature(1)], [feature(1, 'Вторая операция')]
+    adapter.models = [first, second]
+    store = JobStore(tmp_path / 'jobs.sqlite')
+    runtime = Runtime(store, worker_factory=Worker, catalog_factory=lambda: DocumentCatalog(adapter))
+    async def exercise():
+        app = create_app(store, runtime)
+        _, listed = await app.call_tool('document_list', {'request_id': 'documents'})
+        doc_id = listed['data']['documents'][0]['document_id']
+        _, page = await app.call_tool('feature_list', {'request_id': 'features',
+            'document_id': doc_id, 'configuration': 'Основная'})
+        args = {'request_id': 'rename', 'document_id': doc_id, 'configuration': 'Основная',
+                'object_id': page['data']['items'][0]['object_id'], 'expected_revision': page['data']['revision'],
+                'name': 'Основание'}
+        _, result = await app.call_tool('feature_rename', args)
+        assert result['status'] == 'succeeded'
+        assert result['data']['value']['name'] == 'Основание'
+        assert result['context']['expected_revision'] == page['data']['revision']
+        _, duplicate = await app.call_tool('feature_rename', args)
+        assert duplicate['operation_id'] == result['operation_id']
+        _, proof = await app.call_tool('job_get', {'operation_id': result['operation_id']})
+        assert proof['data']['mutation']['phase'] == 'committed'
+        _, readback = await app.call_tool('feature_get', {'request_id': 'get',
+            'document_id': doc_id, 'configuration': 'Основная', 'object_id': args['object_id']})
+        assert readback['data']['feature']['name'] == 'Основание'
+        assert adapter.writes == [(1, 'Основание')]
+        assert second.features[0].state['name'] == 'Вторая операция'
+    try:
+        asyncio.run(exercise())
+    finally:
+        runtime.shutdown()

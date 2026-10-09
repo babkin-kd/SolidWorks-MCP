@@ -28,6 +28,7 @@ class _Entry:
     observed: dict | None = None
     sequence: int = 0
     geometry: dict = field(default_factory=dict)
+    features: dict = field(default_factory=dict)
 
 
 class DocumentCatalog:
@@ -56,6 +57,10 @@ class DocumentCatalog:
                 entry.model = model
             if not any(old.document_id == entry.document_id for old in live):
                 live.append(entry)
+        live_ids = {entry.document_id for entry in live}
+        for old in self._entries:
+            if old.document_id not in live_ids and old.features.get('watch') is not None:
+                old.features['watch'].close()
         self._entries = live  # Closed documents release their COM references here.
 
     def _observe(self, entry):
@@ -98,5 +103,8 @@ class DocumentCatalog:
 
     def close(self):
         self._check_thread()
+        for entry in self._entries:
+            if entry.features.get('watch') is not None:
+                entry.features['watch'].close()
         self._entries.clear()
         self.adapter.close()

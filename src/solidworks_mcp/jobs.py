@@ -423,7 +423,7 @@ class JobRunner:
 
     def submit(self, request_id: str, operation: str, arguments: dict, function: Callable,
                *, context: dict | None = None, mutates: bool = False,
-               verify: Callable | None = None):
+               verify: Callable | None = None, pass_operation_id: bool = False):
         if not callable(function) or (verify is not None and not callable(verify)):
             raise JobError('invalid_operation', 'Operation and verifier must be server-owned callables.')
         if mutates and verify is None:
@@ -435,24 +435,31 @@ class JobRunner:
             if created:
                 job_id = job['operation_id']
                 try:
-                    future = self.worker.submit(lambda: self._execute(job_id, function, mutates, verify))
+                    future = self.worker.submit(lambda: self._execute(job_id, function, mutates, verify, pass_operation_id))
                     self._pending[job_id] = future
-                    future.add_done_callback(lambda _: self._forget(job_id))
+                    future.add_done_callback(lambda done: self._forget(job_id, done))
                 except Exception as exc:
                     # Dispatch failed before execution; retain a terminal record.
                     if self.store.start(job_id):
                         self.store.finish(job_id, 'failed', error={'code': 'dispatch_failed', 'message': str(exc)})
             return self.store.get(job['operation_id'])
 
-    def _forget(self, job_id):
+    def _forget(self, job_id, future):
+        if future.cancelled() or future.exception() is not None:
+            # A worker failure before _execute started is a verified non-write.
+            # Do not overwrite a running/terminal operation (including storage
+            # failures after native execution); its uncertainty must be retained.
+            if self.store.start(job_id):
+                self.store.finish(job_id, 'failed', error={'code': 'dispatch_failed',
+                    'message': 'Worker stopped before queued execution.'})
         with self._lock:
             self._pending.pop(job_id, None)
 
-    def _execute(self, job_id, function, mutates, verify):
+    def _execute(self, job_id, function, mutates, verify, pass_operation_id=False):
         if not self.store.start(job_id):
             return  # Cancellation won the atomic queued -> running race.
         try:
-            result = function()
+            result = function(job_id) if pass_operation_id else function()
             if isinstance(result, dict) and result.get('ok') is False:
                 raise ExecutionFailure('operation_failed', str(result.get('error', 'Operation failed.')),
                                        uncertain=mutates)

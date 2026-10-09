@@ -63,3 +63,46 @@ def test_late_sta_completion_retains_journal_ownership_during_shutdown(tmp_path,
         assert reopened.get(job['operation_id'])['status'] == 'succeeded'
     finally:
         reopened.close()
+
+
+def test_message_pump_runs_while_idle_and_finalizers_release_on_sta(monkeypatch):
+    events = []
+    pumped = threading.Event()
+    monkeypatch.setattr('solidworks_mcp.com_worker.pythoncom.CoInitialize',
+                        lambda: events.append(('init', threading.get_ident())))
+    monkeypatch.setattr('solidworks_mcp.com_worker.pythoncom.CoUninitialize',
+                        lambda: events.append(('uninit', threading.get_ident())))
+    monkeypatch.setattr('solidworks_mcp.com_worker.pythoncom.PumpWaitingMessages',
+                        lambda: (pumped.set(), 0)[1])
+    worker = ComWorker(pump_messages=True)
+    worker.add_finalizer(lambda: events.append(('close_watch', threading.get_ident())))
+    assert pumped.wait(1)
+    assert worker.shutdown()
+    assert [name for name, _ in events] == ['init', 'close_watch', 'uninit']
+    assert len({thread for _, thread in events}) == 1
+
+
+def test_failing_pump_finishes_unstarted_jobs_and_releases_on_sta(tmp_path, monkeypatch):
+    entered, release = threading.Event(), threading.Event()
+    should_fail = threading.Event()
+    closed = threading.Event()
+    monkeypatch.setattr('solidworks_mcp.com_worker.pythoncom.CoInitialize', lambda: None)
+    monkeypatch.setattr('solidworks_mcp.com_worker.pythoncom.CoUninitialize', lambda: None)
+    monkeypatch.setattr('solidworks_mcp.com_worker.pythoncom.PumpWaitingMessages',
+                        lambda: int(should_fail.is_set()))
+    store = JobStore(tmp_path / 'jobs.sqlite')
+    worker = ComWorker(pump_messages=True)
+    worker.add_finalizer(closed.set)
+    runner = JobRunner(store, worker)
+    first = runner.submit('busy', 'test', {}, lambda: (entered.set(), release.wait(2), {})[2])
+    try:
+        assert entered.wait(1)
+        waiting = runner.submit('waiting', 'read', {}, lambda: pytest.fail('Must not run after WM_QUIT.'))
+        should_fail.set()
+    finally:
+        release.set()
+    assert closed.wait(2)
+    assert store.get(first['operation_id'])['status'] == 'succeeded'
+    result = store.get(waiting['operation_id'])
+    assert result['status'] == 'failed' and result['error']['code'] == 'dispatch_failed'
+    assert runner.shutdown()

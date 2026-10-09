@@ -39,7 +39,8 @@ class CadGeometryMixin:
         if status != 0 or raw is None:
             code = ('object_deleted' if status & 4 else 'object_suppressed' if status & 2 else 'object_reference_invalid')
             raise rejected(code, f'Native persistent reference is unavailable (state bitmask {status}).')
-        cls = {'body': self._module.IBody2, 'face': self._module.IFace2, 'edge': self._module.IEdge}[kind]
+        cls = {'body': self._module.IBody2, 'face': self._module.IFace2, 'edge': self._module.IEdge,
+               'feature': self._module.IFeature}[kind]
         return binding.wrap(raw, cls)
 
     def bodies(self, model, body_type):

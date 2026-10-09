@@ -4,11 +4,12 @@ import pythoncom
 
 from . import binding
 from .cad_geometry import CadGeometryMixin
+from .cad_features import CadFeaturesMixin
 from .documents import rejected
 from .errors import SolidWorksError
 
 
-class SolidWorksDocuments(CadGeometryMixin):
+class SolidWorksDocuments(CadGeometryMixin, CadFeaturesMixin):
     def __init__(self):
         try:
             self._sw = binding.connect(show=False)
