@@ -73,8 +73,9 @@ class Adapter(DocumentsAdapter):
             if options.format == 'stl':
                 path.write_bytes(binary_stl(invalid_number=self.fault == 'nan'))
             elif options.format == 'step':
-                unit = 'SI_UNIT(.MILLI.,.METRE.);' if self.fault != 'unit' else 'SI_UNIT($,.FOOT.);'
-                path.write_text('ISO-10303-21;\nDATA;#1=' + unit + '\nENDSEC;\nEND-ISO-10303-21;', encoding='ascii')
+                unit = 'SI_UNIT(.MILLI.,.METRE.)' if self.fault != 'unit' else 'SI_UNIT($,.FOOT.)'
+                path.write_text('ISO-10303-21;\nDATA;#1=(LENGTH_UNIT()NAMED_UNIT(*)' + unit +
+                    ');#2=GLOBAL_UNIT_ASSIGNED_CONTEXT((#1));\nENDSEC;\nEND-ISO-10303-21;', encoding='ascii')
             else:
                 path.write_bytes(b'**PARASOLID TRANSMIT FILE\n**fixture\n')
             if self.write_hook:

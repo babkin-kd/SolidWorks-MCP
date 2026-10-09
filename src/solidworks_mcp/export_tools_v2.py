@@ -50,6 +50,7 @@ def register_export_tools(app, runtime, response, failure):
         .stl/.step/.x_t must match stl/step/parasolid. Existing files are rejected.
         STL requires explicit mm/m/in because the file has no unit metadata.
         STEP/Parasolid require units=""; STEP units come from its declaration,
+        with consistent SI length contexts in a complete file up to 4 MiB.
         Parasolid units remain unknown without independent roundtrip evidence.
         Use the returned revision with export_part and exactly the same options.
         This is a read job: no preferences or output file are changed. A fresh

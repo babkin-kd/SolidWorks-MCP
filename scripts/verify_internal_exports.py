@@ -270,7 +270,7 @@ def _format_facts(path, manifest, source, units):
     if manifest['format'] == 'step':
         content = path.read_text(encoding='ascii', errors='replace')
         assert 'ISO-10303-21;' in content[:256] and 'END-ISO-10303-21;' in content[-4096:]
-        units_found = re.findall(r'SI_UNIT\(\s*(\$|\.MILLI\.)\s*,\s*\.METRE\.\s*\)', content)
+        units_found = re.findall(r'\bSI_UNIT\s*\(\s*(\$|\.MILLI\.)\s*,\s*\.METRE\.\s*\)', content)
         assert units_found and len(set(units_found)) == 1, 'STEP length units are absent or ambiguous.'
         declared = 'mm' if units_found[0] == '.MILLI.' else 'm'
         assert manifest['units'] == declared and manifest['units_embedded'] is True

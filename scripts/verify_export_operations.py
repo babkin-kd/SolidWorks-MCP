@@ -549,7 +549,7 @@ async def check(state, output, internal_report, *, failure_report=None):
                         elif format == 'step':
                             content = path.read_text(encoding='ascii', errors='replace')
                             assert 'ISO-10303-21;' in content[:256] and 'END-ISO-10303-21;' in content[-4096:]
-                            declarations = re.findall(r'SI_UNIT\(\s*(\$|\.MILLI\.)\s*,\s*\.METRE\.\s*\)', content)
+                            declarations = re.findall(r'\bSI_UNIT\s*\(\s*(\$|\.MILLI\.)\s*,\s*\.METRE\.\s*\)', content)
                             assert declarations and len(set(declarations)) == 1
                             declared_units = 'mm' if declarations[0] == '.MILLI.' else 'm'
                             assert manifest['units'] == declared_units and manifest['units_embedded'] is True

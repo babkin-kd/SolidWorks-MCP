@@ -20,6 +20,7 @@ import uuid
 from .documents import rejected
 from .jobs import ExecutionFailure, _json
 from .mutations import MutationCoordinator, PreparedMutation
+from .step_units import MAX_STEP_UNIT_BYTES, declared_step_length_unit
 
 
 SCOPE = 'part_solid_brep_export_v1'
@@ -129,18 +130,25 @@ def validate_export_file(path, options):
                      'units': options.units, 'units_embedded': False,
                      'unit_evidence': 'Explicit request plus verified native swExportStlUnits; STL stores no units.'}
         elif options.format == 'step':
-            # Read bounded text only to establish envelope + a standard length
-            # unit declaration. Never infer millimetres from the CAD UI units.
-            prefix = stream.read(min(info.st_size, 4 * 1024 * 1024)).decode('ascii', errors='replace')
+            # Inspect the complete bounded file: a prefix cannot establish that
+            # later representation contexts use the same length unit.
+            if info.st_size > MAX_STEP_UNIT_BYTES:
+                raise rejected('step_unit_validation_limit', 'STEP unit validation supports files up to 4 MiB.')
+            # Unit syntax is ASCII. Preserve every byte one-to-one while the
+            # metadata parser discards opaque quoted names/comments: native
+            # SW files can contain non-ASCII labels in those fields.
+            prefix = stream.read(info.st_size).decode('latin1')
             stream.seek(max(0, info.st_size - 4096))
             suffix = stream.read().decode('ascii', errors='replace')
             if 'ISO-10303-21;' not in prefix[:256] or 'END-ISO-10303-21;' not in suffix:
                 raise rejected('invalid_export_file', 'STEP exchange-file envelope is missing.')
-            units = re.findall(r'SI_UNIT\(\s*(\$|\.MILLI\.)\s*,\s*\.METRE\.\s*\)', prefix)
-            if not units or len(set(units)) != 1:
-                raise rejected('unsupported_export_unit_declaration', 'No single supported STEP SI length declaration was verified.')
-            facts = {'kind': 'step_exchange_envelope', 'units': 'mm' if units[0] == '.MILLI.' else 'm',
-                     'units_embedded': True, 'unit_evidence': 'SI_UNIT length declaration in the STEP file.'}
+            try:
+                unit = declared_step_length_unit(prefix)
+            except ValueError:
+                raise rejected('unsupported_export_unit_declaration', 'No single supported STEP SI length context was verified.') from None
+            facts = {'kind': 'step_exchange_envelope', 'units': unit,
+                     'units_embedded': True,
+                     'unit_evidence': 'GLOBAL_UNIT_ASSIGNED_CONTEXT references a supported SI LENGTH_UNIT declaration.'}
         else:
             prefix = stream.read(4096)
             if not prefix.startswith(b'**') or b'PARASOLID' not in prefix.upper():
