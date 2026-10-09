@@ -59,6 +59,10 @@ async def check(state):
         async with stdio_client(params) as (read, write):
             async with ClientSession(read, write) as client:
                 await client.initialize()
+                tools = (await client.list_tools()).tools
+                assert {tool.name for tool in tools} == {
+                    'system_get_info', 'job_get', 'job_list', 'job_cancel', 'document_list', 'document_get'}
+                assert all(tool.outputSchema for tool in tools)
                 info = (await client.call_tool('system_get_info')).structuredContent['data']
                 assert info['build_matches_source'] is True
                 assert info['capabilities']['cad_documents'] is True
@@ -105,7 +109,7 @@ async def check(state):
     return {'package_version': metadata.version('solidworks-mcp'), 'git_sha': info['build']['git_sha'],
             'build_matches_source': True, 'source_dirty': info['build']['source_dirty'],
             'solidworks_revision': before[0], 'open_documents': len(before[3]),
-            'explicit_targets_verified': 2, 'tool_count': 6,
+            'explicit_targets_verified': 2, 'tool_count': len(tools),
             'idempotent_read': True, 'restart_invalidates_ids': True,
             'historical_results_survive': True, 'native_state_unchanged': True,
             'scope': 'read_only_document_metadata; no mutation, geometry or inactive configuration acceptance'}
