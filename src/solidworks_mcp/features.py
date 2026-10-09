@@ -66,11 +66,12 @@ class FeatureCatalog:
         current, after = self.documents.resolve(document_id, configuration)
         if current is not entry or observed != after:
             raise rejected('document_changed_during_read', 'Document changed during feature-tree collection; read again.')
-        # Configuration lookup can dispatch notifications itself. Read it before
-        # the final poll, so no native getter follows the closing event check.
+        # Configuration lookup AND canonical PyIUnknown equality can perform
+        # native work. Finish both before the final notification poll.
         closing_identity = self.adapter.configuration_identity(entry.model, configuration)
+        same_identity = closing_identity == identity
         closing_sequence = watch.poll()
-        if closing_identity != identity or closing_sequence != event_sequence:
+        if not same_identity or closing_sequence != event_sequence:
             raise rejected('document_changed_during_read', 'Document changed during feature-tree collection; read again.')
         semantic = {'document': {key: observed[key] for key in ('title', 'path', 'document_type',
                     'configurations', 'active_configuration', 'update_stamp')},

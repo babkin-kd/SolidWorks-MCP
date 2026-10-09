@@ -60,6 +60,7 @@ class _DimensionCapture:
     state: tuple
     feature_identities: tuple
     dimension_memberships: tuple
+    event_sequence: int
 
 
 class DimensionCatalog:
@@ -145,16 +146,18 @@ class DimensionCatalog:
         closing_feature_identities = tuple(self.adapter.identity(feature) for feature in second[2])
         # QueryInterface for the strong identities above is itself native work.
         # Bracket it with a cheap final observation/configuration check, then
-        # poll events LAST. No native work follows that poll in this capture.
+        # poll events after the explicit getters and canonical comparisons.
         closing_entry, closing_observed = self.documents.resolve(document_id, configuration)
         closing_configurations = tuple(self.adapter.configuration_identity(entry.model, name)
                                        for name in configuration_identities)
+        # PyIUnknown equality also performs native QueryInterface/Release.
+        # Finish every canonical comparison BEFORE the last event poll.
+        closing_matches = (second[0] is entry and second[1] == identity and second[4] == feature_revision
+                and closing_feature_identities == feature_identities
+                and closing_entry is entry and closing_observed == second[5]['observed']
+                and closing_configurations == tuple(configuration_identities.values()))
         final_event_sequence = entry.features['watch'].poll()
-        if (second[0] is not entry or second[1] != identity or second[4] != feature_revision
-                or closing_feature_identities != feature_identities
-                or closing_entry is not entry or closing_observed != second[5]['observed']
-                or closing_configurations != tuple(configuration_identities.values())
-                or final_event_sequence != second[5]['event_sequence']):
+        if not closing_matches or final_event_sequence != second[5]['event_sequence']:
             raise rejected('document_changed_during_read', 'Feature/event/configuration state changed during dimension capture.')
         semantic = {'tree': tree, 'configuration_epochs': epochs, 'dimensions': rows,
                     'context': context, 'geometry': geometry}
@@ -164,23 +167,40 @@ class DimensionCatalog:
                    'mutation_sequence': cache.get('mutation_sequence', 0)}
         revision = 'rev_' + hashlib.sha256(_json(payload).encode('utf-8')).hexdigest()
         return _DimensionCapture((entry, identity, native, semantic, revision),
-                                 feature_identities, dimension_memberships)
+                                 feature_identities, dimension_memberships, final_event_sequence)
 
     @staticmethod
     def _same_capture(first, second):
         return (first.state[0] is second.state[0] and first.state[1] == second.state[1]
                 and first.state[3:] == second.state[3:]
                 and first.feature_identities == second.feature_identities
-                and first.dimension_memberships == second.dimension_memberships)
+                and first.dimension_memberships == second.dimension_memberships
+                and first.event_sequence == second.event_sequence)
+
+    @staticmethod
+    def _close_native_proof(entry, event_sequence):
+        # The sequence is saved from an accepted capture, not reread after
+        # native resolution/equality as if late changes were part of its proof.
+        closing_sequence = entry.features['watch'].poll()
+        if closing_sequence != event_sequence:
+            raise rejected('document_changed_during_read', 'Native identity proof dispatched a late document notification.')
+
+    def _close_capture_pair(self, first, second):
+        matches = self._same_capture(first, second)  # Equality itself enters COM.
+        self._close_native_proof(second.state[0], second.event_sequence)
+        if not matches:
+            raise rejected('document_changed_during_read', 'Dimension/control/geometry state changed during collection.')
+
+    def _paired_capture(self, document_id, configuration):
+        first = self._capture(document_id, configuration)
+        second = self._capture(document_id, configuration)
+        self._close_capture_pair(first, second)
+        return first
 
     def _state(self, document_id, configuration):
         # Mutations continue to require a complete paired consistency check at
         # every prepare/validate/inspect stage, including both full BREP reads.
-        first = self._capture(document_id, configuration)
-        second = self._capture(document_id, configuration)
-        if not self._same_capture(first, second):
-            raise rejected('document_changed_during_read', 'Dimension/control/geometry state changed during collection.')
-        return first.state
+        return self._paired_capture(document_id, configuration).state
 
     def _register(self, entry, configuration, identity, native):
         dimension = self.adapter.dimension_object(native)
@@ -277,8 +297,7 @@ class DimensionCatalog:
                 error = {'code': exc.code, 'message': str(exc)}
             items.append({**row, 'object_id': ref.object_id if ref else None,
                           'persistent_reference_supported': ref is not None, 'reference_error': error})
-        if not self._same_capture(captured, self._capture(document_id, configuration)):
-            raise rejected('document_changed_during_read', 'Dimension state changed while references were registered.')
+        self._close_capture_pair(captured, self._capture(document_id, configuration))
         for key in list(cursors):
             if cursors[key]['revision'] != revision:
                 del cursors[key]
@@ -297,8 +316,7 @@ class DimensionCatalog:
         entry, identity, objects, semantic, revision = captured.state
         native, _ = self._resolve(entry, configuration, identity, objects, object_id)
         summary = self._captured_row(objects, semantic, native)
-        if not self._same_capture(captured, self._capture(document_id, configuration)):
-            raise rejected('document_changed_during_read', 'Dimension changed while its reference was resolved.')
+        self._close_capture_pair(captured, self._capture(document_id, configuration))
         return {'document_id': document_id, 'configuration': configuration, 'revision': revision,
                 'revision_scope': SCOPE, 'dimension': {**summary, 'object_id': object_id}}
 
@@ -347,21 +365,26 @@ class DimensionCatalog:
         target = {}
         def prepare():
             self._prevalidate_namespace(document_id, configuration, object_id)
-            entry, identity, objects, semantic, revision = self._state(document_id, configuration)
+            captured = self._paired_capture(document_id, configuration)
+            entry, identity, objects, semantic, revision = captured.state
             native, ref = self._resolve(entry, configuration, identity, objects, object_id)
             row = self._captured_row(objects, semantic, native)
             self._writable(semantic, row, unit)
+            self._close_native_proof(entry, captured.event_sequence)
             target.update(entry=entry, identity=identity, native=native)
             return PreparedMutation(revision, {'scope': SCOPE, 'object_id': object_id,
                 'reference_anchor': ref.persistent_id, 'full_name': row['full_name'],
                 'value_si': row['values_si'][configuration], 'semantic': semantic})
         def validate(prepared):
-            entry, identity, objects, semantic, revision = self._state(document_id, configuration)
+            captured = self._paired_capture(document_id, configuration)
+            entry, identity, objects, semantic, revision = captured.state
             native, _ = self._resolve(entry, configuration, identity, objects, object_id)
             row = self._captured_row(objects, semantic, native)
             self._writable(semantic, row, unit)
-            return (entry is target['entry'] and revision == prepared.revision
+            matches = (entry is target['entry'] and revision == prepared.revision
                     and self.adapter.identity(self.adapter.dimension_object(native)) == self.adapter.identity(self.adapter.dimension_object(target['native'])))
+            self._close_native_proof(entry, captured.event_sequence)
+            return matches
         def apply(prepared):
             entry = target['entry']
             cache = entry.features['dimensions']
@@ -373,9 +396,11 @@ class DimensionCatalog:
                 raise rejected('dimension_rebuild_failed', 'ForceRebuild3 did not confirm rebuilding with no pending rebuild.')
             return {'object_id': object_id, 'requested_value': value, 'unit': unit, 'value_si': requested, 'native_status': status}
         def inspect(prepared):
-            entry, identity, objects, semantic, revision = self._state(document_id, configuration)
+            captured = self._paired_capture(document_id, configuration)
+            entry, identity, objects, semantic, revision = captured.state
             native, _ = self._resolve(entry, configuration, identity, objects, object_id)
             row = self._captured_row(objects, semantic, native)
+            self._close_native_proof(entry, captured.event_sequence)
             return {'scope': SCOPE, 'value_si': row['values_si'][configuration], 'semantic': semantic, 'revision': revision}
         def verify(before, after, result):
             expected = self._comparable(before['semantic'], ignore_geometry=True)
@@ -388,7 +413,8 @@ class DimensionCatalog:
             return (close_value(after['value_si'], requested) and expected == actual
                     and not after['semantic']['tree']['needs_rebuild'])
         def restore(before, prepared):
-            entry, identity, objects, semantic, _ = self._state(document_id, configuration)
+            captured = self._paired_capture(document_id, configuration)
+            entry, identity, objects, semantic, _ = captured.state
             native, _ = self._resolve(entry, configuration, identity, objects, object_id)
             row = self._captured_row(objects, semantic, native)
             current = row['values_si'][configuration]
@@ -403,6 +429,7 @@ class DimensionCatalog:
             before_context.pop('configuration_needs_rebuild', None)
             if row['write_blockers'] or current_context != before_context:
                 raise rejected('concurrent_edit_during_rollback', 'Dimension control/active context changed; do not overwrite it.')
+            self._close_native_proof(entry, captured.event_sequence)
             if not close_value(current, before['value_si']):
                 status = self.adapter.set_dimension_value(native, before['value_si'], configuration)
                 if type(status) is not int or status != 0:
