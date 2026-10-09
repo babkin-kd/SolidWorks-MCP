@@ -973,6 +973,10 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   feature (after that one's own sketch: aim at the sketch to keep the pair
   together). Before a feature it is built on, it returns False and changes
   nothing.
+- IDimension.SystemValue ignores a write at random: a fresh box's width set
+  to 50 read back 40 in 3 of 80 tries through set_dimension, and the same
+  write once more took every time. No trigger was found (the write alone, 0
+  of 120); writing again when the old value reads back covers it.
 
 ## Next
 
