@@ -9,6 +9,7 @@
 В `2.0.0.dev3` доступны журнал заданий, явное чтение метаданных документов и геометрии деталей;
 операции создания и редактирования моделей v2 ещё разрабатываются.
 Контракт кандидата: [guide_v2.md](src/solidworks_mcp/guide_v2.md).
+Статус всех legacy-инструментов: [MIGRATION_V2.md](Docs/MIGRATION_V2.md).
 Ниже сохранена документация upstream/legacy-инструментов для переноса; она не является каталогом доступных инструментов v2.
 
 This installation includes a local sheet-metal extension, version
