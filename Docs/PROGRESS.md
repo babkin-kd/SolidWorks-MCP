@@ -963,6 +963,11 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   that face worked, and on a solid part a side on a face worked too. Up to
   surface (4, the face selected with mark 1) worked there; up to body (7)
   did not.
+- An angle mate (MatePlanarAngleDim) is made at 0..180 between the face
+  normals, but its dimension turns the joint the whole way round: 200, 270
+  and 330 turn on continuously (here the part turned by -value), and 330 is
+  the turn -30 would be. A negative SystemValue is ignored, so -30 is written
+  as 330. IAngleMateFeatureData.ReferenceEntity was not needed.
 
 ## Next
 
