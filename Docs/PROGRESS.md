@@ -968,6 +968,11 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   and 330 turn on continuously (here the part turned by -value), and 330 is
   the turn -30 would be. A negative SystemValue is ignored, so -30 is written
   as 330. IAngleMateFeatureData.ReferenceEntity was not needed.
+- IModelDocExtension.ReorderFeature(name, location, swMoveBefore = 2) moves
+  the feature with the sketch it absorbed, to just before the location
+  feature (after that one's own sketch: aim at the sketch to keep the pair
+  together). Before a feature it is built on, it returns False and changes
+  nothing.
 
 ## Next
 
