@@ -32,6 +32,8 @@ from solidworks_mcp.jobs import ExecutionFailure, JobRunner, JobStore
 from verify_document_reads import native_snapshot
 from verify_geometry_reads import fixtures
 from verifier_fixture_cleanup import InlineFixtureCleanupGate, guarded_inline_submit
+from verifier_export_diagnostics import (capture_ui_difference, close_resources_with_gate,
+    independent_baseline_check, require_fixture_native_access, ui_snapshot_unmeasured)
 from verify_export_operations import (application_preferences, assert_owned_source_facts_unchanged,
     assert_stl_frame_and_units,
     exact_solid, fixture_preferences_baseline, independent_binary_stl, independent_file_facts,
@@ -214,17 +216,15 @@ def check(state, output, *, failure_report=None):
     primary_failure = None
     fixture_cleanup_gate = InlineFixtureCleanupGate()
     owned_fixture_count = 0
+    resource_cleanup_errors = []
 
     def close_resources():
         nonlocal documents, store
-        try:
-            if documents is not None:
-                closing, documents = documents, None
-                closing.close()
-        finally:
-            if store is not None:
-                closing, store = store, None
-                closing.close()
+        closing = [('documents', documents), ('store', store)]
+        documents = store = None
+        active_error = primary_failure if primary_failure is not None else sys.exc_info()[1]
+        close_resources_with_gate(closing, fixture_cleanup_gate, resource_cleanup_errors,
+                                  primary_error=active_error)
 
     try:
         with fixtures(cleanup_gate=fixture_cleanup_gate.can_cleanup) as (session, owned, _), ExitStack() as cleanup:
@@ -274,12 +274,17 @@ def check(state, output, *, failure_report=None):
             assert all(row['boundary_snapshot']['scope'] == PLANAR_BREP_SCOPE for row in semantic['bodies'])
 
             def unchanged():
-                assert native_snapshot() == setup, 'Export changed native document metadata/active configuration.'
-                assert ui_snapshot(sw, module) == setup_ui, 'Export changed native selection/UI blocking.'
-                report.update(assert_owned_source_facts_unchanged(
-                    source, owned_source_snapshot(model, module)))
-                assert exports.export_source_snapshot(model) == semantic, 'Full supported source boundary changed.'
-                assert application_preferences(sw) == before_preferences, 'Global preferences were not restored.'
+                def independent_checks():
+                    assert native_snapshot() == setup, 'Export changed native document metadata/active configuration.'
+                    observed_ui = capture_ui_difference(lambda: ui_snapshot(sw, module), setup_ui, report,
+                                                        'setup_ui_snapshot_difference')
+                    assert observed_ui == setup_ui, 'Export changed native selection/UI blocking.'
+                    report.update(assert_owned_source_facts_unchanged(
+                        source, owned_source_snapshot(model, module)))
+                    assert exports.export_source_snapshot(model) == semantic, 'Full supported source boundary changed.'
+                    assert application_preferences(sw) == before_preferences, 'Global preferences were not restored.'
+                return independent_baseline_check(independent_checks, fixture_cleanup_gate,
+                    native_activity=bool(exports.native_calls or exports.saveas_attempt_count))
 
             def submit(request, arguments):
                 def operation(operation_id):
@@ -288,11 +293,13 @@ def check(state, output, *, failure_report=None):
                         return catalog.execute(operation_id, **arguments)
                     finally:
                         exports.expected_operation = None
-                return guarded_inline_submit(fixture_cleanup_gate, runner, store,
+                job = guarded_inline_submit(fixture_cleanup_gate, runner, store,
                     request, 'internal.export_part', arguments, operation,
                     context={key: arguments[key] for key in ('document_id', 'configuration', 'expected_revision')},
                     mutates=True, pass_operation_id=True,
                     verify=lambda result: result.get('verified') is True)
+                require_fixture_native_access(fixture_cleanup_gate)
+                return job
 
             _reject(lambda: catalog.prepare('doc_missing', 'Основная', 'stl', 'Неизвестный документ.stl', 'mm'),
                     'document_not_open')
@@ -401,8 +408,9 @@ def check(state, output, *, failure_report=None):
 
             # Real SQLite reopen: committed result/idempotency survives process-
             # lifetime objects. No CAD callback is permitted on historical replay.
-            store.close()
-            store = None
+            closing_store, store = store, None
+            close_resources_with_gate([('historical_store', closing_store)], fixture_cleanup_gate,
+                                      resource_cleanup_errors)
             store = JobStore(state / 'jobs.sqlite')
             historical_runner = InlineJobRunner(store)
             for request, arguments, previous in committed_arguments:
@@ -412,14 +420,21 @@ def check(state, output, *, failure_report=None):
                     request, 'internal.export_part', arguments, prohibited,
                     context={key: arguments[key] for key in ('document_id', 'configuration', 'expected_revision')},
                     mutates=True, pass_operation_id=True, verify=lambda result: result.get('verified') is True)
+                require_fixture_native_access(fixture_cleanup_gate)
                 assert historical['operation_id'] == previous['operation_id']
                 assert historical['result'] == previous['result'] and historical['mutation']['phase'] == 'committed'
             assert historical_runner.worker.dispatch_count == 0
             assert not store.mutation_blockers('another-epoch', 'another-document')
             # No catalog write is attempted after replacing its journal owner.
-            assert native_snapshot() == setup and ui_snapshot(sw, module) == setup_ui
-            assert application_preferences(sw) == before_preferences
-            assert exports.export_source_snapshot(model) == semantic
+            def reopened_baselines():
+                assert native_snapshot() == setup
+                observed_ui = capture_ui_difference(lambda: ui_snapshot(sw, module), setup_ui, report,
+                                                    'journal_reopen_ui_snapshot_difference')
+                assert observed_ui == setup_ui
+                assert application_preferences(sw) == before_preferences
+                assert exports.export_source_snapshot(model) == semantic
+            independent_baseline_check(reopened_baselines, fixture_cleanup_gate,
+                native_activity=bool(exports.native_calls or exports.saveas_attempt_count))
             report.update(native_internal_exports=results, actual_native_export_count=5,
                 native_export_adapter_call_count=len(exports.native_calls),
                 saveas_attempt_count=exports.saveas_attempt_count,
@@ -439,7 +454,9 @@ def check(state, output, *, failure_report=None):
                 timeout_zero_reads_already_terminal_job=True, private_outputs_retained=True)
         assert native_snapshot() == original, 'Original user document baseline was not restored.'
         assert application_preferences(original_sw) == original_preferences
-        assert ui_snapshot(original_sw, original_module) == original_ui
+        observed_original_ui = capture_ui_difference(lambda: ui_snapshot(original_sw, original_module),
+            original_ui, report, 'original_ui_snapshot_difference')
+        assert observed_original_ui == original_ui
         assert user_file_metadata(original) == original_files
         for path, facts in confirmed_paths.items():
             assert independent_file_facts(path) == facts
@@ -464,7 +481,7 @@ def check(state, output, *, failure_report=None):
                 raise
             if failure_report is not None:
                 failure_report['resource_cleanup_error'] = {
-                    'error_type': type(cleanup_exc).__name__, 'message': str(cleanup_exc)}
+                    'error_type': type(cleanup_exc).__name__[:80]}
         finally:
             if primary_failure is not None and failure_report is not None:
                 calls = len(exports.native_calls) if exports is not None else 0
@@ -478,7 +495,10 @@ def check(state, output, *, failure_report=None):
                     'approximate_mass_facts_check', 'computed_mass_facts_tolerances',
                     'computed_mass_facts_check_reason', 'independent_nonmass_source_facts_exact',
                     'independent_computed_mass_raw_readings',
-                    'computed_mass_facts_used_for_geometry_revision') if key in report})
+                    'computed_mass_facts_used_for_geometry_revision',
+                    'setup_ui_snapshot_difference', 'journal_reopen_ui_snapshot_difference',
+                    'original_ui_snapshot_difference') if key in report})
+                failure_report['resource_cleanup_errors'] = list(resource_cleanup_errors)
                 failure_report.update(native_export_adapter_call_count=calls,
                     saveas_attempt_count=saveas_attempts,
                     # An attempted SaveAs3 can fail or return an invalid result;
@@ -499,7 +519,8 @@ def check(state, output, *, failure_report=None):
                         'original_preferences_restored': (
                             lambda: application_preferences(original_sw), original_preferences),
                         'original_ui_blocking_and_selection_restored': (
-                            lambda: ui_snapshot(original_sw, original_module), original_ui),
+                            lambda: capture_ui_difference(lambda: ui_snapshot(original_sw, original_module),
+                                original_ui, failure_report, 'original_ui_snapshot_difference'), original_ui),
                         'original_user_file_metadata_unchanged': (
                             lambda: user_file_metadata(original), original_files),
                     }))
@@ -513,6 +534,7 @@ def check(state, output, *, failure_report=None):
                         original_ui_blocking_and_selection_restored=None,
                         original_user_file_metadata_unchanged=None,
                         cleanup_baseline_read_errors={}, cleanup_baseline_reads_skipped_due_to_hold=True)
+                    failure_report['original_ui_snapshot_difference'] = ui_snapshot_unmeasured(original_ui)
         # Every produced path/journal remains private for root's review. Nothing
         # is deleted, especially after an unknown or partially published result.
 

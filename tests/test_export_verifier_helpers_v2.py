@@ -9,6 +9,7 @@ import ast
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from types import SimpleNamespace
+import sys
 
 import pytest
 
@@ -30,8 +31,8 @@ def extracted_functions(filename, names, namespace=None):
     return namespace
 
 
-def pure_cleanup_utility():
-    path = SCRIPTS / 'verifier_fixture_cleanup.py'
+def pure_cleanup_utility(filename='verifier_fixture_cleanup.py'):
+    path = SCRIPTS / filename
     tree = ast.parse(path.read_text(encoding='utf8'), filename=str(path))
     assert not any(isinstance(node, (ast.Import, ast.ImportFrom)) for node in ast.walk(tree))
     selected = [node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))]
@@ -154,6 +155,7 @@ def failed_owned_setup(provenance):
         return dict(provenance)
 
     namespace = {'ExitStack': ExitStack, '_provenance': read_provenance,
+                 'sys': sys,
                  'native_snapshot': snapshot,
                  'binding': SimpleNamespace(connect=lambda **kwargs: object(),
                                             module=lambda: object()),
@@ -161,6 +163,8 @@ def failed_owned_setup(provenance):
                  'ui_snapshot': lambda sw, module: [('ui', 0)],
                  'user_file_metadata': lambda original: {},
                  'InlineFixtureCleanupGate': pure_cleanup_utility()['InlineFixtureCleanupGate'],
+                 'close_resources_with_gate': pure_cleanup_utility('verifier_export_diagnostics.py')['close_resources_with_gate'],
+                 'capture_ui_difference': pure_cleanup_utility('verifier_export_diagnostics.py')['capture_ui_difference'],
                  'fixtures': fixtures, 'SolidWorksDocuments': fail_adapter}
     check = extracted_functions('verify_internal_exports.py',
                                 {'check', 'cleanup_baseline_flags'}, namespace)['check']

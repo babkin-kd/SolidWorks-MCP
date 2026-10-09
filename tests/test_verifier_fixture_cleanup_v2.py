@@ -4,6 +4,7 @@ import ast
 from contextlib import ExitStack, contextmanager
 from copy import deepcopy
 import json
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -255,12 +256,15 @@ def test_internal_failure_reports_retained_owned_count_and_skips_all_posthold_na
         gates[0].retain()  # Artificial unknown result; no actual native work.
         raise original_error
     namespace = {'ExitStack': ExitStack, '_provenance': lambda: {},
+        'sys': sys,
         'native_snapshot': initial_reader('docs', ('original',)),
         'binding': SimpleNamespace(connect=lambda **kwargs: object(), module=lambda: object()),
         'application_preferences': initial_reader('preferences', {'native': 'original'}),
         'ui_snapshot': initial_reader('ui', [('original', 0)]),
         'user_file_metadata': initial_reader('files', {}),
         'fixtures': fixtures, 'InlineFixtureCleanupGate': new_gate,
+        'close_resources_with_gate': pure_cleanup_utility('verifier_export_diagnostics.py')['close_resources_with_gate'],
+        'ui_snapshot_unmeasured': pure_cleanup_utility('verifier_export_diagnostics.py')['ui_snapshot_unmeasured'],
         'SolidWorksDocuments': fail_adapter}
     check = extracted_functions('verify_internal_exports.py', {'check', 'cleanup_baseline_flags'}, namespace)['check']
     failure = {}
