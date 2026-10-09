@@ -7,14 +7,17 @@ same initialized apartment; independent extrema/volume verify the known box.
 
 import argparse
 from concurrent.futures import Future
+from importlib import resources
 import json
 import math
 from pathlib import Path
 import sqlite3
+import time
 
 import pythoncom
 import solidworks_mcp
 from solidworks_mcp import binding
+from solidworks_mcp.build_info import source_digest
 from solidworks_mcp.cad_documents import SolidWorksDocuments
 from solidworks_mcp.documents import DocumentCatalog
 from solidworks_mcp.dimensions import DimensionCatalog
@@ -28,13 +31,38 @@ class Adapter(SolidWorksDocuments):
     def __init__(self):
         super().__init__()
         self.inject_after_write = False
+        self.native_write_count = 0
+        self.native_rebuild_count = 0
 
     def set_dimension_value(self, record, value_si, configuration):
+        self.native_write_count += 1
         result = super().set_dimension_value(record, value_si, configuration)
         if self.inject_after_write:
             self.inject_after_write = False
             raise RuntimeError('Verifier injection after actual native setter, not a native COM failure.')
         return result
+
+    def rebuild_dimension_document(self, model):
+        self.native_rebuild_count += 1
+        return super().rebuild_dimension_document(model)
+
+
+class TimedCatalog(DimensionCatalog):
+    """Measure complete captures without changing, caching or replaying them."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.capture_seconds = []
+
+    def _capture(self, *args, **kwargs):
+        started = time.monotonic()
+        try:
+            return super()._capture(*args, **kwargs)
+        finally:
+            elapsed = round(time.monotonic() - started, 3)
+            self.capture_seconds.append(elapsed)
+            print(json.dumps({'phase': 'dimension_capture', 'capture': len(self.capture_seconds),
+                              'seconds': elapsed}), flush=True)
 
 
 class Worker:
@@ -50,7 +78,13 @@ class Worker:
 def check(state):
     assert 'site-packages' in solidworks_mcp.__file__
     original = native_snapshot()
-    report = {'package_version': solidworks_mcp.__version__, 'public_mcp_dimension_acceptance': False}
+    package = Path(solidworks_mcp.__file__).resolve().parent
+    build = json.loads(resources.files('solidworks_mcp').joinpath('build_info.json').read_text(encoding='utf8'))
+    assert build['package_version'] == solidworks_mcp.__version__
+    assert build['source_digest'] == source_digest(package)
+    report = {'package_version': solidworks_mcp.__version__, 'public_mcp_dimension_acceptance': False,
+              'git_sha': build['git_sha'], 'source_dirty': build['source_dirty'],
+              'installed_source_digest': build['source_digest'], 'installed_build_matches_package': True}
     with fixtures() as (_, owned, _):
         adapter = Adapter()
         documents = DocumentCatalog(adapter)
@@ -61,7 +95,7 @@ def check(state):
             source_ui = ui_snapshot(sw, module)
             other_metadata = adapter.snapshot(owned[0])
             doc = next(row for row in documents.list()['documents'] if row['title'] == model.GetTitle())
-            catalog = DimensionCatalog(documents, store, 'native_dimensions', mutation_guard=adapter.mutation_guard)
+            catalog = TimedCatalog(documents, store, 'native_dimensions', mutation_guard=adapter.mutation_guard)
             page = catalog.list(doc['document_id'], 'Основная')
             assert page['total_count'] == 3
             target = next(row for row in page['items'] if row['owner']['feature_type'] == 'Extrusion')
@@ -112,11 +146,15 @@ def check(state):
             assert catalog._state(doc['document_id'], 'Основная')[3]['geometry'] == before_geometry
             physical(9.)
             assert store.mutation_blockers('native_dimensions', 'another_document') == []
+            assert adapter.native_write_count == 3 and adapter.native_rebuild_count == 2
             report.update(native_typed_configuration_setter=True, actual_native_status=changed['result']['value']['native_status'],
                 explicit_dimension_reference_survives_rebuild=True, same_request_does_not_duplicate_write=True,
                 stale_revision_rejected=True, verified_scoped_restoration_after_injected_error=True,
                 actual_native_error_injected=False, other_owned_document_unchanged=True,
-                ui_guard_released_and_durable=True, dimension_revision_scope=page['revision_scope'])
+                ui_guard_released_and_durable=True, dimension_revision_scope=page['revision_scope'],
+                actual_native_write_count=adapter.native_write_count,
+                actual_native_rebuild_count=adapter.native_rebuild_count,
+                complete_capture_seconds=catalog.capture_seconds)
         finally:
             documents.close()
             store.close()

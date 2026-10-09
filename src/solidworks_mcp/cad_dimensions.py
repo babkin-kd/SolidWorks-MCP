@@ -145,6 +145,12 @@ class CadDimensionsMixin:
         features = tuple(features)
         feature_identities = tuple(self.identity(feature) for feature in features)
         result, visits = [], 0
+        # Only this enumeration owns these strong canonical identities. Linear
+        # equality scans stay in Python: never QueryInterface the old records
+        # again for each incoming slot, and never hash unhashable IUnknown.
+        # Each entry holds dimension identity, record, display identities and
+        # (display identity, explicit API slot) memberships.
+        canonical_records = []
         for feature in features:
             display = binding.wrap(feature.GetFirstDisplayDimension(), self._module.IDisplayDimension)
             chain = []
@@ -162,8 +168,8 @@ class CadDimensionsMixin:
                     if dimension is None:
                         raise rejected('dimension_read_failed', 'Display dimension did not provide its model dimension.')
                     identity = self.identity(dimension)
-                    prior = next((r for r in result if self.identity(r.dimension) == identity), None)
-                    if prior is None:
+                    canonical = next((entry for entry in canonical_records if entry[0] == identity), None)
+                    if canonical is None:
                         if len(result) >= 5000:
                             raise rejected('dimension_budget_exceeded', 'Dimension enumeration budget exhausted.')
                         owner = binding.wrap(dimension.GetFeatureOwner(), self._module.IFeature)
@@ -173,10 +179,15 @@ class CadDimensionsMixin:
                             if any(owner_identity == candidate for candidate in feature_identities):
                                 prior.owner_tree_identity = owner_identity
                         result.append(prior)
-                    if not any(self.identity(d) == display_identity for d in prior.displays):
+                        canonical = (identity, prior, [], [])
+                        canonical_records.append(canonical)
+                    prior, display_identities, slot_identities = canonical[1:]
+                    if not any(old == display_identity for old in display_identities):
                         prior.displays.append(display)
-                    if not any(slot == index and self.identity(d) == display_identity for d, slot in prior.display_slots):
+                        display_identities.append(display_identity)
+                    if not any(slot == index and old == display_identity for old, slot in slot_identities):
                         prior.display_slots.append((display, index))
+                        slot_identities.append((display_identity, index))
                 display = binding.wrap(feature.GetNextDisplayDimension(display), self._module.IDisplayDimension)
         return result
 

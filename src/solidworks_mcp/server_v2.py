@@ -14,6 +14,7 @@ import sys
 from typing import Literal
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import StrictFloat, StrictInt
 
 from . import __version__
 from .build_info import source_digest
@@ -90,7 +91,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
             return failure(exc)
 
     @app.tool()
-    async def job_list(limit: int = 100, before_created_at: float | None = None,
+    async def job_list(limit: StrictInt = 100, before_created_at: StrictFloat | None = None,
                        before_operation_id: str = '') -> ResponseEnvelope:
         """Page through durable jobs, newest first; pass both cursor fields for the next page."""
         try:
@@ -116,7 +117,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
             return failure(exc)
 
     @app.tool()
-    async def document_list(request_id: str, timeout_s: float = 10) -> ResponseEnvelope:
+    async def document_list(request_id: str, timeout_s: StrictFloat = 10) -> ResponseEnvelope:
         """List open documents with opaque IDs/configurations and observation revisions.
 
         Read-only: does not activate, save, resolve components, or change visibility.
@@ -127,7 +128,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
 
     @app.tool()
     async def document_get(request_id: str, document_id: str, configuration: str,
-                           timeout_s: float = 10) -> ResponseEnvelope:
+                           timeout_s: StrictFloat = 10) -> ResponseEnvelope:
         """Read metadata for an explicit open document and existing configuration.
 
         Never switches the active document/configuration. Use configuration=""
@@ -140,7 +141,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
     @app.tool()
     async def body_list(request_id: str, document_id: str, configuration: str,
                         expected_observation_revision: str, body_type: Literal['all', 'solid', 'surface'] = 'all',
-                        limit: int = 100, cursor: str = '', timeout_s: float = 10) -> ResponseEnvelope:
+                        limit: StrictInt = 100, cursor: str = '', timeout_s: StrictFloat = 10) -> ResponseEnvelope:
         """Page native solid/surface bodies of an explicit part's active configuration.
 
         Pass the current observation_revision from document_get/list. No automatic
@@ -154,8 +155,8 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
 
     @app.tool()
     async def face_list(request_id: str, document_id: str, configuration: str,
-                        expected_observation_revision: str, body_id: str, limit: int = 100,
-                        cursor: str = '', timeout_s: float = 10) -> ResponseEnvelope:
+                        expected_observation_revision: str, body_id: str, limit: StrictInt = 100,
+                        cursor: str = '', timeout_s: StrictFloat = 10) -> ResponseEnvelope:
         """Page faces of an explicit solid/surface body; areas are mm², IDs are opaque."""
         return await read_document(request_id, 'geometry.list', {
             'document_id': document_id, 'configuration': configuration,
@@ -164,8 +165,8 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
 
     @app.tool()
     async def edge_list(request_id: str, document_id: str, configuration: str,
-                        expected_observation_revision: str, body_id: str, limit: int = 100,
-                        cursor: str = '', timeout_s: float = 10) -> ResponseEnvelope:
+                        expected_observation_revision: str, body_id: str, limit: StrictInt = 100,
+                        cursor: str = '', timeout_s: StrictFloat = 10) -> ResponseEnvelope:
         """Page edges of an explicit solid/surface body; lengths/endpoints are mm."""
         return await read_document(request_id, 'geometry.list', {
             'document_id': document_id, 'configuration': configuration,
@@ -175,7 +176,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
     @app.tool()
     async def geometry_get(request_id: str, document_id: str, configuration: str,
                            expected_observation_revision: str, object_id: str,
-                           timeout_s: float = 10) -> ResponseEnvelope:
+                           timeout_s: StrictFloat = 10) -> ResponseEnvelope:
         """Resolve an opaque body/face/edge reference in its original document/configuration.
 
         Revalidates the native persistent reference and parent body. Deleted,
@@ -187,7 +188,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
 
     @app.tool()
     async def feature_list(request_id: str, document_id: str, configuration: str,
-                           limit: int = 100, cursor: str = '', timeout_s: float = 10) -> ResponseEnvelope:
+                           limit: StrictInt = 100, cursor: str = '', timeout_s: StrictFloat = 10) -> ResponseEnvelope:
         """Read a part's complete scoped feature-tree revision and a page of native features.
 
         Explicit active configuration; no activation/rebuild. Includes absorbed
@@ -200,14 +201,14 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
 
     @app.tool()
     async def feature_get(request_id: str, document_id: str, configuration: str,
-                          object_id: str, timeout_s: float = 10) -> ResponseEnvelope:
+                          object_id: str, timeout_s: StrictFloat = 10) -> ResponseEnvelope:
         """Resolve a persistent feature ID in its original part/configuration and read its revision."""
         return await read_document(request_id, 'feature.get', {'document_id': document_id,
             'configuration': configuration, 'object_id': object_id}, timeout_s)
 
     @app.tool()
     async def feature_rename(request_id: str, document_id: str, configuration: str, object_id: str,
-                             expected_revision: str, name: str, timeout_s: float = 10) -> ResponseEnvelope:
+                             expected_revision: str, name: str, timeout_s: StrictFloat = 10) -> ResponseEnvelope:
         """Rename one explicitly referenced part feature to a Russian name with durable verification.
 
         Obtain expected_revision from feature_list/get (part_feature_tree_v1).
@@ -233,9 +234,11 @@ def main():
     parser = argparse.ArgumentParser(prog='solidworks-mcp-v2')
     parser.add_argument('--state-dir', type=Path, required=True,
                         help='Persistent private directory for the job journal; do not use a temporary directory.')
+    parser.add_argument('--output-dir', type=Path,
+                        help='Existing operator-approved export directory; clients cannot choose an output path.')
     args = parser.parse_args()
     store = JobStore(args.state_dir / 'jobs.sqlite')
-    runtime = Runtime(store)
+    runtime = Runtime(store, approved_output_root=args.output_dir)
     try:
         create_app(store, runtime).run()
     finally:

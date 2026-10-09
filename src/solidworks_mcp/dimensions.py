@@ -228,6 +228,20 @@ class DimensionCatalog:
             raise rejected('dimension_not_current', 'Persistent dimension is not in the current bounded dimension enumeration.')
         return current, ref
 
+    def _prevalidate_namespace(self, document_id, configuration, object_id):
+        """Deny foreign/unknown references before expensive complete captures.
+
+        This proves no writability or current native membership. All subsequent
+        capture, incarnation, persistent-reference and owner checks still run.
+        """
+        entry, _ = self.documents.resolve(document_id, configuration)
+        references = entry.features.get('dimensions', {}).get('references', {})
+        ref = references.get(object_id)
+        if ref is None:
+            raise rejected('object_reference_not_found', 'Unknown dimension object_id in this document.')
+        if ref.configuration != configuration:
+            raise rejected('object_configuration_mismatch', 'Dimension belongs to another configuration.')
+
     @staticmethod
     def _captured_row(objects, semantic, native):
         # _resolve has already proven the canonical native identity and current
@@ -278,6 +292,7 @@ class DimensionCatalog:
                 'revision_scope': SCOPE, 'items': items, 'total_count': len(objects), 'next_cursor': next_cursor}
 
     def get(self, document_id, configuration, object_id):
+        self._prevalidate_namespace(document_id, configuration, object_id)
         captured = self._capture(document_id, configuration)
         entry, identity, objects, semantic, revision = captured.state
         native, _ = self._resolve(entry, configuration, identity, objects, object_id)
@@ -331,6 +346,7 @@ class DimensionCatalog:
             raise rejected('mutation_guard_unavailable', 'An owning-STA model mutation guard must be installed before dimension writes.')
         target = {}
         def prepare():
+            self._prevalidate_namespace(document_id, configuration, object_id)
             entry, identity, objects, semantic, revision = self._state(document_id, configuration)
             native, ref = self._resolve(entry, configuration, identity, objects, object_id)
             row = self._captured_row(objects, semantic, native)
@@ -354,7 +370,7 @@ class DimensionCatalog:
             if type(status) is not int or status != 0:
                 raise rejected('dimension_write_failed', f'SetSystemValue3 returned {status!r}; only native status 0 is success.')
             if self.adapter.rebuild_dimension_document(entry.model) is not True:
-                raise rejected('dimension_rebuild_failed', 'EditRebuild3 did not confirm successful rebuilding.')
+                raise rejected('dimension_rebuild_failed', 'ForceRebuild3 did not confirm rebuilding with no pending rebuild.')
             return {'object_id': object_id, 'requested_value': value, 'unit': unit, 'value_si': requested, 'native_status': status}
         def inspect(prepared):
             entry, identity, objects, semantic, revision = self._state(document_id, configuration)

@@ -144,8 +144,10 @@ async def check(state, internal_report):
                         'value': 9., 'unit': 'mm'}
                 failed(await call(client, 'dimension_set_value', **{**args, 'document_id': other['document_id']}),
                        'object_reference_not_found')
-                failed(await call(client, 'dimension_set_value', **{**args,
-                       'document_id': other['document_id'], 'configuration': 'Вариант'}), 'configuration_not_active')
+                # Test inactive configuration independently of a foreign ID:
+                # namespace rejection is intentionally earlier for mutations.
+                failed(await call(client, 'dimension_list', document_id=other['document_id'],
+                       configuration='Вариант'), 'configuration_not_active')
                 failed(await call(client, 'dimension_set_value', **{**args, 'unit': 'deg'}), 'dimension_unit_mismatch')
                 failed(await call(client, 'dimension_set_value', **{**args, 'unit': 'inch'}), 'invalid_dimension_unit')
                 failed(await call(client, 'dimension_set_value', **{**args, 'value': -9.}), 'unsupported_signed_dimension')

@@ -203,9 +203,15 @@ class ExportCatalog:
         semantic = {**semantic, 'export_profile': self.adapter.export_profile(options)}
         preferences = self.adapter.export_preferences(options)
         current, after = self.documents.resolve(document_id, configuration)
-        if (current is not entry or after != observed or watch.poll() != sequence
-                or self.adapter.configuration_identity(entry.model, configuration) != configuration_identity
-                or not self.adapter.export_document_is_active(entry.model)):
+        if current is not entry or after != observed:
+            raise rejected('document_changed_during_read', 'Export source changed during collection.')
+        # Both native getters can dispatch changes themselves. Poll LAST so no
+        # native getter follows the closing notification check.
+        closing_identity = self.adapter.configuration_identity(entry.model, configuration)
+        closing_active = self.adapter.export_document_is_active(entry.model)
+        closing_sequence = watch.poll()
+        if (closing_identity != configuration_identity or not closing_active
+                or closing_sequence != sequence):
             raise rejected('document_changed_during_read', 'Export source changed during collection.')
         payload = {'scope': SCOPE, 'connection_epoch': self.connection_epoch, 'document_id': document_id,
                    'configuration': configuration, 'configuration_epoch': cached[1],
