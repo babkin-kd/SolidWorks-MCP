@@ -25,10 +25,11 @@ from solidworks_mcp.constants import SW_TOGGLE_INPUT_DIM_VAL_ON_CREATE
 from solidworks_mcp.session import SolidWorksSession
 import solidworks_mcp
 from verify_document_reads import native_snapshot
+from verifier_fixture_cleanup import fixture_cleanup_allowed
 
 
 @contextmanager
-def fixtures():
+def fixtures(*, cleanup_gate=None):
     session = SolidWorksSession()
     session._sw = binding.connect(show=False)
     session._mod = binding.module()
@@ -38,6 +39,7 @@ def fixtures():
     original_title = original_active.GetTitle() if original_active is not None else None
     dimension_preference = sw.GetUserPreferenceToggle(SW_TOGGLE_INPUT_DIM_VAL_ON_CREATE)
     owned = []
+    primary_failure = None
     try:
         sw.SetUserPreferenceToggle(SW_TOGGLE_INPUT_DIM_VAL_ON_CREATE, False)
         for index in (1, 2):
@@ -91,17 +93,39 @@ def fixtures():
                 assert body.Name == name
         sw.SetUserPreferenceToggle(SW_TOGGLE_INPUT_DIM_VAL_ON_CREATE, dimension_preference)
         yield session, owned, before
+    except BaseException as exc:
+        primary_failure = exc
+        raise
     finally:
-        # Close only exact owned documents; never a title pattern or all new docs.
-        for model in reversed(owned):
-            sw.CloseDoc(model.GetTitle())
-        session._model = None
-        sw.SetUserPreferenceToggle(SW_TOGGLE_INPUT_DIM_VAL_ON_CREATE, dimension_preference)
-        if original_title is not None:
-            restored, _ = sw.ActivateDoc3(original_title, False, 1, 0)  # swDontRebuildActiveDoc
-            assert restored is not None
-        assert before == native_snapshot(), 'Original native document state was not restored.'
-        assert sw.GetUserPreferenceToggle(SW_TOGGLE_INPUT_DIM_VAL_ON_CREATE) == dimension_preference
+        if fixture_cleanup_allowed(cleanup_gate):
+            try:
+                # Close only exact owned documents; never a title pattern or all new docs.
+                for model in reversed(owned):
+                    sw.CloseDoc(model.GetTitle())
+                session._model = None
+                sw.SetUserPreferenceToggle(SW_TOGGLE_INPUT_DIM_VAL_ON_CREATE, dimension_preference)
+                if original_title is not None:
+                    restored, _ = sw.ActivateDoc3(original_title, False, 1, 0)  # swDontRebuildActiveDoc
+                    assert restored is not None
+                assert before == native_snapshot(), 'Original native document state was not restored.'
+                assert sw.GetUserPreferenceToggle(SW_TOGGLE_INPUT_DIM_VAL_ON_CREATE) == dimension_preference
+            except BaseException as cleanup_exc:
+                if primary_failure is None:
+                    raise
+                # Preserve the body exception even when cleanup fails too.
+                try:
+                    print(json.dumps({'phase': 'fixture_cleanup_failed',
+                                      'error_type': type(cleanup_exc).__name__[:80]}), flush=True)
+                except BaseException:
+                    pass
+        else:
+            # No CAD getters, CloseDoc, activation or preference restoration.
+            # The exact in-memory ownership count needs no native observation.
+            try:
+                print(json.dumps({'phase': 'fixture_retained',
+                                  'owned_fixture_document_count': len(owned)}), flush=True)
+            except BaseException:
+                pass
 
 
 async def check(state):

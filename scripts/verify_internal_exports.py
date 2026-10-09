@@ -31,6 +31,7 @@ from solidworks_mcp.exports_v2 import ExportCatalog, ExportOptions
 from solidworks_mcp.jobs import ExecutionFailure, JobRunner, JobStore
 from verify_document_reads import native_snapshot
 from verify_geometry_reads import fixtures
+from verifier_fixture_cleanup import InlineFixtureCleanupGate, guarded_inline_submit
 from verify_export_operations import (application_preferences, assert_owned_source_facts_unchanged,
     assert_stl_frame_and_units,
     exact_solid, fixture_preferences_baseline, independent_binary_stl, independent_file_facts,
@@ -211,6 +212,8 @@ def check(state, output, *, failure_report=None):
     documents = None
     exports = None
     primary_failure = None
+    fixture_cleanup_gate = InlineFixtureCleanupGate()
+    owned_fixture_count = 0
 
     def close_resources():
         nonlocal documents, store
@@ -224,7 +227,8 @@ def check(state, output, *, failure_report=None):
                 closing.close()
 
     try:
-        with fixtures() as (session, owned, _), ExitStack() as cleanup:
+        with fixtures(cleanup_gate=fixture_cleanup_gate.can_cleanup) as (session, owned, _), ExitStack() as cleanup:
+            owned_fixture_count = len(owned)
             # Release watches/adapter/journal on this STA before fixtures closes
             # its exact owned documents, including every failure path.
             cleanup.callback(close_resources)
@@ -284,7 +288,8 @@ def check(state, output, *, failure_report=None):
                         return catalog.execute(operation_id, **arguments)
                     finally:
                         exports.expected_operation = None
-                return runner.submit(request, 'internal.export_part', arguments, operation,
+                return guarded_inline_submit(fixture_cleanup_gate, runner, store,
+                    request, 'internal.export_part', arguments, operation,
                     context={key: arguments[key] for key in ('document_id', 'configuration', 'expected_revision')},
                     mutates=True, pass_operation_id=True,
                     verify=lambda result: result.get('verified') is True)
@@ -403,7 +408,8 @@ def check(state, output, *, failure_report=None):
             for request, arguments, previous in committed_arguments:
                 def prohibited(*args):
                     raise AssertionError('A committed operation was replayed after journal reopen.')
-                historical = historical_runner.submit(request, 'internal.export_part', arguments, prohibited,
+                historical = guarded_inline_submit(fixture_cleanup_gate, historical_runner, store,
+                    request, 'internal.export_part', arguments, prohibited,
                     context={key: arguments[key] for key in ('document_id', 'configuration', 'expected_revision')},
                     mutates=True, pass_operation_id=True, verify=lambda result: result.get('verified') is True)
                 assert historical['operation_id'] == previous['operation_id']
@@ -440,7 +446,9 @@ def check(state, output, *, failure_report=None):
         report.update(original_user_document_baseline_restored=True,
                       original_user_file_metadata_unchanged=True,
                       original_user_file_byte_hashes_checked=False,
-                      retained_confirmed_output_count=len(confirmed_paths))
+                      retained_confirmed_output_count=len(confirmed_paths),
+                      owned_fixture_cleanup_allowed=fixture_cleanup_gate.can_cleanup(),
+                      owned_fixture_cleanup_retained=False, owned_fixture_cleanup_retained_count=0)
         return report
     except BaseException as exc:
         primary_failure = exc
@@ -481,15 +489,30 @@ def check(state, output, *, failure_report=None):
                     independently_confirmed_export_count=len(results),
                     retained_confirmed_output_count=len(confirmed_paths),
                     original_user_file_byte_hashes_checked=False)
-                failure_report.update(cleanup_baseline_flags({
-                    'original_user_document_baseline_restored': (native_snapshot, original),
-                    'original_preferences_restored': (
-                        lambda: application_preferences(original_sw), original_preferences),
-                    'original_ui_blocking_and_selection_restored': (
-                        lambda: ui_snapshot(original_sw, original_module), original_ui),
-                    'original_user_file_metadata_unchanged': (
-                        lambda: user_file_metadata(original), original_files),
-                }))
+                cleanup_allowed = fixture_cleanup_gate.can_cleanup()
+                failure_report.update(owned_fixture_cleanup_allowed=cleanup_allowed,
+                    owned_fixture_cleanup_retained=not cleanup_allowed,
+                    owned_fixture_cleanup_retained_count=0 if cleanup_allowed else owned_fixture_count)
+                if cleanup_allowed:
+                    failure_report.update(cleanup_baseline_flags({
+                        'original_user_document_baseline_restored': (native_snapshot, original),
+                        'original_preferences_restored': (
+                            lambda: application_preferences(original_sw), original_preferences),
+                        'original_ui_blocking_and_selection_restored': (
+                            lambda: ui_snapshot(original_sw, original_module), original_ui),
+                        'original_user_file_metadata_unchanged': (
+                            lambda: user_file_metadata(original), original_files),
+                    }))
+                else:
+                    # Owned open fixtures prove the COMPLETE document baseline
+                    # is not restored, even if all original user docs are intact.
+                    # Other flags are unmeasured; no native getter follows a hold.
+                    failure_report.update(original_user_document_baseline_restored=(
+                            False if owned_fixture_count else None),
+                        original_preferences_restored=None,
+                        original_ui_blocking_and_selection_restored=None,
+                        original_user_file_metadata_unchanged=None,
+                        cleanup_baseline_read_errors={}, cleanup_baseline_reads_skipped_due_to_hold=True)
         # Every produced path/journal remains private for root's review. Nothing
         # is deleted, especially after an unknown or partially published result.
 

@@ -30,6 +30,16 @@ def extracted_functions(filename, names, namespace=None):
     return namespace
 
 
+def pure_cleanup_utility():
+    path = SCRIPTS / 'verifier_fixture_cleanup.py'
+    tree = ast.parse(path.read_text(encoding='utf8'), filename=str(path))
+    assert not any(isinstance(node, (ast.Import, ast.ImportFrom)) for node in ast.walk(tree))
+    selected = [node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))]
+    namespace = {}
+    exec(compile(ast.Module(body=selected, type_ignores=[]), str(path), 'exec'), namespace)
+    return namespace
+
+
 def setup_baseline(before, after):
     function = extracted_functions('verify_export_operations.py',
                                    {'fixture_preferences_baseline'})['fixture_preferences_baseline']
@@ -123,8 +133,9 @@ def failed_owned_setup(provenance):
     calls = []
 
     @contextmanager
-    def fixtures():
+    def fixtures(*, cleanup_gate=None):
         try:
+            assert cleanup_gate() is True
             yield None, [], None
         finally:
             calls.append('fixture_cleanup')
@@ -149,6 +160,7 @@ def failed_owned_setup(provenance):
                  'application_preferences': lambda sw: {'stl_deviation': 1.},
                  'ui_snapshot': lambda sw, module: [('ui', 0)],
                  'user_file_metadata': lambda original: {},
+                 'InlineFixtureCleanupGate': pure_cleanup_utility()['InlineFixtureCleanupGate'],
                  'fixtures': fixtures, 'SolidWorksDocuments': fail_adapter}
     check = extracted_functions('verify_internal_exports.py',
                                 {'check', 'cleanup_baseline_flags'}, namespace)['check']
