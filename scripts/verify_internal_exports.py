@@ -31,7 +31,8 @@ from solidworks_mcp.exports_v2 import ExportCatalog, ExportOptions
 from solidworks_mcp.jobs import ExecutionFailure, JobRunner, JobStore
 from verify_document_reads import native_snapshot
 from verify_geometry_reads import fixtures
-from verify_export_operations import (application_preferences, assert_stl_frame_and_units,
+from verify_export_operations import (application_preferences, assert_owned_source_facts_unchanged,
+    assert_stl_frame_and_units,
     exact_solid, fixture_preferences_baseline, independent_binary_stl, independent_file_facts,
     owned_source_snapshot, ui_snapshot, user_file_metadata)
 
@@ -231,7 +232,8 @@ def check(state, output, *, failure_report=None):
             def unchanged():
                 assert native_snapshot() == setup, 'Export changed native document metadata/active configuration.'
                 assert ui_snapshot(sw, module) == setup_ui, 'Export changed native selection/UI blocking.'
-                assert owned_source_snapshot(model, module) == source, 'Independent source facts changed.'
+                report.update(assert_owned_source_facts_unchanged(
+                    source, owned_source_snapshot(model, module)))
                 assert exports.export_source_snapshot(model) == semantic, 'Full supported source boundary changed.'
                 assert application_preferences(sw) == before_preferences, 'Global preferences were not restored.'
 
@@ -378,8 +380,11 @@ def check(state, output, *, failure_report=None):
                 stale_revision_rejected=True, wrong_document_and_inactive_targets_rejected=True,
                 mixed_solid_surface_source_rejected=True,
                 existing_output_unchanged=True, destination_race_before_execution_rejected=True,
-                native_source_metadata_extrema_mass_and_feature_facts_unchanged=True,
+                native_source_metadata_extrema_feature_facts_exactly_unchanged=True,
+                independent_mass_facts_within_declared_tolerance=True,
                 full_supported_source_snapshot_unchanged=True, global_preferences_restored=True,
+                exact_supported_source_boundary_check='independent_exact_analytical_snapshot_comparison',
+                independent_complete_brep_snapshot_comparison=True,
                 ui_guard_and_selection_restored=True, journal_reopen_retains_committed_results=True,
                 committed_request_after_reopen_does_not_dispatch=True,
                 timeout_zero_reads_already_terminal_job=True, private_outputs_retained=True)
@@ -417,7 +422,11 @@ def check(state, output, *, failure_report=None):
                     'installed_source_digest', 'installed_build_matches_package',
                     'fixture_setup_stl_deviation',
                     'export_preferences_baseline_captured_after_fixture_setup',
-                    'fixture_setup_other_preferences_exactly_unchanged') if key in report})
+                    'fixture_setup_other_preferences_exactly_unchanged',
+                    'approximate_mass_facts_check', 'computed_mass_facts_tolerances',
+                    'computed_mass_facts_check_reason', 'independent_nonmass_source_facts_exact',
+                    'independent_computed_mass_raw_readings',
+                    'computed_mass_facts_used_for_geometry_revision') if key in report})
                 failure_report.update(native_export_adapter_call_count=calls,
                     # The adapter records entry BEFORE preferences/SaveAs3.
                     # Zero entries proves zero calls; nonzero entries cannot

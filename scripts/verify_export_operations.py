@@ -134,6 +134,42 @@ def owned_source_snapshot(model, module):
             'features': tuple(features)}
 
 
+def assert_owned_source_facts_unchanged(before, after):
+    """Check independent fixture facts without rounding computed mass readings.
+
+    Only the 12 numerical IBody2.GetMassProperties results use tight tolerance.
+    This is not a BREP comparator or geometry revision. The domain's complete
+    supported analytical BREP comparison remains exact and separate.
+    """
+    assert set(before) == set(after), 'Independent source fact keys changed.'
+    assert 'body_mass_facts' in before, 'Independent source mass facts are missing.'
+    assert {key: value for key, value in before.items() if key != 'body_mass_facts'} == {
+        key: value for key, value in after.items() if key != 'body_mass_facts'
+    }, 'Independent nonmass source facts changed.'
+    first, second = before['body_mass_facts'], after['body_mass_facts']
+    for values in (first, second):
+        assert isinstance(values, (tuple, list)) and len(values) == 12, 'Expected 12 native mass doubles.'
+        assert all(type(value) is float and math.isfinite(value) for value in values), (
+            'Mass facts must be finite native doubles.', values)
+    relative_tolerance, first_six_absolute_tolerance, inertia_absolute_tolerance = 1e-12, 0., 1e-25
+    for index, (left, right) in enumerate(zip(first, second)):
+        absolute = first_six_absolute_tolerance if index < 6 else inertia_absolute_tolerance
+        assert math.isclose(left, right, rel_tol=relative_tolerance, abs_tol=absolute), (
+            'Computed source mass fact changed beyond the verifier tolerance.', index, left, right)
+    return {'approximate_mass_facts_check': True,
+            'computed_mass_facts_tolerances': {
+                'relative_tolerance': relative_tolerance,
+                'centroid_volume_area_mass_absolute_tolerance': first_six_absolute_tolerance,
+                'inertia_absolute_tolerance': inertia_absolute_tolerance,
+                'mass_fact_count': 12, 'raw_readings_rounded': False},
+            'computed_mass_facts_check_reason': (
+                'Owned dev13 activation diagnostic showed adjacent-float drift in computed mass '
+                'properties while the complete supported analytical BREP remained exactly equal.'),
+            'independent_nonmass_source_facts_exact': True,
+            'independent_computed_mass_raw_readings': {'before': list(first), 'after': list(second)},
+            'computed_mass_facts_used_for_geometry_revision': False}
+
+
 def independent_file_facts(path):
     before = path.stat()
     assert path.is_file() and not path.is_symlink() and before.st_size > 0
@@ -262,7 +298,8 @@ async def check(state, output):
             def unchanged():
                 assert native_snapshot() == setup, 'Export changed native document/active/configuration metadata.'
                 assert ui_snapshot(sw, module) == setup_ui, 'Export changed native UI blocking/selection state.'
-                assert owned_source_snapshot(owned[1], module) == source, 'Export changed independent source body facts.'
+                report.update(assert_owned_source_facts_unchanged(
+                    source, owned_source_snapshot(owned[1], module)))
                 assert application_preferences(sw) == before_preferences, 'Export preferences were not restored.'
             with anyio.fail_after(900):
                 async with stdio_client(params) as (read, write):
@@ -396,7 +433,11 @@ async def check(state, output):
                         report = {**report, 'package_version': info['package_version'], 'git_sha': info['build']['git_sha'],
                             'source_dirty': info['build']['source_dirty'], 'build_matches_source': True,
                             'solidworks_revision': original[0], 'tool_count': len(tools), 'owned_fixture_documents': 2,
-                            'native_mcp_exports': results, 'independent_source_geometry_and_native_state_unchanged': True,
+                            'native_mcp_exports': results,
+                            'native_source_metadata_extrema_feature_facts_exactly_unchanged': True,
+                            'independent_mass_facts_within_declared_tolerance': True,
+                            'exact_supported_source_boundary_check': 'domain_verified_source_unchanged_manifest',
+                            'independent_complete_brep_snapshot_comparison': False,
                             'preferences_and_ui_blocking_restored': True, 'stale_revision_rejected': True,
                             'foreign_inactive_and_mixed_source_rejected': True, 'existing_output_unchanged': True,
                             'revision_scope': 'part_solid_brep_export_v1', 'geometry_roundtrip_verified': False,
