@@ -196,7 +196,7 @@ def test_v1_migration_preserves_jobs_and_imports_unbound_uncertain_mutations(tmp
     db.close()
     value = JobStore(path)
     try:
-        assert value._db.execute('PRAGMA user_version').fetchone()[0] == 2
+        assert value._db.execute('PRAGMA user_version').fetchone()[0] == 3
         assert len(value.list()['items']) == 4
         assert value.get('old_ok')['status'] == 'succeeded'
         assert 'mutation' not in value.get('old_read')

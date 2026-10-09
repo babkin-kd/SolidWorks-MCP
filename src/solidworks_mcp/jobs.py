@@ -20,7 +20,7 @@ import uuid
 
 
 TERMINAL = frozenset({'succeeded', 'failed', 'cancelled', 'unknown'})
-JOURNAL_SCHEMA_VERSION = 2
+JOURNAL_SCHEMA_VERSION = 3
 
 
 class JobError(RuntimeError):
@@ -103,7 +103,7 @@ class JobStore:
             self._db = sqlite3.connect(path, check_same_thread=False, isolation_level=None)
             self._db.row_factory = sqlite3.Row
             version = self._db.execute('PRAGMA user_version').fetchone()[0]
-            if version not in (0, 1, JOURNAL_SCHEMA_VERSION):
+            if version not in (0, 1, 2, JOURNAL_SCHEMA_VERSION):
                 raise JobError('journal_version', f'Unsupported journal schema {version}.')
             self._db.execute('PRAGMA journal_mode=WAL')
             self._db.execute('PRAGMA synchronous=FULL')
@@ -137,7 +137,7 @@ class JobStore:
                     updated_at REAL NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS mutations_phase ON mutations(phase);
-                PRAGMA user_version=2;
+                PRAGMA user_version=3;
                 COMMIT;
             ''')
             self._db.execute("UPDATE jobs SET status='unknown', updated_at=?, error=? "
@@ -189,27 +189,38 @@ class JobStore:
             str(context.get('configuration', '')), str(context.get('expected_revision', 'unavailable')),
             _json({'checkpoint_unavailable': True}), 'unresolved', None, None, time.time()))
 
-    def mutation_blockers(self, connection_epoch: str, document_id: str) -> list[dict]:
+    def mutation_blockers(self, connection_epoch: str, document_id: str, *, effect_scope='document') -> list[dict]:
         """Same connection: hold the exact document, across configurations.
 
         Across connections opaque IDs cannot be re-associated safely. An old
         unresolved hold therefore protects every mutation until reconciliation.
+        Application-side effects protect all documents, including in the same
+        connection. Preparing one requires all existing holds to be resolved.
         """
         with self._lock:
             self._ensure_open()
+            if effect_scope not in ('document', 'application'):
+                raise JobError('invalid_effect_scope', 'Unknown mutation effect scope.')
             rows = self._db.execute("SELECT * FROM mutations WHERE phase IN ('prepared','unresolved') "
-                                    'AND (connection_epoch<>? OR document_id=?) ORDER BY updated_at,operation_id',
-                                    (connection_epoch, document_id)).fetchall()
-            return [self._decode_mutation(row) for row in rows]
+                                    'ORDER BY updated_at,operation_id').fetchall()
+            decoded = [self._decode_mutation(row) for row in rows]
+            return [row for row in decoded if effect_scope == 'application'
+                    or row['before_state'].get('_mutation_effect_scope', 'document') != 'document'
+                    or row['connection_epoch'] != connection_epoch or row['document_id'] == document_id]
 
     def prepare_mutation(self, operation_id: str, *, connection_epoch: str, document_id: str,
-                         configuration: str, expected_revision: str, before_state: dict):
+                         configuration: str, expected_revision: str, before_state: dict,
+                         effect_scope='document'):
         """Server-owned checkpoint: commit to disk BEFORE the first native write."""
         if any(not isinstance(value, str) or not value for value in
                (connection_epoch, document_id, expected_revision)) or not isinstance(configuration, str):
             raise JobError('invalid_mutation_context', 'Explicit connection, document, configuration and revision required.')
         if not isinstance(before_state, dict):
             raise JobError('invalid_checkpoint', 'The before-state must be a JSON object.')
+        if effect_scope not in ('document', 'application') or '_mutation_effect_scope' in before_state:
+            raise JobError('invalid_effect_scope', 'Use the trusted scope parameter; the reserved checkpoint marker cannot be supplied.')
+        if effect_scope == 'application':
+            before_state = {**before_state, '_mutation_effect_scope': 'application'}
         encoded = _json(before_state)
         with self._lock:
             self._ensure_open()
@@ -225,7 +236,7 @@ class JobStore:
                     raise JobError('mutation_context_mismatch', 'Checkpoint target must match the durable request context.')
                 if 'mutation' in job:
                     raise JobError('mutation_already_prepared', 'A mutation checkpoint cannot be replayed.')
-                if self.mutation_blockers(connection_epoch, document_id):
+                if self.mutation_blockers(connection_epoch, document_id, effect_scope=effect_scope):
                     raise JobError('document_mutation_blocked', 'Reconcile pending/uncertain changes before another write.')
                 self._db.execute('INSERT INTO mutations VALUES (?,?,?,?,?,?,?,?,?,?)', (
                     operation_id, connection_epoch, document_id, configuration, expected_revision,

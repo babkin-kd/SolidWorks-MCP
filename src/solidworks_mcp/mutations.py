@@ -15,6 +15,7 @@ from .jobs import ExecutionFailure, _json
 class PreparedMutation:
     revision: str
     before: dict
+    effect_scope: str = 'document'
 
 
 class MutationCoordinator:
@@ -46,7 +47,8 @@ class MutationCoordinator:
                 raise ExecutionFailure('stale_revision', 'The document revision changed; prepare a new request.', uncertain=False)
             self.store.prepare_mutation(operation_id, connection_epoch=self.connection_epoch,
                 document_id=document_id, configuration=configuration,
-                expected_revision=expected_revision, before_state=before)
+                expected_revision=expected_revision, before_state=before,
+                effect_scope=prepared.effect_scope)
         except Exception as exc:
             # No native write has been attempted at this point.
             raise ExecutionFailure(getattr(exc, 'code', 'mutation_preparation_failed'), str(exc), uncertain=False) from exc
