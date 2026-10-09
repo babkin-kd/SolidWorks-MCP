@@ -6,7 +6,7 @@ revisions cover complete supported analytical boundaries and export settings; th
 not feature-rename revisions or assertions about every add-in's metadata.
 """
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from copy import deepcopy
 import hashlib
 import math
@@ -77,6 +77,7 @@ class ExportManifest:
     file_validation: dict
     export_settings: dict
     geometry_roundtrip_verified: bool = False
+    staging_cleanup: dict = field(default_factory=dict)
 
 
 def _identity(path):
@@ -251,7 +252,7 @@ class ExportCatalog:
         staging = self.root / ('.mcp-export-' + uuid.uuid4().hex)
         temporary = staging / ('model' + EXTENSIONS[format])
         context = {'staging_created': False, 'published': False,
-                   'publication_uncertain': False, 'facts': None}
+                   'publication_uncertain': False, 'facts': None, 'staging_retained_empty': False}
 
         def prepare():
             entry, revision, semantic, preferences = self._state(document_id, configuration, options)
@@ -271,7 +272,20 @@ class ExportCatalog:
                 raise rejected('document_identity_changed', 'Export source native identity changed.')
             return {'source': semantic, 'preferences': preferences}
 
-        def clean_staging():
+        def staging_cleanup_facts():
+            if not context['staging_created']:
+                return {'status': 'removed'}
+            if not context['staging_retained_empty']:
+                return {'status': 'pending'}
+            if (_identity(staging) != context['staging_identity'] or _is_reparse(staging)
+                    or not staging.is_dir() or list(staging.iterdir()) or os.path.lexists(temporary)):
+                raise RuntimeError('Retained staging directory ownership/emptiness was not verified.')
+            return {'status': 'retained_empty_directory', 'directory': str(staging),
+                    'identity': list(context['staging_identity']),
+                    'temporary_file_removed': True, 'directory_empty_verified': True,
+                    'reason': 'windows_sharing_violation', 'winerror': 32}
+
+        def clean_staging(*, allow_retained_empty=False):
             if not context['staging_created']:
                 return
             if _identity(staging) != context['staging_identity'] or _is_reparse(staging):
@@ -285,8 +299,20 @@ class ExportCatalog:
                 if context.get('temporary_identity') and _identity(temporary) != context['temporary_identity']:
                     raise RuntimeError('Staged file identity changed; no cleanup attempted.')
                 temporary.unlink()
-            staging.rmdir()  # Never recursively delete unexpected sidecars/files.
+            try:
+                staging.rmdir()  # Never recursively delete unexpected sidecars/files.
+            except OSError as exc:
+                if (not allow_retained_empty or type(getattr(exc, 'winerror', None)) is not int
+                        or exc.winerror != 32 or not context['published'] or context['publication_uncertain']):
+                    raise
+                # A sharing violation on a proven empty owned directory is a
+                # filesystem artifact, not proof of uncertain CAD or publication.
+                # No retry, native setter, or recursive deletion is performed.
+                context['staging_retained_empty'] = True
+                staging_cleanup_facts()  # Strict ownership/emptiness proof NOW.
+                return
             context['staging_created'] = False
+            context['staging_retained_empty'] = False
 
         def apply(prepared):
             self._check_root()
@@ -344,25 +370,29 @@ class ExportCatalog:
             published = validate_export_file(destination, options)
             if published != facts:
                 raise RuntimeError('Published file identity/content differs from the verified staging file.')
-            clean_staging()
+            clean_staging(allow_retained_empty=True)
             validation = facts['validation']
             return asdict(ExportManifest(operation_id, document_id, configuration, expected_revision, SCOPE,
                 str(destination), format, facts['bytes'], facts['sha256'], 'part_model',
                 validation['units'], validation['units_embedded'], validation['unit_evidence'],
                 0, 0, True, True, 'atomic_no_overwrite_link', validation,
-                prepared.before['source']['export_profile']))
+                prepared.before['source']['export_profile'], staging_cleanup=staging_cleanup_facts()))
 
         def inspect(prepared):
             result = source_state()
             result['published'] = context['published']
             result['publication_uncertain'] = context['publication_uncertain']
             result['staging_clean'] = not context['staging_created']
+            result['staging_cleanup'] = staging_cleanup_facts()
             result['file'] = validate_export_file(destination, options) if context['published'] else None
             return result
 
         def verify(before, after, value):
             return (after['source'] == before['source'] and after['preferences'] == before['preferences']
-                and after['published'] is True and after['staging_clean'] is True
+                and after['published'] is True and after['publication_uncertain'] is False
+                and (after['staging_clean'] is True
+                     or after['staging_cleanup']['status'] == 'retained_empty_directory')
+                and after['staging_cleanup'] == value['staging_cleanup']
                 and after['file'] == context['facts'] and value['sha256'] == after['file']['sha256'])
 
         def restore(before, prepared):

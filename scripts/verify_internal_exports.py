@@ -33,6 +33,7 @@ from solidworks_mcp.jobs import ExecutionFailure, JobRunner, JobStore
 from verify_document_reads import native_snapshot
 from verify_geometry_reads import fixtures
 from verifier_fixture_cleanup import InlineFixtureCleanupGate, guarded_inline_submit
+from verifier_export_artifacts import inspect_staging_cleanup, assert_output_inventory
 from verifier_export_diagnostics import (capture_ui_difference, close_resources_with_gate,
     independent_baseline_check, require_fixture_native_access, ui_snapshot_unmeasured)
 from verify_export_operations import (application_preferences, assert_owned_source_facts_unchanged,
@@ -311,6 +312,7 @@ def check(state, output, *, failure_report=None):
     original_ui = ui_snapshot(original_sw, original_module)
     original_files = user_file_metadata(original)
     confirmed_paths = {}
+    retained_directories = {}
     results, committed_arguments = [], []
     store = None
     documents = None
@@ -479,6 +481,14 @@ def check(state, output, *, failure_report=None):
                 assert result['verified'] is True
                 assert result['execution_guard'] == {'original_state': 0, 'locked_state': 2, 'released_state': 0}
                 manifest = result['value']
+                try:
+                    retained = inspect_staging_cleanup(manifest, checkpoint, output)
+                    if retained is not None:
+                        info = retained.lstat()
+                        retained_directories[retained] = (info.st_dev, info.st_ino)
+                except BaseException:
+                    fixture_cleanup_gate.retain()
+                    raise
                 assert manifest['operation_id'] == job['operation_id']
                 assert manifest['source_revision'] == prepared['revision']
                 assert manifest['revision_scope'] == prepared['revision_scope']
@@ -502,12 +512,18 @@ def check(state, output, *, failure_report=None):
                 zero_wait = asyncio.run(runner.wait(job['operation_id'], timeout_s=0))
                 assert zero_wait['status'] == 'succeeded' and zero_wait['result'] == result
                 assert not store.mutation_blockers('different-epoch', 'different-document')
-                assert set(output.iterdir()) == set(confirmed_paths), 'Unexpected staging/sidecars retained for investigation.'
+                try:
+                    assert_output_inventory(output, confirmed_paths, retained_directories)
+                except BaseException:
+                    fixture_cleanup_gate.retain()
+                    raise
                 committed_arguments.append((request, arguments, job))
                 results.append({'operation_id': job['operation_id'], 'format': file_format,
                     'requested_units': units, 'path': str(path), 'bytes': facts['bytes'], 'sha256': facts['sha256'],
                     'durable_application_checkpoint_and_ui_guard': True, 'same_request_does_not_replay': True,
                     'revision_scope': prepared['revision_scope'], 'analytical_geometry_scope': PLANAR_BREP_SCOPE,
+                    'staging_cleanup_verified': True,
+                    'staging_cleanup_status': manifest['staging_cleanup']['status'],
                     **format_facts})
                 print(json.dumps({'phase': 'native_export_confirmed', **results[-1]}, ensure_ascii=True), flush=True)
             assert len(exports.native_calls) == 5 and exports.saveas_attempt_count == 5
@@ -544,6 +560,11 @@ def check(state, output, *, failure_report=None):
                 assert exports.export_source_snapshot(model) == semantic
             independent_baseline_check(reopened_baselines, fixture_cleanup_gate,
                 native_activity=bool(exports.native_calls or exports.saveas_attempt_count))
+            try:
+                assert_output_inventory(output, confirmed_paths, retained_directories)
+            except BaseException:
+                fixture_cleanup_gate.retain()
+                raise
             report.update(native_internal_exports=results, actual_native_export_count=5,
                 native_export_adapter_call_count=len(exports.native_calls),
                 saveas_attempt_count=exports.saveas_attempt_count,
@@ -560,7 +581,9 @@ def check(state, output, *, failure_report=None):
                 independent_complete_brep_snapshot_comparison=True,
                 ui_guard_and_selection_restored=True, journal_reopen_retains_committed_results=True,
                 committed_request_after_reopen_does_not_dispatch=True,
-                timeout_zero_reads_already_terminal_job=True, private_outputs_retained=True)
+                timeout_zero_reads_already_terminal_job=True, private_outputs_retained=True,
+                retained_empty_staging_directories_count=len(retained_directories),
+                retained_staging_cleanup_independently_verified=True)
         assert native_snapshot() == original, 'Original user document baseline was not restored.'
         assert application_preferences(original_sw) == original_preferences
         observed_original_ui = capture_ui_difference(lambda: ui_snapshot(original_sw, original_module),

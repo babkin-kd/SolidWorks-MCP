@@ -31,6 +31,7 @@ from solidworks_mcp.build_info import source_digest
 from solidworks_mcp.constants import SW_TOGGLE_INPUT_DIM_VAL_ON_CREATE
 from verify_document_reads import native_snapshot
 from verify_geometry_reads import fixtures
+from verifier_export_artifacts import inspect_staging_cleanup, assert_output_inventory
 
 
 # Independent reads against the registered swconst31 API; do not reuse the
@@ -301,7 +302,8 @@ def _require_internal_acceptance(internal, current):
                 'full_supported_source_snapshot_unchanged', 'global_preferences_restored',
                 'ui_guard_and_selection_restored', 'original_user_document_baseline_restored',
                 'original_user_file_metadata_unchanged', 'journal_reopen_retains_committed_results',
-                'committed_request_after_reopen_does_not_dispatch', 'owned_fixture_cleanup_allowed'):
+                'committed_request_after_reopen_does_not_dispatch', 'owned_fixture_cleanup_allowed',
+                'retained_staging_cleanup_independently_verified'):
         assert internal.get(key) is True, f'Missing exact internal acceptance gate: {key}'
     assert internal.get('owned_fixture_cleanup_retained') is False
     for key in ('actual_native_export_count', 'saveas_attempt_count', 'independently_confirmed_export_count'):
@@ -315,6 +317,10 @@ def _require_internal_acceptance(internal, current):
         assert row.get('same_request_does_not_replay') is True
         assert row.get('analytical_geometry_scope') == 'planar_polyhedral_brep_v1'
         assert row.get('revision_scope') == 'part_solid_brep_export_v1'
+        assert row.get('staging_cleanup_verified') is True
+        assert row.get('staging_cleanup_status') in ('removed', 'retained_empty_directory')
+    count = internal.get('retained_empty_staging_directories_count')
+    assert type(count) is int and count == sum(row['staging_cleanup_status'] == 'retained_empty_directory' for row in rows)
 
 
 @asynccontextmanager
@@ -367,6 +373,7 @@ async def check(state, output, internal_report, *, failure_report=None):
               'private_outputs_and_journal_retained': True,
               'automatic_replay_or_output_cleanup_attempted': False}
     cleanup, metadata, owned_files = SessionCleanupGate(), {}, {}
+    retained_directories = {}
     owned_count = 0
     params = StdioServerParameters(command=str(Path(sys.executable).with_name('solidworks-mcp-v2.exe')),
         args=['--state-dir', str(state), '--output-dir', str(output)])
@@ -525,6 +532,14 @@ async def check(state, output, internal_report, *, failure_report=None):
                         result = complete['result']
                         assert result['verified'] is True
                         manifest = result['value']
+                        try:
+                            retained = inspect_staging_cleanup(manifest, complete['mutation'], output)
+                            if retained is not None:
+                                entry_info = retained.lstat()
+                                retained_directories[retained] = (entry_info.st_dev, entry_info.st_ino)
+                        except BaseException:
+                            client.retain('independent staging cleanup proof failed')
+                            raise
                         assert manifest['source_revision'] == prepared['revision']
                         assert manifest['revision_scope'] == prepared['revision_scope']
                         assert manifest['operation_id'] == pending['operation_id']
@@ -562,10 +577,16 @@ async def check(state, output, internal_report, *, failure_report=None):
                         await unchanged()
                         historical = succeeded(await call(client, 'job_get', operation_id=pending['operation_id']))
                         assert historical['result'] == result and historical['mutation']['phase'] == 'committed'
-                        assert set(output.iterdir()) == set(owned_files), 'Unexpected output/sidecar was produced.'
+                        try:
+                            assert_output_inventory(output, owned_files, retained_directories)
+                        except BaseException:
+                            client.retain('independent output inventory changed')
+                            raise
                         results.append({'format': format, 'requested_units': units, 'bytes': facts['bytes'],
                             'sha256': facts['sha256'], 'timeout_zero_initial_status': pending['status'],
-                            'same_request_id_same_job': True, 'durable_application_checkpoint': True, **format_facts})
+                            'same_request_id_same_job': True, 'durable_application_checkpoint': True,
+                            'staging_cleanup_verified': True,
+                            'staging_cleanup_status': manifest['staging_cleanup']['status'], **format_facts})
                     report = {**report, 'package_version': info['package_version'], 'git_sha': info['build']['git_sha'],
                         'source_dirty': info['build']['source_dirty'], 'build_matches_source': True,
                         'solidworks_revision': original[0], 'tool_count': len(tools), 'owned_fixture_documents': 2,
@@ -597,7 +618,9 @@ async def check(state, output, internal_report, *, failure_report=None):
             assert independent_file_facts(path) == recorded
         report.update(original_user_document_baseline_restored=True,
             original_cad_file_metadata_unchanged=True, original_cad_file_byte_hashes_checked=False,
-            confirmed_owned_output_files_removed=False, retained_confirmed_output_count=len(owned_files))
+            confirmed_owned_output_files_removed=False, retained_confirmed_output_count=len(owned_files),
+            retained_empty_staging_directories_count=len(retained_directories),
+            retained_staging_cleanup_independently_verified=True)
         assert cleanup.can_cleanup() is True, 'SDK shutdown did not certify safe fixture cleanup.'
         report.update(public_mcp_export_acceptance=True, owned_fixture_cleanup_allowed=True,
                       owned_fixture_cleanup_retained=False, owned_fixture_cleanup_retained_count=0)

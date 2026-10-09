@@ -34,16 +34,19 @@ PROVENANCE = {'package_version': 'version', 'git_sha': 'a' * 40, 'installed_sour
 
 def internal_report():
     report = {**PROVENANCE, 'source_dirty': False, 'owned_fixture_cleanup_retained': False,
-        'actual_native_export_count': 5, 'saveas_attempt_count': 5, 'independently_confirmed_export_count': 5}
+        'actual_native_export_count': 5, 'saveas_attempt_count': 5, 'independently_confirmed_export_count': 5,
+        'retained_empty_staging_directories_count': 0}
     for key in ('installed_build_matches_package', 'internal_native_export_acceptance',
         'full_supported_source_snapshot_unchanged', 'global_preferences_restored',
         'ui_guard_and_selection_restored', 'original_user_document_baseline_restored',
         'original_user_file_metadata_unchanged', 'journal_reopen_retains_committed_results',
-        'committed_request_after_reopen_does_not_dispatch', 'owned_fixture_cleanup_allowed'):
+        'committed_request_after_reopen_does_not_dispatch', 'owned_fixture_cleanup_allowed',
+        'retained_staging_cleanup_independently_verified'):
         report[key] = True
     report['native_internal_exports'] = [{'format': format, 'requested_units': units,
         'durable_application_checkpoint_and_ui_guard': True, 'same_request_does_not_replay': True,
-        'analytical_geometry_scope': 'planar_polyhedral_brep_v1', 'revision_scope': 'part_solid_brep_export_v1'}
+        'analytical_geometry_scope': 'planar_polyhedral_brep_v1', 'revision_scope': 'part_solid_brep_export_v1',
+        'staging_cleanup_verified': True, 'staging_cleanup_status': 'removed'}
         for format, units in [('stl', 'mm'), ('stl', 'm'), ('stl', 'in'), ('step', ''), ('parasolid', '')]]
     return report
 
@@ -55,7 +58,9 @@ def test_same_wheel_internal_gate_accepts_existing_success_contract_without_inve
 @pytest.mark.parametrize('key,bad', [(key, 'other') for key in PROVENANCE] + [
     ('source_dirty', True), ('internal_native_export_acceptance', False), ('accepted', False),
     ('saveas_attempt_count', True), ('actual_native_export_count', 4), ('owned_fixture_cleanup_retained', True),
-    ('original_user_document_baseline_restored', False), ('ui_guard_and_selection_restored', False)])
+    ('original_user_document_baseline_restored', False), ('ui_guard_and_selection_restored', False),
+    ('retained_staging_cleanup_independently_verified', False),
+    ('retained_empty_staging_directories_count', True), ('retained_empty_staging_directories_count', 1)])
 def test_same_wheel_gate_rejects_historical_dirty_failed_incomplete_reports(key, bad):
     report = internal_report()
     report[key] = bad
