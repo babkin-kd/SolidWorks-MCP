@@ -81,7 +81,11 @@ class FeatureCatalog:
             raise rejected('persistent_reference_unavailable', 'Native feature has no persistent reference; no name/index fallback.')
         resolved = self.adapter.resolve_persistent_id(entry.model, persistent, 'feature')
         if self.adapter.identity(resolved) != self.adapter.identity(native):
-            raise rejected('persistent_reference_mismatch', 'Native feature persistent reference resolved to a different object.')
+            source_info = self.adapter.feature_summary(native)
+            resolved_info = self.adapter.feature_summary(resolved)
+            raise rejected('persistent_reference_mismatch',
+                f"Native feature reference differs: source {source_info['feature_type']}/{source_info['native_id']}, "
+                f"resolved {resolved_info['feature_type']}/{resolved_info['native_id']}.")
         refs = entry.features.setdefault('references', {})
         index = entry.features.setdefault('reference_index', {})
         key = (configuration, persistent)
@@ -120,13 +124,17 @@ class FeatureCatalog:
             offset = value['offset']
         items = []
         for obj, item in zip(native[offset:offset + limit], semantic['features'][offset:offset + limit]):
+            reference_error = None
             try:
                 ref = self._register(entry, configuration, identity, obj)
             except Exception as exc:
-                if getattr(exc, 'code', None) != 'persistent_reference_unavailable':
+                if getattr(exc, 'code', None) not in ('persistent_reference_unavailable',
+                    'persistent_reference_mismatch', 'object_reference_invalid', 'object_deleted', 'object_suppressed'):
                     raise
                 ref = None  # Show unsupported built-in nodes honestly, without a fake writable ID.
-            items.append({**item, 'object_id': ref.object_id if ref else None, 'persistent_reference_supported': ref is not None})
+                reference_error = {'code': exc.code, 'message': str(exc)}
+            items.append({**item, 'object_id': ref.object_id if ref else None,
+                'persistent_reference_supported': ref is not None, 'reference_error': reference_error})
         if self._state(document_id, configuration)[4] != revision:
             raise rejected('document_changed_during_read', 'Feature tree changed while references were collected.')
         for key in list(cursors):

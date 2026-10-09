@@ -253,6 +253,19 @@ def test_missing_native_persistent_id_is_displayed_without_fake_writable_id(setu
     assert all(item['object_id'] is None and item['persistent_reference_supported'] is False for item in page['items'])
 
 
+def test_mismatched_native_reference_is_readonly_node_without_poisoning_other_features(setup, monkeypatch):
+    adapter, _, catalog, _, ids = setup
+    original = adapter.resolve_persistent_id
+    first, second = adapter.models[0].features
+    monkeypatch.setattr(adapter, 'resolve_persistent_id',
+                        lambda m, p, k: second if p == first.pid else original(m, p, k))
+    page = catalog.list(ids[0], 'Основная')
+    assert page['items'][0]['object_id'] is None
+    assert page['items'][0]['reference_error']['code'] == 'persistent_reference_mismatch'
+    assert page['items'][1]['object_id'] is not None
+    assert adapter.writes == []
+
+
 def test_paging_and_revision_guard_cover_full_tree_not_only_current_page(setup):
     adapter, _, catalog, _, ids = setup
     first = catalog.list(ids[0], 'Основная', limit=1)

@@ -91,16 +91,16 @@ class CadFeaturesMixin:
             if feature is None:
                 continue
             native_id = int(feature.GetID())
+            prior = seen.get(native_id)
+            if prior is not None and self.identity(prior) != self.identity(feature):
+                raise rejected('feature_identity_collision', 'Native feature IDs are not unique in this traversal.')
             link = (native_id, sub)
             if link in links:
                 continue
             links.add(link)
             next_raw = feature.GetNextSubFeature() if sub else feature.GetNextFeature()
             queue.append((binding.wrap(next_raw, cls), sub))
-            prior = seen.get(native_id)
             if prior is not None:
-                if self.identity(prior) != self.identity(feature):
-                    raise rejected('feature_identity_collision', 'Native feature IDs are not unique in this traversal.')
                 continue
             if len(result) >= 5000:
                 raise rejected('feature_budget_exceeded', 'Feature-tree revision budget is 5000; no partial revision is issued.')
