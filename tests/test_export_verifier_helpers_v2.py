@@ -168,7 +168,8 @@ def test_verifier_failure_preserves_exception_and_reads_baselines_after_cleanup(
     assert report['cleanup_baseline_read_errors'] == {}
     assert report['actual_native_export_count'] == 0
     assert report['native_export_adapter_call_count'] == 0
-    assert report['actual_native_export_count_basis'] == 'no_native_export_adapter_entry'
+    assert report['saveas_attempt_count'] == 0
+    assert report['actual_native_export_count_basis'] == 'no_SaveAs3_attempt'
     assert report['independently_confirmed_export_count'] == 0
     assert report['original_user_file_byte_hashes_checked'] is False
 

@@ -64,6 +64,33 @@ class InlineJobRunner(JobRunner):
         super().__init__(store, InlineWorker())
 
 
+class ObservedExtension:
+    """Delegate one native extension, recording only the SaveAs3 call boundary."""
+
+    def __init__(self, extension, before_saveas):
+        self.extension, self.before_saveas = extension, before_saveas
+
+    def __getattr__(self, name):
+        return getattr(self.extension, name)
+
+    def SaveAs3(self, *args, **kwargs):
+        # Python-only observation: no preference/metadata getters between the
+        # parent's complete profile gate and this unchanged native invocation.
+        self.before_saveas()
+        return self.extension.SaveAs3(*args, **kwargs)
+
+
+def compact_job_failure(job):
+    """Keep assertion output bounded; the full checkpoint remains in SQLite."""
+    mutation = job.get('mutation') or {}
+    result = job.get('result') or {}
+    verification = mutation.get('verification') or {}
+    evidence = verification.get('evidence') or {}
+    return {'operation_id': job.get('operation_id'), 'status': job.get('status'),
+            'error': job.get('error'), 'mutation': {'phase': mutation.get('phase')},
+            'execution_guard': result.get('execution_guard') or evidence.get('execution_guard')}
+
+
 class ObservedExportsAdapter(CadExportsAdapter):
     """Audit durable hold/UI guard immediately before the actual native export.
 
@@ -76,6 +103,19 @@ class ObservedExportsAdapter(CadExportsAdapter):
         self.store, self.epoch = store, epoch
         self.expected_operation = None
         self.native_calls = []
+        self.saveas_attempts = []
+
+    @property
+    def saveas_attempt_count(self):
+        return len(self.saveas_attempts)
+
+    def _record_saveas_attempt(self):
+        # Append immediately before delegation, including raised native calls.
+        # Adapter entry and attempted SaveAs3 are deliberately separate facts.
+        self.saveas_attempts.append(self.expected_operation)
+
+    def _extension(self, model):
+        return ObservedExtension(self.documents_adapter._extension(model), self._record_saveas_attempt)
 
     def export_part_to_file(self, model, path, options, before):
         assert self.expected_operation, 'Native export lacks verifier operation ownership.'
@@ -275,8 +315,8 @@ def check(state, output, *, failure_report=None):
             assert native_feature.Name == 'Отрицательный блок после проверки'
             stale_job = submit('stale', {**context, 'expected_revision': stale['revision'],
                               'format': 'stl', 'filename': 'Устаревший экспорт.stl', 'units': 'mm'})
-            assert stale_job['status'] == 'failed' and stale_job['error']['code'] == 'stale_revision', stale_job
-            assert not exports.native_calls and not (output / 'Устаревший экспорт.stl').exists()
+            assert stale_job['status'] == 'failed' and stale_job['error']['code'] == 'stale_revision', compact_job_failure(stale_job)
+            assert not exports.native_calls and exports.saveas_attempt_count == 0 and not (output / 'Устаревший экспорт.stl').exists()
             source = owned_source_snapshot(model, module)
             setup, setup_ui = native_snapshot(), ui_snapshot(sw, module)
             semantic = exports.export_source_snapshot(model)
@@ -293,9 +333,9 @@ def check(state, output, *, failure_report=None):
             _reject(lambda: catalog.prepare(**context, format='stl', filename=filename, units='mm'), 'export_file_exists')
             exists = submit('existing', {**context, 'expected_revision': prepared['revision'],
                             'format': 'stl', 'filename': filename, 'units': 'mm'})
-            assert exists['status'] == 'failed' and exists['error']['code'] == 'export_file_exists', exists
+            assert exists['status'] == 'failed' and exists['error']['code'] == 'export_file_exists', compact_job_failure(exists)
             assert independent_file_facts(sentinel) == confirmed_paths[sentinel]
-            assert not exports.native_calls
+            assert not exports.native_calls and exports.saveas_attempt_count == 0
             unchanged()
 
             formats = [('stl', 'mm', '.stl'), ('stl', 'm', '.stl'), ('stl', 'in', '.stl'),
@@ -312,7 +352,7 @@ def check(state, output, *, failure_report=None):
                 print(json.dumps({'phase': 'before_native_export', 'format': file_format, 'units': units}), flush=True)
                 job = submit(request, arguments)
                 # Unknown is retained, never retried or converted to success.
-                assert job['status'] == 'succeeded', job
+                assert job['status'] == 'succeeded', compact_job_failure(job)
                 checkpoint, result = job['mutation'], job['result']
                 assert checkpoint['phase'] == 'committed'
                 assert checkpoint['before_state']['_mutation_effect_scope'] == 'application'
@@ -336,10 +376,10 @@ def check(state, output, *, failure_report=None):
                 confirmed_paths[path] = facts
                 format_facts = _format_facts(path, manifest, source, units)
                 unchanged()
-                calls, dispatches = len(exports.native_calls), runner.worker.dispatch_count
+                calls, saveas_attempts, dispatches = len(exports.native_calls), exports.saveas_attempt_count, runner.worker.dispatch_count
                 duplicate = submit(request, arguments)
                 assert duplicate['operation_id'] == job['operation_id'] and duplicate['result'] == result
-                assert (len(exports.native_calls), runner.worker.dispatch_count) == (calls, dispatches)
+                assert (len(exports.native_calls), exports.saveas_attempt_count, runner.worker.dispatch_count) == (calls, saveas_attempts, dispatches)
                 zero_wait = asyncio.run(runner.wait(job['operation_id'], timeout_s=0))
                 assert zero_wait['status'] == 'succeeded' and zero_wait['result'] == result
                 assert not store.mutation_blockers('different-epoch', 'different-document')
@@ -351,7 +391,7 @@ def check(state, output, *, failure_report=None):
                     'revision_scope': prepared['revision_scope'], 'analytical_geometry_scope': PLANAR_BREP_SCOPE,
                     **format_facts})
                 print(json.dumps({'phase': 'native_export_confirmed', **results[-1]}, ensure_ascii=True), flush=True)
-            assert len(exports.native_calls) == 5
+            assert len(exports.native_calls) == 5 and exports.saveas_attempt_count == 5
             unchanged()
 
             # Real SQLite reopen: committed result/idempotency survives process-
@@ -375,6 +415,9 @@ def check(state, output, *, failure_report=None):
             assert application_preferences(sw) == before_preferences
             assert exports.export_source_snapshot(model) == semantic
             report.update(native_internal_exports=results, actual_native_export_count=5,
+                native_export_adapter_call_count=len(exports.native_calls),
+                saveas_attempt_count=exports.saveas_attempt_count,
+                independently_confirmed_export_count=len(results),
                 internal_native_export_acceptance=True,
                 installed_analytical_geometry_scope=PLANAR_BREP_SCOPE,
                 stale_revision_rejected=True, wrong_document_and_inactive_targets_rejected=True,
@@ -417,6 +460,7 @@ def check(state, output, *, failure_report=None):
         finally:
             if primary_failure is not None and failure_report is not None:
                 calls = len(exports.native_calls) if exports is not None else 0
+                saveas_attempts = exports.saveas_attempt_count if exports is not None else 0
                 failure_report.update({key: report[key] for key in (
                     'package_version', 'git_sha', 'source_dirty',
                     'installed_source_digest', 'installed_build_matches_package',
@@ -428,12 +472,12 @@ def check(state, output, *, failure_report=None):
                     'independent_computed_mass_raw_readings',
                     'computed_mass_facts_used_for_geometry_revision') if key in report})
                 failure_report.update(native_export_adapter_call_count=calls,
-                    # The adapter records entry BEFORE preferences/SaveAs3.
-                    # Zero entries proves zero calls; nonzero entries cannot
-                    # establish a real SaveAs count on a failed operation.
-                    actual_native_export_count=0 if calls == 0 else None,
-                    actual_native_export_count_basis='no_native_export_adapter_entry' if calls == 0
-                                                     else 'SaveAs3_not_directly_instrumented',
+                    saveas_attempt_count=saveas_attempts,
+                    # An attempted SaveAs3 can fail or return an invalid result;
+                    # observation of entry does not prove a successful export.
+                    actual_native_export_count=0 if saveas_attempts == 0 else None,
+                    actual_native_export_count_basis='no_SaveAs3_attempt' if saveas_attempts == 0
+                                                     else 'SaveAs3_attempt_observed_success_not_inferred',
                     independently_confirmed_export_count=len(results),
                     retained_confirmed_output_count=len(confirmed_paths),
                     original_user_file_byte_hashes_checked=False)

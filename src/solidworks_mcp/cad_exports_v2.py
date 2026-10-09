@@ -166,6 +166,11 @@ class CadExportsAdapter:
                 # add it to the set of settings we own for restoration.
                 if self._get_preference(name) != before_preferences[name]:
                     raise rejected('stale_export_preferences', f'Native preference {name} changed before its setter.')
+                # Exact no-ops need no native setter (some setters return False
+                # for unchanged values). They create no restoration ownership.
+                # Keep the guard above and the complete desired readback below.
+                if before_preferences[name] == value:
+                    continue
                 # Record before calling the setter: a failing COM call can still
                 # apply a native side effect and must be considered for restore.
                 attempts.append(name)
