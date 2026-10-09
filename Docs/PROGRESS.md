@@ -953,6 +953,11 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   swSTLDontTranslateToPositive (71) is on; 3MF never moves it. With the toggle
   on, an assembly's STL, one file or one per component, is in assembly
   coordinates, so the files line up.
+- A STEP assembly imported with 3D Interconnect off makes its parts as
+  documents in %TEMP%\spiop (unsaved, hidden). Closing the top assembly
+  closes them; their IModelDoc2 objects then fail with RPC_E_DISCONNECTED,
+  so collect titles before closing. LoadFile4 on a STEP whose document title
+  is already open returns that open document.
 
 ## Next
 
