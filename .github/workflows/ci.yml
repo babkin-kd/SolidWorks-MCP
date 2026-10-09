@@ -1,0 +1,24 @@
+# Fork validation. Native SolidWorks/PDM/Simulation acceptance runs separately.
+name: Checks
+
+on:
+  push:
+    branches: [main, stage-1-fixes, stage-2-core, stage-3-extensions]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-and-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - name: Unit tests (runner has no SolidWorks)
+        run: uv run --extra dev pytest -m "not solidworks"
+      - name: Build fork wheel and source distribution
+        run: |
+          uv run scripts/write_build_info.py
+          uv build

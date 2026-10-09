@@ -27,6 +27,7 @@ Conventions
 - Other orientations: add_plane (an offset, or turned about x/y/z) and build on it with add_extruded_profile_on_plane or cut_profile_through_plane.
 - In a part a person drew, their sketches and planes work by name: read_sketch, extrude_sketch, cut_sketch; plane='Plane1' in add_mirror and cut_profile_through_plane.
 - Flowing outlines (an S-bend, a hub running into a beam): add_sketch with lines, tangent arcs and splines, then extrude_sketch / cut_sketch.
+- Sheet metal: add_sheet_metal_base (closed sheet), add_sheet_metal_profile (open L/U/Z profile), add_sheet_metal_edge_flange (one edge, from fresh list_edges), convert_to_sheet_metal (uniform body). get_sheet_metal_info verifies native features; set_sheet_metal_flattened unfolds/refolds; export_sheet_metal_dxf exports the flat pattern. The K-factor is an explicit modelling assumption.
 - A joint: concentric mate (cylinders by list_faces index, '#5') + coincident + angle mate; the angle mate's dimension turns it (set_dimension, check_motion).
 
 Work in small verified steps
@@ -1205,6 +1206,106 @@ async def swept_region(component: str, dimension: str, values: list, heights_mm:
 async def get_assembly_bounding_box() -> dict:
     """Get the bounding box of the whole assembly (min/max/size in mm)."""
     return await _call(_session.get_assembly_bounding_box)
+
+
+@mcp.tool()
+async def add_sheet_metal_base(points_mm: list, thickness_mm: float,
+                               bend_radius_mm: float = 2.0, k_factor: float = 0.5,
+                               reverse_thickness: bool = True, name: str = "SheetBase") -> dict:
+    """Create a native sheet-metal base flange from a closed XY polygon in an empty part.
+
+    points_mm = [[0,0],[80,0],[80,40],[0,40]], thickness_mm=2 makes an 80x40 sheet.
+    The outline is auto-closed. reverse_thickness=True grows along +Z (False: -Z).
+    Creates SheetMetal and suppressed FlatPattern features; returns actual parameters,
+    dimensions, body bounds and mass properties. The supplied K-factor is a modelling
+    assumption; use the production bend table/K-factor for manufacturing.
+    """
+    return await _call(_session.add_sheet_metal_base, points_mm, thickness_mm,
+                       bend_radius_mm, k_factor, reverse_thickness, name)
+
+
+@mcp.tool()
+async def add_sheet_metal_profile(points_mm: list, depth_mm: float, thickness_mm: float,
+                                  bend_radius_mm: float = 2.0, k_factor: float = 0.5,
+                                  reverse_thickness: bool = False, name: str = "SheetProfile") -> dict:
+    """Create a native bent sheet from an OPEN XY polyline, extended depth_mm along +Z.
+
+    For a U section: [[0,25],[0,0],[80,0],[80,25]], depth_mm=40, thickness_mm=2.
+    SolidWorks adds cylindrical bends of bend_radius_mm at the virtual sharp corners.
+    False puts thickness LEFT of the directed polyline; True puts it RIGHT.
+    Points define one surface, so returned outer bounds include thickness and bend
+    offsets. This is a real SMBaseFlange with an editable sketch and a FlatPattern.
+    Call new_part first; no existing solid body is allowed. Supports L, U and Z profiles.
+    """
+    return await _call(_session.add_sheet_metal_profile, points_mm, depth_mm, thickness_mm,
+                       bend_radius_mm, k_factor, reverse_thickness, name)
+
+
+@mcp.tool()
+async def convert_to_sheet_metal(fixed_face: str, bend_radius_mm: float = 2.0,
+                                 k_factor: float = 0.5, auto_relief: bool = False,
+                                 relief_ratio: float = 0.5) -> dict:
+    """Convert one existing uniform-thickness body using native Insert Bends.
+
+    fixed_face: +x/-x/+y/-y/+z/-z, optionally :inner/:outer (e.g. +y:inner for
+    the inside floor of a U bracket). Thickness is inferred from the geometry.
+    Existing cylindrical bends are recognized; the radius parameter applies to sharp
+    bends. Closed shells need rip cuts first; arbitrary thick solids are not supported.
+    Rejects bodies already made of sheet metal. Verifies SheetMetal and FlatPattern.
+    """
+    return await _call(_session.convert_to_sheet_metal, fixed_face, bend_radius_mm,
+                       k_factor, auto_relief, relief_ratio)
+
+
+@mcp.tool()
+async def add_sheet_metal_edge_flange(edge_index: int, length_mm: float,
+                                     angle_deg: float = 90.0, flip: bool = False,
+                                     gap_mm: float = 0.5, name: str = "SheetEdgeFlange") -> dict:
+    """Add one native edge flange to a folded sheet-metal body.
+
+    Select a straight sheet-face boundary edge by its CURRENT zero-based list_edges
+    index; query edges again after every flange, because topology changes.
+    Uses the global bend radius/K-factor, material-inside positioning and length
+    measured to the outer virtual sharp. gap_mm sets the native flange gap; adjoining
+    side bends are trimmed. flip reverses the bend direction (for a second inward
+    return, select the outside top wall edge and set flip=True).
+    Returns verified length/gap, native feature state and measured body bounds.
+    """
+    return await _call(_session.add_sheet_metal_edge_flange, edge_index, length_mm,
+                       angle_deg, flip, gap_mm, name)
+
+
+@mcp.tool()
+async def get_sheet_metal_info() -> dict:
+    """Read native sheet-metal thickness, bend radius, allowance type, K-factor,
+    body bounds, FlatPattern names/states and feature errors. No document changes.
+    k_factor is null when another allowance method is in use.
+    """
+    return await _call(_session.get_sheet_metal_info)
+
+
+@mcp.tool()
+async def set_sheet_metal_flattened(flattened: bool, feature_name: str | None = None) -> dict:
+    """Flatten (True) or refold (False) the native FlatPattern in the current configuration.
+
+    Detects its name automatically for a single-body part; with several FlatPatterns,
+    pass feature_name from get_sheet_metal_info. Rebuilds and verifies actual state,
+    dimensions and mass properties. Restores the prior state when validation fails.
+    """
+    return await _call(_session.set_sheet_metal_flattened, flattened, feature_name)
+
+
+@mcp.tool()
+async def export_sheet_metal_dxf(path: str, include_bend_lines: bool = True,
+                                 include_sketches: bool = False, overwrite: bool = False) -> dict:
+    """Export a single native sheet-metal body's flat pattern to DXF (millimetres).
+
+    Save the part as .SLDPRT first. Includes cut geometry and optional bend lines/sketches.
+    Preserves its folded/flat state. Writes atomically, refuses an existing destination
+    unless overwrite=True, and verifies a nonempty output file. No drawing is needed.
+    """
+    return await _call(_session.export_sheet_metal_dxf, path, include_bend_lines,
+                       include_sketches, overwrite)
 
 
 def main() -> None:

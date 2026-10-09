@@ -1,5 +1,21 @@
 # SolidWorks MCP
 
+## Разработка нашего форка
+
+План: [PLAN.md](PLAN.md). Стадии: исправление → основной функционал → дополнительный функционал.
+Правила работы: [Docs/GIT_WORKFLOW.md](Docs/GIT_WORKFLOW.md).
+Новые детали и элементы называются на русском языке; стандартные изделия для сборок подбираются из утверждённых библиотек.
+Точка входа v2 в разработке: `solidworks-mcp-v2 --state-dir <постоянный каталог состояния>`.
+В `2.0.0.dev3` доступны журнал заданий, явное чтение метаданных документов и геометрии деталей;
+операции создания и редактирования моделей v2 ещё разрабатываются.
+Контракт кандидата: [guide_v2.md](src/solidworks_mcp/guide_v2.md).
+Статус всех legacy-инструментов: [MIGRATION_V2.md](Docs/MIGRATION_V2.md).
+Ниже сохранена документация upstream/legacy-инструментов для переноса; она не является каталогом доступных инструментов v2.
+
+This installation includes a local sheet-metal extension, version
+`0.13.0+sheetmetal.2`, with seven additional tools verified on SolidWorks 2023.
+See [SHEET_METAL_LOCAL.md](SHEET_METAL_LOCAL.md) for usage, validation and recovery.
+
 [![PyPI](https://img.shields.io/pypi/v/solidworks-mcp)](https://pypi.org/project/solidworks-mcp/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/hjbaard/SolidWorks-MCP/blob/main/LICENSE)
 
@@ -9,7 +25,7 @@ modelling call returns the measured volume, mass and bounding box, so the agent
 can compare the result with the spec and correct itself instead of guessing that
 it "looks about right".
 
-<!-- mcp-name: io.github.hjbaard/solidworks-mcp -->
+<!-- mcp-name: io.github.babkin-kd/solidworks-mcp -->
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/hjbaard/SolidWorks-MCP/main/Docs/images/bracket.png" width="32%" alt="3D-print mounting bracket with counterbored holes, bolt circle and cable slot">

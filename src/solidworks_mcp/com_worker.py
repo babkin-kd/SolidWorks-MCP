@@ -47,12 +47,24 @@ class ComWorker:
         self._queue: "queue.Queue" = queue.Queue()
         self._ready = threading.Event()
         self._shutting_down = False
+        self._state_lock = threading.Lock()
+        self._startup_error = None
         self._thread = threading.Thread(target=self._run, name="solidworks-com", daemon=True)
         self._thread.start()
-        self._ready.wait()  # block until the apartment is initialised
+        if not self._ready.wait(timeout=10):
+            self._shutting_down = True
+            self._queue.put(self._STOP)
+            raise SolidWorksError("The COM apartment did not initialise within 10s.")
+        if self._startup_error is not None:
+            raise SolidWorksError(f"Could not initialise the COM apartment: {self._startup_error}")
 
     def _run(self) -> None:
-        pythoncom.CoInitialize()  # STA for this thread
+        try:
+            pythoncom.CoInitialize()  # STA for this thread
+        except BaseException as exc:
+            self._startup_error = exc
+            self._ready.set()
+            return
         self._ready.set()
         try:
             while True:
@@ -70,11 +82,12 @@ class ComWorker:
             pythoncom.CoUninitialize()
 
     def submit(self, fn) -> "concurrent.futures.Future":
-        if self._shutting_down:
-            raise SolidWorksError("The COM worker is shut down; no new operations are possible.")
-        fut: "concurrent.futures.Future" = concurrent.futures.Future()
-        self._queue.put((fn, fut))
-        return fut
+        with self._state_lock:
+            if self._shutting_down:
+                raise SolidWorksError("The COM worker is shut down; no new operations are possible.")
+            fut: "concurrent.futures.Future" = concurrent.futures.Future()
+            self._queue.put((fn, fut))
+            return fut
 
     async def call(self, fn):
         """Submit `fn` to the COM thread and await its result, with a timeout.
@@ -93,7 +106,10 @@ class ComWorker:
                 "Close any dialogs; restart the server if it keeps hanging."
             )
 
-    def shutdown(self) -> None:
-        self._shutting_down = True
-        self._queue.put(self._STOP)
-        self._thread.join(timeout=5)
+    def shutdown(self, timeout_s: float = 5) -> bool:
+        with self._state_lock:
+            if not self._shutting_down:
+                self._shutting_down = True
+                self._queue.put(self._STOP)
+        self._thread.join(timeout=timeout_s)
+        return not self._thread.is_alive()
