@@ -52,8 +52,10 @@ def _declared_tools():
 def _exchange(requests, last_id, timeout=60):
     """Talk to the probe like a real client: keep stdin open until the reply to
     `last_id` arrives, then close it and wait for a clean exit."""
+    # MCP stdio is UTF-8, independently of the Windows console code page.
     proc = subprocess.Popen([sys.executable, "-c", _PROBE], stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            text=True, encoding="utf-8")
     replies, stderr, answered = {}, [], threading.Event()
 
     def read_replies():
@@ -67,11 +69,17 @@ def _exchange(requests, last_id, timeout=60):
 
     threading.Thread(target=read_replies, daemon=True).start()
     threading.Thread(target=lambda: stderr.append(proc.stderr.read()), daemon=True).start()
-    proc.stdin.write("".join(json.dumps(r) + "\n" for r in requests))
-    proc.stdin.flush()
-    answered.wait(timeout)
-    proc.stdin.close()
-    return replies, proc.wait(timeout), stderr
+    try:
+        proc.stdin.write("".join(json.dumps(r) + "\n" for r in requests))
+        proc.stdin.flush()
+        answered.wait(timeout)
+        proc.stdin.close()
+        return replies, proc.wait(timeout), stderr
+    finally:
+        # A failed probe must not leave its child server running.
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait(timeout=5)
 
 
 def test_server_starts_without_pywin32_and_tools_fail_loud():
@@ -92,7 +100,7 @@ def test_server_starts_without_pywin32_and_tools_fail_loud():
 def test_selftest_off_windows_says_why_it_cannot_run():
     probe = _PROBE.replace("server.main()", "sys.argv = ['solidworks-mcp', '--selftest']\nserver.main()")
     run = subprocess.run([sys.executable, "-c", probe], stdin=subprocess.DEVNULL,
-                         capture_output=True, text=True, timeout=60)
+                         capture_output=True, text=True, encoding="utf-8", timeout=60)
 
     assert run.returncode == 1 and "only works on Windows" in run.stdout and "Traceback" not in run.stderr, (
         "a user who runs the selftest where it cannot work must read why, not get a stack trace: "

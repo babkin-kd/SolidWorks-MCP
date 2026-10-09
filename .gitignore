@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 .pytest_cache/
+pytest-cache-files-*/
 *.py[cod]
 *.egg-info/
 build/
@@ -15,6 +16,46 @@ env/
 
 # Generated output (exports, screenshots)
 out/
+outputs/
+work/
+local-backups/
+*.log
+
+# Local secrets and connection settings
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Generated CAD documents and neutral exports
+*.sldprt
+*.SLDPRT
+*.sldasm
+*.SLDASM
+*.slddrw
+*.SLDDRW
+*.step
+*.STEP
+*.stp
+*.STP
+*.iges
+*.IGES
+*.igs
+*.IGS
+*.x_t
+*.X_T
+*.x_b
+*.X_B
+*.stl
+*.STL
+*.3mf
+*.3MF
+*.dxf
+*.DXF
+*.dwg
+*.DWG
+~$*
 
 # OS / editor cruft
 Thumbs.db

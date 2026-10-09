@@ -141,9 +141,10 @@ from .mesh_tools import area, compare_sections, extents, load_mesh, section, sim
 from .region_tools import swept_outline
 from .sketch_constraints import MAX_DIMENSIONED_VERTICES, SketchDefiner
 from .units import deg_to_rad, m_to_mm, mm_to_m
+from .sheet_metal import SheetMetalMixin
 
 
-class SolidWorksSession:
+class SolidWorksSession(SheetMetalMixin):
     """Holds the SolidWorks connection and the current part document."""
 
     def __init__(self) -> None:
