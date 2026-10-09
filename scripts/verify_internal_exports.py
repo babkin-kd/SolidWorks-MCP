@@ -12,6 +12,7 @@ from concurrent.futures import Future
 from contextlib import ExitStack
 from importlib import resources
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -92,6 +93,107 @@ def compact_job_failure(job):
     return {'operation_id': job.get('operation_id'), 'status': job.get('status'),
             'error': job.get('error'), 'mutation': {'phase': mutation.get('phase')},
             'execution_guard': result.get('execution_guard') or evidence.get('execution_guard')}
+
+
+def _diagnostic_code(value):
+    # Codes, not arbitrary messages, names, file paths or pointer renderings.
+    return value if type(value) is str and re.fullmatch(r'[a-z][a-z0-9_]{0,79}', value) else None
+
+
+def bounded_exception_chain(error):
+    """Inspect only Python exception metadata; never stringify native objects."""
+    items, seen = [], set()
+    while isinstance(error, BaseException) and len(items) < 8 and id(error) not in seen:
+        seen.add(id(error))
+        kind = type(error).__name__
+        data = BaseException.__getattribute__(error, '__dict__')
+        data = data if type(data) is dict else {}
+        items.append({'error_type': kind if re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]{0,79}', kind) else None,
+                      'error_code': _diagnostic_code(data.get('code')),
+                      'uncertain': data.get('uncertain') if type(data.get('uncertain')) is bool else None})
+        cause = BaseException.__cause__.__get__(error)
+        if cause is not None:
+            error = cause
+        elif not BaseException.__suppress_context__.__get__(error):
+            error = BaseException.__context__.__get__(error)
+        else:
+            error = None
+    return {'items': items, 'truncated_or_cycle': isinstance(error, BaseException)}
+
+
+def record_export_failure_diagnostic(report, *, job=None, error=None, cleanup_allowed=None):
+    """Best-effort, bounded Python-only observations before any cleanup gate.
+
+    The job is the already-returned durable snapshot, not a fresh store/CAD read.
+    Checkpoint/desired deviation are historical dependencies; this does not
+    claim to have measured the current preference after an unconfirmed restore.
+    """
+    try:
+        if error is not None:
+            report['operation_exception_chain'] = bounded_exception_chain(error)
+        if type(job) is not dict:
+            return
+        status = job.get('status')
+        if type(status) is str and status == 'succeeded' and cleanup_allowed is True:
+            return
+        mutation = job.get('mutation')
+        mutation = mutation if type(mutation) is dict else {}
+        before = mutation.get('before_state')
+        before = before if type(before) is dict else {}
+        source = before.get('source')
+        source = source if type(source) is dict else {}
+        profile = source.get('export_profile')
+        profile = profile if type(profile) is dict else {}
+        desired = profile.get('desired_application_preferences')
+        desired = desired if type(desired) is dict else {}
+        preferences = before.get('preferences')
+        preferences = preferences if type(preferences) is dict else {}
+        def deviation(values):
+            # The installed adapter and durable checkpoint store metres.
+            value = values.get('stl_deviation_m')
+            return value * 1e6 if type(value) in (float, int) and abs(value) < 1e3 and math.isfinite(value) else None
+        verification = mutation.get('verification')
+        verification = verification if type(verification) is dict else {}
+        evidence = verification.get('evidence')
+        evidence = evidence if type(evidence) is dict else {}
+        guard = evidence.get('execution_guard')
+        result = job.get('result')
+        result = result if type(result) is dict else {}
+        if type(guard) is not dict:
+            guard = result.get('execution_guard')
+        guard = guard if type(guard) is dict else {}
+        job_error = job.get('error')
+        job_error = job_error if type(job_error) is dict else {}
+        operation = job.get('operation_id')
+        phase = mutation.get('phase')
+        facts = {'operation_id': operation if type(operation) is str
+                    and re.fullmatch(r'(?:job_|op_)?[0-9a-f]{32}', operation) else None,
+            'status': status if type(status) is str and status in ('queued', 'running', 'succeeded', 'failed', 'unknown', 'cancelled') else None,
+            'phase': phase if type(phase) is str and phase in ('prepared', 'committed', 'rolled_back', 'not_started', 'unresolved', 'reconciled') else None,
+            'error': {'code': _diagnostic_code(job_error.get('code')),
+                      'requires_reconciliation': job_error.get('requires_reconciliation')
+                          if type(job_error.get('requires_reconciliation')) is bool else None,
+                      'message_omitted': True},
+            'cleanup_allowed': cleanup_allowed if type(cleanup_allowed) is bool else None,
+            'dependencies': {'effect_scope': before.get('_mutation_effect_scope')
+                    if type(before.get('_mutation_effect_scope')) is str
+                       and before.get('_mutation_effect_scope') in ('application', 'document') else None,
+                'revision_scope': _diagnostic_code(before.get('scope')),
+                'source_snapshot_present': bool(source), 'checkpoint_preferences_present': bool(preferences),
+                'checkpoint_stl_deviation_um': deviation(preferences), 'desired_stl_deviation_um': deviation(desired),
+                'current_preferences_measured': False},
+            'verification_outcome': _diagnostic_code(verification.get('outcome')),
+            'execution_guard': {key: guard.get(key) if type(guard.get(key)) is int and 0 <= guard[key] <= 2 else None
+                for key in ('original_state', 'locked_state', 'released_state')}}
+        history = report.setdefault('job_failure_diagnostics', [])
+        history.append(facts)
+        del history[:-8]
+    except BaseException:
+        # Reporting is not part of the native outcome and cannot replace it.
+        try:
+            report['failure_diagnostic_formatting_failed'] = True
+        except BaseException:
+            pass
 
 
 class ObservedExportsAdapter(CadExportsAdapter):
@@ -291,6 +393,9 @@ def check(state, output, *, failure_report=None):
                     exports.expected_operation = operation_id
                     try:
                         return catalog.execute(operation_id, **arguments)
+                    except BaseException as operation_error:
+                        record_export_failure_diagnostic(report, error=operation_error)
+                        raise
                     finally:
                         exports.expected_operation = None
                 job = guarded_inline_submit(fixture_cleanup_gate, runner, store,
@@ -298,6 +403,8 @@ def check(state, output, *, failure_report=None):
                     context={key: arguments[key] for key in ('document_id', 'configuration', 'expected_revision')},
                     mutates=True, pass_operation_id=True,
                     verify=lambda result: result.get('verified') is True)
+                record_export_failure_diagnostic(report, job=job,
+                    cleanup_allowed=fixture_cleanup_gate.can_cleanup())
                 require_fixture_native_access(fixture_cleanup_gate)
                 return job
 
@@ -420,6 +527,8 @@ def check(state, output, *, failure_report=None):
                     request, 'internal.export_part', arguments, prohibited,
                     context={key: arguments[key] for key in ('document_id', 'configuration', 'expected_revision')},
                     mutates=True, pass_operation_id=True, verify=lambda result: result.get('verified') is True)
+                record_export_failure_diagnostic(report, job=historical,
+                    cleanup_allowed=fixture_cleanup_gate.can_cleanup())
                 require_fixture_native_access(fixture_cleanup_gate)
                 assert historical['operation_id'] == previous['operation_id']
                 assert historical['result'] == previous['result'] and historical['mutation']['phase'] == 'committed'
@@ -489,6 +598,8 @@ def check(state, output, *, failure_report=None):
                 failure_report.update({key: report[key] for key in (
                     'package_version', 'git_sha', 'source_dirty',
                     'installed_source_digest', 'installed_build_matches_package',
+                    'job_failure_diagnostics', 'operation_exception_chain',
+                    'failure_diagnostic_formatting_failed',
                     'fixture_setup_stl_deviation',
                     'export_preferences_baseline_captured_after_fixture_setup',
                     'fixture_setup_other_preferences_exactly_unchanged',
@@ -558,10 +669,17 @@ def main():
         try:
             result = check(state.resolve(), output.resolve(), failure_report=failure_facts)
         except BaseException as exc:
+            try:
+                exception_chain = bounded_exception_chain(exc)
+            except BaseException:
+                exception_chain = {'items': [], 'formatting_failed': True}
             failure = {**failure_facts, 'accepted': False, 'internal_native_export_acceptance': False,
                        'public_mcp_export_acceptance': False,
-                       'error_type': type(exc).__name__, 'error_code': getattr(exc, 'code', None),
-                       'message': str(exc), 'private_outputs_and_journal_retained': True,
+                       'error_type': exception_chain['items'][0]['error_type'] if exception_chain['items'] else None,
+                       'error_code': exception_chain['items'][0]['error_code'] if exception_chain['items'] else None,
+                       'verifier_exception_chain': exception_chain,
+                       'message': 'Verifier failed; inspect bounded diagnostics and the retained private journal.',
+                       'private_outputs_and_journal_retained': True,
                        'automatic_replay_or_output_cleanup_attempted': False}
             try:
                 with report.open('x', encoding='utf8') as stream:
@@ -571,7 +689,7 @@ def main():
                 # private report itself cannot be written.
                 try:
                     print(json.dumps({'failure_report_write_error': type(report_exc).__name__,
-                                      'message': str(report_exc)}), file=sys.stderr)
+                                      'message': 'Private failure report could not be written.'}), file=sys.stderr)
                 except BaseException:
                     pass
             raise

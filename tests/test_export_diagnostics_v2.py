@@ -168,6 +168,11 @@ def test_real_internal_submit_denies_succeeded_but_held_before_return_to_native_
         'store': SimpleNamespace(get=get, mutation_blockers=blockers),
         'guarded_inline_submit': pure_cleanup_utility()['guarded_inline_submit'],
         'require_fixture_native_access': helpers['require_fixture_native_access']}
+    # The real submit now records a bounded durable diagnostic before its
+    # unchanged denial gate. Supply its actual pure helpers to this AST harness.
+    from test_export_failure_diagnostics_v2 import definitions
+    namespace.update(definitions())
+    namespace['report'] = {}
     exec(compile(ast.fix_missing_locations(ast.Module(body=[submit_function], type_ignores=[])), str(path), 'exec'), namespace)
     with pytest.raises(RuntimeError, match='Held fixture'):
         result = namespace['submit']('request', {'document_id': 'owned',

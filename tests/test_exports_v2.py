@@ -391,6 +391,7 @@ def test_native_setter_partial_failure_attempts_all_restore_and_readback(native_
     desired = module.desired_preferences(options)
     before = {name: (value + 1 if type(value) is int else not value if type(value) is bool
         else value + 0.5 if type(value) is float else 'Другая система') for name, value in desired.items()}
+    before.update(stl_quality=3, stl_deviation_m=9.15190966989661e-7, stl_angle_rad=.0174532925199433)
     state = before.copy()
     calls = []
     adapter._preflight = lambda model: None

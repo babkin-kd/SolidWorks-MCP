@@ -19,6 +19,8 @@ def preferences_fixture(module, fault=None):
     before = {name: (value + 1 if type(value) is int else not value if type(value) is bool
         else value + .5 if type(value) is float else 'Исходная система')
         for name, value in desired.items()}
+    before.update(stl_quality=3, stl_deviation_m=9.15190966989661e-7, stl_angle_rad=.0174532925199433)
+    desired = {**before, **desired}
     state, calls, saves = before.copy(), [], []
     adapter = module.CadExportsAdapter(SimpleNamespace())
     def getter(name):
@@ -29,9 +31,9 @@ def preferences_fixture(module, fault=None):
         state[name] = value
         # A later native setter may affect an earlier preference while still
         # confirming its own exact value. No actual COM is invoked here.
-        if name == 'stl_angle_rad' and value == desired[name]:
+        if name == 'stl_preview' and value == desired[name]:
             if fault == 'before':
-                state['stl_deviation_m'] = before['stl_deviation_m']
+                state['coordinate_system'] = before['coordinate_system']
             elif fault == 'third':
                 state['stl_deviation_m'] = .12345
             elif fault == 'nextafter':
@@ -49,7 +51,7 @@ def preferences_fixture(module, fault=None):
     def extension(model):
         calls.append(('extension',))
         if fault == 'extension_before':
-            state['stl_deviation_m'] = before['stl_deviation_m']
+            state['coordinate_system'] = before['coordinate_system']
         return SimpleNamespace(SaveAs3=save)
     adapter._get_preference, adapter._set_preference = getter, setter
     adapter._preflight, adapter.snapshot = preflight, snapshot

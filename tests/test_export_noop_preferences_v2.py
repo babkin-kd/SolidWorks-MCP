@@ -53,7 +53,13 @@ def fixture(module, file_format='parasolid', before=None):
     extension = {'stl': 'stl', 'step': 'step', 'parasolid': 'x_t'}[file_format]
     options = ExportOptions(file_format, f'never-written.{extension}', 'mm' if file_format == 'stl' else '')
     desired = module.desired_preferences(options)
+    if file_format == 'stl':
+        desired.update(stl_quality=3, stl_deviation_m=9.15190966989661e-7, stl_angle_rad=.0174532925199433)
     checkpoint = deepcopy(desired if before is None else before)
+    if file_format == 'stl':
+        for name in module.STL_PRESERVED_PREFERENCES:
+            checkpoint.setdefault(name, desired[name])
+            desired[name] = checkpoint[name]
     application = PreferenceApplication(module, deepcopy(checkpoint))
     adapter = module.CadExportsAdapter(SimpleNamespace(_sw=application))
     adapter._preflight = lambda model: None
@@ -112,7 +118,7 @@ def test_last_guard_getter_changes_earlier_noop_and_complete_profile_refuses_sav
     def coupled_getter(name):
         # Initial full checkpoint read is first; the last per-setting guard is
         # second. Its side effect must not escape the final full-profile gate.
-        if name == 'stl_angle_rad' and application.gets.count(name) == 2:
+        if name == 'stl_preview' and application.gets.count(name) == 2:
             application.state['coordinate_system'] = 'Чужая система'
     application.on_get = coupled_getter
     with pytest.raises(ExecutionFailure) as error:

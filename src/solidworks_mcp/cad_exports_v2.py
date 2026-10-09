@@ -6,8 +6,6 @@ handoff notes. No document activation, configuration switch, ClearSelection,
 rebuild, save-original, or generic Undo is performed.
 """
 
-import math
-
 from . import binding
 from .documents import rejected
 from .jobs import _json
@@ -37,13 +35,14 @@ PREFERENCES = {
     'parasolid_version': ('Integer', 89),
 }
 
+STL_PRESERVED_PREFERENCES = ('stl_quality', 'stl_deviation_m', 'stl_angle_rad')
+
 
 def desired_preferences(options):
     result = {'coordinate_system': ''}  # Explicit model frame, not a named frame.
     if options.format == 'stl':
         result.update(stl_units={'mm': 0, 'm': 2, 'in': 3}[options.units], stl_binary=True,
-            stl_positive_translation_disabled=True, stl_show_info=False, stl_preview=False,
-            stl_quality=3, stl_deviation_m=0.0001, stl_angle_rad=math.radians(10))
+            stl_positive_translation_disabled=True, stl_show_info=False, stl_preview=False)
     elif options.format == 'step':
         # AP203 geometry-only. Color/configuration/sketch export is intentionally
         # excluded: corresponding metadata needs its own complete revision scope.
@@ -146,26 +145,37 @@ class CadExportsAdapter:
             raise rejected('export_preference_write_failed', f'Native preference {name} was not confirmed.')
 
     def export_preferences(self, options):
-        return {name: self._get_preference(name) for name in desired_preferences(options)}
+        names = tuple(desired_preferences(options))
+        if options.format == 'stl':
+            names += STL_PRESERVED_PREFERENCES
+        return {name: self._get_preference(name) for name in names}
 
     def export_profile(self, options):
-        return {'desired_application_preferences': desired_preferences(options),
+        profile = {'desired_application_preferences': desired_preferences(options),
                 'native_method': 'IModelDocExtension.SaveAs3', 'saveas_version': 0,
                 'saveas_options': 3, 'frame': 'part_model', 'bodies': 'all_visible_native_solids',
                 'accepted_errors': 0, 'accepted_warnings': 0,
                 'verification': 'source_fingerprint_and_file_structure; no_geometry_roundtrip'}
+        if options.format == 'stl':
+            profile.update(resolution_policy='preserve_existing_native',
+                preserved_application_preferences=list(STL_PRESERVED_PREFERENCES),
+                effective_resolution_reference='durable_before_state.preferences')
+        return profile
 
     def export_part_to_file(self, model, path, options, before_preferences):
-        desired = desired_preferences(options)
+        controlled = desired_preferences(options)
         if self.export_preferences(options) != before_preferences:
             raise rejected('stale_export_preferences', 'Export preferences changed before the native write.')
+        # Preserved resolution is still exact revision/checkpoint state. It is
+        # neither a setter target nor ours to restore when another call changes it.
+        desired = {**before_preferences, **controlled}
         self._preflight(model)
         metadata = self.snapshot(model)
         attempts = []
         original = None
         result = None
         try:
-            for name, value in desired.items():
+            for name, value in controlled.items():
                 # Earlier native calls can allow an external edit to a setting
                 # not yet touched by us. Do not overwrite that newer value or
                 # add it to the set of settings we own for restoration.
@@ -203,13 +213,22 @@ class CadExportsAdapter:
                 try:
                     current = self._get_preference(name)
                     if current not in (before_preferences[name], desired[name]):
-                        raise RuntimeError('Preference changed externally; refusing to overwrite a third value.')
+                        raise RuntimeError('Preference differs from checkpoint and requested value; refusing to overwrite a third value.')
                     if current != before_preferences[name]:
                         self._set_preference(name, before_preferences[name])
                     if self._get_preference(name) != before_preferences[name]:
                         raise RuntimeError('Restored value differs from the checkpoint.')
                 except Exception as exc:
                     failures.append(f'{name}: {exc}')
+            if options.format == 'stl':
+                # No ownership is inferred for preserved settings. Dependencies,
+                # native recalculation and external edits remain unseparated.
+                for name in STL_PRESERVED_PREFERENCES:
+                    try:
+                        if self._get_preference(name) != before_preferences[name]:
+                            raise RuntimeError('Preserved resolution differs from the exact checkpoint; no restoration setter is authorized.')
+                    except Exception as exc:
+                        failures.append(f'{name}: {exc}')
             if failures:
                 raise rejected('export_preferences_restore_unconfirmed', '; '.join(failures)) from original
         if original is not None:

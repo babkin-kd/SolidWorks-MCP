@@ -59,11 +59,12 @@ def test_void_toggle_applies_and_restores_with_other_typed_preferences_and_one_s
     result = adapter.export_part_to_file(object(), Path(options.filename), options, checkpoint)
     assert result['success'] is True and result['errors'] == result['warnings'] == 0
     assert len(saves) == 1 and saves[0][1] == desired and application.state == checkpoint
-    for name in desired:
+    for name in native_adapter_module.desired_preferences(options):
         assert (name, desired[name]) in application.sets and (name, checkpoint[name]) in application.sets
+    assert not any(name in native_adapter_module.STL_PRESERVED_PREFERENCES for name, value in application.sets)
 
 
-@pytest.mark.parametrize('name', ['coordinate_system', 'stl_units', 'stl_deviation_m', 'stl_binary'])
+@pytest.mark.parametrize('name', ['coordinate_system', 'stl_units', 'stl_binary'])
 def test_valid_typed_return_without_exact_readback_fails_before_save(native_adapter_module, name):
     _, _, desired, _, _, _ = fixture(native_adapter_module, 'stl')
     changed = {'coordinate_system': 'Исходная система', 'stl_units': 3,
