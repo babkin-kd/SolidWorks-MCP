@@ -8,6 +8,7 @@ Waiting timeout is not cancellation. Only terminal jobs permit native readback.
 
 import argparse
 import asyncio
+from importlib import resources
 import json
 import math
 import os
@@ -21,6 +22,7 @@ import pythoncom
 
 import solidworks_mcp
 from solidworks_mcp import binding
+from solidworks_mcp.build_info import source_digest
 from verify_document_reads import native_snapshot
 from verify_export_operations import application_preferences, exact_solid, native_extrema_m, ui_snapshot, user_file_metadata
 from verify_geometry_reads import fixtures
@@ -67,19 +69,45 @@ def failed(value, code):
     assert value['status'] == 'failed' and value['error']['code'] == code, value
 
 
-async def check(state, internal_report):
-    assert 'site-packages' in solidworks_mcp.__file__, 'Use installed dev wheel without PYTHONPATH.'
-    assert not os.environ.get('PYTHONPATH'), 'Source PYTHONPATH must be removed.'
-    internal = json.loads(internal_report.read_text(encoding='utf8'))
-    assert internal['package_version'] == solidworks_mcp.__version__
+def _provenance():
+    """Verify this installed wheel before any CAD snapshot or connection."""
+    package = Path(solidworks_mcp.__file__).resolve().parent
+    assert 'site-packages' in package.parts, 'Use an installed wheel, never source PYTHONPATH.'
+    assert not os.environ.get('PYTHONPATH'), 'Unset PYTHONPATH before native acceptance.'
+    build = json.loads(resources.files('solidworks_mcp').joinpath('build_info.json').read_text(encoding='utf8'))
+    actual_digest = source_digest(package)
+    assert build.get('package_version') == solidworks_mcp.__version__
+    assert build.get('source_digest') == actual_digest, 'Installed build metadata does not match its files.'
+    assert build.get('source_dirty') is False, 'Native acceptance requires a clean installed build.'
+    sha = build.get('git_sha')
+    assert isinstance(sha, str) and len(sha) == 40 and all(c in '0123456789abcdef' for c in sha), \
+        'Installed build must identify its exact clean commit.'
+    return {'package_version': solidworks_mcp.__version__, 'git_sha': sha,
+            'source_dirty': False, 'installed_source_digest': actual_digest,
+            'installed_build_matches_package': True}
+
+
+def _require_internal_acceptance(internal, current):
+    """Accept only a fresh same-wheel report, never a historical sidecar."""
+    assert internal.get('accepted') is True, 'Internal native dimension acceptance did not pass.'
+    for key in ('package_version', 'git_sha', 'installed_source_digest'):
+        assert internal.get(key) == current[key], f'Internal report is for a different installed build: {key}'
+    assert internal.get('source_dirty') is False, 'Internal report must certify a clean build.'
+    assert internal.get('installed_build_matches_package') is True, 'Internal report lacks verified installed provenance.'
     for gate in ('native_typed_configuration_setter', 'explicit_dimension_reference_survives_rebuild',
                  'verified_scoped_restoration_after_injected_error', 'original_document_baseline_restored'):
         assert internal.get(gate) is True, f'Internal native gate is missing: {gate}'
+
+
+async def check(state, internal_report):
+    provenance = _provenance()
+    internal = json.loads(internal_report.read_text(encoding='utf8'))
+    _require_internal_acceptance(internal, provenance)
     original = native_snapshot()
     original_files = user_file_metadata(original)
     sw, module = binding.connect(show=False), binding.module()
     original_ui, original_preferences = ui_snapshot(sw, module), application_preferences(sw)
-    report = {'public_mcp_dimension_acceptance': False}
+    report = {**provenance, 'public_mcp_dimension_acceptance': False}
     params = StdioServerParameters(command=str(Path(sys.executable).with_name('solidworks-mcp-v2.exe')),
                                    args=['--state-dir', str(state)])
     with fixtures() as (_, owned, _):
@@ -114,6 +142,10 @@ async def check(state, internal_report):
                 await client.initialize()
                 info = succeeded(await call(client, 'system_get_info'))
                 assert info['build_matches_source'] is True and info['build']['source_dirty'] is False
+                assert info['package_version'] == provenance['package_version']
+                assert info['build']['git_sha'] == provenance['git_sha']
+                assert info['source_digest'] == provenance['installed_source_digest']
+                assert info['build']['source_digest'] == provenance['installed_source_digest']
                 assert 'dimension.set_value' in info['implemented_mutations']
                 tools = (await client.list_tools()).tools
                 assert TOOLS <= {tool.name for tool in tools}, 'Dimension tools are not published yet.'

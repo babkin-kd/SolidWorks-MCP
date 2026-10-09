@@ -52,6 +52,22 @@ def application_preferences(sw):
     return {name: getattr(sw, methods[kind])(code) for name, (kind, code) in PREFS.items()}
 
 
+def fixture_preferences_baseline(setup_preferences, export_preferences):
+    """Allow only the observed fixture-geometry deviation recalculation.
+
+    This exemption applies solely to replacement of our own fixture geometry.
+    Callers retain exact comparisons of ALL preferences after every export.
+    """
+    assert set(setup_preferences) == set(export_preferences), 'Fixture preference keys changed.'
+    changed = {key: {'before': setup_preferences[key], 'after': export_preferences[key]}
+               for key in setup_preferences if setup_preferences[key] != export_preferences[key]}
+    assert set(changed) <= {'stl_deviation'}, ('Fixture setup changed other preferences.', changed)
+    return {'fixture_setup_stl_deviation': {'before': setup_preferences['stl_deviation'],
+                                          'after': export_preferences['stl_deviation']},
+            'export_preferences_baseline_captured_after_fixture_setup': True,
+            'fixture_setup_other_preferences_exactly_unchanged': True}
+
+
 def ui_snapshot(sw, module):
     result = []
     for raw in sw.GetDocuments() or ():
@@ -209,7 +225,7 @@ async def check(state, output):
     try:
         with fixtures() as (session, owned, _):
             sw, module = session._sw, session._mod
-            before_preferences = application_preferences(sw)
+            setup_preferences = application_preferences(sw)
             assert session._model._oleobj_.QueryInterface(pythoncom.IID_IUnknown) == (
                 owned[1]._oleobj_.QueryInterface(pythoncom.IID_IUnknown))
             assert sw.ActiveDoc._oleobj_.QueryInterface(pythoncom.IID_IUnknown) == (
@@ -228,7 +244,8 @@ async def check(state, output):
             assert body.Name == 'Отрицательное контрольное тело'
             assert owned[1].ForceRebuild3(False)
             owned[1].ClearSelection2(True)
-            assert application_preferences(sw) == before_preferences
+            before_preferences = application_preferences(sw)
+            report.update(fixture_preferences_baseline(setup_preferences, before_preferences))
             source = owned_source_snapshot(owned[1], module)
             assert source['selection_count'] == 0 and source['blocking_state'] == 0
             assert source['active_configuration'] == 'Основная'
@@ -376,7 +393,7 @@ async def check(state, output):
                             results.append({'format': format, 'requested_units': units, 'bytes': facts['bytes'],
                                 'sha256': facts['sha256'], 'timeout_zero_initial_status': pending['status'],
                                 'same_request_id_same_job': True, 'durable_application_checkpoint': True, **format_facts})
-                        report = {'package_version': info['package_version'], 'git_sha': info['build']['git_sha'],
+                        report = {**report, 'package_version': info['package_version'], 'git_sha': info['build']['git_sha'],
                             'source_dirty': info['build']['source_dirty'], 'build_matches_source': True,
                             'solidworks_revision': original[0], 'tool_count': len(tools), 'owned_fixture_documents': 2,
                             'native_mcp_exports': results, 'independent_source_geometry_and_native_state_unchanged': True,

@@ -173,7 +173,13 @@ class CadExportsAdapter:
             self._preflight(model)
             if self.snapshot(model) != metadata:
                 raise rejected('export_source_changed', 'Source changed while export preferences were applied.')
-            native = self._extension(model).SaveAs3(str(path), 0, 1 | 2, None, None, 0, 0)
+            extension = self._extension(model)
+            # Later setters/native getters can change an earlier preference.
+            # Verify the complete exact profile after them, before SaveAs3.
+            # This is a bounded readback, not an atomic application snapshot.
+            if self.export_preferences(options) != desired:
+                raise rejected('export_preference_write_failed', 'Complete native export preference profile was not confirmed before SaveAs3.')
+            native = extension.SaveAs3(str(path), 0, 1 | 2, None, None, 0, 0)
             if not isinstance(native, tuple) or len(native) != 3:
                 raise rejected('native_export_result_invalid', 'SaveAs3 did not return bool/errors/warnings.')
             success, errors, warnings = native

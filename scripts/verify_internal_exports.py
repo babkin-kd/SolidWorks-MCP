@@ -15,6 +15,7 @@ import json
 import os
 from pathlib import Path
 import re
+import sys
 import threading
 import uuid
 
@@ -31,7 +32,7 @@ from solidworks_mcp.jobs import ExecutionFailure, JobRunner, JobStore
 from verify_document_reads import native_snapshot
 from verify_geometry_reads import fixtures
 from verify_export_operations import (application_preferences, assert_stl_frame_and_units,
-    exact_solid, independent_binary_stl, independent_file_facts,
+    exact_solid, fixture_preferences_baseline, independent_binary_stl, independent_file_facts,
     owned_source_snapshot, ui_snapshot, user_file_metadata)
 
 
@@ -137,7 +138,23 @@ def _format_facts(path, manifest, source, units):
             'geometry_roundtrip_verified': False}
 
 
-def check(state, output):
+def cleanup_baseline_flags(readers):
+    """Read every independent baseline even if a separate reader fails.
+
+    A failed read produces None, never an invented restoration result. This
+    reporting helper does not suppress the verifier's primary exception.
+    """
+    facts, errors = {}, {}
+    for name, (reader, expected) in readers.items():
+        try:
+            facts[name] = reader() == expected
+        except BaseException as exc:
+            facts[name] = None
+            errors[name] = {'error_type': type(exc).__name__, 'message': str(exc)}
+    return {**facts, 'cleanup_baseline_read_errors': errors}
+
+
+def check(state, output, *, failure_report=None):
     report = {**_provenance(), 'public_mcp_export_acceptance': False,
               'asynchronous_pending_timeout_acceptance': False,
               'fault_injection_rollback_and_crash_acceptance': False,
@@ -151,6 +168,8 @@ def check(state, output):
     results, committed_arguments = [], []
     store = None
     documents = None
+    exports = None
+    primary_failure = None
 
     def close_resources():
         nonlocal documents, store
@@ -173,7 +192,7 @@ def check(state, output):
             model = owned[1]
             assert adapter.identity(session._model) == adapter.identity(model)
             assert adapter.identity(binding.wrap(sw.ActiveDoc, module.IModelDoc2)) == adapter.identity(model)
-            before_preferences = application_preferences(sw)
+            setup_preferences = application_preferences(sw)
             # Edit only the exact second verifier-owned, unsaved source.
             assert str(model.GetPathName()) == ''
             session.delete_feature('Контрольный чужой блок', with_children=True)
@@ -188,7 +207,8 @@ def check(state, output):
             assert body.Name == 'Отрицательное контрольное тело'
             assert model.ForceRebuild3(False)
             model.ClearSelection2(True)
-            assert application_preferences(sw) == before_preferences
+            before_preferences = application_preferences(sw)
+            report.update(fixture_preferences_baseline(setup_preferences, before_preferences))
             documents = DocumentCatalog(adapter)
             store = JobStore(state / 'jobs.sqlite')
             epoch = 'internal-exports-' + uuid.uuid4().hex
@@ -374,8 +394,49 @@ def check(state, output):
                       original_user_file_byte_hashes_checked=False,
                       retained_confirmed_output_count=len(confirmed_paths))
         return report
+    except BaseException as exc:
+        primary_failure = exc
+        raise
     finally:
-        close_resources()
+        try:
+            close_resources()
+        except BaseException as cleanup_exc:
+            if primary_failure is None:
+                # Still record independently observed cleanup state before
+                # propagating a cleanup failure from an otherwise finished run.
+                primary_failure = cleanup_exc
+                raise
+            if failure_report is not None:
+                failure_report['resource_cleanup_error'] = {
+                    'error_type': type(cleanup_exc).__name__, 'message': str(cleanup_exc)}
+        finally:
+            if primary_failure is not None and failure_report is not None:
+                calls = len(exports.native_calls) if exports is not None else 0
+                failure_report.update({key: report[key] for key in (
+                    'package_version', 'git_sha', 'source_dirty',
+                    'installed_source_digest', 'installed_build_matches_package',
+                    'fixture_setup_stl_deviation',
+                    'export_preferences_baseline_captured_after_fixture_setup',
+                    'fixture_setup_other_preferences_exactly_unchanged') if key in report})
+                failure_report.update(native_export_adapter_call_count=calls,
+                    # The adapter records entry BEFORE preferences/SaveAs3.
+                    # Zero entries proves zero calls; nonzero entries cannot
+                    # establish a real SaveAs count on a failed operation.
+                    actual_native_export_count=0 if calls == 0 else None,
+                    actual_native_export_count_basis='no_native_export_adapter_entry' if calls == 0
+                                                     else 'SaveAs3_not_directly_instrumented',
+                    independently_confirmed_export_count=len(results),
+                    retained_confirmed_output_count=len(confirmed_paths),
+                    original_user_file_byte_hashes_checked=False)
+                failure_report.update(cleanup_baseline_flags({
+                    'original_user_document_baseline_restored': (native_snapshot, original),
+                    'original_preferences_restored': (
+                        lambda: application_preferences(original_sw), original_preferences),
+                    'original_ui_blocking_and_selection_restored': (
+                        lambda: ui_snapshot(original_sw, original_module), original_ui),
+                    'original_user_file_metadata_unchanged': (
+                        lambda: user_file_metadata(original), original_files),
+                }))
         # Every produced path/journal remains private for root's review. Nothing
         # is deleted, especially after an unknown or partially published result.
 
@@ -395,15 +456,26 @@ def main():
     report.parent.mkdir(parents=True, exist_ok=True)
     pythoncom.CoInitialize()
     try:
+        failure_facts = {}
         try:
-            result = check(state.resolve(), output.resolve())
+            result = check(state.resolve(), output.resolve(), failure_report=failure_facts)
         except BaseException as exc:
-            failure = {'accepted': False, 'public_mcp_export_acceptance': False,
+            failure = {**failure_facts, 'accepted': False, 'internal_native_export_acceptance': False,
+                       'public_mcp_export_acceptance': False,
                        'error_type': type(exc).__name__, 'error_code': getattr(exc, 'code', None),
                        'message': str(exc), 'private_outputs_and_journal_retained': True,
                        'automatic_replay_or_output_cleanup_attempted': False}
-            with report.open('x', encoding='utf8') as stream:
-                stream.write(json.dumps(failure, ensure_ascii=True, indent=2) + '\n')
+            try:
+                with report.open('x', encoding='utf8') as stream:
+                    stream.write(json.dumps(failure, ensure_ascii=True, indent=2) + '\n')
+            except BaseException as report_exc:
+                # Preserve the original native/verifier exception even if the
+                # private report itself cannot be written.
+                try:
+                    print(json.dumps({'failure_report_write_error': type(report_exc).__name__,
+                                      'message': str(report_exc)}), file=sys.stderr)
+                except BaseException:
+                    pass
             raise
         with report.open('x', encoding='utf8') as stream:
             stream.write(json.dumps(result, ensure_ascii=True, indent=2) + '\n')
