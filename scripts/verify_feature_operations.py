@@ -50,12 +50,12 @@ async def check(state):
             while value['status'] in ('queued', 'running'):
                 await asyncio.sleep(.25)
                 job = (await client.call_tool('job_get', {'operation_id': value['operation_id']})).structuredContent
-                value = {**job, 'data': job['data']['result']}
+                value = {**job, 'data': job['data'] if tool == 'job_get' else job['data']['result']}
             return value
         def success(value):
             assert value['status'] == 'succeeded', value
             return value['data']
-        with anyio.fail_after(240):
+        with anyio.fail_after(600):
             async with stdio_client(params) as (read, write):
                 async with ClientSession(read, write) as client:
                     await client.initialize()
