@@ -75,7 +75,7 @@ class Coedge(Entity):
         self.edge, self.loop, self.sense = edge, loop, sense
         edge.coedges.append(self)
     def GetEdge(self): return self.edge
-    def IGetLoop2(self): return self.loop
+    def GetLoop(self): return self.loop
     def GetSense(self): return self.sense
     def GetCurve(self): return None
     def GetNext(self):
@@ -147,6 +147,11 @@ class Body(Entity):
     def GetEdgeCount(self): return len(self.edges)
     def GetFaceCount(self): return len(self.faces)
     def GetUpdateStamp(self): return self.stamp
+
+
+class FaultEntity:
+    def __init__(self, count):
+        self.Count = count
 
 
 POINTS = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0),
@@ -295,7 +300,7 @@ def test_plane_and_line_parameters_are_exact_no_rounding():
 @pytest.mark.parametrize('fault,code', [
     (lambda b: setattr(b, 'IsMeshBody', lambda: True), 'planar_brep_unsupported'),
     (lambda b: setattr(b, 'GetType', lambda: 1), 'planar_brep_unsupported'),
-    (lambda b: setattr(b, 'Check3', object()), 'planar_brep_invalid'),
+    (lambda b: setattr(b, 'Check3', FaultEntity(1)), 'planar_brep_invalid'),
     (lambda b: setattr(b.faces[0].surface, 'IsPlane', lambda: False), 'planar_brep_unsupported'),
     (lambda b: setattr(b.edges[0].curve, 'IsLine', lambda: False), 'planar_brep_unsupported'),
     (lambda b: setattr(b.edges[0].coedges[0], 'GetCurve', lambda: object()), 'planar_brep_unsupported'),
@@ -311,7 +316,7 @@ def test_plane_and_line_parameters_are_exact_no_rounding():
     (lambda b: setattr(b.faces[0].loops[0].ordered[0], 'GetNext', lambda: None), 'planar_brep_incomplete'),
     (lambda b: setattr(b.faces[0].loops[0].ordered[0], 'GetNext', lambda: b.faces[0].loops[0].ordered[0]), 'planar_brep_incomplete'),
     (lambda b: setattr(b.faces[0].loops[0].ordered[0], 'GetPartner', lambda: b.faces[0].loops[0].ordered[0]), 'planar_brep_incomplete'),
-    (lambda b: setattr(b.faces[0].loops[0].ordered[0], 'IGetLoop2', lambda: b.faces[1].loops[0]), 'planar_brep_incomplete'),
+    (lambda b: setattr(b.faces[0].loops[0].ordered[0], 'GetLoop', lambda: b.faces[1].loops[0]), 'planar_brep_incomplete'),
     (lambda b: setattr(b.vertices[0], 'GetEdges', lambda: ()), 'planar_brep_incomplete'),
     (lambda b: setattr(b.faces[0], 'GetEdges', lambda: ()), 'planar_brep_incomplete'),
     (lambda b: setattr(b, 'GetFaces', lambda: (b.faces[0],)*6), 'planar_brep_ambiguous'),
@@ -586,8 +591,153 @@ def test_exact_native_tolerance_negative_zero_not_normalized():
     assert {'is_tolerant': False, 'gap_m': (-0.0).hex()} in snapshot(body)['vertex_tolerances']
 
 
-def test_tightened_consistency_limit_also_bounds_native_gap():
+def test_tightened_native_gap_limit_is_enforced():
     body = make_body()
     body.edges[0].IsTolerant = lambda: (False, 1e-15)
     assert_rejected(body, 'planar_brep_unsupported',
-                    limits=PlanarBrepLimits(consistency_tolerance_m=1e-16))
+                    limits=PlanarBrepLimits(max_native_gap_m=1e-16))
+
+
+@pytest.mark.parametrize('kind', ['vertex', 'edge'])
+def test_exact_native_gap_boundary_retained_without_rounding(kind):
+    body = make_body()
+    entity = body.vertices[0] if kind == 'vertex' else body.edges[0]
+    entity.IsTolerant = lambda: (False, 5e-9)
+    at_limit = snapshot(body)
+    values = (at_limit['vertex_tolerances'] if kind == 'vertex'
+              else [edge['native_tolerance'] for edge in at_limit['edges']])
+    assert {'is_tolerant': False, 'gap_m': (5e-9).hex()} in values
+    entity.IsTolerant = lambda: (False, math.nextafter(5e-9, 0.0))
+    assert planar_snapshot_digest(snapshot(body)) != planar_snapshot_digest(at_limit)
+    entity.IsTolerant = lambda: (False, math.nextafter(5e-9, math.inf))
+    assert_rejected(body, 'planar_brep_unsupported')
+
+
+def test_native_gap_gate_is_independent_of_stricter_geometry_consistency():
+    body = make_body()
+    for entity in body.vertices + body.edges:
+        entity.IsTolerant = lambda: (False, 5e-9)
+    # Exact coordinates pass even with a tightened analytical consistency gate.
+    assert snapshot(body, limits=PlanarBrepLimits(consistency_tolerance_m=1e-16))
+    # Native exact class and its allowed reported gap cannot authorize a larger
+    # vertex-to-plane mismatch than the independent default 1e-12 m limit.
+    face = body.faces[0]
+    face.surface.params = face.surface.params[:3] + (0.0, 0.0, 2e-12)
+    assert_rejected(body, 'planar_brep_incomplete')
+
+
+@pytest.mark.parametrize('value', [True, False, 0.0, -1e-9, math.nan,
+                                 math.inf, -math.inf, None, '5e-9',
+                                 math.nextafter(5e-9, math.inf)])
+def test_native_gap_limit_validation_never_loosens_supported_scope(value):
+    with pytest.raises(ValueError):
+        PlanarBrepLimits(max_native_gap_m=value)
+
+
+def body_with_check_results(results):
+    """Return separate pre/post Check3 observations, including read failures."""
+    class CheckedBody(Body):
+        @property
+        def Check3(self):
+            self.check_reads += 1
+            result = next(self.check_results)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+    body = make_body()
+    body.__class__ = CheckedBody
+    body.check_results = iter(results)
+    body.check_reads = 0
+    return body
+
+
+@pytest.mark.parametrize('checks', [(None, None), (FaultEntity(0), FaultEntity(0)),
+                                   (None, FaultEntity(0)), (FaultEntity(0), None)])
+def test_check3_none_and_zero_fault_count_accept_complete_snapshot(checks):
+    body = body_with_check_results(checks)
+    interfaces = []
+    def wrap(raw, interface):
+        if isinstance(raw, FaultEntity):
+            interfaces.append(interface)
+        return raw
+
+    assert snapshot(body, wrap=wrap) == snapshot(make_body())
+    assert body.check_reads == 2
+    assert interfaces == ['IFaultEntity'] * sum(item is not None for item in checks)
+
+
+@pytest.mark.parametrize('stage', [0, 1], ids=['before', 'after'])
+@pytest.mark.parametrize('count,code', [(1, 'planar_brep_invalid'),
+                                     (17, 'planar_brep_invalid'),
+                                     (-1, 'planar_brep_incomplete'),
+                                     (True, 'planar_brep_incomplete'),
+                                     (False, 'planar_brep_incomplete'),
+                                     (0.0, 'planar_brep_incomplete'),
+                                     (1.0, 'planar_brep_incomplete'),
+                                     (None, 'planar_brep_incomplete'),
+                                     ('0', 'planar_brep_incomplete')])
+def test_check3_fault_count_must_be_exact_nonnegative_integer(stage, count, code):
+    checks = [None, None]
+    checks[stage] = FaultEntity(count)
+    body = body_with_check_results(checks)
+    assert_rejected(body, code)
+    assert body.check_reads == stage + 1
+
+
+@pytest.mark.parametrize('stage', [0, 1], ids=['before', 'after'])
+@pytest.mark.parametrize('mode', ['check_read', 'count_read', 'missing_count',
+                                 'wrap_error', 'wrap_none'])
+def test_check3_unreadable_or_unwrappable_faults_fail_closed(stage, mode):
+    native_error = RuntimeError('native fault observation failed')
+    class UnreadableFault:
+        @property
+        def Count(self):
+            raise native_error
+
+    checks = [None, None]
+    checks[stage] = (native_error if mode == 'check_read' else
+                     UnreadableFault() if mode == 'count_read' else
+                     object() if mode == 'missing_count' else FaultEntity(0))
+    body = body_with_check_results(checks)
+    def wrap(raw, interface):
+        if interface == 'IFaultEntity':
+            if mode == 'wrap_error':
+                raise native_error
+            if mode == 'wrap_none':
+                return None
+        return raw
+
+    with pytest.raises(PlanarBrepError) as exc:
+        snapshot(body, wrap=wrap)
+    assert exc.value.code == ('planar_brep_incomplete' if mode == 'wrap_none'
+                              else 'planar_brep_native_read_failed')
+    assert body.check_reads == stage + 1
+    if mode in ('check_read', 'count_read', 'wrap_error'):
+        assert exc.value.__cause__ is native_error
+    elif mode == 'missing_count':
+        assert isinstance(exc.value.__cause__, AttributeError)
+
+
+@pytest.mark.parametrize('mode,code', [('missing', 'planar_brep_incomplete'),
+                                     ('foreign', 'planar_brep_incomplete'),
+                                     ('raises', 'planar_brep_native_read_failed')])
+def test_public_getloop_requires_confirmed_native_owner_without_fallback(mode, code):
+    body = make_body()
+    coedge = body.faces[0].loops[0].ordered[0]
+    native_error = RuntimeError('public GetLoop unavailable')
+    def get_loop():
+        if mode == 'raises':
+            raise native_error
+        return None if mode == 'missing' else body.faces[1].loops[0]
+
+    coedge.GetLoop = get_loop
+    # A seemingly usable private accessor must never bypass public failure.
+    def private_accessor():
+        pytest.fail('No fallback to IGetLoop2 is permitted.')
+    coedge.IGetLoop2 = private_accessor
+    with pytest.raises(PlanarBrepError) as exc:
+        snapshot(body)
+    assert exc.value.code == code
+    if mode == 'raises':
+        assert exc.value.__cause__ is native_error

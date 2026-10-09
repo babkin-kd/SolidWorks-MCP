@@ -1,0 +1,416 @@
+"""Installed internal export acceptance on disposable owned native fixtures.
+
+Root executes this verifier; authoring it is not native acceptance. All calls
+run synchronously on one initialized main STA. Public MCP exports remain outside
+this verifier. Private journal and all outputs (especially uncertain ones) are
+retained; no generic output cleanup, replay, cancellation or user CAD save.
+"""
+
+import argparse
+import asyncio
+from concurrent.futures import Future
+from contextlib import ExitStack
+from importlib import resources
+import json
+import os
+from pathlib import Path
+import re
+import threading
+import uuid
+
+import pythoncom
+import solidworks_mcp
+from solidworks_mcp import binding
+from solidworks_mcp.build_info import source_digest
+from solidworks_mcp.cad_documents import SolidWorksDocuments
+from solidworks_mcp.cad_exports_v2 import CadExportsAdapter
+from solidworks_mcp.cad_planar_brep import PLANAR_BREP_SCOPE
+from solidworks_mcp.documents import DocumentCatalog
+from solidworks_mcp.exports_v2 import ExportCatalog, ExportOptions
+from solidworks_mcp.jobs import ExecutionFailure, JobRunner, JobStore
+from verify_document_reads import native_snapshot
+from verify_geometry_reads import fixtures
+from verify_export_operations import (application_preferences, assert_stl_frame_and_units,
+    exact_solid, independent_binary_stl, independent_file_facts,
+    owned_source_snapshot, ui_snapshot, user_file_metadata)
+
+
+class InlineWorker:
+    """Execute real native callbacks on the verifier's main apartment, once."""
+
+    def __init__(self):
+        self.thread = threading.get_ident()
+        self.dispatch_count = 0
+
+    def submit(self, function):
+        assert threading.get_ident() == self.thread
+        self.dispatch_count += 1
+        future = Future()
+        try:
+            future.set_result(function())
+        except BaseException as exc:
+            future.set_exception(exc)
+        return future
+
+    def shutdown(self, timeout_s=5):
+        assert threading.get_ident() == self.thread
+        return True
+
+
+class InlineJobRunner(JobRunner):
+    def __init__(self, store):
+        super().__init__(store, InlineWorker())
+
+
+class ObservedExportsAdapter(CadExportsAdapter):
+    """Audit durable hold/UI guard immediately before the actual native export.
+
+    No native response is fabricated or failure injected. Parent implementation
+    still performs actual SaveAs3 and native preference restoration.
+    """
+
+    def __init__(self, adapter, store, epoch):
+        super().__init__(adapter)
+        self.store, self.epoch = store, epoch
+        self.expected_operation = None
+        self.native_calls = []
+
+    def export_part_to_file(self, model, path, options, before):
+        assert self.expected_operation, 'Native export lacks verifier operation ownership.'
+        checkpoint = self.store.get(self.expected_operation)['mutation']
+        assert checkpoint and checkpoint['phase'] == 'prepared'
+        assert checkpoint['before_state']['_mutation_effect_scope'] == 'application'
+        # Application holds must block other documents and other epochs too.
+        for epoch in (self.epoch, 'unrelated-verifier-epoch'):
+            blockers = self.store.mutation_blockers(epoch, 'unrelated-verifier-document')
+            assert any(row['operation_id'] == self.expected_operation for row in blockers), blockers
+        assert int(model.GetBlockingState()) == 2, 'Real UI guard was not acquired.'
+        self.native_calls.append(self.expected_operation)
+        return super().export_part_to_file(model, path, options, before)
+
+
+def _provenance():
+    package = Path(solidworks_mcp.__file__).resolve().parent
+    assert 'site-packages' in package.parts, 'Use an installed wheel, never source PYTHONPATH.'
+    assert not os.environ.get('PYTHONPATH'), 'Unset PYTHONPATH before native acceptance.'
+    build = json.loads(resources.files('solidworks_mcp').joinpath('build_info.json').read_text(encoding='utf8'))
+    actual_digest = source_digest(package)
+    assert build.get('package_version') == solidworks_mcp.__version__
+    assert build.get('source_digest') == actual_digest, 'Installed build metadata does not match its files.'
+    return {'package_version': solidworks_mcp.__version__, 'git_sha': build.get('git_sha'),
+            'source_dirty': build.get('source_dirty'), 'installed_source_digest': actual_digest,
+            'installed_build_matches_package': True}
+
+
+def _reject(function, *codes):
+    try:
+        function()
+    except ExecutionFailure as exc:
+        assert exc.code in codes, (exc.code, str(exc))
+        assert exc.uncertain is False
+        return exc.code
+    raise AssertionError('Expected a known pre-write rejection.')
+
+
+def _format_facts(path, manifest, source, units):
+    if manifest['format'] == 'stl':
+        parsed = independent_binary_stl(path)
+        assert_stl_frame_and_units(parsed, source['native_extrema_m'], units)
+        assert manifest['units'] == units and manifest['units_embedded'] is False
+        return {'triangles': parsed['triangles'], 'native_extrema_and_requested_scale_verified': True,
+                'negative_source_coordinates_preserved': True,
+                'coordinates': {'min': parsed['min'], 'max': parsed['max']}}
+    if manifest['format'] == 'step':
+        content = path.read_text(encoding='ascii', errors='replace')
+        assert 'ISO-10303-21;' in content[:256] and 'END-ISO-10303-21;' in content[-4096:]
+        units_found = re.findall(r'SI_UNIT\(\s*(\$|\.MILLI\.)\s*,\s*\.METRE\.\s*\)', content)
+        assert units_found and len(set(units_found)) == 1, 'STEP length units are absent or ambiguous.'
+        declared = 'mm' if units_found[0] == '.MILLI.' else 'm'
+        assert manifest['units'] == declared and manifest['units_embedded'] is True
+        return {'exchange_header_verified': True, 'declared_length_units': declared,
+                'geometry_roundtrip_verified': False}
+    assert manifest['format'] == 'parasolid'
+    header = path.read_bytes()[:4096]
+    assert header.startswith(b'**') and b'PARASOLID' in header.upper()
+    assert manifest['units'] is None and manifest['units_embedded'] is None
+    return {'text_transmit_header_verified': True, 'file_units_independently_verified': False,
+            'geometry_roundtrip_verified': False}
+
+
+def check(state, output):
+    report = {**_provenance(), 'public_mcp_export_acceptance': False,
+              'asynchronous_pending_timeout_acceptance': False,
+              'fault_injection_rollback_and_crash_acceptance': False,
+              'arbitrary_brep_acceptance': False, 'geometry_roundtrip_verified': False}
+    original = native_snapshot()
+    original_sw, original_module = binding.connect(show=False), binding.module()
+    original_preferences = application_preferences(original_sw)
+    original_ui = ui_snapshot(original_sw, original_module)
+    original_files = user_file_metadata(original)
+    confirmed_paths = {}
+    results, committed_arguments = [], []
+    store = None
+    documents = None
+
+    def close_resources():
+        nonlocal documents, store
+        try:
+            if documents is not None:
+                closing, documents = documents, None
+                closing.close()
+        finally:
+            if store is not None:
+                closing, store = store, None
+                closing.close()
+
+    try:
+        with fixtures() as (session, owned, _), ExitStack() as cleanup:
+            # Release watches/adapter/journal on this STA before fixtures closes
+            # its exact owned documents, including every failure path.
+            cleanup.callback(close_resources)
+            adapter = SolidWorksDocuments()
+            sw, module = adapter._sw, binding.module()
+            model = owned[1]
+            assert adapter.identity(session._model) == adapter.identity(model)
+            assert adapter.identity(binding.wrap(sw.ActiveDoc, module.IModelDoc2)) == adapter.identity(model)
+            before_preferences = application_preferences(sw)
+            # Edit only the exact second verifier-owned, unsaved source.
+            assert str(model.GetPathName()) == ''
+            session.delete_feature('Контрольный чужой блок', with_children=True)
+            session.add_extruded_profile([[-25, -30], [-20, -30], [-20, -24], [-25, -24]],
+                                        7, name='Отрицательный контрольный блок', merge=False)
+            for feature in session._iter_features():
+                if feature.GetTypeName2() in ('ProfileFeature', '3DProfileFeature'):
+                    feature.Name = 'Отрицательный контрольный эскиз'
+                    assert feature.Name == 'Отрицательный контрольный эскиз'
+            body = exact_solid(model, module)
+            body.Name = 'Отрицательное контрольное тело'
+            assert body.Name == 'Отрицательное контрольное тело'
+            assert model.ForceRebuild3(False)
+            model.ClearSelection2(True)
+            assert application_preferences(sw) == before_preferences
+            documents = DocumentCatalog(adapter)
+            store = JobStore(state / 'jobs.sqlite')
+            epoch = 'internal-exports-' + uuid.uuid4().hex
+            exports = ObservedExportsAdapter(adapter, store, epoch)
+            catalog = ExportCatalog(documents, store, epoch, output,
+                                    adapter=exports, mutation_guard=adapter.mutation_guard)
+            runner = InlineJobRunner(store)
+            rows = documents.list()['documents']
+            target, mixed = [next(row for row in rows if row['title'] == item.GetTitle())
+                             for item in (model, owned[0])]
+            context = {'document_id': target['document_id'], 'configuration': 'Основная'}
+            source = owned_source_snapshot(model, module)
+            assert source['selection_count'] == 0 and source['blocking_state'] == 0
+            assert source['active_configuration'] == 'Основная'
+            assert min(source['native_extrema_m']['min']) < 0
+            setup, setup_ui = native_snapshot(), ui_snapshot(sw, module)
+            semantic = exports.export_source_snapshot(model)
+            assert all(row['boundary_snapshot']['scope'] == PLANAR_BREP_SCOPE for row in semantic['bodies'])
+
+            def unchanged():
+                assert native_snapshot() == setup, 'Export changed native document metadata/active configuration.'
+                assert ui_snapshot(sw, module) == setup_ui, 'Export changed native selection/UI blocking.'
+                assert owned_source_snapshot(model, module) == source, 'Independent source facts changed.'
+                assert exports.export_source_snapshot(model) == semantic, 'Full supported source boundary changed.'
+                assert application_preferences(sw) == before_preferences, 'Global preferences were not restored.'
+
+            def submit(request, arguments):
+                def operation(operation_id):
+                    exports.expected_operation = operation_id
+                    try:
+                        return catalog.execute(operation_id, **arguments)
+                    finally:
+                        exports.expected_operation = None
+                return runner.submit(request, 'internal.export_part', arguments, operation,
+                    context={key: arguments[key] for key in ('document_id', 'configuration', 'expected_revision')},
+                    mutates=True, pass_operation_id=True,
+                    verify=lambda result: result.get('verified') is True)
+
+            _reject(lambda: catalog.prepare('doc_missing', 'Основная', 'stl', 'Неизвестный документ.stl', 'mm'),
+                    'document_not_open')
+            _reject(lambda: catalog.prepare(mixed['document_id'], 'Основная', 'stl', 'Неактивная часть.stl', 'mm'),
+                    'document_not_active')
+            _reject(lambda: catalog.prepare(mixed['document_id'], 'Вариант', 'stl', 'Неактивная конфигурация.stl', 'mm'),
+                    'configuration_not_active')
+            try:
+                active, _ = sw.ActivateDoc3(owned[0].GetTitle(), False, 1, 0)
+                assert active is not None
+                owned[0].ClearSelection2(True)
+                _reject(lambda: catalog.prepare(mixed['document_id'], 'Основная', 'stl', 'Смешанные тела.stl', 'mm'),
+                        'unsupported_export_body')
+            finally:
+                active, _ = sw.ActivateDoc3(model.GetTitle(), False, 1, 0)
+                assert active is not None
+            assert not list(output.iterdir())
+            unchanged()
+
+            # Invalidate a token with a direct edit of an exact owned feature.
+            stale = catalog.prepare(**context, format='stl', filename='Устаревший экспорт.stl', units='mm')
+            native_feature = next(feature for feature in session._iter_features()
+                                  if feature.Name == 'Отрицательный контрольный блок')
+            native_feature.Name = 'Отрицательный блок после проверки'
+            assert native_feature.Name == 'Отрицательный блок после проверки'
+            stale_job = submit('stale', {**context, 'expected_revision': stale['revision'],
+                              'format': 'stl', 'filename': 'Устаревший экспорт.stl', 'units': 'mm'})
+            assert stale_job['status'] == 'failed' and stale_job['error']['code'] == 'stale_revision', stale_job
+            assert not exports.native_calls and not (output / 'Устаревший экспорт.stl').exists()
+            source = owned_source_snapshot(model, module)
+            setup, setup_ui = native_snapshot(), ui_snapshot(sw, module)
+            semantic = exports.export_source_snapshot(model)
+            unchanged()
+
+            # Simulate a destination appearing AFTER prepare, without using any
+            # actual user file. Both prepare and execute must refuse overwrite.
+            filename = 'Существующий контрольный файл.stl'
+            prepared = catalog.prepare(**context, format='stl', filename=filename, units='mm')
+            sentinel = output / filename
+            with sentinel.open('xb') as stream:
+                stream.write(b'verifier-owned-do-not-overwrite')
+            confirmed_paths[sentinel] = independent_file_facts(sentinel)
+            _reject(lambda: catalog.prepare(**context, format='stl', filename=filename, units='mm'), 'export_file_exists')
+            exists = submit('existing', {**context, 'expected_revision': prepared['revision'],
+                            'format': 'stl', 'filename': filename, 'units': 'mm'})
+            assert exists['status'] == 'failed' and exists['error']['code'] == 'export_file_exists', exists
+            assert independent_file_facts(sentinel) == confirmed_paths[sentinel]
+            assert not exports.native_calls
+            unchanged()
+
+            formats = [('stl', 'mm', '.stl'), ('stl', 'm', '.stl'), ('stl', 'in', '.stl'),
+                       ('step', '', '.step'), ('parasolid', '', '.x_t')]
+            for index, (file_format, units, extension) in enumerate(formats):
+                filename = f'Контрольный экспорт {index}{extension}'
+                prepared = catalog.prepare(**context, format=file_format, filename=filename, units=units)
+                assert prepared['source'] == {**semantic, 'export_profile': exports.export_profile(
+                    ExportOptions(**prepared['options']).checked())}
+                unchanged()
+                request = f'export-{index}'
+                arguments = {**context, 'expected_revision': prepared['revision'],
+                             'format': file_format, 'filename': filename, 'units': units}
+                print(json.dumps({'phase': 'before_native_export', 'format': file_format, 'units': units}), flush=True)
+                job = submit(request, arguments)
+                # Unknown is retained, never retried or converted to success.
+                assert job['status'] == 'succeeded', job
+                checkpoint, result = job['mutation'], job['result']
+                assert checkpoint['phase'] == 'committed'
+                assert checkpoint['before_state']['_mutation_effect_scope'] == 'application'
+                assert checkpoint['verification']['outcome'] == 'committed'
+                assert result['verified'] is True
+                assert result['execution_guard'] == {'original_state': 0, 'locked_state': 2, 'released_state': 0}
+                manifest = result['value']
+                assert manifest['operation_id'] == job['operation_id']
+                assert manifest['source_revision'] == prepared['revision']
+                assert manifest['revision_scope'] == prepared['revision_scope']
+                assert manifest['document_id'] == context['document_id'] and manifest['configuration'] == 'Основная'
+                assert manifest['format'] == file_format and manifest['coordinate_frame'] == 'part_model'
+                assert manifest['source_unchanged'] is True and manifest['preferences_restored'] is True
+                assert manifest['native_errors'] == 0 and manifest['native_warnings'] == 0
+                assert manifest['publication'] == 'atomic_no_overwrite_link'
+                assert manifest['geometry_roundtrip_verified'] is False
+                path = output / filename
+                assert Path(manifest['path']).resolve() == path.resolve()
+                facts = independent_file_facts(path)
+                assert facts['bytes'] == manifest['bytes'] and facts['sha256'] == manifest['sha256']
+                confirmed_paths[path] = facts
+                format_facts = _format_facts(path, manifest, source, units)
+                unchanged()
+                calls, dispatches = len(exports.native_calls), runner.worker.dispatch_count
+                duplicate = submit(request, arguments)
+                assert duplicate['operation_id'] == job['operation_id'] and duplicate['result'] == result
+                assert (len(exports.native_calls), runner.worker.dispatch_count) == (calls, dispatches)
+                zero_wait = asyncio.run(runner.wait(job['operation_id'], timeout_s=0))
+                assert zero_wait['status'] == 'succeeded' and zero_wait['result'] == result
+                assert not store.mutation_blockers('different-epoch', 'different-document')
+                assert set(output.iterdir()) == set(confirmed_paths), 'Unexpected staging/sidecars retained for investigation.'
+                committed_arguments.append((request, arguments, job))
+                results.append({'operation_id': job['operation_id'], 'format': file_format,
+                    'requested_units': units, 'path': str(path), 'bytes': facts['bytes'], 'sha256': facts['sha256'],
+                    'durable_application_checkpoint_and_ui_guard': True, 'same_request_does_not_replay': True,
+                    'revision_scope': prepared['revision_scope'], 'analytical_geometry_scope': PLANAR_BREP_SCOPE,
+                    **format_facts})
+                print(json.dumps({'phase': 'native_export_confirmed', **results[-1]}, ensure_ascii=True), flush=True)
+            assert len(exports.native_calls) == 5
+            unchanged()
+
+            # Real SQLite reopen: committed result/idempotency survives process-
+            # lifetime objects. No CAD callback is permitted on historical replay.
+            store.close()
+            store = None
+            store = JobStore(state / 'jobs.sqlite')
+            historical_runner = InlineJobRunner(store)
+            for request, arguments, previous in committed_arguments:
+                def prohibited(*args):
+                    raise AssertionError('A committed operation was replayed after journal reopen.')
+                historical = historical_runner.submit(request, 'internal.export_part', arguments, prohibited,
+                    context={key: arguments[key] for key in ('document_id', 'configuration', 'expected_revision')},
+                    mutates=True, pass_operation_id=True, verify=lambda result: result.get('verified') is True)
+                assert historical['operation_id'] == previous['operation_id']
+                assert historical['result'] == previous['result'] and historical['mutation']['phase'] == 'committed'
+            assert historical_runner.worker.dispatch_count == 0
+            assert not store.mutation_blockers('another-epoch', 'another-document')
+            # No catalog write is attempted after replacing its journal owner.
+            assert native_snapshot() == setup and ui_snapshot(sw, module) == setup_ui
+            assert application_preferences(sw) == before_preferences
+            assert exports.export_source_snapshot(model) == semantic
+            report.update(native_internal_exports=results, actual_native_export_count=5,
+                internal_native_export_acceptance=True,
+                installed_analytical_geometry_scope=PLANAR_BREP_SCOPE,
+                stale_revision_rejected=True, wrong_document_and_inactive_targets_rejected=True,
+                mixed_solid_surface_source_rejected=True,
+                existing_output_unchanged=True, destination_race_before_execution_rejected=True,
+                native_source_metadata_extrema_mass_and_feature_facts_unchanged=True,
+                full_supported_source_snapshot_unchanged=True, global_preferences_restored=True,
+                ui_guard_and_selection_restored=True, journal_reopen_retains_committed_results=True,
+                committed_request_after_reopen_does_not_dispatch=True,
+                timeout_zero_reads_already_terminal_job=True, private_outputs_retained=True)
+        assert native_snapshot() == original, 'Original user document baseline was not restored.'
+        assert application_preferences(original_sw) == original_preferences
+        assert ui_snapshot(original_sw, original_module) == original_ui
+        assert user_file_metadata(original) == original_files
+        for path, facts in confirmed_paths.items():
+            assert independent_file_facts(path) == facts
+        report.update(original_user_document_baseline_restored=True,
+                      original_user_file_metadata_unchanged=True,
+                      original_user_file_byte_hashes_checked=False,
+                      retained_confirmed_output_count=len(confirmed_paths))
+        return report
+    finally:
+        close_resources()
+        # Every produced path/journal remains private for root's review. Nothing
+        # is deleted, especially after an unknown or partially published result.
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--state-dir', type=Path, required=True)
+    parser.add_argument('--output-dir', type=Path, required=True)
+    parser.add_argument('--report', type=Path, required=True)
+    args = parser.parse_args()
+    state, output, report = (path.absolute() for path in (args.state_dir, args.output_dir, args.report))
+    assert not state.exists() and not output.exists() and not report.exists(), 'All verifier paths must be fresh.'
+    assert state != output and state not in output.parents and output not in state.parents
+    assert report != state and report != output and state not in report.parents and output not in report.parents
+    state.mkdir(parents=True)
+    output.mkdir(parents=True)
+    report.parent.mkdir(parents=True, exist_ok=True)
+    pythoncom.CoInitialize()
+    try:
+        try:
+            result = check(state.resolve(), output.resolve())
+        except BaseException as exc:
+            failure = {'accepted': False, 'public_mcp_export_acceptance': False,
+                       'error_type': type(exc).__name__, 'error_code': getattr(exc, 'code', None),
+                       'message': str(exc), 'private_outputs_and_journal_retained': True,
+                       'automatic_replay_or_output_cleanup_attempted': False}
+            with report.open('x', encoding='utf8') as stream:
+                stream.write(json.dumps(failure, ensure_ascii=True, indent=2) + '\n')
+            raise
+        with report.open('x', encoding='utf8') as stream:
+            stream.write(json.dumps(result, ensure_ascii=True, indent=2) + '\n')
+        print(json.dumps(result, ensure_ascii=True, indent=2))
+    finally:
+        pythoncom.CoUninitialize()
+
+
+if __name__ == '__main__':
+    main()

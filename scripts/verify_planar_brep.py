@@ -76,7 +76,18 @@ def main():
     assert not args.report.exists()
     pythoncom.CoInitialize()
     try:
-        result = check()
+        baseline = native_snapshot()
+        try:
+            result = check()
+        except Exception as exc:
+            result = {'package_version': solidworks_mcp.__version__, 'accepted': False,
+                'error': {'type': type(exc).__name__, 'code': getattr(exc, 'code', None), 'message': str(exc)},
+                'original_document_baseline_restored': native_snapshot() == baseline}
+            args.report.parent.mkdir(parents=True, exist_ok=True)
+            args.report.write_text(json.dumps(result, indent=2) + '\n', encoding='utf8')
+            print(json.dumps(result, indent=2), flush=True)
+            raise
+        result['accepted'] = True
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps(result, indent=2) + '\n', encoding='utf8')
         print(json.dumps(result, indent=2))

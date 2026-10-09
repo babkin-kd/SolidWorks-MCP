@@ -5,6 +5,8 @@ Call on the owning STA; provide canonical (possibly unhashable) COM identity
 and a ``wrap(raw, interface_name)`` callback for registered dispatch wrappers.
 Exact native doubles are retained as float.hex(), without rounding. Numeric
 consistency tolerances only REJECT malformed input; they never merge geometry.
+The supported native exact class must report a gap <= 5e-9 m. That separate
+classification gate never relaxes the 1e-12 m analytical consistency checks.
 This is a narrow analytical scope, not an arbitrary BREP revision mechanism.
 The caller must supply its document/configuration/event/UI consistency guard.
 """
@@ -39,6 +41,7 @@ class PlanarBrepLimits:
     max_polygon_comparisons: int = 1_000_000
     max_coordinate_m: float = 10_000.0
     consistency_tolerance_m: float = 1e-12
+    max_native_gap_m: float = 5e-9
 
     def __post_init__(self):
         for name in ('max_vertices', 'max_edges', 'max_faces', 'max_loops',
@@ -47,12 +50,14 @@ class PlanarBrepLimits:
             value = getattr(self, name)
             if type(value) is not int or not 1 <= value <= 2_000_000:
                 raise ValueError(f'{name} must be an integer in [1, 2000000].')
-        for name in ('max_coordinate_m', 'consistency_tolerance_m'):
+        for name in ('max_coordinate_m', 'consistency_tolerance_m', 'max_native_gap_m'):
             value = getattr(self, name)
             if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
                 raise ValueError(f'{name} must be finite and positive.')
         if self.max_coordinate_m > 10_000 or self.consistency_tolerance_m > 1e-12:
             raise ValueError('Limits may tighten, never loosen, the analytical consistency gate.')
+        if self.max_native_gap_m > 5e-9:
+            raise ValueError('Native gap limit may tighten, never exceed 5e-9 m.')
 
 
 def _fail(code, message):
@@ -139,6 +144,19 @@ class _Reader:
         except Exception as exc:
             raise PlanarBrepError('planar_brep_native_read_failed', f'{name} failed.') from exc
 
+    def check_body(self, body):
+        # Check3 can return a valid IFaultEntity whose Count is zero. Presence
+        # of the dispatch object alone is not evidence of a defective body.
+        raw = self.prop(body, 'Check3')
+        if raw is None:
+            return
+        faults = self.obj(raw, 'IFaultEntity')
+        count = self.prop(faults, 'Count')
+        if type(count) is not int or count < 0:
+            _fail('planar_brep_incomplete', 'Native fault count is invalid.')
+        if count > 0:
+            _fail('planar_brep_invalid', 'Native body check returned faults; no repair is attempted.')
+
     def obj(self, obj, interface):
         if obj is None:
             _fail('planar_brep_incomplete', f'Missing {interface}.')
@@ -218,9 +236,11 @@ class _Reader:
                 or tolerance < 0):
             _fail('planar_brep_incomplete', 'Native tolerance is invalid, negative or nonfinite.')
         tolerance = float(tolerance)
-        if tolerant or tolerance > self.limits.consistency_tolerance_m:
+        if tolerant or tolerance > self.limits.max_native_gap_m:
             _fail('planar_brep_unsupported', 'Tolerant or excessive-gap native geometry is unsupported.')
         # False is the native exact class, which can still have a small gap.
+        # The reported gap gate is independent of analytical point/plane/line
+        # consistency; accepting an exact class never relaxes those checks.
         # Preserve that gap verbatim; do not equate it with zero or snap points.
         return {'is_tolerant': False, 'gap_m': tolerance.hex()}
 
@@ -286,8 +306,7 @@ def planar_body_snapshot(body, *, identity, wrap=None, limits=None):
         _fail('planar_brep_unsupported', 'Only native solid bodies are supported.')
     if r.flag(r.call(body, 'IsMeshBody'), 'IsMeshBody'):
         _fail('planar_brep_unsupported', 'Mesh bodies are unsupported.')
-    if r.prop(body, 'Check3') is not None:
-        _fail('planar_brep_invalid', 'Native body check returned faults; no repair is attempted.')
+    r.check_body(body)
     stamp = r.call(body, 'GetUpdateStamp')
     if type(stamp) is not int:
         _fail('planar_brep_incomplete', 'Invalid body update stamp.')
@@ -410,7 +429,7 @@ def planar_body_snapshot(body, *, identity, wrap=None, limits=None):
                 coedge_key = r.key(current)
                 if coedge_key in coedge_data or coedge_key in ordered:
                     _fail('planar_brep_incomplete', 'Coedge traversal closes early or shares an entity.')
-                if r.key(r.obj(r.call(current, 'IGetLoop2'), 'ILoop2')) != loop_key:
+                if r.key(r.obj(r.call(current, 'GetLoop'), 'ILoop2')) != loop_key:
                     _fail('planar_brep_incomplete', 'Coedge belongs to another loop.')
                 # A separate coedge curve denotes imprecise sewing; reject it.
                 if r.call(current, 'GetCurve') is not None:
@@ -500,8 +519,7 @@ def planar_body_snapshot(body, *, identity, wrap=None, limits=None):
                     r.count(body, 'GetFaceCount', r.limits.max_faces, 4))
     if after_counts != counts or r.call(body, 'GetUpdateStamp') != stamp:
         _fail('planar_brep_changed_during_read', 'Native body changed during boundary collection.')
-    if r.prop(body, 'Check3') is not None:
-        _fail('planar_brep_invalid', 'Native body check returned faults after collection.')
+    r.check_body(body)
     return {
         'scope': PLANAR_BREP_SCOPE, 'coordinate_frame': 'part_model', 'length_unit': 'm',
         'number_encoding': 'ieee754_binary64_hex_exact',
