@@ -297,8 +297,21 @@ class ExportCatalog:
             current = source_state()
             if current != {'source': prepared.before['source'], 'preferences': prepared.before['preferences']}:
                 raise rejected('export_source_changed', 'Source/preference preservation was not verified; output will not be published.')
-            if sorted(p.name for p in staging.iterdir()) != [temporary.name]:
+            if _identity(staging) != context['staging_identity'] or _is_reparse(staging):
+                raise rejected('export_directory_changed', 'Owned staging directory identity changed.')
+            entries = list(staging.iterdir())
+            if len(entries) != 1:
                 raise rejected('unexpected_export_files', 'Unexpected sidecars appeared; no output will be published.')
+            # SolidWorks can change extension casing (model.stl -> model.STL)
+            # on Windows. Establish the one actual file by native filesystem
+            # identity, not a case-sensitive comparison of directory names.
+            # A second entry is always a sidecar, even if it is a hard link to
+            # the same file. Do not normalize or guess an alternative path.
+            entry = entries[0]
+            if (_is_reparse(entry) or not stat.S_ISREG(entry.lstat().st_mode)
+                    or _identity(entry) != context['temporary_identity']
+                    or _identity(temporary) != context['temporary_identity']):
+                raise rejected('export_file_changed', 'Staged directory entry differs from the verified export file.')
             # Windows FlushFileBuffers (os.fsync) needs a writable handle;
             # this is our verified staging file, never an existing user file.
             with temporary.open('r+b') as stream:

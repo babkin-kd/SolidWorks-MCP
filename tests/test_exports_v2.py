@@ -5,6 +5,7 @@ from contextlib import nullcontext
 from copy import deepcopy
 import importlib.util
 import math
+import os
 from pathlib import Path
 import struct
 import sys
@@ -161,6 +162,62 @@ def test_duplicate_request_returns_historical_output_without_second_write(setup)
     assert first['status'] == 'succeeded', first
     assert first['operation_id'] == retry['operation_id']
     assert first['result'] == retry['result'] and adapter.writes == 1
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='Case-equivalent native export paths require Windows.')
+@pytest.mark.parametrize('format,extension', [('stl', '.stl'), ('step', '.step'), ('parasolid', '.x_t')])
+def test_native_uppercase_extension_publishes_same_verified_file(setup, format, extension):
+    adapter, _, _, _, _, output = setup
+    observed = []
+    def uppercase_native_extension(path):
+        identity = (path.stat().st_dev, path.stat().st_ino)
+        actual = path.with_suffix(extension.upper())
+        path.rename(actual)
+        entries = list(path.parent.iterdir())
+        assert len(entries) == 1 and entries[0].name == actual.name
+        assert path.exists() and (path.stat().st_dev, path.stat().st_ino) == identity
+        observed.append(identity)
+    adapter.write_hook = uppercase_native_extension
+    filename = 'Контрольная деталь' + extension
+    job = export(setup, format=format, filename=filename)
+    assert job['status'] == 'succeeded', job
+    assert job['mutation']['phase'] == 'committed'
+    manifest = job['result']['value']
+    published = (output / filename).stat()
+    assert (published.st_dev, published.st_ino) == observed[0]
+    assert manifest['source_unchanged'] is True and manifest['preferences_restored'] is True
+    assert [entry.name for entry in output.iterdir()] == [filename]
+
+
+def test_second_staging_entry_is_rejected_even_when_same_file_identity(setup):
+    adapter, _, _, store, document_id, output = setup
+    def add_hardlink_sidecar(path):
+        os.link(path, path.parent / 'second.stl')
+    adapter.write_hook = add_hardlink_sidecar
+    job = export(setup)
+    assert job['status'] == 'unknown' and job['mutation']['phase'] == 'unresolved', job
+    assert store.mutation_blockers('connection_1', document_id)
+    assert not (output / 'Кронштейн.stl').exists()
+    sidecar = next(output.glob('.mcp-export-*/second.stl'))
+    assert sidecar.read_bytes() == binary_stl()
+
+
+def test_one_foreign_directory_entry_cannot_replace_verified_file(setup, tmp_path, monkeypatch):
+    _, _, _, store, document_id, output = setup
+    foreign = tmp_path / 'foreign.stl'
+    foreign.write_bytes(b'foreign file must remain untouched')
+    original_iterdir = Path.iterdir
+    def changed_directory_listing(path):
+        if path.name.startswith('.mcp-export-'):
+            return iter([foreign])
+        return original_iterdir(path)
+    monkeypatch.setattr(Path, 'iterdir', changed_directory_listing)
+    job = export(setup)
+    assert job['status'] == 'failed' and job['error']['code'] == 'export_file_changed', job
+    assert job['mutation']['phase'] == 'rolled_back'
+    assert not store.mutation_blockers('connection_1', document_id)
+    assert foreign.read_bytes() == b'foreign file must remain untouched'
+    assert not list(output.iterdir())
 
 
 @pytest.mark.parametrize('change', ['geometry', 'preferences', 'configuration_identity', 'event'])
