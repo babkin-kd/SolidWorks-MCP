@@ -61,7 +61,8 @@ class Runtime:
             if operation == 'geometry.get':
                 return self._geometry.get(**arguments)
             if operation.startswith('feature.') and self._features is None:
-                self._features = FeatureCatalog(self._catalog, self.store, self._connection_epoch)
+                self._features = FeatureCatalog(self._catalog, self.store, self._connection_epoch,
+                    mutation_guard=getattr(self._catalog.adapter, 'mutation_guard', None))
             if operation == 'feature.list':
                 return self._features.list(**arguments)
             if operation == 'feature.get':

@@ -410,9 +410,18 @@ def test_adapter_parameter_enum_units_configuration_arguments_and_signed_semanti
     row = adapter.dimension_summary(record, ['Основная', 'Вариант'])
     assert row['unit'] == 'deg' and row['values']['Основная'] == 90
     assert row['write_blockers'] == []
-    assert calls == [(3, ['Основная']), (3, ['Вариант'])]
+    for call, name in zip(calls, ['Основная', 'Вариант']):
+        option, names = call
+        assert option == 3
+        assert isinstance(names, cad_dimensions.win32com.client.VARIANT)
+        assert names.varianttype == cad_dimensions.pythoncom.VT_ARRAY | cad_dimensions.pythoncom.VT_BSTR
+        assert tuple(names.value) == (name,)
     assert adapter.set_dimension_value(record, math.pi, 'Основная') == 0
-    assert calls[-1] == (math.pi, 3, ['Основная'])
+    requested, option, names = calls[-1]
+    assert requested == math.pi and option == 3
+    assert isinstance(names, cad_dimensions.win32com.client.VARIANT)
+    assert names.varianttype == cad_dimensions.pythoncom.VT_ARRAY | cad_dimensions.pythoncom.VT_BSTR
+    assert tuple(names.value) == ('Основная',)
     dim.GetType = lambda: 0
     display.GetType = lambda: 11
     assert 'unsupported_display_semantics' in adapter.dimension_summary(record, ['Основная'])['write_blockers']
@@ -421,6 +430,73 @@ def test_adapter_parameter_enum_units_configuration_arguments_and_signed_semanti
     display.IsLinked = True
     row = adapter.dimension_summary(record, ['Основная'])
     assert {'read_only', 'driven_or_unknown_state', 'linked'} <= set(row['write_blockers'])
+
+
+@pytest.mark.parametrize('owner_type,blocker', [('Extrusion', None),
+    ('ProfileFeature', 'sketch_geometry_snapshot_not_implemented'),
+    ('3DProfileFeature', 'sketch_geometry_snapshot_not_implemented'),
+    ('UnknownExtrusionLikeFeature', 'owner_type_not_accepted')])
+def test_adapter_native_extrusion_owner_mapping_keeps_unknown_and_sketches_readonly(owner_type, blocker):
+    from solidworks_mcp import cad_dimensions
+    class Adapter(cad_dimensions.CadDimensionsMixin):
+        def feature_summary(self, owner):
+            return {'native_id': 1, 'name': 'Выдавливание', 'feature_type': owner_type,
+                    'suppressed': False, 'error_code': 0, 'is_warning': False}
+    owner = SimpleNamespace(IsFrozen=lambda: False, IsRolledBack=lambda: False, GetUpdateStamp=lambda: 3)
+    def read(option, names):
+        assert option == 3
+        assert names.varianttype == cad_dimensions.pythoncom.VT_ARRAY | cad_dimensions.pythoncom.VT_BSTR
+        assert tuple(names.value) == ('Основная',)
+        return (.007,)
+    dim = SimpleNamespace(FullName='D1@Выдавливание', Name='D1', DrivenState=2, ReadOnly=False,
+        GetType=lambda: 0, IsReference=lambda: False, IsDesignTableDimension=lambda: False,
+        GetSystemValue3=read, GetToleranceType=lambda: 0, GetToleranceValues=lambda: [0., 0.])
+    display = SimpleNamespace(GetType=lambda: 2, IsLinked=False, GetLinkedText=lambda: '')
+    row = Adapter().dimension_summary(cad_dimensions.NativeDimension(dim, owner, [display]), ['Основная'])
+    assert row['values']['Основная'] == 7.
+    assert row['write_blockers'] == ([] if blocker is None else [blocker])
+
+
+@pytest.mark.parametrize('native_values', [None, (), (.007, .008), float('nan'), (float('nan'),)])
+def test_adapter_named_configuration_read_does_not_fallback_when_native_array_is_invalid(native_values):
+    from solidworks_mcp import cad_dimensions
+    def read(option, names):
+        assert names.varianttype == cad_dimensions.pythoncom.VT_ARRAY | cad_dimensions.pythoncom.VT_BSTR
+        return native_values
+    dim = SimpleNamespace(GetType=lambda: 0, GetSystemValue3=read)
+    with pytest.raises(ExecutionFailure) as error:
+        cad_dimensions.CadDimensionsMixin().dimension_summary(
+            cad_dimensions.NativeDimension(dim, None, []), ['Основная'])
+    assert error.value.code == 'dimension_read_failed'
+
+
+@pytest.mark.parametrize('table_exists', [False, True])
+def test_adapter_context_uses_design_table_existence_api_not_nonnull_automation_object(monkeypatch, table_exists):
+    from solidworks_mcp import cad_dimensions
+    monkeypatch.setattr(cad_dimensions.binding, 'wrap', lambda obj, cls: obj)
+    equation = SimpleNamespace(GetCount=lambda: 0, LinkToFile=False, FilePath='')
+    calls = []
+    extension = SimpleNamespace(HasDesignTable=lambda: calls.append('HasDesignTable') or table_exists)
+    native_model = SimpleNamespace(identity=object(), GetEquationMgr=lambda: equation,
+        ListExternalFileReferencesCount2=lambda: 0, GetConfigurationNames=lambda: ['Основная'],
+        GetConfigurationByName=lambda name: SimpleNamespace(NeedsRebuild=False),
+        IsOpenedReadOnly=lambda: False, GetActiveSketch2=lambda: None)
+    def forbidden_get_table():
+        raise AssertionError('GetDesignTable object identity cannot prove table existence.')
+    native_model.GetDesignTable = forbidden_get_table
+    class Adapter(cad_dimensions.CadDimensionsMixin):
+        _module = SimpleNamespace(IModelDoc2=object, IEquationMgr=object, IConfiguration=object)
+        _sw = SimpleNamespace(ActiveDoc=native_model)
+        def identity(self, obj):
+            return obj.identity
+        def features(self, model):
+            return []
+        def _extension(self, model):
+            assert model is native_model
+            return extension
+    context = Adapter().dimension_context(native_model)
+    assert context['design_table'] is table_exists
+    assert calls == ['HasDesignTable']
 
 
 def test_adapter_enumerates_both_chamfer_values_deduplicates_aliases_and_rejects_cycles(monkeypatch):

@@ -6,6 +6,7 @@ this protocol does not fabricate a full revision from GetUpdateStamp alone.
 """
 
 from dataclasses import dataclass
+from contextlib import nullcontext
 import json
 
 from .jobs import ExecutionFailure, _json
@@ -26,7 +27,7 @@ class MutationCoordinator:
         self.connection_epoch = connection_epoch
 
     def execute(self, operation_id, *, document_id, configuration, expected_revision,
-                prepare, validate, apply, inspect, verify, restore, verify_restored):
+                prepare, validate, apply, inspect, verify, restore, verify_restored, guard=None):
         """Run on the owning STA; JobRunner supplies the durable running job.
 
         prepare resolves explicit native identities and computes the operation's
@@ -48,11 +49,57 @@ class MutationCoordinator:
             self.store.prepare_mutation(operation_id, connection_epoch=self.connection_epoch,
                 document_id=document_id, configuration=configuration,
                 expected_revision=expected_revision, before_state=before,
-                effect_scope=prepared.effect_scope)
+                effect_scope='application' if guard is not None else prepared.effect_scope)
         except Exception as exc:
             # No native write has been attempted at this point.
             raise ExecutionFailure(getattr(exc, 'code', 'mutation_preparation_failed'), str(exc), uncertain=False) from exc
 
+        entered = False
+        manager = None
+        operation_error = None
+        try:
+            # The guard can itself change application UI state. Its acquisition
+            # therefore occurs after the durable application-wide checkpoint.
+            manager = guard(prepared) if guard is not None else nullcontext()
+            with manager:
+                entered = True
+                try:
+                    result = self._execute_prepared(operation_id, prepared, before,
+                        validate, apply, inspect, verify, restore, verify_restored)
+                except Exception as exc:
+                    operation_error = exc
+            # A clean exit is required before recording release evidence, even
+            # when native validation or scoped restoration rejected the write.
+            if operation_error is not None:
+                if guard is not None and hasattr(manager, 'evidence'):
+                    verification = self.store.get(operation_id)['mutation'].get('verification')
+                    if verification and verification['outcome'] in ('not_started', 'rolled_back'):
+                        evidence = {**verification['evidence'],
+                            'execution_guard': json.loads(_json(manager.evidence))}
+                        self.store.verify_mutation(operation_id, outcome=verification['outcome'], evidence=evidence)
+                raise operation_error
+            if guard is not None and hasattr(manager, 'evidence'):
+                evidence = json.loads(_json(manager.evidence))
+                result['execution_guard'] = evidence
+                # No rollback after a storage failure here: native effects and
+                # guard release have already happened, so retain uncertainty.
+                self.store.verify_mutation(operation_id, outcome='committed',
+                    evidence={'after': result['after'], 'execution_guard': evidence})
+            return result
+        except Exception as exc:
+            if not entered and isinstance(exc, ExecutionFailure) and not exc.uncertain:
+                evidence = {'native_mutation_started': False, 'guard_error': str(exc)}
+                if manager is not None and hasattr(manager, 'evidence'):
+                    evidence['execution_guard'] = json.loads(_json(manager.evidence))
+                self.store.verify_mutation(operation_id, outcome='not_started',
+                    evidence=evidence)
+            if operation_error is not None and exc is not operation_error:
+                raise ExecutionFailure(getattr(exc, 'code', 'mutation_finalization_unconfirmed'),
+                    f'{exc}; original operation error: {operation_error}', uncertain=True) from operation_error
+            raise
+
+    def _execute_prepared(self, operation_id, prepared, before,
+                          validate, apply, inspect, verify, restore, verify_restored):
         try:
             if validate(prepared) is not True:
                 raise ExecutionFailure('stale_revision', 'Target/revision changed before native execution.', uncertain=False)

@@ -3,6 +3,7 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
+from contextlib import nullcontext
 from types import SimpleNamespace
 
 import pytest
@@ -32,6 +33,9 @@ def feature(native_id, name='Выдавливание', *, kind='Boss', suppress
 
 
 class Adapter(DocumentsAdapter):
+    def mutation_guard(self, model):
+        return nullcontext()
+
     def __init__(self):
         super().__init__()
         self.config_identity = {'Основная': object(), 'Вариант': object()}
@@ -95,7 +99,7 @@ def setup(tmp_path):
     store = JobStore(tmp_path / 'jobs.sqlite')
     documents = DocumentCatalog(adapter)
     ids = [d['document_id'] for d in documents.list()['documents']]
-    catalog = FeatureCatalog(documents, store, 'connection_1')
+    catalog = FeatureCatalog(documents, store, 'connection_1', mutation_guard=adapter.mutation_guard)
     yield adapter, documents, catalog, store, ids
     documents.close()
     store.close()

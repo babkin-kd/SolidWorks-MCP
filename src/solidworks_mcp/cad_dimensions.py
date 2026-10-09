@@ -10,6 +10,7 @@ import hashlib
 import math
 
 import pythoncom
+import win32com.client
 
 from . import binding
 from .documents import rejected
@@ -23,6 +24,12 @@ class NativeDimension:
 
 
 class CadDimensionsMixin:
+    @staticmethod
+    def _named_configuration(configuration):
+        # A plain Python list becomes SAFEARRAY(VARIANT), which SW2023 can
+        # silently ignore. Both read/write require a typed SAFEARRAY(BSTR).
+        return win32com.client.VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_BSTR, [configuration])
+
     @staticmethod
     def dimension_object(record):
         return record.dimension
@@ -77,7 +84,7 @@ class CadDimensionsMixin:
         unit = {0: 'mm', 1: 'deg'}.get(kind)
         values = {}
         for configuration in configurations:
-            raw = dim.GetSystemValue3(3, [configuration])  # swSpecifyConfiguration.
+            raw = dim.GetSystemValue3(3, self._named_configuration(configuration))  # swSpecifyConfiguration.
             if raw is None or not isinstance(raw, (tuple, list)) or len(raw) != 1:
                 raise rejected('dimension_read_failed', 'Native named-configuration value was not a one-element array.')
             value = float(raw[0])
@@ -112,7 +119,7 @@ class CadDimensionsMixin:
                 blockers.append('owner_suppressed_frozen_or_rolled_back')
             if owner_info['feature_type'] in ('ProfileFeature', '3DProfileFeature'):
                 blockers.append('sketch_geometry_snapshot_not_implemented')
-            elif owner_info['feature_type'] not in ('Boss', 'Cut', 'Revolve', 'RevolvCut'):
+            elif owner_info['feature_type'] not in ('Boss', 'Extrusion', 'Cut', 'Revolve', 'RevolvCut'):
                 blockers.append('owner_type_not_accepted')
         # Signed origin coordinates, ordinate, scalar and two-value chamfer
         # dimensions require dedicated semantics. Do not normalize with abs().
@@ -167,7 +174,9 @@ class CadDimensionsMixin:
                 'external_reference_count': external_count, 'equation_count': count, 'equations': equations,
                 'equations_linked': bool(equation.LinkToFile),
                 'equation_file': str(equation.FilePath or ''),
-                'design_table': model.GetDesignTable() is not None,
+                # GetDesignTable may return an automation object even when no
+                # table exists. Query the documented existence API explicitly.
+                'design_table': bool(self._extension(model).HasDesignTable()),
                 'unsafe_feature_types': unsafe}
 
     def dimension_geometry_snapshot(self, model):
@@ -204,7 +213,7 @@ class CadDimensionsMixin:
     @staticmethod
     def set_dimension_value(record, value_si, configuration):
         # swSetValue_InSpecificConfigurations=3; never UseCurrentSetting or All.
-        return record.dimension.SetSystemValue3(value_si, 3, [configuration])
+        return record.dimension.SetSystemValue3(value_si, 3, CadDimensionsMixin._named_configuration(configuration))
 
     def rebuild_dimension_document(self, model):
         active = binding.wrap(self._sw.ActiveDoc, self._module.IModelDoc2)

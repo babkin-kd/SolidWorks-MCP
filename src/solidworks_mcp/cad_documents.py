@@ -7,9 +7,13 @@ from .cad_geometry import CadGeometryMixin
 from .cad_features import CadFeaturesMixin
 from .documents import rejected
 from .errors import SolidWorksError
+from .ui_guard import ModelUiGuard
 
 
 class SolidWorksDocuments(CadGeometryMixin, CadFeaturesMixin):
+    def mutation_guard(self, model):
+        return ModelUiGuard(model)
+
     def __init__(self):
         try:
             self._sw = binding.connect(show=False)

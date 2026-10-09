@@ -1,6 +1,7 @@
 """Export source/preference guards, owned-file cleanup and durable publication."""
 
 from concurrent.futures import Future
+from contextlib import nullcontext
 from copy import deepcopy
 import importlib.util
 import math
@@ -100,7 +101,7 @@ def setup(tmp_path):
     store = JobStore(tmp_path / 'jobs.sqlite')
     output = tmp_path / 'exports'
     output.mkdir()
-    exports = ExportCatalog(documents, store, 'connection_1', output)
+    exports = ExportCatalog(documents, store, 'connection_1', output, mutation_guard=lambda model: nullcontext())
     yield adapter, documents, exports, store, document_id, output
     documents.close()
     store.close()

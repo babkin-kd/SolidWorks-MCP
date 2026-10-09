@@ -249,9 +249,6 @@ class DimensionCatalog:
         requested = system_value(value, unit)
         if self.mutation_guard is None:
             raise rejected('mutation_guard_unavailable', 'An owning-STA model mutation guard must be installed before dimension writes.')
-        # Resolve before acquiring the server-owned guard; preparation rechecks
-        # identity/revision inside it. The guard does not lock other COM clients.
-        initial, _ = self.documents.resolve(document_id, configuration)
         target = {}
         def prepare():
             entry, identity, objects, semantic, revision = self._state(document_id, configuration)
@@ -324,7 +321,7 @@ class DimensionCatalog:
                     row['values'][configuration] = (before['value_si'] * 1000 if unit == 'mm'
                                                      else math.degrees(before['value_si']))
             return close_value(after['value_si'], before['value_si']) and expected == actual
-        with self.mutation_guard(initial.model):
-            return self.coordinator.execute(operation_id, document_id=document_id, configuration=configuration,
-                expected_revision=expected_revision, prepare=prepare, validate=validate, apply=apply,
-                inspect=inspect, verify=verify, restore=restore, verify_restored=verify_restored)
+        return self.coordinator.execute(operation_id, document_id=document_id, configuration=configuration,
+            expected_revision=expected_revision, prepare=prepare, validate=validate, apply=apply,
+            inspect=inspect, verify=verify, restore=restore, verify_restored=verify_restored,
+            guard=lambda prepared: self.mutation_guard(target['entry'].model))

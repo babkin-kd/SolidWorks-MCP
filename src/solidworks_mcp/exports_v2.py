@@ -156,12 +156,13 @@ def validate_export_file(path, options):
 
 
 class ExportCatalog:
-    def __init__(self, documents, store, connection_epoch, approved_output_root, *, adapter=None):
+    def __init__(self, documents, store, connection_epoch, approved_output_root, *, adapter=None, mutation_guard=None):
         self.documents = documents
         self.adapter = adapter or documents.adapter
         self.store = store
         self.connection_epoch = connection_epoch
         self.coordinator = MutationCoordinator(store, connection_epoch)
+        self.mutation_guard = mutation_guard
         path = Path(approved_output_root).absolute()
         _plain_directory(path)
         self.root = path.resolve(strict=True)
@@ -227,6 +228,8 @@ class ExportCatalog:
 
     def execute(self, operation_id, document_id, configuration, expected_revision, format, filename, units=''):
         options = ExportOptions(format, filename, units).checked()
+        if self.mutation_guard is None:
+            raise rejected('mutation_guard_unavailable', 'Export requires an owning-STA native UI guard.')
         destination = self._destination(options)
         # Server-generated, unrelated to request/path input. No filesystem write
         # occurs until MutationCoordinator has committed the durable checkpoint.
@@ -348,4 +351,5 @@ class ExportCatalog:
 
         return self.coordinator.execute(operation_id, document_id=document_id, configuration=configuration,
             expected_revision=expected_revision, prepare=prepare, validate=validate, apply=apply,
-            inspect=inspect, verify=verify, restore=restore, verify_restored=verify_restored)
+            inspect=inspect, verify=verify, restore=restore, verify_restored=verify_restored,
+            guard=lambda prepared: self.mutation_guard(context['entry'].model))

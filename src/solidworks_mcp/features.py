@@ -35,12 +35,13 @@ class FeatureReference:
 
 
 class FeatureCatalog:
-    def __init__(self, documents, store, connection_epoch):
+    def __init__(self, documents, store, connection_epoch, *, mutation_guard=None):
         self.documents = documents
         self.adapter = documents.adapter
         self.store = store
         self.connection_epoch = connection_epoch
         self.coordinator = MutationCoordinator(store, connection_epoch)
+        self.mutation_guard = mutation_guard
 
     def _state(self, document_id, configuration):
         entry, observed = self.documents.resolve(document_id, configuration)
@@ -162,6 +163,8 @@ class FeatureCatalog:
 
     def rename(self, operation_id, document_id, configuration, object_id, expected_revision, name):
         name = russian_name(name)
+        if self.mutation_guard is None:
+            raise rejected('mutation_guard_unavailable', 'Feature rename requires an owning-STA native UI guard.')
         target = {}
         def prepare():
             entry, identity, objects, semantic, revision, _ = self._state(document_id, configuration)
@@ -212,4 +215,5 @@ class FeatureCatalog:
         return self.coordinator.execute(operation_id, document_id=document_id, configuration=configuration,
             expected_revision=expected_revision, prepare=prepare, validate=validate, apply=apply,
             inspect=inspect, verify=verify, restore=restore,
-            verify_restored=lambda b, a: a['name'] == b['name'] and a['semantic'] == b['semantic'])
+            verify_restored=lambda b, a: a['name'] == b['name'] and a['semantic'] == b['semantic'],
+            guard=lambda prepared: self.mutation_guard(target['entry'].model))
