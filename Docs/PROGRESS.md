@@ -949,6 +949,10 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   later feature as its child (they all merge into its body); a feature in the
   middle lists only what is built on its faces, and DeleteSelection2 with
   swDelete_Children also takes their children: walk GetChildren to the end.
+- STL export moves the mesh into positive space unless the user toggle
+  swSTLDontTranslateToPositive (71) is on; 3MF never moves it. With the toggle
+  on, an assembly's STL, one file or one per component, is in assembly
+  coordinates, so the files line up.
 
 ## Next
 
