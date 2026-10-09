@@ -172,3 +172,82 @@ def test_revision_budget_rejects_a_partial_5000_feature_tree(monkeypatch):
     with pytest.raises(ExecutionFailure) as error:
         adapter.features(SimpleNamespace(FirstFeature=lambda: first))
     assert error.value.code == 'feature_budget_exceeded'
+
+
+def exception_leaves(error):
+    """Accept either the original error or an aggregate that preserves it."""
+    if isinstance(error, BaseExceptionGroup):
+        return [leaf for child in error.exceptions for leaf in exception_leaves(child)]
+    return [error]
+
+
+@pytest.mark.parametrize('adapter_failure', [False, True])
+def test_catalog_cleanup_attempts_every_monitor_and_adapter_then_releases_caches(adapter_failure):
+    from solidworks_mcp.documents import DocumentCatalog
+    from test_document_catalog_v2 import Adapter, model
+
+    events = []
+    monitor_error = RuntimeError('First synthetic monitor cleanup failed.')
+    adapter_error = RuntimeError('Synthetic adapter cleanup failed.')
+
+    class Watch:
+        def __init__(self, name, error=None):
+            self.name, self.error = name, error
+
+        def close(self):
+            events.append(self.name)
+            if self.error:
+                raise self.error
+
+    class CleanupAdapter(Adapter):
+        def close(self):
+            events.append('adapter')
+            self.closed = True
+            if adapter_failure:
+                raise adapter_error
+
+    adapter = CleanupAdapter()
+    adapter.models = [model(title='Первая'), model(title='Вторая')]
+    catalog = DocumentCatalog(adapter)
+    catalog.list()
+    entries = list(catalog._entries)
+    for index, entry in enumerate(entries):
+        # These caches stand for native references/cursor snapshots. Keeping
+        # external entry references also catches traceback-retained caches.
+        entry.geometry['objects'] = [object()]
+        entry.features.update(watch=Watch(f'watch_{index}', monitor_error if index == 0 else None),
+                              references={'feature': object()})
+
+    with pytest.raises(Exception) as error:
+        catalog.close()
+    leaves = exception_leaves(error.value)
+    assert monitor_error in leaves, 'The first cleanup failure must not be swallowed.'
+    if adapter_failure:
+        assert adapter_error in leaves, 'All cleanup failures must remain available for diagnostics.'
+    assert events == ['watch_0', 'watch_1', 'adapter']
+    assert adapter.closed is True
+    assert catalog._entries == []
+    assert all(entry.geometry == {} and entry.features == {} for entry in entries)
+
+
+def test_runtime_retirement_resets_every_catalog_cache_even_when_close_raises():
+    from solidworks_mcp.runtime_v2 import Runtime
+
+    failure = RuntimeError('Synthetic catalog retirement failure.')
+
+    class Catalog:
+        def close(self):
+            raise failure
+
+    runtime = Runtime(None)
+    runtime._catalog = Catalog()
+    runtime._geometry = object()
+    runtime._features = object()
+    runtime._connection_epoch = 'old_connection'
+    with pytest.raises(Exception) as error:
+        runtime._release_catalog()
+    assert failure in exception_leaves(error.value)
+    assert runtime._catalog is None
+    assert runtime._geometry is None
+    assert runtime._features is None
+    assert runtime._connection_epoch is None

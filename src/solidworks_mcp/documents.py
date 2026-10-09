@@ -103,8 +103,23 @@ class DocumentCatalog:
 
     def close(self):
         self._check_thread()
-        for entry in self._entries:
-            if entry.features.get('watch') is not None:
-                entry.features['watch'].close()
-        self._entries.clear()
-        self.adapter.close()
+        entries, self._entries = self._entries, []
+        failures = []
+        for entry in entries:
+            watch = entry.features.pop('watch', None)
+            try:
+                if watch is not None:
+                    watch.close()
+            except Exception as exc:
+                failures.append(exc)
+            finally:
+                entry.features.clear()
+                entry.geometry.clear()
+        try:
+            self.adapter.close()
+        except Exception as exc:
+            failures.append(exc)
+        finally:
+            entries.clear()
+        if failures:
+            raise ExceptionGroup('Document catalog cleanup failed.', failures)

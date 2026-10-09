@@ -110,12 +110,12 @@ class Runtime:
         return await runner.wait(job['operation_id'], timeout_s=timeout_s)
 
     def _release_catalog(self):
-        if self._catalog is not None:
-            self._catalog.close()
-            self._catalog = None
-            self._geometry = None
-            self._features = None
-            self._connection_epoch = None
+        catalog, self._catalog = self._catalog, None
+        self._geometry = None
+        self._features = None
+        self._connection_epoch = None
+        if catalog is not None:
+            catalog.close()
 
     def shutdown(self, timeout_s=5):
         with self._lock:
