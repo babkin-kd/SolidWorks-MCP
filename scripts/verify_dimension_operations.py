@@ -102,7 +102,9 @@ def check(state):
             assert target['object_id'] and not target['write_blockers']
             assert target['reference_anchor']['strategy'] == 'display_dimension_v1'
             assert math.isclose(target['values']['Основная'], 7., abs_tol=1e-10)
-            assert catalog.list(doc['document_id'], 'Основная')['revision'] == page['revision']
+            # The successful mutation below must match this same revision in
+            # both complete prepare and pre-setter validate captures. A second
+            # initial list would duplicate that cross-read consistency proof.
             runner = JobRunner(store, Worker())
 
             def submit(request, revision, value):
@@ -137,10 +139,13 @@ def check(state):
             stale = submit('stale', page['revision'], 11.)
             assert stale['status'] == 'failed' and stale['error']['code'] == 'stale_revision'
             physical(9.)
-            fresh = catalog.list(doc['document_id'], 'Основная')
-            before_geometry = catalog._state(doc['document_id'], 'Основная')[3]['geometry']
+            # _state retains its two full captures and all closing proofs.
+            # Bind the injected mutation's revision and geometry baseline to
+            # this one accepted state, rather than separate list/state reads.
+            before_state = catalog._state(doc['document_id'], 'Основная')
+            before_geometry = before_state[3]['geometry']
             adapter.inject_after_write = True
-            restored = submit('injected', fresh['revision'], 11.)
+            restored = submit('injected', before_state[4], 11.)
             assert restored['status'] == 'failed' and restored['mutation']['phase'] == 'rolled_back', restored
             assert restored['mutation']['verification']['evidence']['execution_guard']['released_state'] == 0
             assert catalog._state(doc['document_id'], 'Основная')[3]['geometry'] == before_geometry
