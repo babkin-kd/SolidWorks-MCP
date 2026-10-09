@@ -20,6 +20,13 @@ outputs/
 work/
 local-backups/
 *.log
+# Generated build provenance and private job state
+src/solidworks_mcp/build_info.json
+.mcp-state/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite.lock
 
 # Local secrets and connection settings
 .env

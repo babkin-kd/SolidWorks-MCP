@@ -19,4 +19,6 @@ jobs:
       - name: Unit tests (runner has no SolidWorks)
         run: uv run --extra dev pytest -m "not solidworks"
       - name: Build fork wheel and source distribution
-        run: uv build
+        run: |
+          uv run scripts/write_build_info.py
+          uv build

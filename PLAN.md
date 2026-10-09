@@ -211,3 +211,11 @@ Milestones: [три стадии проекта](https://github.com/babkin-kd/So
 | Исправление | [1.1 Репозиторий и сборка](https://github.com/babkin-kd/SolidWorks-MCP/issues/1), [1.2 API и объекты](https://github.com/babkin-kd/SolidWorks-MCP/issues/2), [1.3 Задания](https://github.com/babkin-kd/SolidWorks-MCP/issues/3), [1.4–1.5 Изменения и приёмка](https://github.com/babkin-kd/SolidWorks-MCP/issues/4) |
 | Основной функционал | [2.1 Геометрия](https://github.com/babkin-kd/SolidWorks-MCP/issues/5), [2.2 Листовой металл](https://github.com/babkin-kd/SolidWorks-MCP/issues/6), [2.3 Сварные конструкции](https://github.com/babkin-kd/SolidWorks-MCP/issues/7), [2.4 Чертежи](https://github.com/babkin-kd/SolidWorks-MCP/issues/8), [2.5 Конфигурации](https://github.com/babkin-kd/SolidWorks-MCP/issues/9), [2.6 Сборки и библиотеки](https://github.com/babkin-kd/SolidWorks-MCP/issues/10), [2.7 PDM](https://github.com/babkin-kd/SolidWorks-MCP/issues/11) |
 | Дополнительный функционал | [3.1 Кинематика](https://github.com/babkin-kd/SolidWorks-MCP/issues/12), [3.2 Сетки и печать](https://github.com/babkin-kd/SolidWorks-MCP/issues/13), [3.3 Simulation](https://github.com/babkin-kd/SolidWorks-MCP/issues/14) |
+
+## 9. Текущий результат первой стадии
+
+Кандидат `2.0.0.dev1`: отдельный entry point v2, типизированный формат ответов и фактически объявленные возможности, SQLite-журнал, повтор запроса без повторного исполнения, отмена очереди и восстановление неопределённых заданий после аварии. Реализованы данные сборки и сверка исходников установленного пакета. Подробности и ограничения: [Docs/API_V2.md](Docs/API_V2.md).
+
+Проверки журнала используют искусственные доменные операции, настоящий MCP stdio и аварийное завершение отдельного процесса; CAD-документы ими не изменяются. В каталоге v2 пока четыре инструмента журнала/диагностики. Приёмка стадии 1 не завершена: ещё нужны явные документы/объекты/ревизии, блокировка неопределённого состояния, операции изменения/отката и native-проверки SolidWorks 2023. Задачи остаются открытыми до соответствующей проверки.
+
+GitHub используется напрямую через подключение и Git; браузер для работы с GitHub больше не применяется.
