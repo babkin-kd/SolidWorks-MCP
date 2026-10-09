@@ -18,6 +18,7 @@ from . import __version__
 from .build_info import source_digest
 from .contracts import ResponseEnvelope
 from .jobs import JobError, JobStore
+from .runtime_v2 import Runtime
 
 
 API_VERSION = 2
@@ -36,13 +37,15 @@ def failure(exc):
     return response(status='failed', error={'code': exc.code, 'message': str(exc)})
 
 
-def create_app(store: JobStore) -> FastMCP:
+def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
+    runtime = runtime if runtime is not None else Runtime(store)
     app = FastMCP('SolidWorks MCP v2', instructions=(
         'Development API v2. Read solidworks://guide/v2 for the supported contract. '
         'Only advertised tools are available. Jobs survive timeouts; poll their operation_id. '
         'An unknown outcome requires reconciliation before retrying an operation. '
         'Names of new CAD objects must be meaningful Russian names; standard components '
-        'must come from approved libraries. CAD tools are not yet available in this candidate.'
+        'must come from approved libraries. Only read-only document metadata is available '
+        'for CAD in this candidate; observation revisions are not yet mutation guards.'
     ))
 
     @app.resource('solidworks://guide/v2')
@@ -66,7 +69,7 @@ def create_app(store: JobStore) -> FastMCP:
             'build': build, 'source_digest': actual_digest, 'build_matches_source': verified,
             'platform': sys.platform, 'development_candidate': True,
             'capabilities': {'job_journal': True, 'job_query': True, 'queued_job_cancellation': True,
-                             'cad_documents': False, 'cad_mutations': False,
+                             'cad_documents': True, 'cad_mutations': False,
                              'pdm': False, 'simulation': False},
             'journal_schema_version': 1,
         })
@@ -99,6 +102,36 @@ def create_app(store: JobStore) -> FastMCP:
         except (JobError, sqlite3.Error) as exc:
             return failure(exc)
 
+    async def read_document(request_id, operation, arguments, timeout_s):
+        try:
+            job = await runtime.read(request_id, operation, arguments, timeout_s=timeout_s)
+            return response(status=job['status'], operation_id=job['operation_id'],
+                            context=job['payload']['context'], data=job['result'], error=job['error'])
+        except (JobError, sqlite3.Error) as exc:
+            return failure(exc)
+
+    @app.tool()
+    async def document_list(request_id: str, timeout_s: float = 10) -> ResponseEnvelope:
+        """List open documents with opaque IDs/configurations and observation revisions.
+
+        Read-only: does not activate, save, resolve components, or change visibility.
+        Use a new request_id for a fresh snapshot; retries retrieve the same job.
+        A timeout returns its running/queued status; poll job_get for completion.
+        """
+        return await read_document(request_id, 'document.list', {}, timeout_s)
+
+    @app.tool()
+    async def document_get(request_id: str, document_id: str, configuration: str,
+                           timeout_s: float = 10) -> ResponseEnvelope:
+        """Read metadata for an explicit open document and existing configuration.
+
+        Never switches the active document/configuration. Use configuration=""
+        only when document_list reports no configurations. Observation revisions
+        cover stamps and document metadata, not all CAD properties or geometry.
+        """
+        return await read_document(request_id, 'document.get',
+                                   {'document_id': document_id, 'configuration': configuration}, timeout_s)
+
     return app
 
 
@@ -108,10 +141,11 @@ def main():
                         help='Persistent private directory for the job journal; do not use a temporary directory.')
     args = parser.parse_args()
     store = JobStore(args.state_dir / 'jobs.sqlite')
+    runtime = Runtime(store)
     try:
-        create_app(store).run()
+        create_app(store, runtime).run()
     finally:
-        store.close()
+        runtime.shutdown()
 
 
 if __name__ == '__main__':

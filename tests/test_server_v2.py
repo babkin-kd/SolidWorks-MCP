@@ -16,7 +16,7 @@ from solidworks_mcp.server_v2 import create_app
 
 ROOT = Path(__file__).resolve().parents[1]
 FIELDS = {'status', 'operation_id', 'context', 'data', 'diagnostics', 'error'}
-TOOLS = {'system_get_info', 'job_get', 'job_list', 'job_cancel'}
+TOOLS = {'system_get_info', 'job_get', 'job_list', 'job_cancel', 'document_list', 'document_get'}
 
 
 def test_v2_stdio_discovery_unicode_guide_and_journal_survive_restart(tmp_path):

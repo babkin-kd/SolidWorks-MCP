@@ -82,3 +82,9 @@ def test_module_before_connect_fails_loud(monkeypatch):
 
     with pytest.raises(SolidWorksError):
         binding.module()
+
+
+def test_read_only_connect_preserves_visibility(running_solidworks):
+    running_solidworks("31.2.1")
+    assert binding.connect(show=False).Visible is False
+    assert binding.connect().Visible is True

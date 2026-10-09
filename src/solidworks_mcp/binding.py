@@ -74,7 +74,7 @@ def wrap(obj, cls):
     return cls(oleobj)
 
 
-def connect():
+def connect(*, show: bool = True):
     """Attach to a running SolidWorks and return an early-bound ISldWorks.
 
     Also loads the wrapper module matching that release, which module() returns.
@@ -92,5 +92,6 @@ def connect():
     revision = win32com.client.dynamic.DumbDispatch(raw._oleobj_).RevisionNumber
     _mod = _load_module(revision)
     sw = wrap(raw, _mod.ISldWorks)
-    sw.Visible = True
+    if show:
+        sw.Visible = True
     return sw
