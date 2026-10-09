@@ -958,6 +958,11 @@ Views and zoom for `screenshot`, exact component boxes, `measure_distance`,
   closes them; their IModelDoc2 objects then fail with RPC_E_DISCONNECTED,
   so collect titles before closing. LoadFile4 on a STEP whose document title
   is already open returns that open document.
+- FeatureExtrusion3 up to next (11) returned None for a strip whose side lay
+  on a boss's side face, inside a hollow part; the same strip 0.05 mm off
+  that face worked, and on a solid part a side on a face worked too. Up to
+  surface (4, the face selected with mark 1) worked there; up to body (7)
+  did not.
 
 ## Next
 
