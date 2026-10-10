@@ -1,5 +1,30 @@
 # Ход разработки
 
+## 11.10.2026 — листовой L-профиль dev61 принят на точном wheel
+
+После полного pure3284 passed /323 CAD deselected (37,83с) зафиксирован чистый
+source4482037089f58f94aea21fed29f74975183595e3; wheel dev61 собран/установлен только
+в dev-.venv, рабочая v1 сохранена. Installed metadata40 инструментов /13 мутаций.
+SHA wheel a6ccbf941dea3890f7d70647bea7fc8d4d27e1c9be18e88e52c6e4909f021ddb;
+source digest2e7b0c32e924f3f40e20e3ab8f25be9e196e940d968f67b0e5c45785161f3b38.
+
+Internal native6 и public MCP6 passed/accepted=true на одном точном wheel без
+source PYTHONPATH. Внутренний: short-leg/stale до записи, known failure →
+failed/rolled_back с полным исходным empty-state, успешная folded-форма16/28/14,
+параметры/native K=.42 и сохранение отдельного исходника. Публичный: настоящая
+SDK/stdio цепочка, schema/catalog, успешный профиль, request_id без второго
+документа/профиля; в журнале ровно одна sheet.create_l_profile. Все задания
+terminal, новых unknown нет; internal3 committed/1 rolled_back, public3 committed.
+V≈3402,74333882308 мм³/A≈3749,59289474462 мм². Оба fixtures_closed=true;
+guard/selection/non-STL настройки и пустой/free baseline восстановлены.
+
+Контракт/ограничения и приватные протоколы перечислены в SHEET_PROFILE.md;
+source unknown-probe4 сохраняется отдельно, не переписан успехом probe5/приёмки.
+Принят один инженерный блок2.2, native-развёртка/прочие листовые операции ещё
+не реализованы в v2. Все стадии открыты; импорт/экспорт отложены. Следующий блок —
+native-развёртка собственного профиля без экспорта. Изменения и коммиты накоплены
+локально; GitHub push/CI и дополнительные агенты не запускались.
+
 ## 11.10.2026 — кандидат dev61: домен/MCP и проверенное source-восстановление
 
 Подключены sheet_prepare_l_profile/sheet_create_l_profile, общий runtime/STA и

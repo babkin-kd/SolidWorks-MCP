@@ -1,29 +1,26 @@
 # API v2: текущий кандидат первой стадии
 
-Рабочий исходник — **кандидат dev60**: добавлены `part_prepare_edge_fillet` и
-`part_create_edge_fillet`, каталог **38 инструментов /12 мутаций**. Новая область
-`single_base_selected_edge_fillet_v1`; контракт и ограничения: [PART_FILLET.md](PART_FILLET.md).
-**3111 pure passed /323 CAD deselected**, installed metadata38 принят;
-**internal native7 /public MCP7 passed, оба accepted=true** на одном точном wheel.
-Доказаны полная конечная дуга/цилиндрическая грань, native-параметры, сохранение
-источника, known restoration, stale/material prewrite и request_id. Свои
-документы закрыты, baseline восстановлен. Dev59 не принят, его unknown сохранён.
-Ни одна стадия плана этим блоком не закрывается; импорт/экспорт отложены.
-
-## Новый кандидат dev61 — приёмка ожидается
-
-Добавлены `sheet_prepare_l_profile` и `sheet_create_l_profile`; каталог кандидата
-40 инструментов /13 мутаций. Scope `empty_part_sheet_l_profile_v1`: пустая деталь,
-явная плоскость, открытый L-эскиз, один реальный сгиб и обязательный K-фактор.
-Контракт: [SHEET_PROFILE.md](SHEET_PROFILE.md). Доменная операция проверяет полный
-folded BREP и native allowance, журнал/checkpoint, ревизию и владение узлами.
-Source-проба доказала scoped restoration; она не заменяет приёмку установленного
-wheel. Принятый dev60 и его доказательства выше сохраняют историческую область.
+Текущий принятый инженерный блок — **dev61**, `sheet_prepare_l_profile` и
+`sheet_create_l_profile`; каталог **40 инструментов /13 мутаций**. Scope
+`empty_part_sheet_l_profile_v1`: пустая деталь, явная плоскость, открытый L-эскиз,
+один реальный сгиб и обязательный K-фактор. Контракт: [SHEET_PROFILE.md](SHEET_PROFILE.md).
+**3284 pure passed /323 CAD deselected**; installed metadata40 принят;
+**internal native6 /public MCP6 passed, оба accepted=true** на одном точном wheel.
+Проверены полный folded BREP/native allowance, журнал/checkpoint, ревизия,
+владение, scoped restoration, request_id и сохранение исходной модели.
+Свои документы закрыты, guard released, baseline пуст/free; все задания terminal,
+новых unknown нет. Source unknown-журналы не переписаны и не засчитаны успехом.
+Развёртка/другие профили/конфигурации — отдельные области. Стадии плана открыты;
+импорт/экспорт отложены. Приёмка dev61 не заменяет исторические native-сценарии
+скругления/массива/отверстия на их точных прежних wheel.
 
 | Инструмент | Реализованная операция |
 | --- | --- |
 | `sheet_prepare_l_profile` | Read-only полная подготовка пустой детали/плоскости, размеров и K; ожидаемая форма и ревизия. |
 | `sheet_create_l_profile` | Создание по той же ревизии и request_id; native folded sheet metal, русские имена, полная проверка и scoped restoration при доказанном известном сбое. |
+
+Ранее принятый dev60: 3111 pure /323 CAD deselected, installed metadata38,
+internal7/public7 на его wheel. Контракт: [PART_FILLET.md](PART_FILLET.md).
 
 | Инструмент | Реализованная операция |
 | --- | --- |
