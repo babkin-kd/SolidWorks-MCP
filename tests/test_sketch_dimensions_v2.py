@@ -24,6 +24,7 @@ class Adapter(ConstructionAdapter):
         self.sketch = Sketch()
         self.sketch_hook = None
         self.measure_fault = None
+        self.restore_noise = False
     def sketch_snapshot(self, wrapper, feature):
         part = self.original(wrapper)
         for i, record in enumerate(part.dimensions[:2]):
@@ -46,6 +47,11 @@ class Adapter(ConstructionAdapter):
         for point, xyz in zip(self.sketch.points,((0.,0.,0.),(w,0.,0.),(w,h,0.),(0.,h,0.))):
             point.X,point.Y,point.Z = xyz
         part.state['bodies'][0]['vertices'] = [[float(v).hex() for v in (x,y,z)] for x in (0.,w) for y in (0.,h) for z in (0.,d)]
+        if self.restore_noise and len(self.dimension_writes)>1:
+            self.sketch.points[2].Y=math.nextafter(h,1.)
+            for point in part.state['bodies'][0]['vertices']:
+                if float.fromhex(point[0])==w and float.fromhex(point[1])==h:
+                    point[1]=self.sketch.points[2].Y.hex()
         return result
     def rectangle_body_measurements(self, wrapper):
         if self.measure_fault:
@@ -140,6 +146,21 @@ def test_unrelated_target_value_is_unknown_and_never_overwritten(setup):
     job=change(setup)
     assert job['status']=='unknown',job
     assert len(adapter.dimension_writes)==1 and adapter.models[0].dimensions[0].state['values_si']['Основная']==.049
+
+
+def test_native_solver_roundoff_after_restore_requires_full_bounded_shape_not_binary_equality(setup):
+    adapter=setup[0]
+    adapter.restore_noise=True
+    adapter.dimension_fault='status'
+    job=change(setup)
+    assert job['status']=='failed' and job['mutation']['phase']=='rolled_back',job
+    assert adapter.models[0].dimensions[0].state['values_si']['Основная']==.04
+
+
+def test_horizontal_relations_tolerate_only_native_solver_coordinate_roundoff(setup):
+    adapter,catalog,_,_,doc,obj,ids=setup
+    adapter.sketch.points[2].Y=math.nextafter(.02,1.)
+    assert catalog.prepare_dimension_change(doc,'Основная',obj,ids[0],45.)['axis']=='width'
 
 
 def test_foreign_constraint_after_write_is_not_restored(setup):

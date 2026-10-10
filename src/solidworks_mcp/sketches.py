@@ -31,6 +31,14 @@ def sketch_structure(snapshot):
     return result
 
 
+def same_sketch_geometry(first, second):
+    if sketch_structure(first) != sketch_structure(second):
+        return False
+    current = {point['key']:point['coordinates_si'] for point in second['points']}
+    return all(all(abs(float.fromhex(a)-float.fromhex(b)) <= 1e-12 for a,b in zip(point['coordinates_si'],current[point['key']]))
+               for point in first['points'])
+
+
 def persistent_sketch_members(members):
     # ISketchRelation has no persistent reference and GetRelations returns fresh
     # relation wrappers every time. Retain them in the capture, but compare
@@ -78,7 +86,7 @@ def rectangle_parameters(snapshot, semantic, configuration):
         if a not in regular or b not in regular:
             raise fail('Every edge endpoint must be an enumerated rectangle corner.')
         edges.add(frozenset((corner_by_key[a], corner_by_key[b])))
-        (horizontal if coordinates[a][1] == coordinates[b][1] else vertical).add(key)
+        (horizontal if abs(coordinates[a][1] - coordinates[b][1]) <= 1e-12 else vertical).add(key)
     if len(lines) != 4 or edges != expected_edges:
         raise fail('Four native lines must form exactly one rectangular perimeter.')
     dimension_rows = [row for row in semantic['dimensions'] if row['owner'] and row['owner']['native_id'] == snapshot['feature_native_id']]
@@ -346,12 +354,25 @@ class SketchCatalog:
             if self.adapter.rebuild_dimension_document(entry.model) is not True:
                 raise rejected('sketch_dimension_restore_failed', 'Restoration rebuild was not confirmed.')
         def verify_restored(before, after):
-            old, current = self.dimensions._comparable(before['semantic']), self.dimensions._comparable(after['semantic'])
+            # A native solver can return the original rectangle with a few ULP
+            # differences in corner/face doubles. Keep all structural/control
+            # data exact and prove the complete bounded shape and native measures.
+            old = self.dimensions._comparable(before['semantic'], ignore_geometry=True)
+            current = self.dimensions._comparable(after['semantic'], ignore_geometry=True)
             for row in current['dimensions']:
                 if row['full_name'] == before['full_name'] and close_value(row['values_si'][configuration], before['value_m']):
                     row['values_si'][configuration] = before['value_m']
                     row['values'][configuration] = before['value_m']*1000.
-            return close_value(after['value_m'], before['value_m']) and old == current and before['sketch'] == after['sketch']
+            original = rectangle_parameters(before['sketch'], before['semantic'], configuration)
+            restored = rectangle_parameters(after['sketch'], after['semantic'], configuration)
+            mass = after['native_body_measurements']
+            w,h,d = (original[key] for key in ('width_m','height_m','depth_m'))
+            return (close_value(after['value_m'], before['value_m']) and old == current
+                and same_sketch_geometry(before['sketch'], after['sketch'])
+                and all(close_value(original[key],restored[key]) for key in ('width_m','height_m','depth_m'))
+                and rectangular_body_matches(after['semantic']['geometry'], original)
+                and math.isclose(mass['volume_mm3'],w*h*d*1e9,rel_tol=1e-10,abs_tol=1e-8)
+                and math.isclose(mass['surface_area_mm2'],2*(w*h+w*d+h*d)*1e6,rel_tol=1e-10,abs_tol=1e-8))
         def guard(prepared):
             model = target['captured'].dimensions.state[0].model
             manager = self.dimensions.mutation_guard(model)

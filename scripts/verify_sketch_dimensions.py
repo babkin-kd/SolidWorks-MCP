@@ -19,7 +19,7 @@ from solidworks_mcp.document_creation import DocumentCreationCatalog
 from solidworks_mcp.documents import DocumentCatalog
 from solidworks_mcp.dimensions import DimensionCatalog
 from solidworks_mcp.part_creation import PartCreationCatalog
-from solidworks_mcp.sketches import SketchCatalog
+from solidworks_mcp.sketches import SketchCatalog, same_sketch_geometry
 from solidworks_mcp.jobs import JobRunner, JobStore
 from verify_document_reads import native_snapshot
 from verify_export_operations import application_preferences
@@ -185,7 +185,7 @@ def main():
         failed_edit = edit(width,46.)
         record('known_failure_after_native_write_scoped_restore', failed_edit, 'failed')
         assert failed_edit['mutation']['phase']=='rolled_back'
-        assert sketches.get(second_id, 'Основная', sketch_id)['sketch']==before_failure
+        assert same_sketch_geometry(before_failure, sketches.get(second_id, 'Основная', sketch_id)['sketch'])
         listed = dimensions.list(second_id, 'Основная')
         thickness = next(row for row in listed['items'] if row['name'] == 'Толщина')
         arguments = dict(document_id=second_id, configuration='Основная', expected_revision=listed['revision'],
