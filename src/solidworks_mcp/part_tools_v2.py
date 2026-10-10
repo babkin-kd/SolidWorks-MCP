@@ -65,7 +65,8 @@ def register_part_tools(app, runtime, response, failure):
         holds the application and is never automatically replayed. A repeated
         request_id retrieves the same job. timeout_s limits waiting, not COM execution;
         poll job_get. Obtain the thickness object_id/revision from dimension_list
-        before dimension_set_value; sketch dimension editing remains unsupported.
+        before dimension_set_value. For the bounded rectangle width/height use
+        sketch_prepare_dimension_change and sketch_set_dimension instead.
         """
         return await dispatch(request_id, 'part.create_base_extrusion', {
             'document_id': document_id, 'configuration': configuration, 'expected_revision': expected_revision,

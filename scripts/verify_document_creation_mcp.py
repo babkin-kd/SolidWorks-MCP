@@ -50,7 +50,7 @@ async def exercise(state, sw, module, owned, report, persist, gate):
                 assert info['build_matches_source'] is True and info['package_version'] == report['wheel']['package_version']
                 assert info['build']['git_sha'] == report['wheel']['git_sha'] and info['source_digest'] == report['wheel']['source_digest']
                 tools = (await raw.list_tools()).tools
-                assert len(tools) == 23 and all(tool.outputSchema for tool in tools)
+                assert len(tools) == 26 and all(tool.outputSchema for tool in tools)
                 assert set(TOOL_SPECS) <= {tool.name for tool in tools}
                 report['tool_count'] = len(tools)
                 yield raw

@@ -1,6 +1,6 @@
 # Чтение эскиза и изменение ширины/высоты
 
-Кандидат dev47 реализует внутренний `SketchCatalog`. Новые инструменты пока не объявляются в публичном каталоге MCP: сначала требуется приёмка установленного wheel в SolidWorks. Старый blocker `sketch_geometry_snapshot_not_implemented` общего инструмента размеров сохраняется.
+Внутренний installed dev47 прошёл **11 native-сценариев, accepted=true**, включая ширину 45 мм, высоту 25 мм, восстановление после сбоя и толщину 12 мм: 13 500 мм³. **2350 pure passed, 323 CAD deselected**. Пройден artifact/metadata smoke с прежним каталогом из 23 инструментов. Свои модели закрыты, исходная сессия/выделение/вид и non-STL настройки сохранены, собственный command flag освобождён. Кандидат dev48 подключает `sketch_get`, `sketch_prepare_dimension_change`, `sketch_set_dimension`; fresh same-wheel internal и public MCP приёмка dev48 ещё требуются. Старый blocker `sketch_geometry_snapshot_not_implemented` общего инструмента размеров сохраняется.
 
 ## Поддерживаемый инженерный сценарий
 

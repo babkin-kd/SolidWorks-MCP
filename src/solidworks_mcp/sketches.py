@@ -239,7 +239,7 @@ class SketchCatalog:
         self.dimensions._close_native_proof(entry, captured.dimensions.event_sequence)
         public = {'document_id': document_id, 'configuration': configuration, 'object_id': object_id, 'dimension_id': dimension_id,
             'revision_scope': CHANGE_SCOPE, 'revision': revision, 'value_mm': value_mm, 'axis': axis,
-            'expected_volume_mm3': volume*1e9, 'expected_surface_area_mm2': area*1e6, 'native_change_available': False}
+            'expected_volume_mm3': volume*1e9, 'expected_surface_area_mm2': area*1e6, 'native_change_available': True}
         return public, captured, native, row, expected
 
     def prepare_dimension_change(self, document_id, configuration, object_id, dimension_id, value_mm):

@@ -27,7 +27,7 @@ import anyio
 
 TERMINAL = frozenset({'succeeded', 'failed', 'cancelled', 'unknown'})
 CONTEXT_KEYS = ('document_id', 'configuration', 'expected_observation_revision',
-                'expected_revision', 'body_id', 'object_id')
+                'expected_revision', 'body_id', 'object_id', 'dimension_id')
 
 
 def released_execution_guard(guard):
