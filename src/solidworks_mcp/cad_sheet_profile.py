@@ -26,6 +26,11 @@ class NativeSheetMember:
 
 
 class CadSheetProfileMixin:
+    def sheet_profile_empty_state(self,model):
+        factory=binding.wrap(model.FeatureManager,self._module.IFeatureManager)
+        return dict(sheet_folder_present=factory.GetSheetMetalFolder() is not None,
+            flat_folder_present=factory.GetFlatPatternFolder() is not None)
+
     def new_sheet_profile_receipt(self,model,features,controls):
         base=self.new_base_receipt(model,features,controls)
         return NativeSheetReceipt(base.model_identity,base.configuration_identity,base.baseline_features,base.controls)
@@ -175,10 +180,8 @@ class CadSheetProfileMixin:
         return base_parameters,sheet_parameters
 
     def _name_sheet_bundle(self,model,receipt):
-        names=dict(sheet='Параметры листового тела',flat='Развёртка листового тела',bend='Сгиб профиля',
-            flat_sketch_1='Служебный эскиз развёртки 1',flat_sketch_2='Служебный эскиз развёртки 2',
-            ui_bend='Сгиб развёртки',fold_sketch_folder='Эскизы сгиба',cut_list='Список вырезов',
-            sheet_folder='Параметры листового металла',flat_folder='Развёртки листового металла')
+        from .sheet_profile_definition import AUXILIARY_SCHEMA
+        names={role:row[0] for role,row in AUXILIARY_SCHEMA.items()}
         if {member.role for member in receipt.auxiliary}!=set(names):
             raise rejected('sheet_names_unconfirmed','An incomplete auxiliary bundle cannot authorize naming.')
         baseline_names={summary['name'].casefold() for _,summary in receipt.baseline_features}
@@ -300,6 +303,12 @@ class CadSheetProfileMixin:
         roots=[member.feature for member in members if member.role in ('sheet','flat','cut_list','sheet_folder','flat_folder')]
         roots.append(receipt.extrusion)
         tokens=[receipt.sketch_identity,receipt.extrusion_identity]+[member.identity for member in members]
+        # A sheet-template root can unabsorb the profile while deleting its
+        # base. Retain its complete exact proof before the first deletion.
+        profile_pid=self.persistent_id(model,receipt.sketch)
+        if not profile_pid or self.identity(self.resolve_persistent_id(model,profile_pid,'feature'))!=receipt.sketch_identity:
+            raise rejected('sheet_restore_unsafe','The exact own profile must round-trip before deleting the bundle.')
+        profile_before,_=self.sketch_snapshot(model,receipt.sketch)
         with self._base_selection(model,receipt):
             model.ClearSelection2(True)
             for index,feature in enumerate(roots):
@@ -314,6 +323,34 @@ class CadSheetProfileMixin:
             if self._extension(model).DeleteSelection2(2) is not True:
                 raise rejected('sheet_restore_unsafe','Native deletion of the selected owned bundle failed.')
             if not self.rebuild_dimension_document(model):raise rejected('sheet_restore_unsafe','Scoped rebuild failed.')
+            remaining=self.features(model)
+            leftovers=[f for f in remaining if any(self.identity(f)==token for token in tokens)]
+            if leftovers:
+                if len(leftovers)!=1 or self.identity(leftovers[0])!=receipt.sketch_identity or self.bodies(model,'all'):
+                    raise rejected('sheet_restore_unsafe','Only the exact own unabsorbed profile may remain after bundle deletion.')
+                profile=self.resolve_persistent_id(model,profile_pid,'feature')
+                if self.identity(profile)!=receipt.sketch_identity or profile.GetOwnerFeature() is not None or profile.GetChildren():
+                    raise rejected('sheet_restore_unsafe','Own residual profile reference/owner/dependants are unconfirmed.')
+                profile_after,_=self.sketch_snapshot(model,profile)
+                if profile_after!=profile_before:
+                    raise rejected('sheet_restore_unsafe','The complete residual own profile changed during bundle deletion.')
+                baseline_tokens=[token for token,_ in receipt.baseline_features]
+                if (len(remaining)!=len(baseline_tokens)+1 or any(not any(self.identity(f)==token for token in baseline_tokens+[receipt.sketch_identity]) for f in remaining)
+                        or any(not any(self.identity(binding.wrap(raw,self._module.IFeature))==token for token in baseline_tokens) for raw in profile.GetParents() or ())):
+                    raise rejected('sheet_restore_unsafe','Foreign residual state prevents deleting the own profile.')
+                for token,summary in receipt.baseline_features:
+                    current=next((f for f in remaining if self.identity(f)==token),None)
+                    if current is None or self.feature_summary(current)!=summary:
+                        raise rejected('sheet_restore_unsafe','The exact baseline changed before residual-profile deletion.')
+                dimensions=self.dimensions(model,remaining)
+                if len(dimensions)!=2 or any(self.identity(record.owner)!=receipt.sketch_identity for record in dimensions):
+                    raise rejected('sheet_restore_unsafe','Only the two original own sketch drivers may remain.')
+                if not profile.Select2(False,0):raise rejected('sheet_restore_unsafe','Exact own residual profile selection failed.')
+                selected=binding.wrap(selections.GetSelectedObject6(1,0),self._module.IFeature)
+                if selections.GetSelectedObjectCount2(-1)!=1 or selected is None or self.identity(selected)!=receipt.sketch_identity:
+                    raise rejected('sheet_restore_unsafe','Only the exact residual own profile may be selected.')
+                if self._extension(model).DeleteSelection2(0) is not True or not self.rebuild_dimension_document(model):
+                    raise rejected('sheet_restore_unsafe','Exact residual profile deletion/rebuild failed.')
         if self.bodies(model,'all') or self.part_creation_controls(model)!=receipt.controls:
             raise rejected('sheet_restore_unsafe','Empty body scope or original controls were not restored.')
         remaining=self.features(model)

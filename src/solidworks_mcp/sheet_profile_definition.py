@@ -12,6 +12,17 @@ from .part_creation import _positive_length,validated_plane_transform
 
 SCOPE='empty_part_sheet_l_profile_v1'
 TOLERANCE_M=1e-12
+AUXILIARY_SCHEMA={
+    'sheet':('Параметры листового тела','SheetMetal',False),
+    'flat':('Развёртка листового тела','FlatPattern',True),
+    'bend':('Сгиб профиля','SketchBend',False),
+    'flat_sketch_1':('Служебный эскиз развёртки 1','ProfileFeature',False),
+    'flat_sketch_2':('Служебный эскиз развёртки 2','ProfileFeature',True),
+    'ui_bend':('Сгиб развёртки','UiBend',False),
+    'fold_sketch_folder':('Эскизы сгиба','FoldUpDownSketchFolder',True),
+    'cut_list':('Список вырезов','CutListFolder',False),
+    'sheet_folder':('Параметры листового металла','TemplateSheetMetal',False),
+    'flat_folder':('Развёртки листового металла','TemplateFlatPattern',True)}
 
 
 @dataclass(frozen=True)
