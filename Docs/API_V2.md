@@ -1,6 +1,21 @@
 # API v2: текущий кандидат первой стадии
 
-Рабочий исходник — **кандидат dev58**: добавлены
+Рабочий исходник — **кандидат dev60**: добавлены `part_prepare_edge_fillet` и
+`part_create_edge_fillet`, каталог **38 инструментов /12 мутаций**. Новая область
+`single_base_selected_edge_fillet_v1`; контракт и ограничения: [PART_FILLET.md](PART_FILLET.md).
+**3111 pure passed /323 CAD deselected**, installed metadata38 принят;
+**internal native7 /public MCP7 passed, оба accepted=true** на одном точном wheel.
+Доказаны полная конечная дуга/цилиндрическая грань, native-параметры, сохранение
+источника, known restoration, stale/material prewrite и request_id. Свои
+документы закрыты, baseline восстановлен. Dev59 не принят, его unknown сохранён.
+Ни одна стадия плана этим блоком не закрывается; импорт/экспорт отложены.
+
+| Инструмент | Реализованная операция |
+| --- | --- |
+| `part_prepare_edge_fillet` | Read-only подготовка полного явного ребра прямоугольного основания, радиуса и русской метки; собственная ревизия полного источника и ожидаемой формы. |
+| `part_create_edge_fillet` | Постоянное скругление по той же ревизии и request_id; полный finite-arc BREP, selected-edge/native proof, сохранение исходного эскиза/размеров и scoped restoration. |
+
+Ранее принятый **dev58**: добавлены
 `part_prepare_linear_hole_pattern` и `part_create_linear_hole_pattern`, каталог
 36 инструментов /11 мутаций. Pure3023 passed /323 CAD deselected, installed
 metadata36 принят; **internal native8 /public MCP9 passed, оба accepted=true**

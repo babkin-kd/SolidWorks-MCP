@@ -1,5 +1,33 @@
 # Ход разработки
 
+## 11.10.2026 — dev60: явное скругление принято через native и MCP
+
+Принят инженерный блок пункта 2.1: одно постоянное скругление полного ребра
+прямоугольного основания, явные ссылки/радиус/русское имя, полный источник и
+конечная дуга/цилиндрическая BREP, native definition и independent mass proof.
+Каталог38 инструментов /12 мутаций; pure3111 passed /323 CAD deselected,
+installed metadata принят. **Internal native7 /public MCP7 passed, оба accepted=true**.
+R2: V7991,4159265358985 мм³, A2789,6991118430774 мм²,10/15/7; R1,5 после
+внедрённого сбоя удалён только после полного own-definition/body proof. Исходный
+эскиз/три размера, чужая контрольная модель с mark=7 и вид сохранены. Проверены
+stale/material prewrite и request_id; свои документы закрыты, baseline пуст/free.
+
+Dev59 failed/unknown сохранён. Native-пробник показал другую фазу базового
+ICurve и семантику FilletItemsCount=-1 для постоянного радиуса. Dev60 использует
+IEdge.Evaluate2 и документированный packed status, без неопределённого верхнего
+слова в ревизии. После terminal read-only аудита полного BREP две собственные
+unsaved детали dev59 закрыты по постоянному разрешению; unknown-журнал не изменён.
+
+Источник wheel `0b8f214a18134b4e9281c01f8d8816df2bd3c9ba`,
+SHA256 `fd77501a64a634bd5861458242aeea4da2cce6f8ea8406c7393840402814e7f0`,
+digest `eef676ae2dbe1e446d7ba5a683784e8c9cd30cb140d96b70cfa9353333617d0e`.
+Отчёты: `work/native-fillet-dev60-1/report.json`,
+`work/native-fillet-mcp-dev60-1/report.json`, `work/metadata-dev60-1.report.json`.
+Приблизительно internal5м52с /public2м33с; pure36,11с; failed59 отдельно3м53с.
+Контракт, границы native-покрытия и восстановление: [PART_FILLET.md](PART_FILLET.md).
+Все стадии открыты, импорт/экспорт отложены. Один агент, локальные изменения,
+без push/нового CI; v1 сохранена.
+
 ## 10.10.2026 — dev58: линейный массив принят через native и MCP
 
 Завершён ограниченный инженерный блок нового native LPattern существующего
