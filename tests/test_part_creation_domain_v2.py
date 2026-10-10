@@ -69,7 +69,7 @@ def test_preparation_binds_full_state_plane_and_parameters_and_does_not_write(se
     assert result['revision_scope'] == 'empty_part_base_rectangle_v1'
     assert result['document_id'] == ids[0] and result['definition']['plane_object_id'] == planes[0]
     assert result['expected_geometry'] == {'volume_mm3': 8000., 'surface_area_mm2': 2800., 'solid_body_count': 1}
-    assert result['native_creation_available'] is False
+    assert result['native_creation_available'] is True
     assert result['revision'] == prepare(setup)['revision']
     assert result['revision'] != prepare(setup, depth_mm=12.)['revision']
     assert [row.state for row in adapter.models] == before

@@ -35,6 +35,38 @@ def test_export_without_trusted_directory_does_not_start_worker_or_record_job(tm
         runtime.shutdown()
 
 
+def test_priority_part_runtime_routes_preparation_and_single_durable_creation(tmp_path):
+    from solidworks_mcp.documents import DocumentCatalog
+    from test_part_construction_mutation_v2 import Adapter, feature, model
+    adapter = Adapter()
+    adapter.mutation_guard = adapter.guard
+    part = model(title='Пластина', configurations=['Основная'])
+    part.features, part.dimensions, part.displays = [feature(1, 'Передняя', kind='RefPlane')], [], []
+    adapter.models = [part]
+    adapter.context['configuration_needs_rebuild'] = {'Основная': False}
+    store = JobStore(tmp_path / 'parts.sqlite')
+    runtime = Runtime(store, worker_factory=Worker, catalog_factory=lambda: DocumentCatalog(adapter))
+    async def exercise():
+        listing = await runtime.read('documents', 'document.list', {})
+        context = dict(document_id=listing['result']['documents'][0]['document_id'], configuration='Основная')
+        tree = await runtime.read('features', 'feature.list', context)
+        args = dict(context, plane_object_id=tree['result']['items'][0]['object_id'], width_mm=40., height_mm=20., depth_mm=10.)
+        prepared = await runtime.read('prepare', 'part.prepare_base_extrusion', args)
+        assert prepared['status'] == 'succeeded'
+        args['expected_revision'] = prepared['result']['revision']
+        created = await runtime.mutate('create', 'part.create_base_extrusion', args)
+        assert created['status'] == 'succeeded' and created['result']['verified']
+        duplicate = await runtime.mutate('create', 'part.create_base_extrusion', args)
+        assert duplicate['operation_id'] == created['operation_id'] and adapter.creation_count == 1
+        assert runtime._parts is not None
+    try:
+        asyncio.run(exercise())
+    finally:
+        assert runtime.shutdown() is True
+        store.close()
+    assert runtime._parts is None
+
+
 def test_internal_dimension_runtime_routes_durable_write_and_releases_on_sta(tmp_path):
     from solidworks_mcp.documents import DocumentCatalog
     from test_dimension_domain_v2 import Adapter, dimension, feature, model

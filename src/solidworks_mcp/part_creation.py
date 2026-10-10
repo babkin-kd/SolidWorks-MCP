@@ -192,7 +192,7 @@ class PartCreationCatalog:
         return {'document_id': document_id, 'configuration': configuration, 'revision': revision,
                 **payload, 'expected_geometry': {'volume_mm3': definition.volume_mm3,
                     'surface_area_mm2': definition.surface_area_mm2, 'solid_body_count': 1},
-                'native_creation_available': False}
+                'native_creation_available': True}
 
     def create_base_extrusion(self, operation_id, document_id, configuration, expected_revision, **parameters):
         """Internal guarded construction, initially on the validated empty scope.

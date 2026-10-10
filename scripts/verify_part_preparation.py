@@ -117,7 +117,7 @@ def main():
                 assert error == exc.code and exc.uncertain is False, (label, exc.code)
                 result = {'expected_error': exc.code}
             else:
-                assert error is None and result['native_creation_available'] is False
+                assert error is None and result['native_creation_available'] is True
                 assert result['expected_geometry']['volume_mm3'] == parameters['width_mm'] * parameters['height_mm'] * parameters['depth_mm']
             confirm_source(before, source_state(sw, module))
             assert_non_stl_preferences(lambda: application_preferences(sw), before_preferences,

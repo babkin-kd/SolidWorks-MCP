@@ -8,6 +8,7 @@ from .documents import DocumentCatalog, rejected
 from .geometry import GeometryCatalog
 from .features import FeatureCatalog
 from .dimensions import DimensionCatalog
+from .part_creation import PartCreationCatalog
 from .exports_v2 import ExportCatalog
 from .jobs import JobError, JobRunner, _json
 
@@ -40,6 +41,7 @@ class Runtime:
         self._geometry = None
         self._features = None
         self._dimensions = None
+        self._parts = None
         self._exports = None
         self._approved_output_root = approved_output_root
         self._connection_epoch = None
@@ -56,7 +58,7 @@ class Runtime:
             try:
                 self._catalog = self._catalog_factory()  # Always called on the STA.
             except Exception as exc:
-                if operation in ('feature.rename', 'dimension.set_value', 'export.execute'):
+                if operation in ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion'):
                     raise rejected(getattr(exc, 'code', 'cad_connection_failed'), str(exc)) from exc
                 raise
             self._connection_epoch = 'connection_' + uuid.uuid4().hex
@@ -86,7 +88,7 @@ class Runtime:
                 return self._features.deletion_structure(**arguments)
             if operation == 'feature.rename':
                 return self._features.rename(operation_id, **arguments)
-            if operation.startswith('dimension.') and self._dimensions is None:
+            if operation.startswith(('dimension.', 'part.')) and self._dimensions is None:
                 self._dimensions = DimensionCatalog(self._catalog, self.store, self._connection_epoch,
                     mutation_guard=getattr(self._catalog.adapter, 'mutation_guard', None))
             if operation == 'dimension.list':
@@ -95,6 +97,12 @@ class Runtime:
                 return self._dimensions.get(**arguments)
             if operation == 'dimension.set_value':
                 return self._dimensions.set_value(operation_id, **arguments)
+            if operation.startswith('part.') and self._parts is None:
+                self._parts = PartCreationCatalog(self._dimensions)
+            if operation == 'part.prepare_base_extrusion':
+                return self._parts.prepare_base_extrusion(**arguments)
+            if operation == 'part.create_base_extrusion':
+                return self._parts.create_base_extrusion(operation_id, **arguments)
             if operation.startswith('export.') and self._exports is None:
                 from .cad_exports_v2 import CadExportsAdapter
                 self._exports = ExportCatalog(self._catalog, self.store, self._connection_epoch,
@@ -122,10 +130,10 @@ class Runtime:
         # Validate before recording/dispatch. A bad timeout must not start CAD.
         if isinstance(timeout_s, bool) or not isinstance(timeout_s, (int, float)) or not 0 <= timeout_s <= 120:
             raise JobError('invalid_timeout', 'timeout_s must be finite and between 0 and 120.')
-        allowed = ('feature.rename', 'dimension.set_value', 'export.execute') if mutates else (
+        allowed = ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion') if mutates else (
             'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies',
             'feature.deletion_structure', 'feature.deletion_context',
-            'dimension.list', 'dimension.get', 'export.prepare')
+            'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion')
         if operation not in allowed:
             raise JobError('unsupported_operation', 'No domain implementation for this operation.')
         if operation.startswith('export.') and self._approved_output_root is None:
@@ -154,6 +162,7 @@ class Runtime:
         self._geometry = None
         self._features = None
         self._dimensions = None
+        self._parts = None
         self._exports = None
         self._connection_epoch = None
         if catalog is not None:

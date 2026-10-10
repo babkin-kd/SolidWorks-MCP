@@ -14,7 +14,7 @@ from verify_wheel_artifact import require, validate_wheel
 TOOLS = frozenset({'system_get_info', 'job_get', 'job_list', 'job_cancel',
     'document_list', 'document_get', 'body_list', 'face_list', 'edge_list', 'geometry_get',
     'feature_list', 'feature_get', 'feature_rename', 'dimension_list', 'dimension_get',
-    'dimension_set_value', 'export_prepare', 'export_part'})
+    'dimension_set_value', 'export_prepare', 'export_part', 'part_prepare_base_extrusion', 'part_create_base_extrusion'})
 
 
 def installed_identity(wheel):
@@ -51,10 +51,10 @@ def verify_metadata(tools, info, wheel):
             'MCP source digest mismatch.')
     require(info['schema_version'] == '2.0-dev', 'Unexpected API schema version.')
     require(info['mutation_revision_scopes'] == ['part_feature_tree_v1', 'part_dimension_values_v1',
-                                                 'part_solid_brep_export_v1'],
+                                                 'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1'],
             'Unexpected mutation revision scopes.')
     require(info['development_candidate'] is True, 'Expected a development candidate.')
-    require(info['implemented_mutations'] == ['feature.rename', 'dimension.set_value', 'export.execute'],
+    require(info['implemented_mutations'] == ['feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion'],
             'Unexpected implemented mutation catalog.')
     require(info['capabilities']['pdm'] is False and info['capabilities']['simulation'] is False,
             'Unimplemented modules must not be advertised.')

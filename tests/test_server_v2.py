@@ -19,7 +19,8 @@ ROOT = Path(__file__).resolve().parents[1]
 FIELDS = {'status', 'operation_id', 'context', 'data', 'diagnostics', 'error'}
 TOOLS = {'system_get_info', 'job_get', 'job_list', 'job_cancel', 'document_list', 'document_get',
          'body_list', 'face_list', 'edge_list', 'geometry_get', 'feature_list', 'feature_get', 'feature_rename',
-         'dimension_list', 'dimension_get', 'dimension_set_value', 'export_prepare', 'export_part'}
+         'dimension_list', 'dimension_get', 'dimension_set_value', 'export_prepare', 'export_part',
+         'part_prepare_base_extrusion', 'part_create_base_extrusion'}
 
 
 def test_v2_stdio_discovery_unicode_guide_and_journal_survive_restart(tmp_path):
@@ -47,9 +48,9 @@ def test_v2_stdio_discovery_unicode_guide_and_journal_survive_restart(tmp_path):
                     assert len(info['data']['schema_hash']) == 64
                     assert info['data']['capabilities']['cad_mutations'] is True
                     assert info['data']['implemented_mutations'] == [
-                        'feature.rename', 'dimension.set_value', 'export.execute']
+                        'feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion']
                     assert info['data']['mutation_revision_scopes'] == [
-                        'part_feature_tree_v1', 'part_dimension_values_v1', 'part_solid_brep_export_v1']
+                        'part_feature_tree_v1', 'part_dimension_values_v1', 'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1']
                     assert info['data']['export_output_configured'] is False
                     unavailable = (await client.call_tool('export_prepare', {
                         'request_id': 'no-output', 'document_id': 'doc_explicit', 'configuration': 'Основная',
