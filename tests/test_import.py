@@ -7,6 +7,7 @@ body. Marked `solidworks` where SolidWorks is needed. Volumes in mm^3.
 import math
 
 import pytest
+import pythoncom
 
 from solidworks_mcp.constants import SW_TOGGLE_3D_INTERCONNECT
 from solidworks_mcp.errors import SolidWorksError
@@ -87,7 +88,8 @@ def test_open_assembly_refuses_a_part_file_and_closes_it(part, tmp_path):
 
 
 @pytest.mark.solidworks
-def test_a_failed_import_closes_what_it_opened(assembly, blocks, tmp_path, monkeypatch):
+@pytest.mark.parametrize('failure', ['reported-error', 'injected-com-error'])
+def test_a_failed_import_closes_what_it_opened(assembly, blocks, tmp_path, monkeypatch, failure):
     """SolidWorks answered a STEP import with error 1, yet left the parts it
     had made open, hidden and unsaved, next to the user's own documents.
     Played here by an import that runs and then reports error 1."""
@@ -100,10 +102,13 @@ def test_a_failed_import_closes_what_it_opened(assembly, blocks, tmp_path, monke
 
     def load_then_fail(*args):
         load(*args)
+        if failure == 'injected-com-error':
+            raise pythoncom.com_error(-2147467259, 'Injected after completed native import', None, None)
         return None, 1
 
     monkeypatch.setattr(assembly, "_load_file", load_then_fail)
-    with pytest.raises(SolidWorksError, match="error 1"):
+    exception = pythoncom.com_error if failure == 'injected-com-error' else SolidWorksError
+    with pytest.raises(exception):
         assembly.open_assembly(step)
     left = {d.GetTitle() for d in assembly._open_documents()} - before
     assert not left, f"the failed import left documents open: {sorted(left)}"
@@ -122,3 +127,26 @@ def test_an_assembly_step_is_refused_and_leaves_nothing_open(assembly, blocks, t
     assert len(assembly._sw.GetDocuments() or ()) == documents_before, (
         "the refused import left its assembly or component documents open"
     )
+
+
+@pytest.mark.solidworks
+def test_native_import_cleanup_also_covers_post_load_mass_read_failure(part, tmp_path, monkeypatch):
+    """Real CAD load/close; a synthetic Python failure is injected after load.
+
+    This proves that validation belongs to the cleanup interval, not that
+    SolidWorks itself returns this artificial error.
+    """
+    part.add_box(40, 20, 10, name='Контрольное выдавливание')
+    step = part.export(str(tmp_path / 'Проверка импорта.step'))['path']
+    original = part._model
+    before = [d._oleobj_.QueryInterface(pythoncom.IID_IUnknown) for d in part._open_documents()]
+    error = RuntimeError('Injected mass-read failure after native LoadFile4')
+    def fail_mass():
+        raise error
+    monkeypatch.setattr(part, 'get_mass_properties', fail_mass)
+    with pytest.raises(RuntimeError) as caught:
+        part.open_part(step)
+    assert caught.value is error and part._model is original
+    after = [d._oleobj_.QueryInterface(pythoncom.IID_IUnknown) for d in part._open_documents()]
+    assert len(after) == len(before) and all(any(token == current for current in after) for token in before)
+    assert not getattr(error, '__notes__', ()), 'Native cleanup was not confirmed.'

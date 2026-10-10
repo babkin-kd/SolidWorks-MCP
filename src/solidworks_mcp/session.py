@@ -9,11 +9,13 @@ language-independent plane walk, forced-SI mass properties) are the ones proven
 green by scripts/m1_block.py and scripts/m2_parametric.py.
 """
 
+from contextlib import contextmanager
 import itertools
 import math
 import os
 import re
 import shutil
+import sys
 import tempfile
 import uuid
 from xml.sax.saxutils import quoteattr
@@ -23,6 +25,7 @@ import win32com.client
 import win32gui
 
 from . import __version__, binding, free_sketch
+from .import_cleanup import ImportDocumentCleanup
 from .constants import (
     FEATURE_ERRORS,
     DRAWING_FORMATS,
@@ -151,6 +154,8 @@ class SolidWorksSession(SheetMetalMixin):
         self._sw = None       # early-bound ISldWorks
         self._mod = None      # generated wrapper module
         self._model = None    # current IModelDoc2
+        self._owns_command_in_progress = False
+        self._import_reconciliation_required = False
 
     # --- connection -----------------------------------------------------------
 
@@ -162,6 +167,7 @@ class SolidWorksSession(SheetMetalMixin):
     def connect(self) -> dict:
         """Attach to the running SolidWorks instance and configure it for automation."""
         self._sw = binding.connect()
+        self._owns_command_in_progress = False
         self._mod = binding.module()
         self._configure_for_automation()
         return self.get_status()
@@ -376,15 +382,15 @@ class SolidWorksSession(SheetMetalMixin):
         abs_path, imported = self._native_or_neutral(path, "sldprt", "a part")
         sw = self._ensure()
         if imported:
-            model = self._import_document(sw, abs_path, SW_DOC_PART)
-            bodies = binding.wrap(model, self._mod.IPartDoc).GetBodies2(SW_BODY_SOLID, True) or ()
-            if not bodies:
-                sw.CloseDoc(model.GetTitle())
-                raise SolidWorksError(f"{os.path.basename(abs_path)} brought in no solid body (only surfaces?), "
-                                      "so there is nothing to build on.")
-            self._model = model
-            return {"ok": True, "title": model.GetTitle(), "path": abs_path, "imported": True,
-                    "solid_bodies": len(bodies), "mass_properties": self.get_mass_properties()["mass_properties"]}
+            with self._neutral_import_scope(sw):
+                model = self._import_document(sw, abs_path, SW_DOC_PART)
+                bodies = binding.wrap(model, self._mod.IPartDoc).GetBodies2(SW_BODY_SOLID, True) or ()
+                if not bodies:
+                    raise SolidWorksError(f"{os.path.basename(abs_path)} brought in no solid body (only surfaces?), "
+                                          "so there is nothing to build on.")
+                self._model = model
+                return {"ok": True, "title": model.GetTitle(), "path": abs_path, "imported": True,
+                        "solid_bodies": len(bodies), "mass_properties": self.get_mass_properties()["mass_properties"]}
         result = sw.OpenDoc6(abs_path, SW_DOC_PART, 0, "", 0, 0)
         doc = result[0] if isinstance(result, tuple) else result
         model = binding.wrap(doc, self._mod.IModelDoc2)
@@ -408,48 +414,89 @@ class SolidWorksSession(SheetMetalMixin):
             raise SolidWorksError(f"File not found: {abs_path}")
         return abs_path, extension != native
 
-    def _import_document(self, sw, abs_path: str, doc_type: int):
-        """Import a STEP/IGES/Parasolid file; a document of the other type is
-        closed again (components and all) with the tool that does take it.
-
-        An assembly is imported with 3D Interconnect switched off for the call:
-        with it on, the parts arrive wrapped in one sub-assembly, out of reach
-        of list_components and add_mate. The user's setting is restored after.
-        """
-        interconnect = sw.GetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT)
-        if doc_type == SW_DOC_ASSEMBLY:
-            sw.SetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT, False)
-        before = {d.GetTitle() for d in self._open_documents()}
+    @contextmanager
+    def _neutral_import_scope(self, sw):
+        if self._import_reconciliation_required:
+            raise SolidWorksError("A previous import has unconfirmed cleanup/settings. "
+                                  "Reconcile state before starting another import.")
         try:
-            doc, errors = self._load_file(sw, abs_path)
+            busy = self._command_in_progress(True)
+        except BaseException as guard_error:
+            self._import_reconciliation_required = True
+            guard_error.add_note("Import command guard acquisition is unconfirmed; reconcile automation state.")
+            raise
+        try:
+            if not self._owns_command_in_progress:
+                raise SolidWorksError("Cannot borrow an existing CommandInProgress flag for import. "
+                                      "Reconcile the automation state first.")
+            # Capture before settings or LoadFile4; canonical identities live
+            # for the entire interval, including validation and cleanup.
+            cleanup = ImportDocumentCleanup(sw, self._open_documents,
+                lambda model: model._oleobj_.QueryInterface(pythoncom.IID_IUnknown),
+                lambda: self._owns_command_in_progress)
+            previous = self._model
+            try:
+                yield
+            except BaseException as original:
+                self._model = previous
+                try:
+                    cleanup.cleanup()
+                except BaseException as cleanup_error:
+                    self._import_reconciliation_required = True
+                    original.add_note(f"Import cleanup is unconfirmed: {cleanup_error}. "
+                                      "Reconcile the open documents and settings before retrying.")
+                if any(note.startswith('3D Interconnect restoration is unconfirmed:')
+                       for note in getattr(original, '__notes__', ())):
+                    self._import_reconciliation_required = True
+                raise
         finally:
-            sw.SetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT, interconnect)
-        model = binding.wrap(doc, self._mod.IModelDoc2)
-        name = os.path.basename(abs_path)
-        if model is None:
-            # error 1 came with the parts it had made left open, hidden and unsaved
-            raise SolidWorksError(f"SolidWorks could not import {abs_path} (error {errors}"
-                                  f"{', no reason given' if errors == 1 else ''}).{self._close_new_documents(before)}")
-        if int(model.GetType()) != doc_type:
-            raise SolidWorksError((f"{name} holds an assembly, not a part: open it with open_assembly."
-                                   if doc_type == SW_DOC_PART else
-                                   f"{name} holds a single part, not an assembly: open it with open_part.")
-                                  + self._close_new_documents(before))
-        return model
+            primary = sys.exc_info()[1]
+            try:
+                self._command_in_progress(busy)
+            except BaseException as guard_error:
+                self._import_reconciliation_required = True
+                if primary is None:
+                    raise
+                primary.add_note(f"Import command guard restoration is unconfirmed: {guard_error}.")
 
-    def _close_new_documents(self, before: set) -> str:
-        """Close every document not open before, assemblies first (a part an
-        open assembly holds stays); '' when all went, else what stayed."""
-        for _ in range(3):
-            # titles first: closing an assembly closes its parts, whose objects then answer nothing
-            new = sorted((int(d.GetType()) != SW_DOC_ASSEMBLY, d.GetTitle()) for d in self._open_documents()
-                         if d.GetTitle() not in before)
-            if not new:
-                return ""
-            for _, title in new:
-                self._sw.CloseDoc(title)
-        stayed = sorted(d.GetTitle() for d in self._open_documents() if d.GetTitle() not in before)
-        return f" It left open: {', '.join(stayed)}; close each with activate_document and close_part." if stayed else ""
+    def _import_document(self, sw, abs_path: str, doc_type: int):
+        """Load a neutral document; the enclosing scope also covers validation.
+
+        3D Interconnect is changed only for an assembly that needs it disabled.
+        A throwing setter may have taken effect, so restoration starts before
+        the setter and is verified by readback. Never mask the primary error.
+        """
+        interconnect = bool(sw.GetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT))
+        restore_attempted = doc_type == SW_DOC_ASSEMBLY and interconnect
+        try:
+            if restore_attempted:
+                status = sw.SetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT, False)
+                if not status or bool(sw.GetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT)):
+                    raise SolidWorksError("Could not disable 3D Interconnect for this assembly import.")
+            doc, errors = self._load_file(sw, abs_path)
+            model = binding.wrap(doc, self._mod.IModelDoc2)
+            if model is None:
+                raise SolidWorksError(f"SolidWorks could not import {abs_path} (error {errors}"
+                                      f"{', no reason given' if errors == 1 else ''}).")
+            if int(model.GetType()) != doc_type:
+                name = os.path.basename(abs_path)
+                raise SolidWorksError(f"{name} holds an assembly, not a part: open it with open_assembly."
+                                     if doc_type == SW_DOC_PART else
+                                     f"{name} holds a single part, not an assembly: open it with open_part.")
+            return model
+        finally:
+            primary = sys.exc_info()[1]
+            if restore_attempted:
+                try:
+                    status = sw.SetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT, interconnect)
+                    if not status or bool(sw.GetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT)) != interconnect:
+                        raise SolidWorksError("3D Interconnect restoration was not confirmed.")
+                except BaseException as restoration_error:
+                    self._import_reconciliation_required = True
+                    if primary is None:
+                        raise
+                    primary.add_note(f"3D Interconnect restoration is unconfirmed: {restoration_error}. "
+                                     "Reconcile settings before retrying.")
 
     @staticmethod
     def _load_file(sw, abs_path: str) -> tuple:
@@ -3815,6 +3862,9 @@ class SolidWorksSession(SheetMetalMixin):
         if before == bool(flag):
             return None
         self._sw.CommandInProgress = bool(flag)
+        if bool(self._sw.CommandInProgress) != bool(flag):
+            raise SolidWorksError("CommandInProgress change was not confirmed; reconcile automation state.")
+        self._owns_command_in_progress = bool(flag)
         return before
 
     def _history_snapshot(self):
@@ -5415,9 +5465,10 @@ class SolidWorksSession(SheetMetalMixin):
         abs_path, imported = self._native_or_neutral(path, "sldasm", "an assembly")
         sw = self._ensure()
         if imported:
-            self._model = self._import_document(sw, abs_path, SW_DOC_ASSEMBLY)
-            return {"ok": True, "title": self._model.GetTitle(), "path": abs_path, "imported": True,
-                    "components": len(self._components(self._require_assembly()))}
+            with self._neutral_import_scope(sw):
+                self._model = self._import_document(sw, abs_path, SW_DOC_ASSEMBLY)
+                return {"ok": True, "title": self._model.GetTitle(), "path": abs_path, "imported": True,
+                        "components": len(self._components(self._require_assembly()))}
         result = sw.OpenDoc6(abs_path, SW_DOC_ASSEMBLY, SW_OPEN_DOC_SILENT, "", 0, 0)
         doc = result[0] if isinstance(result, tuple) else result
         model = binding.wrap(doc, self._mod.IModelDoc2)

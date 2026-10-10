@@ -85,6 +85,14 @@ else:
     _COM_ERROR = ()  # an empty tuple matches no exception
 
 
+def _failure(message, exception):
+    result = {"ok": False, "error": message}
+    notes = getattr(exception, '__notes__', ())
+    if notes:
+        result['diagnostics'] = list(notes)
+    return result
+
+
 async def _call(fn, *args, **kwargs) -> dict:
     """Run a session method on the COM thread and normalise errors to a result dict.
 
@@ -95,15 +103,15 @@ async def _call(fn, *args, **kwargs) -> dict:
             return fn(*args, **kwargs)
         return await _worker.call(lambda: _session.run_guarded(fn, *args, **kwargs))
     except SolidWorksError as exc:
-        return {"ok": False, "error": str(exc)}
+        return _failure(str(exc), exc)
     except _COM_ERROR as exc:
         # Extract the human-readable description if SolidWorks supplied one;
         # raw HRESULT tuples are useless as a correction-loop signal.
         info = getattr(exc, "excepinfo", None)
         desc = info[2] if info and len(info) > 2 and info[2] else getattr(exc, "strerror", None)
-        return {"ok": False, "error": f"SolidWorks COM error: {desc or exc}"}
+        return _failure(f"SolidWorks COM error: {desc or exc}", exc)
     except Exception as exc:  # noqa: BLE001 - never leak a stack trace to the agent
-        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+        return _failure(f"{type(exc).__name__}: {exc}", exc)
 
 
 @mcp.tool()
