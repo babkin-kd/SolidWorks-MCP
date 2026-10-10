@@ -142,7 +142,7 @@ def main():
         gate = CleanupGate()
         report['fixture_setup_started'] = True
         persist()
-        with fixtures(cleanup_gate=gate) as (session, owned, _):
+        with fixtures(cleanup_gate=gate.can_cleanup) as (session, owned, _):
             report['fixture_setup_completed'] = True
             report['owned_document_count'] = len(owned)
             report['owned_documents'] = [{'title': model.GetTitle(), 'path': model.GetPathName(),
