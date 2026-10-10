@@ -423,3 +423,21 @@ bundle; чужие узлы/зависимости запрещают восст
 существующих отбортовок, native-развёртки или DXF. Нейтральная длина в
 подготовке — аналитический прогноз. Native-приёмка кандидата требует
 отдельного отчёта точного установленного wheel и MCP-вызова.
+
+
+## Existing native L-sheet flat/folded state
+
+Use `sheet_prepare_flat_state` with explicit document/configuration/base_object_id
+and a required boolean flattened. The native K-factor is read and bound to the
+revision; it is not overridden. The exact flat pattern is derived from the
+strong base and complete body/folder membership. One active independent
+configuration and the supported original two-line L-profile are required.
+
+Pass the same parameters/revision to `sheet_set_flat_state`. The guarded operation
+re-proves fresh bodies and the full intended material BREP before preserving
+original body/cut-list names if SolidWorks auto-renames them. Original drivers,
+K/parameters, controls and every other node are preserved. Known failure may
+restore only the proved original state/names, with full verification; no delete
+or generic Undo. Same request_id never starts another change; timeout only limits
+waiting, not COM execution. Unknown cannot be auto-repeated. No new configuration,
+save, export/DXF or arbitrary sheet geometry is implemented by these tools.

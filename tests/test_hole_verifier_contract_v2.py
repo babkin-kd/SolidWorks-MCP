@@ -77,6 +77,11 @@ def test_public_hole_harness_tracks_all_literal_calls_before_sdk_dispatch():
         and any(isinstance(target,ast.Name) and target.id=='TOOL_SPECS' for target in node.targets))
     exec(compile(ast.Module(body=[sheet_assignment],type_ignores=[]),'sheet_specs','exec'),namespace)
     namespace['SHEET_SPECS']=namespace['TOOL_SPECS']
+    sheet_state=ast.parse((ROOT/'scripts/verifier_sheet_flat_state_mcp.py').read_text(encoding='utf8'))
+    state_assignment=next(node for node in sheet_state.body if isinstance(node,ast.Assign)
+        and any(isinstance(target,ast.Name) and target.id=='TOOL_SPECS' for target in node.targets))
+    exec(compile(ast.Module(body=[state_assignment],type_ignores=[]),'sheet_state_specs','exec'),namespace)
+    namespace['SHEET_STATE_SPECS']=namespace['TOOL_SPECS']
     exec(compile(ast.Module(body=[assignment],type_ignores=[]),str(script),'exec'),namespace)
     specs=namespace['TOOL_SPECS']
     called={node.args[1].value for node in ast.walk(tree) if isinstance(node,ast.Call)
@@ -93,6 +98,14 @@ def test_public_hole_harness_tracks_all_literal_calls_before_sdk_dispatch():
     sheet_called={node.args[1].value for node in ast.walk(sheet) if isinstance(node,ast.Call)
         and isinstance(node.func,ast.Name) and node.func.id=='call' and len(node.args)>=2 and isinstance(node.args[1],ast.Constant)}
     assert sheet_called<=specs.keys()
+    state_called={node.args[1].value for node in ast.walk(sheet_state) if isinstance(node,ast.Call)
+        and isinstance(node.func,ast.Name) and node.func.id=='call' and len(node.args)>=2 and isinstance(node.args[1],ast.Constant)}
+    assert state_called<=specs.keys()
+    assert specs['sheet_prepare_flat_state'].operation=='sheet.prepare_flat_state'
+    assert specs['sheet_prepare_flat_state'].mutates is False
+    assert specs['sheet_set_flat_state'].operation=='sheet.set_flat_state'
+    assert specs['sheet_set_flat_state'].mutates is True
+    assert specs['sheet_set_flat_state'].prewrite_failure_codes==frozenset({'stale_revision'})
     assert specs['sheet_create_l_profile'].float_arguments==frozenset({'leg_x_mm','leg_y_mm','length_mm','thickness_mm','bend_radius_mm','k_factor'})
     assert specs['sheet_create_l_profile'].argument_defaults=={'sketch_name':'Эскиз листового профиля','feature_name':'Листовой уголок','body_name':'Тело листового уголка'}
     assert specs['part_create_edge_fillet'].argument_defaults=={'feature_name':'Скругление ребра'}

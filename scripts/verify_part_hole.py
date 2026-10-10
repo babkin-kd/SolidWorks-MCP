@@ -47,6 +47,13 @@ class Adapter(SolidWorksDocuments):
     inject_edit = False
     inject_pattern = False
     inject_fillet = False
+    inject_sheet_state=False
+    def sheet_preserve_flat_names(self,*args):
+        super().sheet_preserve_flat_names(*args)
+        if self.inject_sheet_state:
+            self.inject_sheet_state=False
+            raise RuntimeError('Known verifier failure after complete native sheet state/name preservation.')
+
     inject_sheet = False
 
     def create_sheet_l_profile(self,*args):
@@ -88,13 +95,14 @@ def main():
     parser.add_argument('--hole-edit-only', action='store_true', help='Complete editing block; older guard/cut fault cases are not run or counted.')
     parser.add_argument('--pattern-only',action='store_true',help='Complete native linear hole pattern block; hole-edit cases are not counted.')
     parser.add_argument('--fillet-only',action='store_true',help='Complete native selected-edge fillet block; hole/pattern cases are not counted.')
+    parser.add_argument('--sheet-flat-only',action='store_true',help='Existing native L-sheet flat/fold state block.')
     parser.add_argument('--sheet-only',action='store_true',help='Empty-part folded sheet block; plate/hole/fillet cases are not run or counted.')
     parser.add_argument('--wheel', type=Path, required=True)
     parser.add_argument('--expected-version', required=True)
     parser.add_argument('--expected-git-sha', required=True)
     parser.add_argument('--state-dir', type=Path, required=True)
     args = parser.parse_args()
-    if sum((args.pattern_only,args.hole_edit_only,args.fillet_only,args.sheet_only))>1:parser.error('Choose one engineering block.')
+    if sum((args.pattern_only,args.hole_edit_only,args.fillet_only,args.sheet_only,args.sheet_flat_only))>1:parser.error('Choose one engineering block.')
     if not args.run_solidworks: parser.error('Explicit native opt-in required.')
     assert not os.environ.get('PYTHONPATH'), 'Installed package only, without source PYTHONPATH.'
     package = Path(solidworks_mcp.__file__).resolve().parent
@@ -192,6 +200,16 @@ def main():
         # Production mutation guard must acquire/release its own flag after
         # the durable checkpoint. No harness-wide flag hides this lifecycle.
         report['harness_command_flag_borrowed'] = False
+        if args.sheet_flat_only:
+            from verifier_sheet_flat_state import exercise_sheet_flat
+            report['scope']='internal_l_sheet_flat_state_native_v1'
+            report['sheet_state_helper_sha256']=hashlib.sha256(Path(__file__).with_name('verifier_sheet_flat_state.py').read_bytes()).hexdigest()
+            exercise_sheet_flat(adapter,documents,dimensions,store,runner,gate,second_model,
+                dict(document_id=second_id,configuration='Основная'),record,report)
+            snap,facts=source_state(sw,module)
+            assert [(row,fact) for row,fact in zip(snap[3],facts) if row[0]==first_identity]==original
+            report['core_suite_passed']=True
+            return
         if args.sheet_only:
             from verifier_sheet_profile import exercise_sheet
             report['scope']='internal_folded_sheet_l_profile_native_v1'
