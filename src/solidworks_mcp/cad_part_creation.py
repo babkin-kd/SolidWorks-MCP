@@ -18,6 +18,8 @@ class NativeBaseReceipt:
     baseline_features: tuple
     controls: dict
     sketch: object = None
+    native_sketch: object = None
+    native_sketch_identity: object = None
     extrusion: object = None
     body: object = None
     sketch_identity: object = None
@@ -110,6 +112,24 @@ class CadPartCreationMixin:
             raise rejected('created_feature_reference_unavailable', 'The exact created feature has no verified persistent reference.')
         return feature
 
+    def _feature_for_exact_sketch(self, model, sketch):
+        """Resolve an exact returned ISketch through documented feature access.
+
+        ISketch has no GetFeature method in SW2023. This is a canonical round-trip
+        proof through IFeature.GetSpecificFeature2, never a name/tree-diff guess.
+        """
+        token = self.identity(sketch)
+        matches = []
+        for feature in self.features(model):
+            if str(feature.GetTypeName2()) not in ('ProfileFeature', '3DProfileFeature'):
+                continue
+            specific = binding.wrap(feature.GetSpecificFeature2(), self._module.ISketch)
+            if specific is not None and self.identity(specific) == token:
+                matches.append(feature)
+        if len(matches) != 1:
+            raise rejected('construction_sketch_feature_unavailable', 'Exact native sketch has no unique matching feature interface.')
+        return matches[0]
+
     def create_base_rectangle(self, model, plane, definition, receipt):
         self._base_target(model, receipt)
         if self.part_creation_controls(model) != receipt.controls:
@@ -118,8 +138,7 @@ class CadPartCreationMixin:
         if manager.ActiveSketch is not None:
             raise rejected('part_not_writable', 'An unrelated sketch is active.')
         from .session import SolidWorksSession
-        helper = SolidWorksSession()
-        helper._model, helper._sw, helper._mod = model, self._sw, self._module
+        from .sketch_constraints import SketchDefiner
         with self._base_selection(model, receipt):
             if not plane.Select2(False, 0):
                 raise rejected('construction_plane_select_failed', 'The exact plane could not be selected.')
@@ -128,18 +147,27 @@ class CadPartCreationMixin:
             sketch = binding.wrap(manager.ActiveSketch, self._module.ISketch)
             if sketch is None:
                 raise ExecutionFailure('construction_sketch_unconfirmed', 'Sketch creation returned no active sketch.', uncertain=True)
-            sketch_feature = self._retain_base_feature(model, receipt, 'sketch', sketch.GetFeature())
+            receipt.native_sketch, receipt.native_sketch_identity = sketch, self.identity(sketch)
+            sketch_feature = self._retain_base_feature(model, receipt, 'sketch', self._feature_for_exact_sketch(model, sketch))
             sketch_feature.Name = definition.sketch_name
             if sketch_feature.Name != definition.sketch_name:
                 raise rejected('construction_name_mismatch', 'Created sketch did not retain its requested Russian name.')
-            lines = helper._draw_polyline(manager, definition.profile_m)
+            lines = SolidWorksSession._draw_polyline(manager, definition.profile_m)  # Stateless primitive only.
             names = {(axis, i): role for axis, role in (('x', 'Ширина'), ('y', 'Высота')) for i in range(8)}
-            constrained = helper._define_sketch(manager, lines, names=names)
-            if constrained['fully_defined'] is not True:
+            origins = [item for item in self.features(model) if item.GetTypeName2() == 'OriginProfileFeature']
+            if len(origins) != 1:
+                raise rejected('construction_origin_unavailable', 'The explicit model has no unique native origin feature.')
+            points = binding.wrap(origins[0].GetSpecificFeature2(), self._module.ISketch).GetSketchPoints2()
+            if points is None or len(points) != 1:
+                raise rejected('construction_origin_unavailable', 'The explicit model has no unique native origin point.')
+            self._base_target(model, receipt)
+            definer = SketchDefiner(model, self._module, manager, sketch, binding.wrap(points[0], self._module.ISketchPoint))
+            definer.define(lines, names=names, origin_mm=(0., 0.))
+            if definer.fully_defined() is not True:
                 raise rejected('construction_sketch_underdefined', 'Rectangle was not fully defined by native constraints.')
             self._base_target(model, receipt)
             current = binding.wrap(manager.ActiveSketch, self._module.ISketch)
-            if current is None or self.identity(binding.wrap(current.GetFeature(), self._module.IFeature)) != receipt.sketch_identity:
+            if current is None or self.identity(current) != receipt.native_sketch_identity:
                 raise rejected('construction_sketch_changed', 'An unrelated sketch replaced the owned open sketch.')
             manager.InsertSketch(True)
             if manager.ActiveSketch is not None:
@@ -216,7 +244,7 @@ class CadPartCreationMixin:
         with self._base_selection(model, receipt):
             active = binding.wrap(manager.ActiveSketch, self._module.ISketch)
             if active is not None:
-                if receipt.sketch is None or self.identity(binding.wrap(active.GetFeature(), self._module.IFeature)) != receipt.sketch_identity:
+                if receipt.native_sketch is None or self.identity(active) != receipt.native_sketch_identity:
                     raise rejected('construction_restore_unsafe', 'Never close an unrelated active sketch.')
                 manager.InsertSketch(True)
                 if manager.ActiveSketch is not None:
