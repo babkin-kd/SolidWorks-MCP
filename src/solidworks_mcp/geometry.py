@@ -178,3 +178,31 @@ class GeometryCatalog:
         return {'document_id': document_id, 'configuration': configuration,
                 'observation_revision': observed['observation_revision'], 'object': item,
                 'coordinate_frame': 'model', 'length_unit': 'mm', 'area_unit': 'mm2'}
+
+
+    def measure_mass(self, document_id, configuration, expected_observation_revision, *, body_id=None):
+        """Internal candidate: explicit solid scope, never inferred from UI selection.
+
+        Not routed by runtime_v2 or announced in the public tool catalog until
+        installed-wheel native acceptance proves the adapter's read semantics.
+        """
+        entry, observed, identity = self._context(document_id, configuration, expected_observation_revision)
+        if body_id is None:
+            bodies = tuple(self.adapter.bodies(entry.model, 'solid'))
+        else:
+            body, reference = self._resolve(entry, body_id, configuration, identity, 'body')
+            if self.adapter.geometry_summary(body, reference.kind)['body_type'] != 'solid':
+                raise rejected('unsupported_body_type', 'Mass measurements require a native solid body.')
+            bodies = (body,)
+        if not bodies:
+            raise rejected('no_solid_bodies', 'The explicit active configuration has no solid bodies.')
+        values = self.adapter.mass_properties(entry.model, bodies)
+        self._confirm(entry, observed, configuration, identity)
+        from .mass_properties import normalize_mass_properties
+        result = normalize_mass_properties(values)
+        return {'document_id': document_id, 'configuration': configuration,
+                'observation_revision': observed['observation_revision'], 'body_id': body_id,
+                'body_count': len(bodies), 'includes_hidden_bodies': True,
+                'coordinate_frame': 'model', 'length_unit': 'mm', 'area_unit': 'mm2',
+                'volume_unit': 'mm3', 'mass_unit': 'kg', 'density_source': 'solidworks_effective',
+                'mass_properties': result}

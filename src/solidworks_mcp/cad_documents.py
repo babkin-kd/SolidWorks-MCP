@@ -4,6 +4,7 @@ import pythoncom
 
 from . import binding
 from .cad_geometry import CadGeometryMixin
+from .cad_mass_properties import CadMassPropertiesMixin
 from .cad_features import CadFeaturesMixin
 from .cad_dimensions import CadDimensionsMixin
 from .cad_deletion_context import CadDeletionContextMixin
@@ -12,7 +13,7 @@ from .errors import SolidWorksError
 from .ui_guard import ModelUiGuard
 
 
-class SolidWorksDocuments(CadGeometryMixin, CadFeaturesMixin, CadDimensionsMixin, CadDeletionContextMixin):
+class SolidWorksDocuments(CadMassPropertiesMixin, CadGeometryMixin, CadFeaturesMixin, CadDimensionsMixin, CadDeletionContextMixin):
     def mutation_guard(self, model):
         return ModelUiGuard(model)
 
