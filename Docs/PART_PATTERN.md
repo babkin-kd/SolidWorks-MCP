@@ -1,6 +1,6 @@
 # Линейный массив сквозных отверстий
 
-Кандидат dev57, native-приёмка пока не выполнена. Последний принятый блок —
+Кандидат dev58, native-приёмка пока не выполнена. Последний принятый блок —
 редактор отверстия dev56; его результаты не переносятся на новый wheel.
 Все три стадии PLAN.md остаются открыты. Импорт и экспорт отложены.
 
@@ -69,3 +69,20 @@ CAD-запись; тайм-аут ожидания не означает отм�
 [FeatureLinearPattern4](https://help.solidworks.com/2024/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IFeatureManager~FeatureLinearPattern4.html),
 [ILinearPatternFeatureData](https://help.solidworks.com/2023/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.ILinearPatternFeatureData.html?id=2.2.1.193).
 Реальная CAD-приёмка публикуется только после выполнения installed-wheel сценариев.
+
+
+## Выявленный native-дефект dev57
+
+Первый прогон массива на точном dev57 не принят. Native массив был создан, но
+после освобождения AccessSelections изменился canonical COM IBody2. Проверка
+identity прежней обёртки дала `mutation_rollback_unconfirmed`; статус unknown
+не заменялся успехом и запись не повторялась. После завершения процесса отдельный
+read-only аудит подтвердил все terminal jobs, собственную roster, исходные
+эскизы/дерево и полную ожидаемую форму трёх отверстий. Обе контрольные детали
+закрыты без сохранения по постоянному разрешению пользователя; журнал сохранён
+без изменения, baseline снова пуст/free.
+
+В dev58 тело после native rollback подтверждается исходным persistent reference,
+round-trip к текущему IBody2 и native IsSamePersistentID. Полный BREP/источники
+по-прежнему обязательны. Три регрессии проверяют замену обёртки того же тела,
+отказ чужому persistent body при одинаковых массе/имени и scalar read без rollback.

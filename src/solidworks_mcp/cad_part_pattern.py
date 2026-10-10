@@ -18,6 +18,7 @@ class NativePatternReceipt(NativeCutReceipt):
     direction: object = None
     direction_pid: bytes = b''
     reverse: bool = False
+    body_pid: bytes = b''
 
 
 class CadPartPatternMixin:
@@ -91,6 +92,9 @@ class CadPartPatternMixin:
             if len(bodies) != 1 or bodies[0].GetType() != 0:
                 raise rejected('pattern_body_scope_mismatch', 'Exactly one resulting solid body is required.')
             receipt.body, receipt.body_identity = bodies[0], self.identity(bodies[0])
+            receipt.body_pid = self.persistent_id(model, receipt.body)
+            if not receipt.body_pid or self.identity(self.resolve_persistent_id(model,receipt.body_pid,'body'))!=receipt.body_identity:
+                raise rejected('pattern_body_reference_unavailable','Exact created body has no verified persistent reference.')
             if str(receipt.body.Name) != receipt.baseline_body_name:
                 raise rejected('pattern_body_name_changed', 'The original body display name changed.')
 
@@ -133,8 +137,18 @@ class CadPartPatternMixin:
                     raise
         self._base_target(model, receipt)
         bodies = self.bodies(model, 'all')
-        if len(bodies)!=1 or (receipt.body is not None and self.identity(bodies[0])!=receipt.body_identity):
+        if len(bodies)!=1:
             raise rejected('pattern_owned_body_not_current', 'Exact resulting single body changed after selection access.')
+        if receipt.body is not None:
+            # AccessSelections can replace the IBody2 wrapper when ending its
+            # documented rollback. Prove the same persistent body against the
+            # current native collection; name/index/mass are not identity.
+            resolved=self.resolve_persistent_id(model,receipt.body_pid,'body')
+            pid=self.persistent_id(model,bodies[0])
+            if (not receipt.body_pid or not pid or self.identity(resolved)!=self.identity(bodies[0])
+                    or not self.same_persistent_id(model,receipt.body_pid,pid)):
+                raise rejected('pattern_owned_body_not_current','Persistent resulting body is not the exact current single body.')
+            receipt.body,receipt.body_identity=bodies[0],self.identity(bodies[0])
         values = tuple(bodies[0].GetMassProperties(1.))
         if len(values)<5 or not all(math.isfinite(float(v)) and float(v)>0 for v in values[3:5]):
             raise rejected('pattern_mass_unavailable', 'Independent native volume/area are unavailable.')

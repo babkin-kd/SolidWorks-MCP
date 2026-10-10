@@ -21,17 +21,15 @@ def exercise_pattern(adapter,documents,dimensions,store,runner,gate,model,target
     bodies=geometry.list(targets['document_id'],cfg,observation,kind='body')['items']
     assert len(bodies)==1
     edges=geometry.list(targets['document_id'],cfg,observation,kind='edge',body_id=bodies[0]['object_id'])['items']
-    direction=None
+    directions={}
     for row in edges:
         if row['curve_type']!='line':continue
         edge,_=geometry._resolve(entry,row['object_id'],cfg,identity,'edge')
         try:axis,_=pattern_axis(adapter.pattern_edge_points(edge),hole.base_parameters)
         except Exception:continue
-        if axis==0:
-            direction=row['object_id']
-            break
-    assert direction is not None
-    args={**targets,'seed_object_id':seed_id,'direction_edge_id':direction,'count':3,'spacing_mm':10.}
+        directions.setdefault(axis,row['object_id'])
+    assert set(directions)=={0,1}
+    args={**targets,'seed_object_id':seed_id,'direction_edge_id':directions[0],'count':3,'spacing_mm':10.}
     def run(*,revision=None,**changes):
         values={**args,**changes}
         values['expected_revision']=revision or catalog.prepare_linear_hole_pattern(**values)['revision']
@@ -47,9 +45,10 @@ def exercise_pattern(adapter,documents,dimensions,store,runner,gate,model,target
     assert stale['status']=='failed' and stale['error']['code']=='stale_revision'
     record('pattern_stale_prewrite_rejected',stale,'failed')
     adapter.inject_pattern=True
-    failed=run()
+    failed=run(direction_edge_id=directions[1],count=2,spacing_mm=6.5)
     record('pattern_known_failure_scoped_restoration',failed,'failed')
     assert failed['mutation']['phase']=='rolled_back'
+    report['native_y2_step6_5_proved_before_restoration']=True
     assert len(dimensions.list(targets['document_id'],cfg)['items'])==6
     result=run()
     record('native_linear_hole_pattern_x3_step10',result)
