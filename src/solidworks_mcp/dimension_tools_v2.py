@@ -1,4 +1,4 @@
-"""Unconnected dimension MCP candidate; register only after native acceptance.
+"""Public dimension MCP facades backed by the guarded domain runtime.
 
 Registration performs no CAD work. The owning runtime supplies explicit targets,
 complete scoped captures, durable jobs and verified mutation/guard semantics.
@@ -16,8 +16,8 @@ from .jobs import JobError
 def register_dimension_tools(app, runtime, response, failure):
     """Add exactly three tools using the server's shared envelope factories.
 
-    Root calls this from create_app only after installed-wheel native gates pass,
-    and separately updates system_get_info, guide and capability declarations.
+    create_app calls this after the installed internal native path was accepted.
+    Public stdio acceptance remains a separate installed-wheel gate.
     This module does not publish itself, instantiate a runtime or enter COM.
     """
     async def dispatch(request_id, operation, arguments, timeout_s, *, mutates=False):

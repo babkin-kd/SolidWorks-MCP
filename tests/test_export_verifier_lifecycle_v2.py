@@ -100,12 +100,13 @@ def test_export_specs_match_domain_payload_and_stale_prewrite_outcome_only():
     assert specs['export_prepare'].payload({'file_format': 'step', 'filename': 'f.step'})['arguments']['units'] == ''
 
 
-@pytest.mark.parametrize('fault', ['none', 'source_dirty', 'different_build', 'different_digest', 'missing_tool'])
+@pytest.mark.parametrize('fault', ['none', 'source_dirty', 'different_build', 'different_digest', 'missing_tool',
+                                  'missing_output_configuration', 'output_not_configured'])
 def test_real_metadata_factory_checks_child_wheel_and_schemas_without_cad_dispatch(fault):
     events, metadata = [], {}
     info = {'build_matches_source': True, 'package_version': 'version',
         'build': {'source_dirty': False, 'git_sha': 'a' * 40, 'source_digest': 'b' * 64},
-        'source_digest': 'b' * 64, 'implemented_mutations': ['export.execute']}
+        'source_digest': 'b' * 64, 'implemented_mutations': ['export.execute'], 'export_output_configured': True}
     tools = [SimpleNamespace(name=name, outputSchema={'type': 'object'})
              for name in ('export_prepare', 'export_part', 'document_list', 'job_get')]
     if fault == 'source_dirty':
@@ -116,6 +117,10 @@ def test_real_metadata_factory_checks_child_wheel_and_schemas_without_cad_dispat
         info['source_digest'] = 'c' * 64
     elif fault == 'missing_tool':
         tools.pop(0)
+    elif fault == 'missing_output_configuration':
+        info.pop('export_output_configured')
+    elif fault == 'output_not_configured':
+        info['export_output_configured'] = False
     class Raw:
         async def initialize(self):
             events.append('initialize')

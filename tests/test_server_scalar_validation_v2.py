@@ -21,6 +21,13 @@ CAD_TOOLS = [
     ('feature_list', CONTEXT),
     ('feature_get', {**CONTEXT, 'object_id': 'feature'}),
     ('feature_rename', {**CONTEXT, 'object_id': 'feature', 'expected_revision': 'rev', 'name': 'Основание'}),
+    ('dimension_list', CONTEXT),
+    ('dimension_get', {**CONTEXT, 'object_id': 'dimension'}),
+    ('dimension_set_value', {**CONTEXT, 'object_id': 'dimension', 'expected_revision': 'rev',
+                             'value': 9.0, 'unit': 'mm'}),
+    ('export_prepare', {**CONTEXT, 'file_format': 'stl', 'filename': 'Деталь.stl', 'units': 'mm'}),
+    ('export_part', {**CONTEXT, 'expected_revision': 'rev', 'file_format': 'stl',
+                     'filename': 'Деталь.stl', 'units': 'mm'}),
 ]
 
 
@@ -43,6 +50,7 @@ def test_timeout_types_are_rejected_before_journal_or_cad(tmp_path, tool, argume
 @pytest.mark.parametrize('tool,arguments', [
     ('job_list', {}), ('body_list', CAD_TOOLS[2][1]),
     ('face_list', CAD_TOOLS[3][1]), ('edge_list', CAD_TOOLS[4][1]), ('feature_list', CONTEXT),
+    ('dimension_list', CONTEXT),
 ])
 @pytest.mark.parametrize('invalid', [True, False, '1', 1.0])
 def test_page_limit_types_are_rejected_before_journal_or_cad(tmp_path, tool, arguments, invalid):

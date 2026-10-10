@@ -11,13 +11,15 @@ from mcp.client.stdio import stdio_client
 
 from solidworks_mcp import __version__
 from solidworks_mcp.jobs import JobStore
+from solidworks_mcp.runtime_v2 import Runtime
 from solidworks_mcp.server_v2 import create_app
 
 
 ROOT = Path(__file__).resolve().parents[1]
 FIELDS = {'status', 'operation_id', 'context', 'data', 'diagnostics', 'error'}
 TOOLS = {'system_get_info', 'job_get', 'job_list', 'job_cancel', 'document_list', 'document_get',
-         'body_list', 'face_list', 'edge_list', 'geometry_get', 'feature_list', 'feature_get', 'feature_rename'}
+         'body_list', 'face_list', 'edge_list', 'geometry_get', 'feature_list', 'feature_get', 'feature_rename',
+         'dimension_list', 'dimension_get', 'dimension_set_value', 'export_prepare', 'export_part'}
 
 
 def test_v2_stdio_discovery_unicode_guide_and_journal_survive_restart(tmp_path):
@@ -44,9 +46,21 @@ def test_v2_stdio_discovery_unicode_guide_and_journal_survive_restart(tmp_path):
                     assert info['data']['package_version'] == __version__
                     assert len(info['data']['schema_hash']) == 64
                     assert info['data']['capabilities']['cad_mutations'] is True
-                    assert info['data']['implemented_mutations'] == ['feature.rename']
+                    assert info['data']['implemented_mutations'] == [
+                        'feature.rename', 'dimension.set_value', 'export.execute']
+                    assert info['data']['mutation_revision_scopes'] == [
+                        'part_feature_tree_v1', 'part_dimension_values_v1', 'part_solid_brep_export_v1']
+                    assert info['data']['export_output_configured'] is False
+                    unavailable = (await client.call_tool('export_prepare', {
+                        'request_id': 'no-output', 'document_id': 'doc_explicit', 'configuration': 'Основная',
+                        'file_format': 'stl', 'filename': 'Контрольная деталь.stl', 'units': 'mm',
+                    })).structuredContent
+                    assert unavailable['status'] == 'failed'
+                    assert unavailable['operation_id'] is None
+                    assert unavailable['error']['code'] == 'export_output_not_configured'
                     guide = await client.read_resource('solidworks://guide/v2')
                     assert 'русские названия' in guide.contents[0].text
+                    assert all(f'`{name}`' in guide.contents[0].text for name in TOOLS)
                     old = (await client.call_tool('job_get', {'operation_id': queued['operation_id']})).structuredContent
                     assert old['status'] == 'unknown' and old['data']['request_id'] == 'old-running'
                     assert old['data']['payload']['arguments']['name'] == 'Кронштейн'
@@ -92,3 +106,28 @@ def test_journal_io_error_still_has_typed_response(tmp_path, monkeypatch):
         asyncio.run(exercise())
     finally:
         store.close()
+
+
+def test_export_configuration_discovery_and_missing_root_fail_before_cad(tmp_path):
+    def forbidden():
+        raise AssertionError('Discovery and missing export configuration must not start CAD.')
+    store = JobStore(tmp_path / 'jobs.sqlite')
+    runtime = Runtime(store, worker_factory=forbidden, catalog_factory=forbidden)
+    try:
+        app = create_app(store, runtime)
+        async def exercise():
+            _, info = await app.call_tool('system_get_info', {})
+            assert info['data']['export_output_configured'] is False
+            assert info['data']['capabilities']['part_exports'] is True
+            for tool in ('export_prepare', 'export_part'):
+                arguments = {'request_id': tool, 'document_id': 'explicit', 'configuration': 'Основная',
+                             'file_format': 'stl', 'filename': 'Деталь.stl', 'units': 'mm'}
+                if tool == 'export_part':
+                    arguments['expected_revision'] = 'explicit'
+                _, result = await app.call_tool(tool, arguments)
+                assert result['status'] == 'failed' and result['operation_id'] is None
+                assert result['error']['code'] == 'export_output_not_configured'
+            assert store.list()['items'] == [] and runtime._runner is None
+        asyncio.run(exercise())
+    finally:
+        runtime.shutdown()

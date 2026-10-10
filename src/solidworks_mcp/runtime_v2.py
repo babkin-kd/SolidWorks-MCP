@@ -46,6 +46,11 @@ class Runtime:
         self._lock = threading.RLock()
         self._closed = False
 
+    @property
+    def export_output_configured(self):
+        """Report operator configuration without filesystem or CAD discovery."""
+        return self._approved_output_root is not None
+
     def _execute(self, operation, arguments, operation_id=None):
         if self._catalog is None:
             try:

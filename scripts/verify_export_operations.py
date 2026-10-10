@@ -336,6 +336,7 @@ async def metadata_session(params, provenance, metadata):
             assert info['source_digest'] == provenance['installed_source_digest']
             assert info['build']['source_digest'] == provenance['installed_source_digest']
             assert 'export.execute' in info['implemented_mutations']
+            assert info.get('export_output_configured') is True
             tools = (await raw.list_tools()).tools
             assert TOOLS <= {tool.name for tool in tools}, 'Export tools are not published yet.'
             assert all(tool.outputSchema for tool in tools)

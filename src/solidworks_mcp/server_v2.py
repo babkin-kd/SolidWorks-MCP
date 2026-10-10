@@ -19,6 +19,8 @@ from pydantic import StrictFloat, StrictInt
 from . import __version__
 from .build_info import source_digest
 from .contracts import ResponseEnvelope
+from .dimension_tools_v2 import register_dimension_tools
+from .export_tools_v2 import register_export_tools
 from .jobs import JOURNAL_SCHEMA_VERSION, JobError, JobStore
 from .runtime_v2 import Runtime
 
@@ -47,7 +49,9 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
         'An unknown outcome requires reconciliation before retrying an operation. '
         'Names of new CAD objects must be meaningful Russian names; standard components '
         'must come from approved libraries. Document/part geometry reads and guarded part feature '
-        'renaming are available. Feature-tree revisions cover this declared operation scope; '
+        'renaming, scoped dimension changes and part exports are available. Exports require '
+        'a server-configured output directory and supported planar polyhedral geometry. '
+        'Each operation requires its own declared revision scope; '
         'observation revisions are not mutation guards.'
     ))
 
@@ -75,8 +79,13 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
                              'cad_documents': True, 'cad_mutations': True,
                              'part_geometry_reads': True, 'persistent_geometry_references': True,
                              'part_feature_reads': True, 'part_feature_rename': True,
+                             'part_dimension_reads': True, 'part_dimension_set_value': True,
+                             'part_exports': True,
                              'pdm': False, 'simulation': False},
-            'implemented_mutations': ['feature.rename'], 'mutation_revision_scopes': ['part_feature_tree_v1'],
+            'export_output_configured': runtime.export_output_configured,
+            'implemented_mutations': ['feature.rename', 'dimension.set_value', 'export.execute'],
+            'mutation_revision_scopes': ['part_feature_tree_v1', 'part_dimension_values_v1',
+                                         'part_solid_brep_export_v1'],
             'journal_schema_version': JOURNAL_SCHEMA_VERSION,
         })
 
@@ -227,6 +236,8 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
         except (JobError, sqlite3.Error) as exc:
             return failure(exc)
 
+    register_dimension_tools(app, runtime, response, failure)
+    register_export_tools(app, runtime, response, failure)
     return app
 
 

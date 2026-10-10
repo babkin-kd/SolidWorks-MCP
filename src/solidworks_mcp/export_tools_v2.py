@@ -1,4 +1,4 @@
-"""Optional public export registrations; root enables after native acceptance.
+"""Public export facades backed by the accepted internal export path.
 
 No registration at import time, CAD calls, client-owned output directory or
 filesystem access here. Runtime owns job idempotency, server output root and
@@ -83,7 +83,9 @@ def register_export_tools(app, runtime, response, failure):
         warnings require inspection; publication is not a CAD/filesystem
         transaction. Source preservation covers the declared analytical scope.
         The verified result contains a manifest with file hash, frame and unit
-        evidence; geometry roundtrip is not implied. Output location comes only
+        evidence; geometry roundtrip is not implied. staging_cleanup explicitly
+        reports a removed or independently verified retained empty directory.
+        Output location comes only
         from server configuration. No automatic activation/rebuild/source save.
         A timeout does not cancel COM: poll job_get using the returned operation_id.
         Reuse request_id to retrieve the same job; unknown outcomes require
