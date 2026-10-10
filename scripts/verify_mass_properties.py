@@ -145,6 +145,8 @@ def main():
         with fixtures(cleanup_gate=gate) as (session, owned, _):
             report['fixture_setup_completed'] = True
             report['owned_document_count'] = len(owned)
+            report['owned_documents'] = [{'title': model.GetTitle(), 'path': model.GetPathName(),
+                                           'type': model.GetType()} for model in owned]
             persist()
             adapter = SolidWorksDocuments()
             documents = DocumentCatalog(adapter)
@@ -175,7 +177,14 @@ def main():
                 else:
                     assert error is None, (label, 'Expected rejection')
                     check_analytical(result, count, x)
-                confirm_source(baseline, source_state(sw, module))
+                after = source_state(sw, module)
+                try:
+                    confirm_source(baseline, after)
+                except AssertionError:
+                    report['read_state_mismatch'] = {'case': label, 'before': repr(baseline),
+                                                     'after': repr(after)}
+                    persist()
+                    raise
                 assert application_preferences(sw) == before_preferences, 'Read changed preferences.'
                 assert sw.CommandInProgress, 'Owned application guard lost.'
                 report['cases'].append({'label': label, 'passed': True, 'result': result})
