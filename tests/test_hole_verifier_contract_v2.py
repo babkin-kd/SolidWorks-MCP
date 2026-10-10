@@ -3,9 +3,40 @@
 import ast
 from pathlib import Path
 from types import SimpleNamespace as NS
+from copy import deepcopy
+
+import pytest
 
 
 ROOT=Path(__file__).resolve().parents[1]
+
+
+def internal_record():
+    from test_verifier_fixture_cleanup_v2 import utility
+    tree=ast.parse((ROOT/'scripts/verify_part_hole.py').read_text(encoding='utf8'))
+    function=next(node for node in ast.walk(tree) if isinstance(node,ast.FunctionDef) and node.name=='record')
+    namespace={'report':{'cases':[]},'catalog':NS(receipts={}),
+        'persist':lambda:None,'gate':NS(can_cleanup=lambda:True),'sw':NS(CommandInProgress=False),
+        'own_flag':False,'assert_non_stl_preferences':lambda *args:None,'application_preferences':lambda _:None,
+        'preferences':{},'untouched_busy_guard':utility['untouched_busy_guard']}
+    exec(compile(ast.Module(body=[function],type_ignores=[]),'hole_record','exec'),namespace)
+    return namespace
+
+
+def test_native_record_distinguishes_unacquired_busy_flag_from_released_owned_flag():
+    from test_verifier_fixture_cleanup_v2 import terminal
+    from test_verifier_application_guard_scopes_v2 import model_guard,busy_guard
+    namespace=internal_record()
+    busy=terminal('failed','not_started'); busy['error']['code']='application_busy'
+    busy['mutation']['verification']['evidence']={'execution_guard':busy_guard(),'native_mutation_started':False}
+    namespace['record']('existing_command_flag_not_borrowed',busy,'failed')
+    complete=terminal(); complete['mutation']['verification']['evidence']['execution_guard']=model_guard()
+    namespace['record']('plate_in_server_created_document_40_20_10',complete)
+    assert len(namespace['report']['cases'])==2
+    wrong=deepcopy(busy); wrong['mutation']['verification']['evidence']['execution_guard']['acquired']=True
+    with pytest.raises(AssertionError): namespace['record']('existing_command_flag_not_borrowed',wrong,'failed')
+    wrong=deepcopy(complete); wrong['mutation']['verification']['evidence']['execution_guard']['released']=False
+    with pytest.raises(AssertionError): namespace['record']('plate_in_server_created_document_40_20_10',wrong)
 
 
 def test_public_hole_harness_tracks_all_literal_calls_before_sdk_dispatch():

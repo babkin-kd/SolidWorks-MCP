@@ -28,7 +28,7 @@ from verify_export_operations import application_preferences
 from verify_mass_properties import source_state
 from verifier_dimension_diagnostics import assert_non_stl_preferences
 from verify_wheel_artifact import validate_wheel
-from verifier_fixture_cleanup import InlineFixtureCleanupGate, guarded_inline_submit
+from verifier_fixture_cleanup import InlineFixtureCleanupGate, guarded_inline_submit, untouched_busy_guard
 from verify_part_construction import Worker
 
 
@@ -97,7 +97,11 @@ def main():
             evidence = verification.get('evidence', {}).get('execution_guard')
             if label.startswith(('plate_in_server_created','guarded_','hole_known_failure','native_circular')):
                 assert evidence and evidence['scope']=='application_model_mutation_guard_v1'
-            if evidence and evidence.get('scope') == 'application_model_mutation_guard_v1':
+            if label=='existing_command_flag_not_borrowed':
+                assert untouched_busy_guard(evidence)
+                assert verification['outcome']=='not_started' and verification['evidence']['native_mutation_started'] is False
+                assert job['status']=='failed' and job['error']['code']=='application_busy'
+            elif evidence and evidence.get('scope') == 'application_model_mutation_guard_v1':
                 assert evidence['original_command_in_progress'] is False
                 assert evidence['acquired'] is True and evidence['released'] is True
                 assert evidence['selection_preserved'] is True
