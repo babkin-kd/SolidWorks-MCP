@@ -20,7 +20,7 @@ def test_preparation_binds_original_geometry_exact_plane_and_cut_parameters_with
     result=prepare(sketch_setup)
     expected=result['expected_geometry']
     assert result['revision_scope']=='single_base_rectangular_corner_through_cut_v1'
-    assert result['native_creation_available'] is False
+    assert result['native_creation_available'] is True
     assert expected['volume_mm3']==pytest.approx(7500.)
     assert expected['surface_area_mm2']==pytest.approx(2700.)
     assert len(expected['vertices_si'])==expected['vertex_count']==12
@@ -53,7 +53,7 @@ def test_wrong_explicit_plane_never_adopts_the_base_plane_by_name(sketch_setup):
 
 def test_invalid_reference_rejected_before_native_access(sketch_setup,monkeypatch):
     _,sketches,_,_,doc,obj,_=sketch_setup
-    monkeypatch.setattr(sketches,'_paired',lambda *args:pytest.fail('Unexpected CAD access'))
+    monkeypatch.setattr(sketches,'_capture',lambda *args:pytest.fail('Unexpected CAD access'))
     with pytest.raises(ExecutionFailure):PartCutCatalog(sketches).prepare_corner_cut(doc,'Основная',
         object_id=obj,plane_object_id='Передняя',width_mm=10.,height_mm=5.)
 

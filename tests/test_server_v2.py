@@ -21,7 +21,7 @@ TOOLS = {'system_get_info', 'job_get', 'job_list', 'job_cancel', 'document_list'
          'body_list', 'face_list', 'edge_list', 'geometry_get', 'feature_list', 'feature_get', 'feature_rename',
          'dimension_list', 'dimension_get', 'dimension_set_value', 'export_prepare', 'export_part',
          'part_prepare_base_extrusion', 'part_create_base_extrusion',
-         'document_list_templates', 'document_prepare_create_part', 'document_create_part', 'sketch_get', 'sketch_prepare_dimension_change', 'sketch_set_dimension'}
+         'document_list_templates', 'document_prepare_create_part', 'document_create_part', 'sketch_get', 'sketch_prepare_dimension_change', 'sketch_set_dimension', 'part_prepare_corner_cut', 'part_create_corner_cut'}
 
 
 def test_v2_stdio_discovery_unicode_guide_and_journal_survive_restart(tmp_path):
@@ -49,9 +49,9 @@ def test_v2_stdio_discovery_unicode_guide_and_journal_survive_restart(tmp_path):
                     assert len(info['data']['schema_hash']) == 64
                     assert info['data']['capabilities']['cad_mutations'] is True
                     assert info['data']['implemented_mutations'] == [
-                        'feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension']
+                        'feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut']
                     assert info['data']['mutation_revision_scopes'] == [
-                        'part_feature_tree_v1', 'part_dimension_values_v1', 'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1']
+                        'part_feature_tree_v1', 'part_dimension_values_v1', 'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1']
                     assert info['data']['export_output_configured'] is False
                     unavailable = (await client.call_tool('export_prepare', {
                         'request_id': 'no-output', 'document_id': 'doc_explicit', 'configuration': 'Основная',

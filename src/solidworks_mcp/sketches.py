@@ -46,7 +46,7 @@ def persistent_sketch_members(members):
     return tuple((key,value) for key,value in members if not key.startswith('relation:'))
 
 
-def rectangle_parameters(snapshot, semantic, configuration):
+def rectangle_profile_parameters(snapshot, semantic, configuration):
     """Classify native structure/axis relations, never dimension display names."""
     fail = lambda message: rejected('unsupported_rectangular_sketch', message)
     if snapshot['constraint_status'] != 3 or snapshot['is_3d']:
@@ -128,6 +128,15 @@ def rectangle_parameters(snapshot, semantic, configuration):
         checked = deepcopy(row)
         checked['write_blockers'] = [item for item in checked['write_blockers'] if item != 'sketch_geometry_snapshot_not_implemented']
         DimensionCatalog._writable(semantic, checked, 'mm')
+    return {'width_m': width, 'height_m': height, 'axes': axes}
+
+
+def rectangle_parameters(snapshot, semantic, configuration):
+    profile = rectangle_profile_parameters(snapshot, semantic, configuration)
+    width, height, axes = (profile[key] for key in ('width_m', 'height_m', 'axes'))
+    fail = lambda message: rejected('unsupported_rectangular_sketch', message)
+    dimension_rows = [row for row in semantic['dimensions'] if row['owner']
+                      and row['owner']['native_id'] == snapshot['feature_native_id']]
     other = [row for row in semantic['dimensions'] if row not in dimension_rows]
     parent = dimension_rows[0]['owner']['owner_native_id']
     if (len(other) != 1 or parent is None or other[0]['owner'] is None or other[0]['owner']['native_id'] != parent
