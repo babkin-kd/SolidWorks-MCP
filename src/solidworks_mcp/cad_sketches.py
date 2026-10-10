@@ -29,8 +29,12 @@ class CadSketchesMixin:
         if type(kind) is not int or kind != 4 or raw_plane is None:
             raise rejected('sketch_reference_unsupported', 'The initial reader requires an explicit native reference plane.')
         objects = self.features(model)
+        # GetReferenceEntity can expose another native interface identity for
+        # the same plane. Bind its persistent reference to the exact current
+        # IFeature; comparing these different proxy identities is insufficient.
+        plane_pid = self.persistent_id(model, raw_plane)
         planes = [item for item in objects if item.GetTypeName2() == 'RefPlane'
-                  and self.identity(item.GetSpecificFeature2()) == self.identity(raw_plane)]
+                  and plane_pid and self.persistent_id(model, item) == plane_pid]
         origins = [item for item in objects if item.GetTypeName2() == 'OriginProfileFeature']
         if len(planes) != 1 or len(origins) != 1:
             raise rejected('sketch_reference_unsupported', 'The exact reference plane and model origin must be unique current features.')
