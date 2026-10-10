@@ -150,7 +150,7 @@ async def exercise(state, sw, module, owned, report, persist, gate, pattern_only
             from verifier_sheet_flat_state_mcp import exercise_sheet_flat
             await exercise_sheet_flat(client,context,second,module,record,report)
             check_first()
-            await require_native_cleanup()
+            await require_native_cleanup(client,gate)
             report['core_suite_passed']=True
             return
         if sheet_only:

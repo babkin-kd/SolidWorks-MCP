@@ -11,6 +11,16 @@ import pytest
 ROOT=Path(__file__).resolve().parents[1]
 
 
+def test_public_harness_cleanup_always_receives_owner_and_aggregate():
+    tree=ast.parse((ROOT/'scripts/verify_part_hole_mcp.py').read_text(encoding='utf8'))
+    calls=[node for node in ast.walk(tree) if isinstance(node,ast.Call)
+        and isinstance(node.func,ast.Name) and node.func.id=='require_native_cleanup']
+    assert calls
+    for call in calls:
+        assert len(call.args)==2
+        assert isinstance(call.args[1],ast.Name) and call.args[1].id=='gate'
+
+
 def test_hole_editor_prewrite_reject_may_precede_checkpoint():
     tree=ast.parse((ROOT/'scripts/verify_part_hole.py').read_text(encoding='utf8'))
     function=next(node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name=='prewrite_rejection')
