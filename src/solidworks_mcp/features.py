@@ -172,6 +172,13 @@ class FeatureCatalog:
         from .feature_dependency_graph import dependency_graph
         return dependency_graph(self, document_id, configuration)
 
+    def deletion_structure(self, document_id, configuration, object_ids, include_children, include_absorbed):
+        """Internal structural candidates; full impact and deletion remain unimplemented."""
+        from .feature_deletion_structure import structural_candidates, validate_request
+        validate_request(object_ids, include_children, include_absorbed)
+        graph = self.dependencies(document_id, configuration)
+        return structural_candidates(graph, object_ids, include_children, include_absorbed)
+
     def rename(self, operation_id, document_id, configuration, object_id, expected_revision, name):
         name = russian_name(name)
         if self.mutation_guard is None:

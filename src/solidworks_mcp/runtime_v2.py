@@ -80,6 +80,8 @@ class Runtime:
                 return self._features.get(**arguments)
             if operation == 'feature.dependencies':
                 return self._features.dependencies(**arguments)
+            if operation == 'feature.deletion_structure':
+                return self._features.deletion_structure(**arguments)
             if operation == 'feature.rename':
                 return self._features.rename(operation_id, **arguments)
             if operation.startswith('dimension.') and self._dimensions is None:
@@ -120,6 +122,7 @@ class Runtime:
             raise JobError('invalid_timeout', 'timeout_s must be finite and between 0 and 120.')
         allowed = ('feature.rename', 'dimension.set_value', 'export.execute') if mutates else (
             'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies',
+            'feature.deletion_structure',
             'dimension.list', 'dimension.get', 'export.prepare')
         if operation not in allowed:
             raise JobError('unsupported_operation', 'No domain implementation for this operation.')
