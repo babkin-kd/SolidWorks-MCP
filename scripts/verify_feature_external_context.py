@@ -11,7 +11,7 @@ import sys
 
 import pythoncom
 from solidworks_mcp import binding
-from solidworks_mcp.cad_documents import SolidWorksDocuments
+from verifier_native_read_metrics import CountingDocuments, measure_read
 from solidworks_mcp.documents import DocumentCatalog
 from solidworks_mcp.features import FeatureCatalog
 from solidworks_mcp.jobs import JobStore
@@ -121,10 +121,13 @@ def setup_owned_reference(sw, module, source, target, path, checkpoint):
     return feature
 
 
-def check(state, report, gate):
+def check(state, report, gate, *, expected_tree_reads=2):
     report.update(_provenance(), accepted=False, public_mcp_dependency_acceptance=False,
                   native_delete_attempted=False, deletion_impact_complete=False,
                   stl_preferences_verified=False, original_document_baseline_restored=False)
+    if expected_tree_reads == 4:
+        assert report['package_version'] == '2.0.0.dev26'
+        assert report['git_sha'] == 'b7cd2a81caf3f9e06bd136fa4a257cc1ff8f1e0f'
     original = native_snapshot()
     sw, module = binding.connect(show=False), binding.module()
     original_ui, original_prefs = ui_snapshot(sw, module), application_preferences(sw)
@@ -139,18 +142,18 @@ def check(state, report, gate):
             feature = setup_owned_reference(sw, module, source, target, path, trace)
             source_file = file_signature(path)
             setup, setup_ui = native_snapshot(), ui_snapshot(sw, module)
-            adapter = SolidWorksDocuments()
+            adapter = CountingDocuments()
             documents = DocumentCatalog(adapter)
             store = JobStore(state / 'jobs.sqlite')
             catalog = FeatureCatalog(documents, store, 'native_external_context_acceptance')
             doc = next(row for row in documents.list()['documents'] if row['title'] == target.GetTitle())
             context = {'document_id': doc['document_id'], 'configuration': 'Основная'}
-            first = catalog.deletion_context(**context)
+            first, first_metrics = measure_read(adapter, lambda: catalog.deletion_context(**context), expected_tree_reads)
             document_rows = reference_rows(binding.wrap(target.Extension, module.IModelDocExtension))
             feature_rows = reference_rows(feature, feature=True)
             verify_reference_context(first, document_rows, feature_rows, path, feature.Name)
             verify_reference_bindings(first, feature.GetID())
-            second = catalog.deletion_context(**context)
+            second, second_metrics = measure_read(adapter, lambda: catalog.deletion_context(**context), expected_tree_reads)
             assert first == second, 'Repeated context changed without a model edit'
             nodes = [row for row in first['dependency_graph']['nodes'] if row['native_id'] == feature.GetID()]
             assert len(nodes) == 1 and nodes[0]['object_id'] and nodes[0]['persistent_reference_supported']
@@ -160,7 +163,8 @@ def check(state, report, gate):
             assert native_snapshot() == setup and ui_snapshot(sw, module) == setup_ui
             assert file_signature(path) == source_file
             assert not store.list()['items']
-            report.update(deletion_context=first, independent_document_reference_rows=document_rows,
+            report.update(deletion_context=first, read_metrics=[first_metrics, second_metrics],
+                          independent_document_reference_rows=document_rows,
                           independent_feature_reference_rows=feature_rows,
                           native_nonempty_external_references_verified=True,
                           native_fixture_feature_reference_correspondence_verified=True,
@@ -200,6 +204,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--state-dir', type=Path, required=True)
     parser.add_argument('--report', type=Path, required=True)
+    parser.add_argument('--expected-tree-reads', type=int, choices=(2, 4), default=2,
+                        help='4 only for a deliberate installed dev26 baseline; the candidate must prove 2.')
     args = parser.parse_args()
     private = Path(__file__).resolve().parent.parent / 'work'
     args.state_dir, args.report = args.state_dir.resolve(), args.report.resolve()
@@ -210,7 +216,7 @@ def main():
     try:
         pythoncom.CoInitialize()
         initialized = True
-        check(args.state_dir, report, gate)
+        check(args.state_dir, report, gate, expected_tree_reads=args.expected_tree_reads)
     except BaseException as error:
         report.update(accepted=False, error_type=type(error).__name__,
                       fixture_retention_required=not gate.can_cleanup(), automatic_replay_attempted=False)

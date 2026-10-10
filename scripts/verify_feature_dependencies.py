@@ -13,7 +13,7 @@ import time
 
 import pythoncom
 from solidworks_mcp import binding
-from solidworks_mcp.cad_documents import SolidWorksDocuments
+from verifier_native_read_metrics import CountingDocuments, measure_read
 from solidworks_mcp.documents import DocumentCatalog
 from solidworks_mcp.features import FeatureCatalog
 from solidworks_mcp.jobs import JobStore
@@ -119,7 +119,7 @@ def check(state, report, gate, *, deletion_context=False):
         documents = store = trace = None
         primary = None
         try:
-            adapter = SolidWorksDocuments()
+            adapter = CountingDocuments()
             documents = DocumentCatalog(adapter)
             store = JobStore(state / 'jobs.sqlite')
             catalog = FeatureCatalog(documents, store, 'native_dependency_acceptance')
@@ -134,8 +134,8 @@ def check(state, report, gate, *, deletion_context=False):
             setup, setup_ui = native_snapshot(), ui_snapshot(sw, module)
             body = exact_solid(model, module)
             geometry = {'extrema': native_extrema_m(body), 'volume': float(body.GetMassProperties(1.)[3])}
-            graph = catalog.dependencies(**context)
-            second = catalog.dependencies(**context)
+            graph, graph_metrics = measure_read(adapter, lambda: catalog.dependencies(**context))
+            second, repeated_graph_metrics = measure_read(adapter, lambda: catalog.dependencies(**context))
             assert second == graph, 'Unchanged native graph must keep its revision and persistent IDs.'
             native = adapter.features(model)
             extrusion = next(row for row in native if row.GetTypeName2() == 'Extrusion')
@@ -149,26 +149,28 @@ def check(state, report, gate, *, deletion_context=False):
             results = []
             for children, absorbed in ((False, False), (True, False), (False, True), (True, True)):
                 started = time.monotonic()
-                result = catalog.deletion_structure(**context, object_ids=[owner['object_id']],
-                    include_children=children, include_absorbed=absorbed)
+                result, metrics = measure_read(adapter, lambda: catalog.deletion_structure(**context,
+                    object_ids=[owner['object_id']], include_children=children, include_absorbed=absorbed))
                 verify_options(result, owner, child, children, absorbed)
                 assert result['dependency_graph_revision'] == graph['revision']
                 results.append({'options': result['options'], 'candidate_count': len(result['structural_candidate_nodes']),
-                                'seconds': round(time.monotonic() - started, 3), 'revision': result['revision']})
+                                'seconds': round(time.monotonic() - started, 3), 'revision': result['revision'], 'read_metrics': metrics})
             assert len({row['revision'] for row in results}) == 4
             if deletion_context:
-                inventory = catalog.deletion_context(**context)
+                inventory, inventory_metrics = measure_read(adapter, lambda: catalog.deletion_context(**context))
                 verify_equation_context(inventory, manager)
                 assert inventory['dependency_graph'] == graph
-                assert catalog.deletion_context(**context) == inventory
-                report.update(deletion_context=inventory, native_enumerated_equations_and_disabled_counter_verified=True,
+                repeated_inventory, repeated_inventory_metrics = measure_read(adapter, lambda: catalog.deletion_context(**context))
+                assert repeated_inventory == inventory
+                report.update(deletion_context=inventory, context_read_metrics=[inventory_metrics, repeated_inventory_metrics], native_enumerated_equations_and_disabled_counter_verified=True,
                     native_disabled_equation_definitions_verified=False,
                     empty_native_reference_arrays_verified=True, nonempty_native_external_references_verified=False,
                     nonempty_native_auxiliary_references_verified=False)
             assert native_snapshot() == setup and ui_snapshot(sw, module) == setup_ui
             after_body = exact_solid(model, module)
             assert {'extrema': native_extrema_m(after_body), 'volume': float(after_body.GetMassProperties(1.)[3])} == geometry
-            report.update(graph=graph, structural_options=results, repeated_graph_exactly_equal=True,
+            report.update(graph=graph, graph_read_metrics=[graph_metrics, repeated_graph_metrics],
+                          structural_options=results, repeated_graph_exactly_equal=True,
                           independent_fixture_relations_verified=True, native_persistent_target_verified=True,
                           fixture_geometry_and_documents_unchanged=True)
         except BaseException as error:

@@ -6,6 +6,7 @@ import hashlib
 from .cad_deletion_context import SCOPE as CAPTURE_SCOPE, EXTERNAL_FIELDS, MAX_TEXT_TOTAL, _count, _text, _boolean, _integer
 from .documents import rejected
 from .jobs import _json
+from .feature_dependency_graph import FeatureGraphRead
 from .feature_external_reference_bindings import feature_reference_semantics, enforce_combined_text_budget, outgoing_bindings
 
 SCOPE = 'part_feature_deletion_context_v3'
@@ -67,30 +68,23 @@ def context_semantics(value):
 
 
 def deletion_context(catalog, document_id, configuration):
-    adapter, documents = catalog.adapter, catalog.documents
+    adapter = catalog.adapter
     first = catalog._state(document_id, configuration)
-    entry, identity, native, semantic, tree_revision, payload = first
-    first_native = [adapter.identity(item) for item in native]
+    entry, _, native, semantic, _, _ = first
+    frame = FeatureGraphRead(catalog, document_id, configuration, first)
     context = context_semantics(adapter.feature_deletion_context(entry.model))
     references = feature_reference_semantics(adapter.feature_external_references(native), semantic['features'])
     enforce_combined_text_budget(context, references)
-    graph = catalog.dependencies(document_id, configuration)
     closing_context = context_semantics(adapter.feature_deletion_context(entry.model))
     closing_references = feature_reference_semantics(adapter.feature_external_references(native), semantic['features'])
     enforce_combined_text_budget(closing_context, closing_references)
-    bindings = outgoing_bindings(context, references, graph)
+    frame.capture_second_relations()
     last = catalog._state(document_id, configuration)
-    same_native = (len(last[2]) == len(first_native)
-                   and all(saved == adapter.identity(item) for saved, item in zip(first_native, last[2])))
-    same_config = identity == last[1]
-    current, observed = documents.resolve(document_id, configuration)
-    final_config_equal = adapter.configuration_identity(entry.model, configuration) == identity
-    final_sequence = entry.features['watch'].poll()
-    if (last[0] is not entry or current is not entry or last[3] != semantic or last[5] != payload
-            or graph['feature_tree_revision'] != tree_revision or context != closing_context or references != closing_references
-            or not same_native or not same_config or not final_config_equal
-            or observed != payload['observed'] or final_sequence != payload['event_sequence']):
-        raise rejected('document_changed_during_read', 'Feature graph or nonstructural context changed during collection.')
+    if context != closing_context or references != closing_references:
+        raise rejected('document_changed_during_read', 'Nonstructural feature context changed during collection.')
+    graph = frame.close(last)
+    # The frame has finished every COM check; only typed pure transformations follow.
+    bindings = outgoing_bindings(context, references, graph)
     revision = 'rev_' + hashlib.sha256(_json({'scope': SCOPE, 'graph_revision': graph['revision'],
                                             'context': context, 'feature_references': references, 'bindings': bindings}).encode('utf8')).hexdigest()
     blockers = [{'code': 'unverified_impact_scope', 'scope': scope} for scope in UNVERIFIED
@@ -103,6 +97,7 @@ def deletion_context(catalog, document_id, configuration):
             'revision': revision, 'dependency_graph': graph, 'native_context': context,
             'native_feature_external_references': references, 'outgoing_reference_bindings': bindings,
             'native_inventory_capture_closed': True, 'native_inventory_read_count': 2,
+            'feature_tree_read_count': 2,
             'row_indices_and_names_are_writable_anchors': False,
             'blockers': blockers,
             'deletion_impact_complete': False, 'deletion_authorized': False}
