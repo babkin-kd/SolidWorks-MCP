@@ -43,6 +43,12 @@ def test_three_independent_native_drivers_are_identified_by_entities_and_orienta
     assert classify(snapshot,semantic)==result
 
 
+def test_diameter_requires_native_diameter_relation_not_linear_distance_relation():
+    snapshot,semantic=state()
+    next(row for row in snapshot['relations'] if row['display_type']==6)['type']=1
+    with pytest.raises(ExecutionFailure): classify(snapshot,semantic)
+
+
 def test_display_names_do_not_prove_or_change_driver_roles():
     snapshot,semantic=state()
     for index,row in enumerate(semantic['dimensions']):

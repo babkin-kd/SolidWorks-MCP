@@ -75,8 +75,37 @@ class CircularSketchReader(LinearSketchReader):
         if (start_raw is None)!=(end_raw is None):
             raise rejected('sketch_capture_invalid','Circle native endpoint evidence must be complete.')
         start = end = None
+        periodic_endpoints = None
         if start_raw is not None:
-            start,end = self._point(start_raw),self._point(end_raw)
+            endpoints = [self.wrap(raw,'ISketchPoint') for raw in (start_raw,end_raw)]
+            kinds = [_integer(point.Type,low=-1,high=1000) for point in endpoints]
+            if -1 in kinds:
+                # Native SW2023 exposes paired persistent periodic handles;
+                # these are not enumerated sketch points or dimension targets.
+                if kinds!=[-1,-1] or self.identity(endpoints[0])!=self.identity(endpoints[1]):
+                    raise rejected('sketch_capture_invalid','Periodic circle endpoints must be the same exact native handle.')
+                periodic_endpoints = []
+                for index,point in enumerate(endpoints):
+                    token = self.identity(point)
+                    owner = self.wrap(point.GetSketch(),'ISketch')
+                    identifier = _identifier(point)
+                    coordinates = _coordinates((point.X,point.Y,point.Z),3)
+                    xyz = tuple(float.fromhex(v) for v in coordinates)
+                    centre_xyz = tuple(float.fromhex(v) for v in self.points[centre]['coordinates_si'])
+                    if (owner is None or self.identity(owner)!=self.sketch_token
+                            or _integer(point.Status,high=10)!=1
+                            or token in self.members.values()
+                            or 'point:'+':'.join(map(str,identifier)) in self.points
+                            or not math.isclose(math.dist(xyz,centre_xyz),radius,rel_tol=0.,abs_tol=1e-12)
+                            or abs(math.fsum((a-b)*float.fromhex(n) for a,b,n in zip(xyz,centre_xyz,normal)))>1e-12):
+                        raise rejected('sketch_capture_invalid','Periodic handle must be separate, own and on the complete native circle.')
+                    periodic_endpoints.append({'native_id':identifier,'point_type':-1,'constraint_status':1,'coordinates_si':coordinates})
+                if periodic_endpoints[0]!=periodic_endpoints[1]:
+                    raise rejected('sketch_capture_invalid','Periodic endpoint states must close exactly.')
+                self.members[key+':periodic_endpoint'] = self.identity(endpoints[0])
+            else:
+                start,end = self._point(start_raw),self._point(end_raw)
+        if start is not None:
             if 'model_origin' in (start,end):
                 raise rejected('sketch_capture_invalid','Circle endpoints cannot alias the model origin.')
             a,b,c = (tuple(float.fromhex(value) for value in self.points[name]['coordinates_si']) for name in (start,end,centre))
@@ -85,7 +114,8 @@ class CircularSketchReader(LinearSketchReader):
         self.lines[key] = {'key':key,'native_id':identifier,'kind':'circle',
             'construction':_boolean(segment.ConstructionGeometry),'constraint_status':_integer(segment.Status,high=10),
             'centre':centre,'start':start,'end':end,'radius_si':radius.hex(),
-            'normal_si':normal,'rotation_direction':rotation,'circle_parameters_si':parameters}
+            'normal_si':normal,'rotation_direction':rotation,'circle_parameters_si':parameters,
+            'periodic_endpoints':periodic_endpoints}
         self.members[key] = self.identity(segment)
 
 
@@ -139,7 +169,7 @@ def circle_profile_parameters(snapshot, semantic, configuration):
     for relation in snapshot['relations']:
         role = {11:'centre_x',12:'centre_y',6:'diameter'}.get(relation['display_type'])
         name = relation['dimension_full_name']
-        if (relation['type']!=1 or relation['suppressed'] or role is None
+        if (relation['type']!=(15 if role=='diameter' else 1) or relation['suppressed'] or role is None
                 or role in axes or name not in by_name or name in axes.values()):
             raise fail('Only one unsuppressed X/Y/diameter dimension relation per independent driver is supported.')
         entities,definitions = relation['entities'],relation['definitions']

@@ -2,7 +2,7 @@
 
 ## Состояние
 
-Инженерный блок ещё не завершён. Исходный кандидат **dev53** теперь содержит полный circle reader/classifier, домен с durable протоколом, native through-all writer/restore и два MCP-фасада: `part_prepare_through_hole`, `part_create_through_hole`. Исходный каталог — 32 tools/9 mutations. **Installed/native-приёмка отверстия ещё не выполнена.** Установка dev52 и её принятая цепочка вращения сохраняются до установки итогового кандидата; их приёмка не засчитывается за отверстие.
+Инженерный блок ещё не завершён. Кандидат **dev54** сохраняет полный circle reader/classifier, домен с durable протоколом, native through-all writer/restore и два MCP-фасада: `part_prepare_through_hole`, `part_create_through_hole`. Каталог — 32 tools/9 mutations. Установленный dev53 прошёл metadata-проверку, но native-восстановление не было подтверждено. Dev54 учитывает фактические периодические endpoint handles `Type=-1` и связь диаметра `15`; его installed/native-приёмка ещё впереди. Исторический принятый wheel dev52 сохранён, рабочая v1 не изменялась.
 
 Следующая цепочка: новая деталь → параметрическая пластина → одно сквозное круглое отверстие. Это пункты 1.4 и 2.1 PLAN.md; импорт/экспорт в блок не входят.
 
@@ -28,7 +28,7 @@
 
 Native и доменные вырезы используют общий путь удержания собственных handles, checkpoint, выделения, through-all Cut4, rebuild, evidence и scoped restoration. Угловой вырез сохраняет свой профиль и scope; круговой — собственные размеры/shape proof и `single_base_circular_through_hole_v1`. Аналитический dispatcher выбирает hole-reader для census 8/14/7, но только полный reader доказывает форму. Полностью плоская репрезентация не менялась; набор с цилиндром/одним отверстием имеет scope `planar_cylinder_or_single_hole_body_set_v1`.
 
-На предыдущем checkpoint `8919902` связанный pure-набор дал **422 passed**: BREP/domain, planar/cylinder, corner-cut preparation и revolve domain. Это искусственные сценарии; тогда полный набор ещё не запускался. Текущий полный результат dev53 указан выше.
+На предыдущем checkpoint `8919902` связанный pure-набор дал **422 passed**: BREP/domain, planar/cylinder, corner-cut preparation и revolve domain. Это искусственные сценарии; тогда полный набор ещё не запускался. Полный результат предыдущего dev53 указан выше.
 
 Фактический API-пробник использовал временные тела в памяти ядра SolidWorks 2023: `CreateBodyFromBox`, `CreateBodyFromCyl`, `IBody2.Operations2` cut. Он не создавал/редактировал/сохранял CAD-документы и не запускал MCP-мутацию. Две пары полных снимков совпали точно:
 
@@ -61,3 +61,13 @@ Ignored evidence: `work/hole-reader-source-probe.json`, `work/hole-reader-source
 - [Типы размеров](https://help.solidworks.com/2024/english/api/swconst/SolidWorks.Interop.swconst~SolidWorks.Interop.swconst.swDimensionType_e.html?id=2.10.1.272): horizontal=11, vertical=12, diameter=6.
 
 Документация/generated wrapper не заменяют подтверждение native-return semantics установленной версии.
+
+## Диагностика native dev53
+
+Установленный wheel dev53: Git `10684eb1f4aefe53dc103e44c1b842a1d9351b52`, SHA256 `469b151be420c5783a45e722f1c15c53d25404ac1ad1ed8dd24ce9f82e86561e`. Metadata: 32 инструмента, accepted=true; CAD-операции не вызывались. Internal native: четыре случая прошли, контрольный known failure после реального выреза завершился `unknown / mutation_rollback_unconfirmed`. Public native не запускался. Это не приёмка сценария.
+
+Read-only диагностика сохранившейся собственной модели подтвердила Ø6 в центре X=10/Y=10 мм: V=7717,25666117692 мм³, A=2931,946891450771 мм², 8/14/7, Check3 без дефектов. Полная окружность возвращает два одинаковых persistent periodic handles Type=-1/Status=1; это не перечисляемые точки эскиза. Диаметр имеет relation type15, X/Y type1. Исправленный исходный reader/classifier прочитал полный профиль и геометрию без записи. Это диагностическое свидетельство исходников, не native-приёмка нового wheel.
+
+После завершения тестового процесса доказаны владение и текущее состояние ровно двух контрольных документов; они закрыты без сохранения, собственный CommandInProgress освобождён, сессия пуста и свободна. Исходное задание dev53 осталось unknown, повтор операции не выполнялся. Все private reports/CAD-журналы остаются в ignored work/.
+
+Итоговый полный pure-набор dev54: **2885 passed, 323 CAD deselected**, 29,39 с. Это проверка исходников, не native-приёмка.

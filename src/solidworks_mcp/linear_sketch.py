@@ -32,7 +32,10 @@ class SketchEntityBinder:
         owner = self.wrap(obj.GetSketch(), 'ISketch')
         if owner is None:
             raise rejected('sketch_entity_reference_mismatch', 'Native sketch entity has no current owner.')
-        geometry = ((_integer(obj.Type, high=1000), _integer(obj.Status, high=10), tuple(_coordinates((obj.X, obj.Y, obj.Z), 3)))
+        # Periodic full-circle endpoint handles have native Type=-1. Retain
+        # their exact state here; only the circular reader may classify them.
+        # The ordinary point reader still rejects every negative point type.
+        geometry = ((_integer(obj.Type, low=-1, high=1000), _integer(obj.Status, high=10), tuple(_coordinates((obj.X, obj.Y, obj.Z), 3)))
                     if name == 'ISketchPoint' else (_integer(obj.GetType(), high=1000), _integer(obj.Status, high=10), _boolean(obj.ConstructionGeometry)))
         return tuple(_identifier(obj)), self.identity(owner), geometry
 

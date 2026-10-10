@@ -48,7 +48,7 @@ class CircleSketch(Sketch):
                 types,entities,definitions = [2,2],[self.points[0],self.projected],[self.points[0],self.origin]
             else:
                 types,entities,definitions = [4],[self.lines[0]],[self.lines[0]]
-            self.relations.append(Relation(1,types,entities,definitions,display))
+            self.relations.append(Relation(15 if index==2 else 1,types,entities,definitions,display))
         self.RelationManager = NS(GetRelationsCount=lambda kind:len(self.relations),GetRelations=lambda kind:self.relations)
 
 
@@ -81,6 +81,47 @@ def test_full_circle_with_complete_native_coincident_seam_points_is_retained():
     sketch.lines[0].start = sketch.lines[0].end = seam
     row = capture(sketch)[0]['segments'][0]
     assert row['start']==row['end']=='point:2:3'
+
+
+def test_native_periodic_handle_is_retained_without_inventing_an_enumerated_point():
+    sketch = CircleSketch()
+    handle = Point(sketch,2,(.013,.01,0.),kind=-1)
+    handle.Status = 1
+    sketch.lines[0].start = sketch.lines[0].end = handle
+    snapshot,members = capture(sketch)
+    circle = snapshot['segments'][0]
+    assert circle['start'] is circle['end'] is None
+    assert circle['periodic_endpoints'][0]==circle['periodic_endpoints'][1]
+    assert circle['periodic_endpoints'][0]['point_type']==-1
+    assert len(snapshot['points'])==2
+    assert dict(members)['circle:0:1:periodic_endpoint']==id(handle)
+
+
+@pytest.mark.parametrize('fault',['alias','mixed','foreign','off_circle','off_plane','enumerated','status','changed_state'])
+def test_invalid_periodic_handle_is_rejected(fault):
+    sketch = CircleSketch()
+    handle = Point(sketch,2,(.013,.01,0.),kind=-1)
+    handle.Status = 1
+    sketch.lines[0].start = sketch.lines[0].end = handle
+    if fault=='alias': sketch.lines[0].end=Point(sketch,2,(.013,.01,0.),kind=-1)
+    if fault=='mixed': sketch.lines[0].end=Point(sketch,3,(.013,.01,0.))
+    if fault=='foreign': handle.owner=object()
+    if fault=='off_circle': handle.X=.014
+    if fault=='off_plane': handle.Z=.001
+    if fault=='enumerated': sketch.points.append(handle)
+    if fault=='status': handle.Status=2
+    if fault=='changed_state':
+        class ChangingPoint(Point):
+            reads=0
+            @property
+            def X(self):
+                self.reads+=1
+                return .013 if self.reads==1 else .014
+            @X.setter
+            def X(self,value): pass
+        handle=ChangingPoint(sketch,2,(.013,.01,0.),kind=-1); handle.Status=1
+        sketch.lines[0].start=sketch.lines[0].end=handle
+    with pytest.raises(ExecutionFailure): capture(sketch)
 
 
 def test_census_order_does_not_change_circle_or_relation_semantics():

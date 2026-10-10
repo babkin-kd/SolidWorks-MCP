@@ -1,10 +1,16 @@
+# Ход разработки
+
+## 10.10.2026 — dev54: исправление native полного круга
+
+Dev53 установлен только в dev-окружение и прошёл metadata (32 tools). Первый internal native дошёл до реального отверстия и выявил неподтверждённое восстановление: unknown сохранён, повтор не выполнялся. Read-only диагностика выявила periodic endpoint handles Type=-1/Status=1 и отдельный diameter relation type15. Dev54 сохраняет точные persistent/reference/owner/geometry proof этих служебных handles отдельно от перечисляемых точек; линейный scope отрицательные точки по-прежнему отвергает. Добавлены регрессионные проверки. Собственные два документа доказанно идентифицированы и закрыты после терминального вызова, флаг освобождён, пустой/free baseline подтверждён. Подробности: [PART_HOLE.md](PART_HOLE.md). Новый wheel/native впереди; стадии открыты, без push/CI и дополнительных агентов.
+
 # История локальных проверок первой стадии
 
 ## 10.10.2026 — dev53: исходный сценарий отверстия и MCP-фасады
 
 Подготовлены полный circle reader с LONG IsCircle, точными curve/radius/normal/rotation и всем constraint network; независимый X/Y/diameter classifier, persistent binder/plane/origin proof; domain/native through-all cut/restore на общем проверяемом протоколе углового выреза. Подключены `part_prepare_through_hole`/`part_create_through_hole`, lazy owning-STA runtime и освобождение references. Исходный каталог32/9 mutations, scope `single_base_circular_through_hole_v1`; census8/14/7 выбирает полный reader и не заменяет его.
 
-**2875 pure passed, 323 CAD deselected**. Первый полный прогон: 2874 passed/1 failed из-за версии Registry-шаблона; после исправления итоговый прошёл. Circle/linear/binder/sketch/constraints связанный набор222 passed; domain/SQLite commit/stale/request_id/rollback/unknown/foreign проверены искусственно; MCP/metadata/verifier gates58 passed. Подготовлены internal/public installed-wheel верификаторы с V/A/полным census и SDK job-tracking preflight. Реальные CAD-операции этого кандидата ещё не запускались, установленный dev52/v1 сохранены; wheel/metadata/native-приёмка впереди. Исторические результаты не засчитываются за dev53. Один агент, без push/CI, стадии открыты.
+**2875 pure passed, 323 CAD deselected**. Первый полный прогон: 2874 passed/1 failed из-за версии Registry-шаблона; после исправления итоговый прошёл. Circle/linear/binder/sketch/constraints связанный набор222 passed; domain/SQLite commit/stale/request_id/rollback/unknown/foreign проверены искусственно; MCP/metadata/verifier gates58 passed. Подготовлены internal/public installed-wheel верификаторы с V/A/полным census и SDK job-tracking preflight. На момент исходного checkpoint native-приёмка ещё не запускалась; последующий фактический отказ и очистка описаны выше. Исторические результаты не засчитываются за dev53. Один агент, без push/CI, стадии открыты.
 
 ## 10.10.2026 — отверстие: исходные BREP и инженерные постусловия
 
@@ -180,3 +186,5 @@ Dev28: 2075 pure/323 deselected; 18 tool metadata smoke accepted, native 2 passe
 Dev33: выделение защищено Suspend/ResumeSelectionList; первый native-прогон 12 passed остановился на подготовке конфигурации, следующий 16 passed выявил обход document override после SelectedItems. Dev34 проверяет document override до выбора тел и повторно читает scoped options после Recalculate. IFeature теста заново получается после смены конфигурации; ACK подавления проверяется отдельно. Source pure — 2155 passed/323 CAD deselected; installed mass — 64 synthetic passed, artifact/metadata18 accepted без PYTHONPATH.
 
 Первый mass native dev34: 22 сценария прошли, но неправильный cleanup callback сохранил модели — общая приёмка false. Callback исправлен; свежий полный прогон на wheel `c1a8a6025c4226d65d20e398a4312e1e530bff8a` дал 22 passed/accepted true с точным восстановлением выделения/камера/модель, всех 11 non-STL-настроек, пустым baseline и снятым guard. Все failed-отчёты сохранены. По постоянному разрешению пользователя собственные контрольные модели после завершения процессов закрывались без дополнительных вопросов. V1 сохранена, push/CI не запускались, публичный каталог остаётся18; стадия1 открыта. Следующий блок — безопасный перенос создания/редактирования детали в v2.
+
+Итоговый полный pure-набор dev54: **2885 passed, 323 CAD deselected**, 29,39 с. Это проверка исходников, не native-приёмка.
