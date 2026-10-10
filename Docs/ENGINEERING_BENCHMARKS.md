@@ -34,4 +34,22 @@ Private CAD, SQLite и полные native-отчёты остаются в igno
 
 Счётчик покрывает явные reader method/property calls и QueryInterface(IUnknown); дополнительные вызовы внутри wrapper и сравнений COM-identity не измерены. Это не полное число COM-вызовов сценария, не native-приёмка инструмента и не прогноз ускорения всей операции. Замер локализует основную разницу этого reader в CommandInProgress, а не в выбранном STA. По [официальному API](https://help.solidworks.com/2022/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.ISldWorks~CommandInProgress.html) флаг уменьшает обновления во время последовательности вызовов из внешнего процесса.
 
-Кандидат dev55 сначала применяет существующий проверяемый application guard к model-мутациям после их durable checkpoint. Новых CAD-инструментов нет. Подготовительные read jobs пока не меняют флаг: им потребовался бы отдельный безопасный durable service-scope протокол. Новые end-to-end времена и native-эффект ещё не подтверждены.
+Кандидат dev55 сначала применяет существующий проверяемый application guard к model-мутациям после их durable checkpoint. Новых CAD-инструментов нет. Подготовительные read jobs пока не меняют флаг: им потребовался бы отдельный безопасный durable service-scope протокол. На исходном checkpoint новые end-to-end времена и native-эффект ещё не были подтверждены; итоговый замер приведён ниже.
+
+## Принятая public MCP-цепочка — dev55 против dev54
+
+Одинаковые семь public-сценариев приняты на обоих точных wheel. Dev55: Git `4ebe1a93a5d846b670a4381fae1fb8c56d0cbb0b`, SHA256 `1e69033d942f108aaeb826c8c36d08de96bbf2a15b047fa38a499e8d6d6cf4de`, digest `27099c06b58e64fe0470fb8a69868d871efbe66dda3564bf63293b93c6ed6099`. Отдельный internal dev55:10 passed, включая shared dimension/rename guards и busy/stale/restoration. Metadata32 tools, pure2906 /323 CAD deselected. Собственные документы закрыты, live baseline восстановлен.
+
+| Операция | Dev54, с | Dev55, с |
+| --- | ---: | ---: |
+| Подготовка пластины | 17,981 | 18,430 |
+| Создание пластины | 69,560 | 31,512 |
+| Подготовка отверстия | 44,800 | 44,278 |
+| Создание отверстия | 134,477 | 51,249 |
+| Сумма длительностей всех заданий цепочки | 281,146 | 159,219 |
+
+Сумма снизилась примерно на43,4%; создание пластины — на54,7%, отверстия — на61,9%. Метод тот же: updated_at-created_at, включая очередь; сумма не равна полному wall-clock времени и не включает все проверки/опросы harness. Это один сопоставимый замер, не статистическая гарантия и не обещание для любых моделей. Подготовительные чтения почти не изменились.
+
+Изменён только защищённый исполнительный интервал после checkpoint: собственный CommandInProgress, UI lock и selection scope. Чужой True отклоняется, release uncertainty сохраняет hold; checkpoints, stale, два полных снимка и postconditions остаются. Первые два internal-прогона dev55 остановились на ошибках verifier-контракта/учёта busy и не приняты. Пакет wheel не менялся, helpers и record исправлены и покрыты pure-тестами; третий fresh internal и первый public приняты.
+
+Пункт1.5 остаётся открытым: полное число COM-вызовов всей модели и read jobs не измерены; безопасное переключение флага для подготовительных чтений требует отдельного durable service-scope. Эти задачи не подменяют дальнейший приоритетный функционал деталей.
