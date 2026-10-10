@@ -7,12 +7,12 @@
     "url": "https://github.com/babkin-kd/SolidWorks-MCP",
     "source": "github"
   },
-  "version": "2.0.0.dev34",
+  "version": "2.0.0.dev35",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "__FORK_PYPI_PACKAGE__",
-      "version": "2.0.0.dev34",
+      "version": "2.0.0.dev35",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
