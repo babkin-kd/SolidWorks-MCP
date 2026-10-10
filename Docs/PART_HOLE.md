@@ -1,10 +1,10 @@
-# Сквозное круглое отверстие: исходная подготовка
+# Сквозное круглое отверстие: ограниченная приёмка dev54
 
 ## Состояние
 
-Инженерный блок ещё не завершён. Кандидат **dev54** сохраняет полный circle reader/classifier, домен с durable протоколом, native through-all writer/restore и два MCP-фасада: `part_prepare_through_hole`, `part_create_through_hole`. Каталог — 32 tools/9 mutations. Установленный dev53 прошёл metadata-проверку, но native-восстановление не было подтверждено. Dev54 учитывает фактические периодические endpoint handles `Type=-1` и связь диаметра `15`; его installed/native-приёмка ещё впереди. Исторический принятый wheel dev52 сохранён, рабочая v1 не изменялась.
+Принят ограниченный сценарий **dev54: новая деталь → пластина 40 × 20 × 10 мм → сквозное отверстие Ø6 мм, X=10/Y=10 мм**. Полный pure-набор: **2885 passed, 323 CAD deselected**. Установленный wheel: metadata32 tools, **internal native6 passed / public MCP stdio7 passed**, оба accepted=true. Проверены stale до записи, восстановление после известного сбоя, повтор request_id без второго документа/отверстия, полная геометрия и сохранение исходного документа. Собственные контрольные детали закрыты; пустая/free сессия восстановлена. Каталог — 32 tools/9 mutations. Рабочая v1 не изменена; прежние wheel сохранены. Стадии остаются открытыми.
 
-Следующая цепочка: новая деталь → параметрическая пластина → одно сквозное круглое отверстие. Это пункты 1.4 и 2.1 PLAN.md; импорт/экспорт в блок не входят.
+Принятая цепочка: новая деталь → параметрическая пластина → одно сквозное круглое отверстие. Это пункты 1.4 и 2.1 PLAN.md; импорт/экспорт в блок не входят.
 
 ## Реализовано в исходниках
 
@@ -24,7 +24,7 @@
 
 Для полного исходного кандидата dev53: **2875 pure passed, 323 CAD deselected**. До исправления версии справочного Registry-шаблона первый полный прогон дал 2874 passed/1 failed; исправленный итоговый набор прошёл полностью. Это не native-приёмка. Связанные circle/linear/adapter/constraint проверки — 222 passed; domain/MCP/metadata/verifier gates отдельно проверены. Registry-шаблон остаётся справочным, публикация не выполнялась.
 
-`CircularSketchReader` сохраняет полный circle curve, собственный центр/возможные полные seam endpoints, radius/normal/rotation, все relations/definition entities и dimensions. `circle_profile_parameters` выделяет ровно один circle без seam points и три независимых driving dimensions X/Y/диаметра по Type2 и точным native entities, не по именам. Для этой операции сохранены binder/reference, plane/origin proof и существующий linear reader. В типовой библиотеке SW2023 подтверждено: `ISketchArc.IsCircle` возвращает LONG; BOOL/truthiness не подменяют этот контракт. Фактические значения вновь созданного круга и его constraints ещё должны пройти installed/native-проверку.
+`CircularSketchReader` сохраняет полный circle curve, собственный центр/возможные полные seam endpoints, radius/normal/rotation, все relations/definition entities и dimensions. `circle_profile_parameters` выделяет ровно один circle без seam points и три независимых driving dimensions X/Y/диаметра по Type2 и точным native entities, не по именам. Для этой операции сохранены binder/reference, plane/origin proof и существующий linear reader. В типовой библиотеке SW2023 подтверждено: `ISketchArc.IsCircle` возвращает LONG; BOOL/truthiness не подменяют этот контракт. Фактический вновь созданный круг и его constraints впоследствии проверены на установленном dev54.
 
 Native и доменные вырезы используют общий путь удержания собственных handles, checkpoint, выделения, through-all Cut4, rebuild, evidence и scoped restoration. Угловой вырез сохраняет свой профиль и scope; круговой — собственные размеры/shape proof и `single_base_circular_through_hole_v1`. Аналитический dispatcher выбирает hole-reader для census 8/14/7, но только полный reader доказывает форму. Полностью плоская репрезентация не менялась; набор с цилиндром/одним отверстием имеет scope `planar_cylinder_or_single_hole_body_set_v1`.
 
@@ -71,3 +71,15 @@ Read-only диагностика сохранившейся собственно
 После завершения тестового процесса доказаны владение и текущее состояние ровно двух контрольных документов; они закрыты без сохранения, собственный CommandInProgress освобождён, сессия пуста и свободна. Исходное задание dev53 осталось unknown, повтор операции не выполнялся. Все private reports/CAD-журналы остаются в ignored work/.
 
 Итоговый полный pure-набор dev54: **2885 passed, 323 CAD deselected**, 29,39 с. Это проверка исходников, не native-приёмка.
+
+## Точный принятый артефакт dev54
+
+- Wheel: `solidworks_mcp-2.0.0.dev54-py3-none-any.whl`.
+- Git: `6e89b2389390290f36e6d2c039fb62b6ffebdd64`.
+- SHA256 wheel: `cf53edb40e6a75711421874ce67144e6a4cc03f2feee6c35b137bdcf78d64268`.
+- Source digest: `837c63a33daf84c765b2d1be7c91c15070fc3cdaf31ceea2d8a96dd7d5a5f6c8`.
+- V=7717,25666117692 мм³; A=2931,946891450771 мм²; native census8/14/7 и полный BREP/shape proof.
+
+Область: одна существующая прямоугольная база без дополнительных операций, одна явная плоскость и конфигурация, один круг с независимыми X/Y/диаметром, through-all по нормали плоскости, русские имена. Native периодические endpoint handles сохраняются отдельно, с exact persistent-reference/state/owner/geometry proof; они не объявляются перечисляемыми точками или целями изменения. Приёмка не распространяется на произвольные Hole Wizard, blind/наклонные отверстия, зенковки, резьбы, несколько отверстий, изменение их размеров и импортированные тела. Исторический unknown dev53 не изменён и не засчитан успехом.
+
+Следующий блок — ограниченная диагностика производительности по пункту1.5, затем дальнейшие операции деталей. Замеры текущего прогона: [ENGINEERING_BENCHMARKS.md](ENGINEERING_BENCHMARKS.md).
