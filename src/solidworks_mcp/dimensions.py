@@ -17,6 +17,7 @@ from .documents import rejected
 from .features import FeatureCatalog
 from .jobs import _json
 from .mutations import MutationCoordinator, PreparedMutation
+from .combined_guard import CombinedMutationGuard
 
 
 SCOPE = 'part_dimension_values_v1'
@@ -444,7 +445,12 @@ class DimensionCatalog:
                     row['values'][configuration] = (before['value_si'] * 1000 if unit == 'mm'
                                                      else math.degrees(before['value_si']))
             return close_value(after['value_si'], before['value_si']) and expected == actual
+        def guard(prepared):
+            model = target['entry'].model
+            manager = self.mutation_guard(model)
+            scope = getattr(self.adapter, 'dimension_selection_scope', None)
+            return CombinedMutationGuard(manager, scope(model)) if scope is not None else manager
         return self.coordinator.execute(operation_id, document_id=document_id, configuration=configuration,
             expected_revision=expected_revision, prepare=prepare, validate=validate, apply=apply,
             inspect=inspect, verify=verify, restore=restore, verify_restored=verify_restored,
-            guard=lambda prepared: self.mutation_guard(target['entry'].model))
+            guard=guard)

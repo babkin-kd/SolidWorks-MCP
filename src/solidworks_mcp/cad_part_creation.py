@@ -1,6 +1,5 @@
 """Read-only native plane input for the internal base-part candidate."""
 
-from contextlib import contextmanager
 from dataclasses import dataclass, field
 import math
 
@@ -67,34 +66,9 @@ class CadPartCreationMixin:
                 or self.identity(config) != receipt.configuration_identity):
             raise rejected('construction_target_changed', 'Explicit construction document/configuration changed.')
 
-    @contextmanager
     def _base_selection(self, model, receipt):
-        if receipt.selection_uncertain:
-            raise ExecutionFailure('construction_selection_unconfirmed', 'Do not reuse an unconfirmed selection scope.', uncertain=True)
-        selection = binding.wrap(model.SelectionManager, self._module.ISelectionMgr)
-        original = self._mass_selection_snapshot(selection)
-        receipt.selection_uncertain = True  # Before the first possibly effective native setter.
-        suspended = selection.SuspendSelectionList()
-        if type(suspended) is not int or suspended != int(bool(original)):
-            raise ExecutionFailure('construction_selection_unconfirmed', 'Suspension acknowledgement is unknown; no blind resume.', uncertain=True)
-        primary = None
-        try:
-            if self._mass_selection_snapshot(selection):
-                raise rejected('construction_selection_not_empty', 'Private construction selection must start empty.')
-            yield
-        except BaseException as exc:
-            primary = exc
-            raise
-        finally:
-            try:
-                selection.ResumeSelectionList()  # Native void, exactly once.
-                if self._mass_selection_snapshot(selection) != original:
-                    raise RuntimeError('Original selected objects/marks were not restored.')
-            except BaseException as exc:
-                failure = ExecutionFailure('construction_selection_unconfirmed', 'Selection restoration was not confirmed.', uncertain=True)
-                if primary is not None: failure.add_note('Original error: ' + repr(primary))
-                raise failure from exc
-            receipt.selection_uncertain = False
+        from .cad_selection_scope import preserved_selection
+        return preserved_selection(self, model, state=receipt, label='construction')
 
     def _retain_base_feature(self, model, receipt, name, raw):
         feature = binding.wrap(raw, self._module.IFeature)

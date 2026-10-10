@@ -156,6 +156,12 @@ def main():
         selection = binding.wrap(first.SelectionManager, module.ISelectionMgr)
         original_selection = adapter._mass_selection_snapshot(selection)
         assert len(original_selection) == 1 and original_selection[0][1] == 7
+        def check_selection(label):
+            current = adapter._mass_selection_snapshot(binding.wrap(first.SelectionManager, module.ISelectionMgr))
+            report['selection_' + label] = {'count': len(current), 'marks': [mark for _, mark in current],
+                                            'exactly_restored': current == original_selection}
+            persist()
+            assert current == original_selection, 'Original selection identities/marks changed.'
         def create(request):
             prepared = catalog.prepare_base_extrusion(ids[0], 'Основная', **parameters)
             arguments = dict(document_id=ids[0], configuration='Основная', expected_revision=prepared['revision'], **parameters)
@@ -169,13 +175,13 @@ def main():
         persist()
         assert rollback['status'] == 'failed' and rollback['mutation']['phase'] == 'rolled_back', rollback.get('error')
         record('known_creation_failure_scoped_rollback', rollback)
-        assert adapter._mass_selection_snapshot(selection) == original_selection
+        check_selection('after_rollback')
         result = create('plate-create-' + uuid.uuid4().hex)
         report['last_job'] = result
         persist()
         assert result['status'] == 'succeeded' and result['mutation']['phase'] == 'committed', result.get('error')
         record('parametric_plate_40_20_10', result)
-        assert adapter._mass_selection_snapshot(selection) == original_selection
+        check_selection('after_creation')
         page = dimensions.list(ids[0], 'Основная')
         thickness = next(row for row in page['items'] if row['name'] == 'Толщина')
         assert thickness['object_id'] and thickness['write_blockers'] == []
@@ -189,7 +195,7 @@ def main():
         persist()
         assert edited['status'] == 'succeeded' and edited['mutation']['phase'] == 'committed', edited.get('error')
         record('thickness_edit_12', edited)
-        assert adapter._mass_selection_snapshot(selection) == original_selection
+        check_selection('after_thickness_edit')
         bodies = adapter.bodies(first, 'all')
         assert len(bodies) == 1 and math.isclose(float(bodies[0].GetMassProperties(1.)[3]) * 1e9, 9600., rel_tol=1e-7)
         report['plate_volume_after_edit_mm3'] = float(bodies[0].GetMassProperties(1.)[3]) * 1e9

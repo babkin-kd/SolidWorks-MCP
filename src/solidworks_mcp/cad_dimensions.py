@@ -29,6 +29,10 @@ class NativeDimension:
 
 
 class CadDimensionsMixin:
+    def dimension_selection_scope(self, model):
+        from .cad_selection_scope import preserved_selection
+        return preserved_selection(self, model, label='dimension')
+
     @staticmethod
     def _named_configuration(configuration):
         # A plain Python list becomes SAFEARRAY(VARIANT), which SW2023 can
