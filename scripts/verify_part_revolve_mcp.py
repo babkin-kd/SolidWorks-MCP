@@ -35,7 +35,13 @@ TOOL_SPECS = {**PART_SPECS,
         argument_defaults={'axis':'profile_y','sketch_name':'Эскиз вращения','feature_name':'Вращение основания','body_name':'Тело вращения'}),
     'part_create_base_revolve': ToolSpec('part.create_base_revolve', True,
         float_arguments=frozenset({'radius_mm','height_mm'}),
-        argument_defaults={'axis':'profile_y','sketch_name':'Эскиз вращения','feature_name':'Вращение основания','body_name':'Тело вращения'})}
+        argument_defaults={'axis':'profile_y','sketch_name':'Эскиз вращения','feature_name':'Вращение основания','body_name':'Тело вращения'}),
+    'document_list_templates': ToolSpec('document.list_templates', False),
+    'document_prepare_create_part': ToolSpec('document.prepare_create_part', False,
+        argument_defaults={'configuration_name':'Основная'}),
+    'document_create_part': ToolSpec('document.create_part', True,
+        argument_map={'application_id':'document_id'},argument_defaults={'configuration_name':'Основная'},
+        constant_args={'configuration':''},prewrite_failure_codes=frozenset({'stale_revision'}))}
 
 
 async def exercise(state, sw, module, owned, report, persist, gate):
