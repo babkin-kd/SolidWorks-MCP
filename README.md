@@ -185,8 +185,9 @@ verified enum values — run it if SolidWorks is upgraded and signatures change.
 ### Tests
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest                 # all tests
+.\.venv\Scripts\python.exe -m pytest                 # unit tests; native CAD tests skip by default
 .\.venv\Scripts\python.exe -m pytest -m "not solidworks"   # fast unit layer, no SolidWorks
+.\.venv\Scripts\python.exe -m pytest -m solidworks --run-solidworks  # explicit native run, empty disposable CAD session only
 ```
 
 Two layers: **pure unit tests** (units, selector/direction parsing, polygon

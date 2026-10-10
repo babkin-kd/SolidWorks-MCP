@@ -5,7 +5,8 @@ Two layers of tests live under tests/:
 - integration tests marked `solidworks` -- they use the `part` fixture below,
   which connects to a running SolidWorks and SKIPS the whole suite if it can't.
 
-Run only the fast layer with:  pytest -m "not solidworks"
+Run the fast layer with: pytest -m "not solidworks"
+Native legacy tests also require --run-solidworks; a marker typo cannot opt in.
 """
 
 import pytest
@@ -14,20 +15,35 @@ from solidworks_mcp.errors import SolidWorksError
 from solidworks_mcp.session import SolidWorksSession
 
 
+def pytest_addoption(parser):
+    parser.addoption('--run-solidworks', action='store_true', default=False,
+                     help='Explicitly allow legacy native CAD tests on a disposable SolidWorks session.')
+
+
 @pytest.fixture(scope="session")
-def sw():
+def sw(request):
     """A connected SolidWorksSession shared across integration tests.
 
     Skips the integration suite when SolidWorks is not reachable.
     """
+    if not request.config.getoption('--run-solidworks', default=False):
+        pytest.skip('Native CAD tests require explicit --run-solidworks; no SolidWorks connection was attempted.')
     session = SolidWorksSession()
     try:
         session.connect()
     except SolidWorksError as exc:
         pytest.skip(f"SolidWorks not reachable: {exc}")
-    before = session._command_in_progress(True)  # as within every tool call the server makes
-    yield session
-    session._command_in_progress(before)
+    # Legacy tests own all documents they create. Refuse to mix their global
+    # guard and active-document operations with an existing CAD session.
+    if session._sw.GetDocuments():
+        pytest.fail('Native legacy tests require an empty disposable SolidWorks session; existing documents are retained.')
+    if session._sw.CommandInProgress:
+        pytest.fail('Native legacy tests cannot take over an existing CommandInProgress guard.')
+    before = session._command_in_progress(True)
+    try:
+        yield session
+    finally:
+        session._command_in_progress(before)
 
 
 @pytest.fixture
