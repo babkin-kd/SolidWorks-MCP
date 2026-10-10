@@ -7,7 +7,7 @@ import pytest
 SOURCE = Path(__file__).parents[1] / 'scripts' / 'verify_feature_external_context.py'
 TREE = ast.parse(SOURCE.read_text(encoding='utf-8-sig'))
 MODULE = ast.Module(body=[node for node in TREE.body if isinstance(node, (ast.FunctionDef, ast.Assign))
-                         and (getattr(node, 'name', None) in ('reference_rows', 'verify_reference_context')
+                         and (getattr(node, 'name', None) in ('reference_rows', 'verify_reference_context', 'verify_reference_bindings')
                               or isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'FIELDS' for t in node.targets))], type_ignores=[])
 NS = {'Path': Path}
 exec(compile(MODULE, str(SOURCE), 'exec'), NS)
@@ -83,3 +83,32 @@ def test_empty_native_arrays_remain_empty_without_inventing_references(feature):
     value.value=[]
     value.ListExternalFileReferences2=lambda: (None,)*7 + ((0, '') if feature else (None, None))
     assert NS['reference_rows'](value, feature=feature)==[]
+
+
+def binding_result():
+    data=result()
+    data['dependency_graph']={'nodes':[{'native_id':46,'object_id':'obj_derived'}]}
+    data['outgoing_reference_bindings']={'complete':True,'blockers':[],
+        'names_and_indices_are_writable_anchors':False,'document_reference_row_count':1,
+        'native_feature_reference_row_count':1,'groups':[{'match_status':'bound','document_row_indices':[0],
+            'feature_rows':[{'native_id':46,'node_index':0,'object_id':'obj_derived','native_reference_row_indices':[0]}]}]}
+    return data
+
+
+def test_binding_acceptance_requires_the_independently_returned_native_feature():
+    NS['verify_reference_bindings'](binding_result(),46)
+
+
+@pytest.mark.parametrize('fault',['wrong_native_id','missing_target','extra_group','unmatched','different_graph','incomplete','authority'])
+def test_native_fixture_binding_claim_cannot_hide_identity_or_coverage_mismatch(fault):
+    data=binding_result()
+    bindings=data['outgoing_reference_bindings']
+    group=bindings['groups'][0]
+    if fault=='wrong_native_id': group['feature_rows'][0]['native_id']=99
+    elif fault=='missing_target': group['feature_rows'][0]['object_id']=None
+    elif fault=='extra_group': bindings['groups'].append(group.copy())
+    elif fault=='unmatched': group['match_status']='inventory_mismatch'
+    elif fault=='different_graph': data['dependency_graph']['nodes'][0]['object_id']='obj_foreign'
+    elif fault=='incomplete': bindings['complete']=False
+    else: data['deletion_authorized']=True
+    with pytest.raises(AssertionError):NS['verify_reference_bindings'](data,46)

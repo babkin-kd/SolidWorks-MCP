@@ -102,3 +102,41 @@ class CadDeletionContextMixin:
                     {'row_index': index, 'feature_name': values[0], 'file_path': values[1]}
                     for index, values in enumerate(zip(*auxiliary))]}}
         return result
+
+    def feature_external_references(self, native):
+        """Read direct IFeature outputs; its last two OUT values are scalar."""
+        if type(native) is not list:
+            raise rejected('feature_context_capture_invalid', 'Per-feature inventory needs a complete native list.')
+        feature_count = _count(len(native))
+        tables, seen, total, text_work = [], set(), 0, 0
+        def read_text(value):
+            nonlocal text_work
+            value = _text(value)
+            text_work += len(value)
+            if text_work > MAX_TEXT_TOTAL:
+                raise rejected('feature_context_budget_exceeded', 'Per-feature reference text budget exceeded.')
+            return value
+        validators = (read_text, read_text, read_text, read_text, _integer,
+                      read_text, read_text, _integer, read_text)
+        for feature in native:
+            native_id = _integer(feature.GetID())
+            if native_id in seen:
+                raise rejected('feature_identity_collision', 'Per-feature reference census has duplicate native IDs.')
+            seen.add(native_id)
+            count = _count(feature.ListExternalFileReferencesCount())
+            total += count
+            _count(total)
+            if count:
+                raw = feature.ListExternalFileReferences2()
+                if type(raw) not in (tuple, list) or len(raw) != 9:
+                    raise rejected('feature_context_capture_invalid', 'Invalid feature reference outputs.')
+                columns = _columns((*raw[:7], [_integer(raw[7])] * count, [_text(raw[8])] * count), count, validators)
+                rows = [{'row_index': index, **dict(zip(EXTERNAL_FIELDS, values))}
+                        for index, values in enumerate(zip(*columns))]
+            else:
+                rows = []  # No dependent record exists; do not certify undefined OUT values.
+            if _count(feature.ListExternalFileReferencesCount()) != count:
+                raise rejected('document_changed_during_read', 'Per-feature reference count changed during capture.')
+            tables.append({'native_id': native_id, 'count': count, 'rows': rows})
+        return {'scope': 'native_feature_external_references_v1', 'feature_count': feature_count,
+                'total_reference_rows': total, 'features': tables}

@@ -70,6 +70,25 @@ def verify_reference_context(result, document_rows, feature_rows, source_path, f
                and row['scope'] == 'incoming_external_document_references' for row in result['blockers'])
 
 
+def verify_reference_bindings(result, native_id):
+    bindings = result['outgoing_reference_bindings']
+    assert bindings['complete'] is True and bindings['blockers'] == []
+    assert bindings['names_and_indices_are_writable_anchors'] is False
+    assert bindings['document_reference_row_count'] == bindings['native_feature_reference_row_count'] == 1
+    assert len(bindings['groups']) == 1
+    group = bindings['groups'][0]
+    assert group['match_status'] == 'bound' and group['document_row_indices'] == [0]
+    assert len(group['feature_rows']) == 1
+    target = group['feature_rows'][0]
+    assert target['native_id'] == native_id and target['object_id']
+    assert target['native_reference_row_indices'] == [0]
+    nodes = result['dependency_graph']['nodes']
+    assert nodes[target['node_index']]['native_id'] == native_id
+    assert nodes[target['node_index']]['object_id'] == target['object_id']
+    assert 'external_reference_native_feature_bindings' not in {row.get('scope') for row in result['blockers']}
+    assert result['deletion_impact_complete'] is result['deletion_authorized'] is False
+
+
 def setup_owned_reference(sw, module, source, target, path, checkpoint):
     assert not source.GetPathName() and not target.GetPathName() and not path.exists()
     assert tuple(source.GetConfigurationNames()) == ('Основная', 'Вариант')
@@ -130,6 +149,7 @@ def check(state, report, gate):
             document_rows = reference_rows(binding.wrap(target.Extension, module.IModelDocExtension))
             feature_rows = reference_rows(feature, feature=True)
             verify_reference_context(first, document_rows, feature_rows, path, feature.Name)
+            verify_reference_bindings(first, feature.GetID())
             second = catalog.deletion_context(**context)
             assert first == second, 'Repeated context changed without a model edit'
             nodes = [row for row in first['dependency_graph']['nodes'] if row['native_id'] == feature.GetID()]
@@ -144,7 +164,8 @@ def check(state, report, gate):
                           independent_feature_reference_rows=feature_rows,
                           native_nonempty_external_references_verified=True,
                           native_fixture_feature_reference_correspondence_verified=True,
-                          native_generic_feature_reference_bindings_implemented=False,
+                          native_generic_feature_reference_bindings_implemented=True,
+                          native_fixture_outgoing_reference_bindings_verified=True,
                           native_nonempty_auxiliary_references_verified=False,
                           owned_source_file_unchanged_during_reads=True,
                           repeated_context_exactly_equal=True, fixture_documents_and_ui_unchanged=True)

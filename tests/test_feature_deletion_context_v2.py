@@ -127,6 +127,13 @@ def test_domain_schema_never_accepts_incomplete_or_forged_capture(fault):
     with pytest.raises(ExecutionFailure): context_semantics(value)
 
 
+def feature_capture(native, rows):
+    return {'scope': 'native_feature_external_references_v1', 'feature_count': len(native),
+            'total_reference_rows': len(rows), 'features': [
+                {'native_id': item.state['native_id'], 'count': len(rows) if index == 0 else 0,
+                 'rows': deepcopy(rows) if index == 0 else []} for index, item in enumerate(native)]}
+
+
 def install_context(adapter, change=None):
     calls = []
     shared = capture()
@@ -135,6 +142,7 @@ def install_context(adapter, change=None):
         if change: change(len(calls), shared)
         return shared
     adapter.feature_deletion_context = read
+    adapter.feature_external_references = lambda native: feature_capture(native, shared['external_references']['rows'])
     return calls
 
 
@@ -160,6 +168,7 @@ def test_nonstructural_change_without_tree_stamp_changes_revision(setup, field):
     install(adapter)
     value = capture()
     adapter.feature_deletion_context = lambda model: value
+    adapter.feature_external_references = lambda native: feature_capture(native, value['external_references']['rows'])
     before = catalog.deletion_context(ids[0], 'Основная')
     if field == 'expression': value['equations']['rows'][0]['expression'] = '"Высота" = 12'
     elif field == 'disabled':
