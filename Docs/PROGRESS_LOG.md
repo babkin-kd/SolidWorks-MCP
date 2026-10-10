@@ -1,5 +1,35 @@
 # Ход разработки
 
+## 11.10.2026 — source-развёртка: полная геометрия, имя списка ещё требует исправления
+
+Подготовлены flat geometry/fixed-face/revision primitives и усиленный read-only
+native-reader. Новых pure87; связанный sheet-поднабор260 passed/1,84с, без заявления
+о полном наборе/wheel. Каталог v2 не расширен: установленный dev61 остаётся40/13.
+Source-probe1 отказал до FlatPattern write из-за exact mass comparison; probe2 —
+stale/not_started до native execution из-за mass round-off в revision≈4e−13 мм³.
+Оба собственных документа закрыты. Из хеша исключены только redundant mass/area,
+все geometry/tree/drivers/native parameters/refs/control сохранены; численные
+mass-проверки остаются отдельными обязательными постусловиями.
+
+Probe3 после durable checkpoint/owning guard подтвердил реальную native flat
+форму8/12/6 при W40/H20/L30/t2/r2/K.42: D≈56,4610615681 мм,
+V≈3387,66369408585 мм³/A≈3733,50794035824 мм²; fixed-face X подтверждён полными
+native углами/нормалью/current body. Обратное сворачивание вернуло точные исходные
+BREP16/28/14 и размеры/K/эскиз. Однако CutListFolder сменил русское имя на Sheet<2>:
+full_folded_state_restored=false, итоговая приёмка не заявляется. Имя тела ещё
+нужно снимать/подтвердить. CAN тела меняется через rebuild; flat body.GetFeatures
+добавляет exact TemplateFlatPattern, FixedFace PID/footprint меняется через merge.
+
+Все4 source-задания terminal/committed, новые unknown отсутствуют; source scopes
+означают только наблюдения геометрии/параметров, не принятую публичную операцию.
+Guard released/selection preserved, свой документ закрыт, non-STL настройки и
+пустой/free baseline подтверждены. Доказательства/primary API/оставшиеся шаги:
+SHEET_FLAT_STATE.md; private reports work/native-flat-development-probe-1…3.
+Следующий шаг — домен/MCP и сохранение русских имён по exact refs/membership,
+затем полный pure и один итоговый same-wheel internal/public блок. Усиленный
+reader пока прошёл искусственные тесты, не был частью native-probe3. Импорт/экспорт
+отложены, все стадии открыты. GitHub push/CI и дополнительных агентов нет.
+
 ## 11.10.2026 — листовой L-профиль dev61 принят на точном wheel
 
 После полного pure3284 passed /323 CAD deselected (37,83с) зафиксирован чистый
