@@ -4,7 +4,7 @@ import math
 
 from . import binding
 from .documents import rejected
-from .linear_sketch import LinearSketchReader, _coordinates
+from .linear_sketch import LinearSketchReader, SketchEntityBinder, _coordinates
 
 
 class CadSketchesMixin:
@@ -49,8 +49,14 @@ class CadSketchesMixin:
             if not pid or self.identity(self.resolve_persistent_id(model, pid, 'feature')) != self.identity(item):
                 raise rejected('sketch_reference_unsupported', 'Sketch/plane/origin persistent reference did not round-trip.')
             references.append(pid.hex())
-        reader = LinearSketchReader(sketch, binding.wrap(points[0], self._module.ISketchPoint), identity=self.identity,
-            wrap=lambda raw, name: binding.wrap(raw, getattr(self._module, name)))
+        def resolve(pid, name):
+            raw, status = self._extension(model).GetObjectByPersistReference3(self._persistent_variant(pid))
+            if type(status) is not int or status != 0 or raw is None:
+                raise rejected('sketch_entity_reference_unavailable', 'Current sketch entity reference is unavailable/suppressed/deleted.')
+            return binding.wrap(raw, getattr(self._module, name))
+        binder = SketchEntityBinder(wrap=lambda raw,name:binding.wrap(raw,getattr(self._module,name)),
+            reference=lambda obj:self.persistent_id(model,obj),resolve=resolve,identity=self.identity)
+        reader = LinearSketchReader(sketch, binder(points[0], 'ISketchPoint'), identity=self.identity, wrap=binder)
         snapshot, members = reader.read()
         transform = binding.wrap(sketch.ModelToSketchTransform, self._module.IMathTransform)
         if transform is None:
@@ -60,4 +66,6 @@ class CadSketchesMixin:
             reference_plane={'native_id': int(plane.GetID()), 'pid_hex': references[1],
                 'transform': _coordinates(self.reference_plane_transform(plane), 16)},
             model_origin={'feature_native_id': int(origin.GetID()), 'pid_hex': references[2]})
+        snapshot['entity_references'] = sorted(({'kind':kind,'pid_hex':pid.hex()} for kind,pid in binder.bound),
+            key=lambda row:(row['kind'],row['pid_hex']))
         return snapshot, members + (('feature', self.identity(feature)), ('plane', self.identity(plane)), ('origin_feature', self.identity(origin)))

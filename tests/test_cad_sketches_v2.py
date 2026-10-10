@@ -16,10 +16,16 @@ class Adapter(CadSketchesMixin):
     def persistent_id(self, model, obj):return obj.pid
     def resolve_persistent_id(self, model, pid, kind):return next(item for item in model if item.pid==pid)
     def reference_plane_transform(self, plane):return IDENTITY
+    def _persistent_variant(self, pid):return pid
+    def _extension(self, model):
+        sketch=model[0].GetSpecificFeature2()
+        members={item.pid:item for item in sketch.points+[sketch.origin,sketch.projected]+sketch.lines}
+        return NS(GetObjectByPersistReference3=lambda pid:(members.get(pid),0))
 
 
 def fixture():
     sketch=Sketch()
+    for i,item in enumerate(sketch.points+[sketch.origin,sketch.projected]+sketch.lines):item.pid=str(i).encode()
     raw_plane=NS(pid=b'plane')
     sketch.GetReferenceEntity=lambda kind:(raw_plane,4)
     sketch.ModelToSketchTransform=NS(ArrayData=IDENTITY)

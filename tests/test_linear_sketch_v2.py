@@ -6,7 +6,7 @@ from types import SimpleNamespace as NS
 import pytest
 
 from solidworks_mcp.jobs import ExecutionFailure
-from solidworks_mcp.linear_sketch import LinearSketchReader
+from solidworks_mcp.linear_sketch import LinearSketchReader, SketchEntityBinder
 
 
 class Point:
@@ -117,3 +117,34 @@ def test_mutated_coordinate_changes_exact_capture_even_by_one_ulp():
     old = capture(sketch)[0]
     sketch.points[1].X = math.nextafter(sketch.points[1].X,1.)
     assert old != capture(sketch)[0]
+
+
+def test_alternate_relation_interface_binds_to_exact_native_persistent_entity():
+    owner=object()
+    current=Point(owner,0,(0.,0.,0.))
+    alternate=Point(owner,0,(0.,0.,0.))
+    current.pid=alternate.pid=b'actual-native-point'
+    binder=SketchEntityBinder(wrap=lambda raw,name:raw,reference=lambda raw:raw.pid,
+        resolve=lambda pid,name:current,identity=id)
+    assert binder(alternate,'ISketchPoint') is current
+    assert binder(current,'ISketchPoint') is current
+    replacement=Point(owner,0,(0.,0.,0.))
+    replacement.pid=current.pid
+    binder.resolve=lambda pid,name:replacement
+    with pytest.raises(ExecutionFailure):binder(alternate,'ISketchPoint')
+
+
+@pytest.mark.parametrize('fault',['missing','wrong_pid','wrong_id','owner','coordinates','type'])
+def test_entity_binder_never_uses_local_hint_or_shape_as_reference(fault):
+    owner=object()
+    current=Point(owner,0,(0.,0.,0.));alternate=Point(owner,0,(0.,0.,0.))
+    current.pid=alternate.pid=b'native'
+    if fault=='missing':alternate.pid=b''
+    if fault=='wrong_pid':current.pid=b'foreign'
+    if fault=='wrong_id':current.number=2
+    if fault=='owner':current.owner=object()
+    if fault=='coordinates':current.X=.01
+    if fault=='type':current.Type=10
+    binder=SketchEntityBinder(wrap=lambda raw,name:raw,reference=lambda raw:raw.pid,
+        resolve=lambda pid,name:current,identity=id)
+    with pytest.raises(ExecutionFailure):binder(alternate,'ISketchPoint')

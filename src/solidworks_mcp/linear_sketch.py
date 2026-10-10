@@ -15,6 +15,44 @@ from .documents import rejected
 SCOPE = 'linear_planar_sketch_geometry_v1'
 
 
+class SketchEntityBinder:
+    """Bind alternate relation interfaces to actual native persistent entities.
+
+    Never trusts a local ID pair or identical coordinates as object identity.
+    Each reference must resolve and retain the same canonical current entity.
+    """
+    def __init__(self, *, wrap, reference, resolve, identity):
+        self.wrap, self.reference, self.resolve, self.identity = wrap, reference, resolve, identity
+        self.bound = {}
+
+    def __call__(self, raw, name):
+        obj = self.wrap(raw, name)
+        if obj is None or name not in ('ISketchPoint', 'ISketchSegment', 'ISketchLine'):
+            return obj
+        pid = self.reference(obj)
+        if type(pid) is not bytes or not pid:
+            raise rejected('sketch_entity_reference_unavailable', 'Every native sketch point/segment requires a persistent reference.')
+        current = self.resolve(pid, name)
+        if current is None or self.reference(current) != pid or _identifier(current) != _identifier(obj):
+            raise rejected('sketch_entity_reference_mismatch', 'Native sketch entity reference did not resolve to the same current entity.')
+        category = 'point' if name == 'ISketchPoint' else 'segment'
+        key, token = (category, pid), self.identity(current)
+        if key in self.bound and self.bound[key] != token:
+            raise rejected('sketch_entity_identity_collision', 'The same reference retargeted to another canonical entity during capture.')
+        if self.identity(self.wrap(obj.GetSketch(), 'ISketch')) != self.identity(self.wrap(current.GetSketch(), 'ISketch')):
+            raise rejected('sketch_entity_reference_mismatch', 'Relation interface and resolved native entity have different sketch owners.')
+        if name == 'ISketchPoint':
+            actual = (obj.Type, obj.Status, _coordinates((obj.X, obj.Y, obj.Z), 3))
+            expected = (current.Type, current.Status, _coordinates((current.X, current.Y, current.Z), 3))
+        else:
+            actual = (obj.GetType(), obj.Status, obj.ConstructionGeometry)
+            expected = (current.GetType(), current.Status, current.ConstructionGeometry)
+        if actual != expected:
+            raise rejected('sketch_entity_reference_mismatch', 'Alternate interface disagrees with the full resolved native entity.')
+        self.bound[key] = token
+        return current
+
+
 def _integer(value, *, low=0, high=100000):
     if type(value) is not int or not low <= value <= high:
         raise rejected('sketch_capture_invalid', 'Native sketch integer is outside the supported bound.')
