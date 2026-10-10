@@ -105,42 +105,51 @@ def hole_body_matches(geometry,expected):
         circular = [edge for edge in body['edges'] if edge['kind']=='circle']
         pairs = [frozenset((mapping[edge['start']],mapping[edge['end']])) for edge in finite]
         wanted_pairs = {frozenset((i,i^bit)) for i in range(8) for bit in (1,2,4)}
-        if len(pairs)!=12 or len(set(pairs))!=12 or set(pairs)!=wanted_pairs or len(circular)!=2:
+        holes = expected.get('holes_si') or [{'circle_centres_si': expected['circle_centres_si'],
+                                            'radius_si': expected['radius_si']}]
+        if len(pairs)!=12 or len(set(pairs))!=12 or set(pairs)!=wanted_pairs or len(circular)!=2*len(holes):
             return False
-        centres = [point(row) for row in expected['circle_centres_si']]
-        axis,radius = point(expected['axis_si']),float.fromhex(expected['radius_si'])
+        centres = [point(row) for hole in holes for row in hole['circle_centres_si']]
+        radii = [float.fromhex(hole['radius_si']) for hole in holes]
+        axis = point(expected['axis_si'])
         ends = {}
         for index,edge in enumerate(body['edges']):
             if edge['kind']!='circle':
                 continue
             p = point(edge['circle_parameters'])
             matches = [i for i,centre in enumerate(centres) if close(p[:3],centre)]
-            if (len(matches)!=1 or matches[0] in ends.values() or abs(p[6]-radius)>GEOMETRY_TOLERANCE_M
+            if (len(matches)!=1 or matches[0] in ends.values() or abs(p[6]-radii[matches[0]//2])>GEOMETRY_TOLERANCE_M
                     or abs(abs(dot(p[3:6],axis))-1.)>1e-12):
                 return False
             ends[index] = matches[0]
-        if set(ends.values())!={0,1}:
+        if set(ends.values())!=set(range(2*len(holes))):
             return False
         frame = point(expected['plane_transform_si'])
         axes = (frame[:3],frame[3:6],frame[6:9])
         extents = point(expected['base_extents_si'])
         remaining = {(i,end) for i in range(3) for end in (0,1)}
-        walls = 0
+        walls = set()
         for face in body['faces']:
             p = point(face['surface_parameters'])
             if face['surface_type']=='cylinder':
-                walls += 1
-                if (face['normal_opposes_surface'] is not True or abs(p[6]-radius)>GEOMETRY_TOLERANCE_M
-                        or abs(abs(dot(p[3:6],axis))-1.)>1e-12):
+                matches = []
+                for hole_index, centre in enumerate(centres[::2]):
+                    displacement = delta(p[:3],centre)
+                    projected = dot(displacement,axis)
+                    if all(abs(value-projected*direction)<=GEOMETRY_TOLERANCE_M
+                           for value,direction in zip(displacement,axis)):
+                        matches.append(hole_index)
+                if len(matches)!=1 or matches[0] in walls:
                     return False
-                displacement = delta(p[:3],centres[0])
-                projected = dot(displacement,axis)
-                if any(abs(value-projected*direction)>GEOMETRY_TOLERANCE_M
-                       for value,direction in zip(displacement,axis)):
+                hole_index = matches[0]
+                walls.add(hole_index)
+                if (face['normal_opposes_surface'] is not True or abs(p[6]-radii[hole_index])>GEOMETRY_TOLERANCE_M
+                        or abs(abs(dot(p[3:6],axis))-1.)>1e-12):
                     return False
                 loops = face['loops']
                 if (len(loops)!=2 or any(loop['outer'] is not True or len(loop['coedges'])!=1 for loop in loops)
-                        or {use['edge'] for loop in loops for use in loop['coedges']}!=set(ends)):
+                        or {ends.get(use['edge']) for loop in loops for use in loop['coedges']}
+                        !={2*hole_index,2*hole_index+1}):
                     return False
                 continue
             if face['surface_type']!='plane':
@@ -154,7 +163,7 @@ def hole_body_matches(geometry,expected):
             remaining.remove((plane,end))
             outer = [loop for loop in face['loops'] if loop['outer'] is True]
             inner = [loop for loop in face['loops'] if loop['outer'] is False]
-            if len(outer)!=1 or len(outer[0]['coedges'])!=4 or len(inner)!=(1 if plane==2 else 0):
+            if len(outer)!=1 or len(outer[0]['coedges'])!=4 or len(inner)!=(len(holes) if plane==2 else 0):
                 return False
             bit = (4,2,1)[plane]
             expected_vertices = {i for i in range(8) if bool(i&bit)==bool(end)}
@@ -162,11 +171,14 @@ def hole_body_matches(geometry,expected):
             if ({mapping[use['start']] for use in uses}!=expected_vertices
                     or any(body['edges'][use['edge']]['kind']!='line' for use in uses)):
                 return False
-            if inner:
-                uses = inner[0]['coedges']
-                if len(uses)!=1 or ends.get(uses[0]['edge'])!=end:
+            cap_holes = set()
+            for loop in inner:
+                uses = loop['coedges']
+                cap = ends.get(uses[0]['edge']) if len(uses)==1 else None
+                if cap is None or cap%2!=end or cap//2 in cap_holes:
                     return False
-        return not remaining and walls==1
+                cap_holes.add(cap//2)
+        return not remaining and walls==set(range(len(holes)))
     except (KeyError,IndexError,TypeError,ValueError,OverflowError):
         return False
 

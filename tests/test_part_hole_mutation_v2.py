@@ -18,23 +18,24 @@ from test_cylinder_brep_v2 import Edge,Surface,PeriodicLoop
 from test_hole_brep_v2 import read
 
 
-def native_shape(definition):
+def native_shape(definition, centres=None):
     body=make_body(points=[(x,y,z) for z in (0.,.01) for y,x in ((0.,0.),(0.,.04),(.02,.04),(.02,0.))])
     for edge in body.edges:edge.curve.IsCircle=lambda:False
     for face in body.faces:face.surface.IsCylinder=lambda:False
     x,y,r=definition.centre_x_mm/1000.,definition.centre_y_mm/1000.,definition.diameter_mm/2000.
-    wall=Face(body,())
-    wall.surface=Surface('cylinder',(x,y,-.005,0.,0.,1.,r))
-    wall.sense=True
-    body.faces.append(wall)
-    for z,cap in zip((0.,.01),body.faces[:2]):
-        normal=(0.,0.,-1.) if z==0. else (0.,0.,1.)
-        edge=Edge(body,(x,y,z,*normal,r),(x+r,y,z))
-        body.edges.append(edge)
-        inner,outer=PeriodicLoop(cap,False),PeriodicLoop(wall,True)
-        cap.loops.append(inner);wall.loops.append(outer)
-        inner.ordered=[Coedge(edge,inner,False)]
-        outer.ordered=[Coedge(edge,outer,True)]
+    for x,y in centres or ((x,y),):
+        wall=Face(body,())
+        wall.surface=Surface('cylinder',(x,y,-.005,0.,0.,1.,r))
+        wall.sense=True
+        body.faces.append(wall)
+        for z,cap in zip((0.,.01),body.faces[:2]):
+            normal=(0.,0.,-1.) if z==0. else (0.,0.,1.)
+            edge=Edge(body,(x,y,z,*normal,r),(x+r,y,z))
+            body.edges.append(edge)
+            inner,outer=PeriodicLoop(cap,False),PeriodicLoop(wall,True)
+            cap.loops.append(inner);wall.loops.append(outer)
+            inner.ordered=[Coedge(edge,inner,False)]
+            outer.ordered=[Coedge(edge,outer,True)]
     return read(body)
 
 

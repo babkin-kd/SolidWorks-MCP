@@ -27,9 +27,10 @@ from verify_wheel_artifact import validate_wheel
 from verifier_lifecycle import ToolSpec, open_supervised_session
 from verify_dimension_mcp import SessionCleanupGate, require_native_cleanup, call, succeeded
 from verify_part_mcp import TOOL_SPECS as PART_SPECS
+from verifier_part_pattern_mcp import TOOL_SPECS as PATTERN_SPECS
 
 
-TOOL_SPECS = {**PART_SPECS,
+TOOL_SPECS = {**PART_SPECS, **PATTERN_SPECS,
     'dimension_list': ToolSpec('dimension.list',False,argument_defaults={'limit':100,'cursor':''}),
     'part_prepare_hole_dimension_change': ToolSpec('part.prepare_hole_dimension_change',False,float_arguments=frozenset({'value_mm'})),
     'part_set_hole_dimension': ToolSpec('part.set_hole_dimension',True,float_arguments=frozenset({'value_mm'}),prewrite_failure_codes=frozenset({'stale_revision'})),
@@ -51,7 +52,7 @@ TOOL_SPECS = {**PART_SPECS,
         constant_args={'configuration': ''}, prewrite_failure_codes=frozenset({'stale_revision'}))}
 
 
-async def exercise(state, sw, module, owned, report, persist, gate):
+async def exercise(state, sw, module, owned, report, persist, gate, pattern_only=False):
     params = StdioServerParameters(command=str(Path(sys.executable).with_name('solidworks-mcp-v2.exe')),
                                    args=['--state-dir', str(state / 'mcp')])
     @asynccontextmanager
@@ -63,7 +64,7 @@ async def exercise(state, sw, module, owned, report, persist, gate):
                 assert info['build_matches_source'] is True and info['package_version'] == report['wheel']['package_version']
                 assert info['build']['git_sha'] == report['wheel']['git_sha'] and info['source_digest'] == report['wheel']['source_digest']
                 tools = (await raw.list_tools()).tools
-                assert len(tools) == 34 and all(tool.outputSchema for tool in tools)
+                assert len(tools) == 36 and all(tool.outputSchema for tool in tools)
                 assert set(TOOL_SPECS) <= {tool.name for tool in tools}
                 report['tool_count'] = len(tools)
                 yield raw
@@ -157,6 +158,7 @@ async def exercise(state, sw, module, owned, report, persist, gate):
         prepared = succeeded(await call(client, 'part_prepare_through_hole', **arguments))
         assert prepared['native_creation_available'] is True
         assert math.isclose(prepared['expected_geometry']['volume_mm3'], (8000.-math.pi*3.**2*10.), rel_tol=1e-10)
+        prepared_hole_geometry=prepared['expected_geometry']
         request = dict(arguments, request_id='cut-'+uuid.uuid4().hex,
                        expected_revision=prepared['revision'], timeout_s=0.)
         edited = await call(client, 'part_create_through_hole', **request)
@@ -179,36 +181,44 @@ async def exercise(state, sw, module, owned, report, persist, gate):
         circle_native_id=succeeded(edited)['after']['created']['sketch_native_id']
         tree=succeeded(await call(client,'feature_list',**context))
         circle_id=next(row['object_id'] for row in tree['items'] if row['native_id']==circle_native_id)
-        rows=succeeded(await call(client,'dimension_list',**context))['items']
-        diameter=next(row['object_id'] for row in rows if row['owner'] and row['owner']['native_id']==circle_native_id and row['name']=='Диаметр')
-        edit_arguments=dict(context,base_object_id=sketch_id,object_id=circle_id,dimension_id=diameter,value_mm=8.)
-        prepared=succeeded(await call(client,'part_prepare_hole_dimension_change',**edit_arguments))
-        assert prepared['revision_scope']=='single_base_circular_through_hole_dimension_v1'
-        edit_request=dict(edit_arguments,expected_revision=prepared['revision'],request_id='hole-edit-'+uuid.uuid4().hex,timeout_s=0.)
-        changed=await call(client,'part_set_hole_dimension',**edit_request)
-        assert succeeded(changed)['verified'] is True
-        await record('public_hole_edit_d8',changed)
-        again=await call(client,'part_set_hole_dimension',**edit_request)
-        assert again['operation_id']==changed['operation_id'] and again['data']==changed['data']
-        await record('same_request_does_not_edit_hole_twice',again)
-        native_body=binding.wrap((binding.wrap(second,module.IPartDoc).GetBodies2(-1,False) or ())[0],module.IBody2)
-        measures=native_body.GetMassProperties(1.)
-        assert math.isclose(float(measures[3])*1e9,8000.-math.pi*4.**2*10.,rel_tol=1e-10)
-        assert math.isclose(float(measures[4])*1e6,2800.-2.*math.pi*4.**2+2.*math.pi*4.*10.,rel_tol=1e-10)
-        assert (native_body.GetVertexCount(),native_body.GetEdgeCount(),native_body.GetFaceCount())==(8,14,7)
-        report['hole_edit_volume_mm3']=float(measures[3])*1e9
-        report['hole_edit_surface_area_mm2']=float(measures[4])*1e6
+        if pattern_only:
+            from verifier_part_pattern_mcp import exercise_pattern
+            # The base frame is present in the committed complete base sketch.
+            frame=prepared_hole_geometry
+            await exercise_pattern(client,context,sketch_id,circle_id,succeeded(edited)['after']['created']['cut_native_id'],
+                frame,second,module,record,report)
+        else:
+            rows=succeeded(await call(client,'dimension_list',**context))['items']
+            diameter=next(row['object_id'] for row in rows if row['owner'] and row['owner']['native_id']==circle_native_id and row['name']=='Диаметр')
+            edit_arguments=dict(context,base_object_id=sketch_id,object_id=circle_id,dimension_id=diameter,value_mm=8.)
+            prepared=succeeded(await call(client,'part_prepare_hole_dimension_change',**edit_arguments))
+            assert prepared['revision_scope']=='single_base_circular_through_hole_dimension_v1'
+            edit_request=dict(edit_arguments,expected_revision=prepared['revision'],request_id='hole-edit-'+uuid.uuid4().hex,timeout_s=0.)
+            changed=await call(client,'part_set_hole_dimension',**edit_request)
+            assert succeeded(changed)['verified'] is True
+            await record('public_hole_edit_d8',changed)
+            again=await call(client,'part_set_hole_dimension',**edit_request)
+            assert again['operation_id']==changed['operation_id'] and again['data']==changed['data']
+            await record('same_request_does_not_edit_hole_twice',again)
+            native_body=binding.wrap((binding.wrap(second,module.IPartDoc).GetBodies2(-1,False) or ())[0],module.IBody2)
+            measures=native_body.GetMassProperties(1.)
+            assert math.isclose(float(measures[3])*1e9,8000.-math.pi*4.**2*10.,rel_tol=1e-10)
+            assert math.isclose(float(measures[4])*1e6,2800.-2.*math.pi*4.**2+2.*math.pi*4.*10.,rel_tol=1e-10)
+            assert (native_body.GetVertexCount(),native_body.GetEdgeCount(),native_body.GetFaceCount())==(8,14,7)
+            report['hole_edit_volume_mm3']=float(measures[3])*1e9
+            report['hole_edit_surface_area_mm2']=float(measures[4])*1e6
         check_first()
         await require_native_cleanup(client, gate)
     assert gate.can_cleanup(), 'SDK shutdown must preserve terminal native cleanup proof.'
     report['public_mcp_hole_accepted'] = True
-    report['public_mcp_hole_edit_accepted'] = True
+    if not pattern_only:report['public_mcp_hole_edit_accepted'] = True
     report['core_suite_passed'] = True
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-solidworks', action='store_true')
+    parser.add_argument('--pattern-only',action='store_true')
     parser.add_argument('--wheel', type=Path, required=True)
     parser.add_argument('--expected-version', required=True)
     parser.add_argument('--expected-git-sha', required=True)
@@ -224,21 +234,31 @@ def main():
     assert source_digest(package) == wheel['source_digest']
     internal = json.loads(args.internal_report.read_text(encoding='utf8'))
     assert internal['accepted'] is True and internal['core_suite_passed'] is True
-    assert internal['hole_edit_suite_passed'] is True
-    assert all(internal['wheel'][key] == wheel[key] for key in ('git_sha', 'source_digest', 'package_version', 'wheel_sha256'))
-    assert internal['scope'] == 'internal_circular_through_hole_edit_native_v1'
+    assert all(internal['wheel'][key] == wheel[key] for key in ('git_sha','source_digest','package_version','wheel_sha256'))
     assert internal['fixtures_closed'] is True and internal['command_flag_baseline_restored'] is True
     assert internal['verifier_sha256'] == hashlib.sha256(Path(__file__).with_name('verify_part_hole.py').read_bytes()).hexdigest()
-    assert {'new_part_from_empty_session','new_part_preserves_existing_document',
-            'plate_in_server_created_document_40_20_10','native_circular_through_hole_d6_x10_y10',
-            'hole_edit_x12','hole_edit_y11','hole_edit_d8','hole_edit_known_failure_scoped_restoration',
-            'hole_edit_stale_prewrite_rejected','hole_edit_material_prewrite_rejected'} <= {
-        row['label'] for row in internal['cases'] if row['passed'] is True}
+    if args.pattern_only:
+        assert internal['scope']=='internal_linear_through_hole_pattern_native_v1' and internal['pattern_suite_passed'] is True
+        assert internal['circle_native_id_metadata_fixed'] is True
+        assert internal['pattern_helper_sha256']==hashlib.sha256(Path(__file__).with_name('verifier_part_pattern.py').read_bytes()).hexdigest()
+        assert {'pattern_material_prewrite_rejected','pattern_stale_prewrite_rejected',
+            'pattern_known_failure_scoped_restoration','native_linear_hole_pattern_x3_step10'} <= {row['label'] for row in internal['cases'] if row['passed'] is True}
+    else:
+        assert internal['hole_edit_suite_passed'] is True
+        assert all(internal['wheel'][key] == wheel[key] for key in ('git_sha', 'source_digest', 'package_version', 'wheel_sha256'))
+        assert internal['scope'] == 'internal_circular_through_hole_edit_native_v1'
+        assert internal['fixtures_closed'] is True and internal['command_flag_baseline_restored'] is True
+        assert internal['verifier_sha256'] == hashlib.sha256(Path(__file__).with_name('verify_part_hole.py').read_bytes()).hexdigest()
+        assert {'new_part_from_empty_session','new_part_preserves_existing_document',
+                'plate_in_server_created_document_40_20_10','native_circular_through_hole_d6_x10_y10',
+                'hole_edit_x12','hole_edit_y11','hole_edit_d8','hole_edit_known_failure_scoped_restoration',
+                'hole_edit_stale_prewrite_rejected','hole_edit_material_prewrite_rejected'} <= {
+            row['label'] for row in internal['cases'] if row['passed'] is True}
     state = args.state_dir.resolve()
     private = (Path(__file__).resolve().parents[1] / 'work').resolve()
     assert state.is_relative_to(private) and state != private
     state.mkdir(parents=True, exist_ok=False)
-    report = {'accepted': False, 'scope': 'public_circular_through_hole_native_v1', 'wheel': wheel,
+    report = {'accepted': False, 'scope': 'public_linear_through_hole_pattern_native_v1' if args.pattern_only else 'public_circular_through_hole_native_v1', 'wheel': wheel,
         'verifier_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), 'internal_report': str(args.internal_report),
         'cases': [], 'owned_documents': [], 'public_mcp_hole_accepted': False}
     def persist():
@@ -251,7 +271,7 @@ def main():
         assert not sw.GetDocuments() and sw.CommandInProgress is False, 'Empty/free native baseline required.'
         baseline = native_snapshot()
         report['preferences'] = application_preferences(sw)
-        asyncio.run(exercise(state, sw, module, owned, report, persist, gate))
+        asyncio.run(exercise(state, sw, module, owned, report, persist, gate,args.pattern_only))
     except BaseException as exc:
         report['failure'] = {'type': type(exc).__name__, 'message': str(exc)}
         raise

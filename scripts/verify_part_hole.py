@@ -45,6 +45,13 @@ def prewrite_rejection(job, code):
 class Adapter(SolidWorksDocuments):
     inject_cut = False
     inject_edit = False
+    inject_pattern = False
+
+    def create_linear_hole_pattern(self,*args):
+        super().create_linear_hole_pattern(*args)
+        if self.inject_pattern:
+            self.inject_pattern=False
+            raise RuntimeError('Known verifier failure after exact own pattern retention and rebuild.')
 
     def rebuild_dimension_document(self, *args):
         result = super().rebuild_dimension_document(*args)
@@ -65,11 +72,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-solidworks', action='store_true')
     parser.add_argument('--hole-edit-only', action='store_true', help='Complete editing block; older guard/cut fault cases are not run or counted.')
+    parser.add_argument('--pattern-only',action='store_true',help='Complete native linear hole pattern block; hole-edit cases are not counted.')
     parser.add_argument('--wheel', type=Path, required=True)
     parser.add_argument('--expected-version', required=True)
     parser.add_argument('--expected-git-sha', required=True)
     parser.add_argument('--state-dir', type=Path, required=True)
     args = parser.parse_args()
+    if args.pattern_only and args.hole_edit_only:parser.error('Choose one engineering block.')
     if not args.run_solidworks: parser.error('Explicit native opt-in required.')
     assert not os.environ.get('PYTHONPATH'), 'Installed package only, without source PYTHONPATH.'
     package = Path(solidworks_mcp.__file__).resolve().parent
@@ -81,7 +90,7 @@ def main():
     private = (Path(__file__).resolve().parents[1] / 'work').resolve()
     assert state.is_relative_to(private) and state != private
     state.mkdir(parents=True, exist_ok=False)
-    report = {'accepted': False, 'scope': ('internal_circular_through_hole_edit_native_v1' if args.hole_edit_only else 'internal_circular_through_hole_native_v1'), 'wheel': wheel,
+    report = {'accepted': False, 'scope': ('internal_linear_through_hole_pattern_native_v1' if args.pattern_only else 'internal_circular_through_hole_edit_native_v1' if args.hole_edit_only else 'internal_circular_through_hole_native_v1'), 'wheel': wheel,
               'verifier_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               'cases': [], 'owned_documents': [], 'public_mcp_creation_accepted': False}
     def persist():
@@ -177,7 +186,7 @@ def main():
             context={key: arguments[key] for key in ('document_id', 'configuration', 'expected_revision')},
             mutates=True, pass_operation_id=True, verify=lambda result: result['verified'] is True)
         record('plate_in_server_created_document_40_20_10', built)
-        if not args.hole_edit_only:
+        if not (args.hole_edit_only or args.pattern_only):
             # The shared guard changed: exercise existing dimension and rename
             # paths on this same fixture, without another physical acceptance set.
             for thickness_mm in (12.,10.):
@@ -216,7 +225,7 @@ def main():
                 lambda op: cuts.create_through_hole(op, **args),
                 context={key: args[key] for key in ('document_id', 'configuration', 'expected_revision')},
                 mutates=True, pass_operation_id=True, verify=lambda result: result['verified'] is True)
-        if not args.hole_edit_only:
+        if not (args.hole_edit_only or args.pattern_only):
             record('hole_stale_prewrite_rejected', cut(stale=True), 'failed')
             # This is the harness's own temporary flag, never a user's command.
             arguments = dict(parameters,expected_revision=last_preparation['revision'])
@@ -258,6 +267,15 @@ def main():
             if row['native_id']==result['result']['after']['created']['sketch_native_id'])
         rows = dimensions.list(second_id,'Основная')['items']
         edit_targets = dict(document_id=second_id,configuration='Основная',base_object_id=sketch_id,object_id=circle_id)
+        if args.pattern_only:
+            from verifier_part_pattern import exercise_pattern
+            report['pattern_helper_sha256']=hashlib.sha256(Path(__file__).with_name('verifier_part_pattern.py').read_bytes()).hexdigest()
+            exercise_pattern(adapter,documents,dimensions,store,runner,gate,second_model,edit_targets,
+                result['result']['after']['created']['cut_native_id'],record,report)
+            snap,facts=source_state(sw,module)
+            assert [(row,fact) for row,fact in zip(snap[3],facts) if row[0]==first_identity]==original
+            report['core_suite_passed']=True
+            return
         ids = {row['name']:row['object_id'] for row in rows if row['owner'] and row['owner']['native_id']==result['result']['after']['created']['sketch_native_id']}
         def edit(name,value,*,revision=None):
             arguments = dict(edit_targets,dimension_id=ids[name],value_mm=value)

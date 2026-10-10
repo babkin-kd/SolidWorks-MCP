@@ -37,6 +37,18 @@ def test_single_hole_census_selects_the_complete_native_reader():
     with pytest.raises(PlanarBrepError):capture(body)
 
 
+def test_multiple_hole_routing_still_rejects_intersection_and_invalid_trims():
+    from test_hole_brep_v2 import plate, circles
+    from solidworks_mcp.cad_hole_brep import HOLE_BREP_SCOPE
+    body = plate(((.2,.5,.05),(.4,.5,.05),(.6,.5,.05)))
+    assert capture(body)['scope'] == HOLE_BREP_SCOPE
+    circles(body)[-1].trim.UMaxValue /= 2.
+    with pytest.raises(PlanarBrepError):
+        capture(body)
+    with pytest.raises(PlanarBrepError):
+        capture(plate(((.3,.5,.2),(.5,.5,.2))))
+
+
 @pytest.mark.parametrize('value',[True,-1,None,'0',0.])
 def test_invalid_census_cannot_select_a_reader(value):
     body = cylinder()

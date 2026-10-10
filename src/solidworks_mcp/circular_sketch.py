@@ -88,18 +88,18 @@ class CircularSketchReader(LinearSketchReader):
                 for index,point in enumerate(endpoints):
                     token = self.identity(point)
                     owner = self.wrap(point.GetSketch(),'ISketch')
-                    identifier = _identifier(point)
+                    endpoint_identifier = _identifier(point)
                     coordinates = _coordinates((point.X,point.Y,point.Z),3)
                     xyz = tuple(float.fromhex(v) for v in coordinates)
                     centre_xyz = tuple(float.fromhex(v) for v in self.points[centre]['coordinates_si'])
                     if (owner is None or self.identity(owner)!=self.sketch_token
                             or _integer(point.Status,high=10)!=1
                             or token in self.members.values()
-                            or 'point:'+':'.join(map(str,identifier)) in self.points
+                            or 'point:'+':'.join(map(str,endpoint_identifier)) in self.points
                             or not math.isclose(math.dist(xyz,centre_xyz),radius,rel_tol=0.,abs_tol=1e-12)
                             or abs(math.fsum((a-b)*float.fromhex(n) for a,b,n in zip(xyz,centre_xyz,normal)))>1e-12):
                         raise rejected('sketch_capture_invalid','Periodic handle must be separate, own and on the complete native circle.')
-                    periodic_endpoints.append({'native_id':identifier,'point_type':-1,'constraint_status':1,'coordinates_si':coordinates})
+                    periodic_endpoints.append({'native_id':endpoint_identifier,'point_type':-1,'constraint_status':1,'coordinates_si':coordinates})
                 if periodic_endpoints[0]!=periodic_endpoints[1]:
                     raise rejected('sketch_capture_invalid','Periodic endpoint states must close exactly.')
                 self.members[key+':periodic_endpoint'] = self.identity(endpoints[0])

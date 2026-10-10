@@ -93,6 +93,9 @@ def test_native_periodic_handle_is_retained_without_inventing_an_enumerated_poin
     assert circle['start'] is circle['end'] is None
     assert circle['periodic_endpoints'][0]==circle['periodic_endpoints'][1]
     assert circle['periodic_endpoints'][0]['point_type']==-1
+    assert circle['native_id']==[0,1]
+    assert circle['key']=='circle:'+':'.join(map(str,circle['native_id']))
+    assert circle['native_id']!=circle['periodic_endpoints'][0]['native_id']
     assert len(snapshot['points'])==2
     assert dict(members)['circle:0:1:periodic_endpoint']==id(handle)
 

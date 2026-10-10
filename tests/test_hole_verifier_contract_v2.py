@@ -62,12 +62,25 @@ def test_public_hole_harness_tracks_all_literal_calls_before_sdk_dispatch():
         and any(isinstance(target,ast.Name) and target.id=='TOOL_SPECS' for target in node.targets))
     namespace={'PART_SPECS':{'feature_list':object(),'part_prepare_base_extrusion':object(),
         'part_create_base_extrusion':object()},'ToolSpec':lambda op,mutates,**kw:NS(operation=op,mutates=mutates,**kw)}
+    helper=ast.parse((ROOT/'scripts/verifier_part_pattern_mcp.py').read_text(encoding='utf8'))
+    helper_assignment=next(node for node in helper.body if isinstance(node,ast.Assign)
+        and any(isinstance(target,ast.Name) and target.id=='TOOL_SPECS' for target in node.targets))
+    exec(compile(ast.Module(body=[helper_assignment],type_ignores=[]),'pattern_specs','exec'),namespace)
+    namespace['PATTERN_SPECS']=namespace['TOOL_SPECS']
     exec(compile(ast.Module(body=[assignment],type_ignores=[]),str(script),'exec'),namespace)
     specs=namespace['TOOL_SPECS']
     called={node.args[1].value for node in ast.walk(tree) if isinstance(node,ast.Call)
         and isinstance(node.func,ast.Name) and node.func.id=='call' and len(node.args)>=2
         and isinstance(node.args[1],ast.Constant)}
+    called|={node.args[1].value for node in ast.walk(helper) if isinstance(node,ast.Call)
+        and isinstance(node.func,ast.Name) and node.func.id=='call' and len(node.args)>=2
+        and isinstance(node.args[1],ast.Constant)}
     assert called<=specs.keys()
+    assert specs['body_list'].constant_args=={'kind':'body'}
+    assert specs['body_list'].argument_defaults=={'body_type':'all','limit':100,'cursor':''}
+    assert specs['edge_list'].constant_args=={'kind':'edge'}
+    assert specs['edge_list'].argument_defaults=={'limit':100,'cursor':''}
+    assert specs['part_create_linear_hole_pattern'].argument_defaults=={'feature_name':'Линейный массив отверстий'}
     assert {'document_create_part','part_prepare_base_extrusion','part_create_base_extrusion',
         'part_prepare_through_hole','part_create_through_hole'}<=called
     create=specs['part_create_through_hole']
