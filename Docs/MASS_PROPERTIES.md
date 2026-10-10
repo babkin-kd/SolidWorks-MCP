@@ -30,3 +30,14 @@
 Прочитаны зарегистрированные сигнатуры библиотеки SolidWorks 2023 (31.2.1): CreateMassProperty2, SelectedItems, GetOverrideOptions, SetCoordinateSystem и Recalculate. COM-объект расчёта при этом не создавался.
 
 Документация: [IMassProperty2](https://help.solidworks.com/2020/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IMassProperty2_members.html), [скрытые тела](https://help.solidworks.com/2023/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IMassProperty2~IncludeHiddenBodiesOrComponents.html), [система координат](https://help.solidworks.com/2020/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IMassProperty2~SetCoordinateSystem.html).
+
+
+## Подготовленная native-приёмка
+
+`scripts/verify_mass_properties.py` содержит 22 последовательных сценария для отдельной установленной dev31-сборки. Помимо обычных измерений он проверяет скрытое тело, выбор другого тела в UI, миллиметры/дюймы, другую геометрию конфигурации, подавленные/удалённые тела, ручные overrides массы и центра тяжести. Изменения выполняются только на собственных одноразовых моделях с русскими именами.
+
+Это **подготовленные, ещё не выполненные** CAD-сценарии. Syntax-check и отказ CLI без opt-in прошли. Пять искусственных preflight-тестов проверяют отказ без opt-in, при PYTHONPATH исходников, source-установке, непустой и занятой сессии — без COM-подключения либо setter настоящего SolidWorks. После добавления этих тестов общий локальный набор: **2139 passed, 323 CAD deselected**.
+
+Для реального запуска нужны согласованная пустая свободная сессия, явный `--run-solidworks`, точный wheel/версия/Git SHA и новая приватная директория под `work/`. До генерации моделей проверяются происхождение установленного пакета и baseline. Для каждого чтения сравниваются независимые нативные факты модели, конфигурации, единицы, тела, UI-выделение и камера. При ошибке контрольные модели сохраняются; COM-вызовы не повторяются автоматически. Перед успешным закрытием проверяются COM-идентичности, уникальность заголовков, отсутствие файловых путей и сохранность собственного guard.
+
+Следующая последовательность остаётся прежней: согласовать закрытие четырёх документов после dev29 → восстановить пустой baseline → проверить установленный dev30 импорт → выполнить отдельную native-приёмку измерений dev31 → только после неё добавлять публичный инструмент. Успех измерений не завершает общую первую стадию.
