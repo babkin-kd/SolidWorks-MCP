@@ -211,6 +211,24 @@ def save_summary(path, report, primary_error):
         primary_error.add_note('Private summary recording failed: ' + type(recording_error).__name__[:80])
 
 
+def close_probe_resources(trace, uninitialize, primary_error):
+    """Attempt both owner-thread closures, preserving the first failure."""
+    errors = []
+    callbacks = ([uninitialize] if uninitialize is not None else []) + [trace.close]
+    for callback in callbacks:
+        try:
+            callback()
+        except BaseException as error:
+            errors.append(error)
+    if primary_error is not None:
+        for error in errors:
+            primary_error.add_note('Probe resource cleanup failed: ' + type(error).__name__[:80])
+    elif errors:
+        for error in errors[1:]:
+            errors[0].add_note('Additional probe resource cleanup failure: ' + type(error).__name__[:80])
+        raise errors[0]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--state-dir', type=Path, required=True)
@@ -222,11 +240,12 @@ def main():
     report = {'accepted': False, 'public_mcp_dimension_acceptance': False,
               'diagnostic_completed': False, 'automatic_replay_attempted': False}
     trace = PrivateTrace(state / 'trace.jsonl')
-    import pythoncom
-    pythoncom.CoInitialize()
-    primary_error = None
+    primary_error, initialized = None, False
     try:
         try:
+            import pythoncom
+            pythoncom.CoInitialize()
+            initialized = True
             check(report, trace)
         except BaseException as error:
             primary_error = error
@@ -240,8 +259,11 @@ def main():
         finally:
             save_summary(state / 'report.json', report, primary_error)
     finally:
-        pythoncom.CoUninitialize()
-        trace.close()
+        # Initialization failure never permits an unmatched uninitialize.
+        # An exceptional summary write is also a primary error to preserve.
+        import sys
+        close_probe_resources(trace, pythoncom.CoUninitialize if initialized else None,
+                              primary_error if primary_error is not None else sys.exception())
 
 
 if __name__ == '__main__':

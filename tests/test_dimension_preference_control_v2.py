@@ -187,3 +187,74 @@ def test_summary_write_never_overwrites_or_masks_original_error(tmp_path):
     assert 'FileExistsError' in original.__notes__[0]
     with pytest.raises(FileExistsError):
         control.save_summary(path, {}, None)
+
+
+@pytest.mark.parametrize('primary', [True, False])
+def test_both_resource_closures_are_attempted_and_first_error_is_preserved(primary):
+    events = []
+    initial = RuntimeError('Native primary error')
+    uninitialize_error, close_error = OSError('Uninitialize failed'), ValueError('Trace close failed')
+    def uninitialize():
+        events.append('uninitialize')
+        raise uninitialize_error
+    class Trace:
+        def close(self):
+            events.append('close')
+            raise close_error
+    if primary:
+        control.close_probe_resources(Trace(), uninitialize, initial)
+        assert len(initial.__notes__) == 2
+    else:
+        with pytest.raises(OSError) as raised:
+            control.close_probe_resources(Trace(), uninitialize, None)
+        assert raised.value is uninitialize_error and 'ValueError' in uninitialize_error.__notes__[0]
+    assert events == ['uninitialize', 'close']
+
+
+@pytest.mark.parametrize('failure', ['initialize', 'operation', 'summary'])
+def test_actual_cli_preserves_primary_and_closes_trace_even_if_uninitialize_fails(tmp_path, monkeypatch, failure):
+    from types import SimpleNamespace
+    state = tmp_path / 'project' / 'work' / 'state'
+    monkeypatch.setattr(control, '__file__', str(tmp_path / 'project' / 'scripts' / 'diagnose_dimension_preferences.py'))
+    parser = SimpleNamespace(add_argument=lambda *args, **kwargs: None,
+                             parse_args=lambda: SimpleNamespace(state_dir=state))
+    monkeypatch.setattr(control.argparse, 'ArgumentParser', lambda **kwargs: parser)
+    events, reports = [], []
+    initial = RuntimeError('Injected primary error')
+    def initialize():
+        events.append('initialize')
+        if failure == 'initialize':
+            raise initial
+    def uninitialize():
+        events.append('uninitialize')
+        raise OSError('Injected uninitialize error')
+    monkeypatch.setitem(sys.modules, 'pythoncom', SimpleNamespace(CoInitialize=initialize, CoUninitialize=uninitialize))
+    class Trace:
+        def __init__(self, path):
+            events.append('trace_open')
+        def __call__(self, report):
+            reports.append(dict(report))
+        def close(self):
+            events.append('trace_close')
+            raise ValueError('Injected trace close error')
+    monkeypatch.setattr(control, 'PrivateTrace', Trace)
+    def check(report, trace):
+        events.append('check')
+        if failure == 'operation':
+            raise initial
+    monkeypatch.setattr(control, 'check', check)
+    if failure == 'summary':
+        monkeypatch.setattr(control, 'save_summary', lambda *args: (_ for _ in ()).throw(initial))
+    with pytest.raises(RuntimeError) as raised:
+        control.main()
+    assert raised.value is initial and events[-1] == 'trace_close'
+    if failure == 'initialize':
+        assert events == ['trace_open', 'initialize', 'trace_close']
+        assert len(initial.__notes__) == 1
+    else:
+        assert events == ['trace_open', 'initialize', 'check', 'uninitialize', 'trace_close']
+        assert len(initial.__notes__) == 2
+    if failure != 'summary':
+        facts = json.loads((state / 'report.json').read_text())
+        assert facts['error_type'] == 'RuntimeError' and facts['diagnostic_completed'] is False
+        assert facts['accepted'] is facts['public_mcp_dimension_acceptance'] is False
