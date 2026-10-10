@@ -10,6 +10,7 @@ from .features import FeatureCatalog
 from .dimensions import DimensionCatalog
 from .part_creation import PartCreationCatalog
 from .part_cut import PartCutCatalog
+from .part_revolve import PartRevolveCatalog
 from .document_creation import DocumentCreationCatalog
 from .sketches import SketchCatalog
 from .exports_v2 import ExportCatalog
@@ -46,6 +47,7 @@ class Runtime:
         self._dimensions = None
         self._parts = None
         self._cuts = None
+        self._revolves = None
         self._document_creation = None
         self._sketches = None
         self._exports = None
@@ -64,7 +66,7 @@ class Runtime:
             try:
                 self._catalog = self._catalog_factory()  # Always called on the STA.
             except Exception as exc:
-                if operation in ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut'):
+                if operation in ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve'):
                     raise rejected(getattr(exc, 'code', 'cad_connection_failed'), str(exc)) from exc
                 raise
             self._connection_epoch = 'connection_' + uuid.uuid4().hex
@@ -127,6 +129,12 @@ class Runtime:
                 if operation == 'part.prepare_corner_cut':
                     return self._cuts.prepare_corner_cut(**arguments)
                 return self._cuts.create_corner_cut(operation_id, **arguments)
+            if operation in ('part.prepare_base_revolve', 'part.create_base_revolve'):
+                if self._revolves is None:
+                    self._revolves = PartRevolveCatalog(self._dimensions)
+                if operation == 'part.prepare_base_revolve':
+                    return self._revolves.prepare_base_revolve(**arguments)
+                return self._revolves.create_base_revolve(operation_id, **arguments)
             if operation.startswith('part.') and self._parts is None:
                 self._parts = PartCreationCatalog(self._dimensions)
             if operation == 'part.prepare_base_extrusion':
@@ -160,11 +168,11 @@ class Runtime:
         # Validate before recording/dispatch. A bad timeout must not start CAD.
         if isinstance(timeout_s, bool) or not isinstance(timeout_s, (int, float)) or not 0 <= timeout_s <= 120:
             raise JobError('invalid_timeout', 'timeout_s must be finite and between 0 and 120.')
-        allowed = ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut') if mutates else (
+        allowed = ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve') if mutates else (
             'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies',
             'feature.deletion_structure', 'feature.deletion_context',
             'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion',
-            'document.list_templates', 'document.prepare_create_part', 'sketch.get', 'sketch.prepare_dimension_change', 'part.prepare_corner_cut')
+            'document.list_templates', 'document.prepare_create_part', 'sketch.get', 'sketch.prepare_dimension_change', 'part.prepare_corner_cut', 'part.prepare_base_revolve')
         if operation not in allowed:
             raise JobError('unsupported_operation', 'No domain implementation for this operation.')
         if operation.startswith('export.') and self._approved_output_root is None:
@@ -195,6 +203,7 @@ class Runtime:
         self._dimensions = None
         self._parts = None
         self._cuts = None
+        self._revolves = None
         self._document_creation = None
         self._sketches = None
         self._exports = None

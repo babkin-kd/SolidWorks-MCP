@@ -838,7 +838,7 @@ def test_analytical_geometry_adapter_has_no_stream_bounds_or_mass_fallback(monke
         if source.boundary is None:
             raise cad_dimensions.PlanarBrepError('planar_brep_unsupported', 'Curved boundary requires its full geometry scope.')
         return deepcopy(source.boundary)
-    monkeypatch.setattr(cad_dimensions, 'planar_body_snapshot', read)
+    monkeypatch.setattr(cad_dimensions, 'analytical_body_snapshot', read)
     adapter = Adapter()
     before = adapter.dimension_geometry_snapshot([first, second])
     assert before == adapter.dimension_geometry_snapshot([second, first])

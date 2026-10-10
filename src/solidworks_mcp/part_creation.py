@@ -159,6 +159,10 @@ class PartCreationCatalog:
 
     def prepare_base_extrusion(self, document_id, configuration, **parameters):
         definition = BaseRectangle.validate(**parameters)  # Before any CAD access.
+        return self._prepare_base(document_id, configuration, definition, SCOPE)
+
+    def _prepare_base(self, document_id, configuration, definition, scope):
+        """Shared read proof for validated empty-part builders; no native write."""
         first = self.dimensions._paired_capture(document_id, configuration)
         entry, identity, _, semantic, dimension_revision = first.state
         self._empty_writable_part(semantic)
@@ -185,7 +189,7 @@ class PartCreationCatalog:
         self.dimensions._close_capture_pair(first, second)  # Last native comparisons/event poll.
         if not same_plane or frame != closing_frame or controls != closing_controls:
             raise rejected('document_changed_during_read', 'Plane identity or transform changed during preparation.')
-        payload = {'revision_scope': SCOPE, 'dimension_revision': dimension_revision,
+        payload = {'revision_scope': scope, 'dimension_revision': dimension_revision,
                    'definition': asdict(definition), 'plane_persistent_id_hex': reference.persistent_id.hex(),
                    'plane_transform': list(frame), 'creation_controls': controls}
         revision = 'rev_' + hashlib.sha256(_json(payload).encode('utf8')).hexdigest()

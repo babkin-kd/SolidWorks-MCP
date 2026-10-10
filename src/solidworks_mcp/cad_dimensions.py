@@ -14,7 +14,8 @@ import win32com.client
 
 from . import binding
 from .documents import rejected
-from .cad_planar_brep import PLANAR_BREP_SCOPE, PlanarBrepError, planar_body_snapshot
+from .cad_planar_brep import PLANAR_BREP_SCOPE, PlanarBrepError
+from .cad_analytical_brep import ANALYTICAL_BREP_SCOPE, analytical_body_snapshot
 
 
 @dataclass
@@ -299,8 +300,8 @@ class CadDimensionsMixin:
     def dimension_geometry_snapshot(self, model):
         """Read the complete supported analytical boundary, without Copy/Save.
 
-        Native serialization of a NEW copy is not canonical on SW2023. Curved
-        or unsupported topology is refused until its full scope is implemented.
+        Native serialization of a NEW copy is not canonical on SW2023. Only
+        complete planar bodies and unseamed right cylinders are implemented.
         """
         bodies = self.bodies(model, 'all')
         if len(bodies) > 500:
@@ -308,7 +309,7 @@ class CadDimensionsMixin:
         result, total = [], 0
         for body in bodies:
             try:
-                snapshot = planar_body_snapshot(body, identity=self.identity,
+                snapshot = analytical_body_snapshot(body, identity=self.identity,
                     wrap=lambda raw, name: binding.wrap(raw, getattr(self._module, name)))
             except PlanarBrepError as exc:
                 raise rejected(exc.code, str(exc)) from exc
@@ -320,7 +321,9 @@ class CadDimensionsMixin:
                 raise rejected('geometry_snapshot_unavailable', 'Analytical boundary snapshot exceeds the bounded budget.')
             result.append((serialized, snapshot))
         result.sort(key=lambda row: row[0])
-        return {'representation': PLANAR_BREP_SCOPE, 'bodies': [row[1] for row in result]}
+        representation = (PLANAR_BREP_SCOPE if all(row[1]['scope'] == PLANAR_BREP_SCOPE for row in result)
+                          else ANALYTICAL_BREP_SCOPE)
+        return {'representation': representation, 'bodies': [row[1] for row in result]}
 
     @staticmethod
     def set_dimension_value(record, value_si, configuration):
