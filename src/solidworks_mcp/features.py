@@ -167,6 +167,11 @@ class FeatureCatalog:
         return {'document_id': document_id, 'configuration': configuration, 'revision': revision,
                 'revision_scope': SCOPE, 'feature': {**summary, 'object_id': object_id}}
 
+    def dependencies(self, document_id, configuration):
+        """Internal relation graph for future deletion preview; no model changes."""
+        from .feature_dependency_graph import dependency_graph
+        return dependency_graph(self, document_id, configuration)
+
     def rename(self, operation_id, document_id, configuration, object_id, expected_revision, name):
         name = russian_name(name)
         if self.mutation_guard is None:
