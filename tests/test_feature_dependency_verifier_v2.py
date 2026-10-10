@@ -9,7 +9,7 @@ import pytest
 SCRIPT = Path(__file__).resolve().parents[1] / 'scripts/verify_feature_dependencies.py'
 TREE = ast.parse(SCRIPT.read_text(encoding='utf8'))
 HELPERS = [node for node in TREE.body if isinstance(node, ast.FunctionDef)
-           and node.name in ('verify_box_relations', 'verify_options')]
+           and node.name in ('verify_box_relations', 'verify_options', 'setup_owned_equations', 'verify_equation_context')]
 NS = {}
 exec(compile(ast.Module(body=HELPERS, type_ignores=[]), str(SCRIPT), 'exec'), NS)
 
@@ -76,3 +76,50 @@ def test_structural_mismatch_and_unsupported_authority_rejected(change):
         value['native_deletion_result_predicted'] = True
     with pytest.raises(AssertionError):
         NS['verify_options'](value, owner, sketch, False, absorbed)
+
+
+class EquationManager:
+    def __init__(self, events): self.events, self.rows, self.disabled = events, [], []
+    def GetCount(self): return len(self.rows)
+    def GetDisabledEquationCount(self): return sum(self.disabled)
+    def Add2(self, index, expression, solve):
+        assert index == -1 and solve is False
+        assert self.events[-1]['phase'] == 'before_equation_add'
+        self.events.append({'phase': 'native_add'})
+        self.rows.append(expression); self.disabled.append(False)
+        return len(self.rows)-1
+    def Equation(self, index): return self.rows[index]
+    def Disabled(self, index): return self.disabled[index]
+    def SetDisabled(self, index, value):
+        assert index == 1 and value is True and self.events[-1]['phase'] == 'before_equation_disable'
+        self.events.append({'phase': 'native_disable'})
+        self.disabled[index] = value
+
+
+def test_fixture_equation_changes_have_durable_intent_before_dispatch_without_evaluate_or_replay():
+    events = []
+    manager = EquationManager(events)
+    NS['setup_owned_equations'](manager, events.append)
+    assert [row['phase'] for row in events] == [
+        'before_equation_add', 'native_add', 'equation_add_verified',
+        'before_equation_add', 'native_add', 'equation_add_verified',
+        'before_equation_disable', 'native_disable', 'equation_disable_verified']
+    assert manager.disabled == [False, True]
+
+
+@pytest.mark.parametrize('fault', ['boolean_index', 'silent_equation', 'native_exception'])
+def test_unconfirmed_fixture_setup_stops_without_another_add_disable_or_rollback(fault):
+    events = []
+    manager = EquationManager(events)
+    original_add = manager.Add2
+    original = OSError('COM acknowledgement missing')
+    def add(*args):
+        result = original_add(*args)
+        if fault == 'native_exception': raise original
+        if fault == 'silent_equation': manager.rows[0] = 'unexpected'
+        return False if fault == 'boolean_index' else result
+    manager.Add2 = add
+    with pytest.raises((AssertionError, OSError)) as error:
+        NS['setup_owned_equations'](manager, events.append)
+    if fault == 'native_exception': assert error.value is original
+    assert [row['phase'] for row in events] == ['before_equation_add', 'native_add']

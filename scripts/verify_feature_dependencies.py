@@ -23,6 +23,7 @@ from verify_export_operations import application_preferences, exact_solid, nativ
 from verify_geometry_reads import fixtures
 from verifier_dimension_diagnostics import assert_non_stl_preferences
 from verifier_fixture_cleanup import InlineFixtureCleanupGate
+from diagnose_dimension_preferences import PrivateTrace
 
 
 def verify_box_relations(graph, extrusion, sketch, native_parent_ids, native_child_ids):
@@ -69,18 +70,51 @@ def verify_options(result, owner, sketch, children, absorbed):
         'external_files_and_in_context_references', 'native_deletion_effects_and_restoration'}
 
 
-def check(state, report, gate):
+def setup_owned_equations(manager, checkpoint):
+    assert manager.GetCount() == 0 and manager.GetDisabledEquationCount() == 0
+    expressions = ['"Контрольная активная величина" = 3', '"Контрольная отключённая величина" = 5']
+    for index, expression in enumerate(expressions):
+        checkpoint({'phase': 'before_equation_add', 'expected_index': index, 'expression': expression})
+        actual = manager.Add2(-1, expression, False)
+        assert type(actual) is int and actual == index
+        assert manager.Equation(index) == expression
+        checkpoint({'phase': 'equation_add_verified', 'index': index})
+    checkpoint({'phase': 'before_equation_disable', 'index': 1})
+    manager.SetDisabled(1, True)
+    assert manager.Disabled(1) is True
+    assert manager.GetCount() == 2 and manager.GetDisabledEquationCount() == 1
+    checkpoint({'phase': 'equation_disable_verified', 'index': 1})
+
+
+def verify_equation_context(result, manager):
+    assert result['native_inventory_capture_closed'] is True
+    assert result['row_indices_and_names_are_writable_anchors'] is False
+    equations = result['native_context']['equations']
+    assert equations['count'] == 2 and equations['disabled_count'] == 1
+    rows = [{'row_index': i, 'expression': manager.Equation(i), 'disabled': manager.Disabled(i),
+             'global_variable': manager.GlobalVariable(i), 'configuration_option': manager.GetConfigurationOption(i)}
+            for i in range(manager.GetCount())]
+    assert equations['rows'] == rows
+    assert [row['disabled'] for row in rows] == [False, True]
+    assert result['native_context']['external_references']['count'] == 0
+    assert result['native_context']['auxiliary_references']['count'] == 0
+    assert result['deletion_impact_complete'] is result['deletion_authorized'] is False
+
+
+def check(state, report, gate, *, deletion_context=False):
     report.update(_provenance(), accepted=False, public_mcp_dependency_acceptance=False,
                   native_delete_attempted=False, deletion_impact_complete=False,
                   stl_preferences_verified=False, original_document_baseline_restored=False)
     assert callable(getattr(FeatureCatalog, 'dependencies', None))
     assert callable(getattr(FeatureCatalog, 'deletion_structure', None))
+    if deletion_context:
+        assert callable(getattr(FeatureCatalog, 'deletion_context', None))
     original = native_snapshot()
     sw, module = binding.connect(show=False), binding.module()
     original_ui, original_prefs = ui_snapshot(sw, module), application_preferences(sw)
     original_files = user_file_metadata(original)
     with fixtures(cleanup_gate=gate.can_cleanup) as (_, owned, _):
-        documents = store = None
+        documents = store = trace = None
         primary = None
         try:
             adapter = SolidWorksDocuments()
@@ -89,6 +123,10 @@ def check(state, report, gate):
             catalog = FeatureCatalog(documents, store, 'native_dependency_acceptance')
             model = owned[1]
             assert not model.GetPathName()
+            if deletion_context:
+                manager = binding.wrap(model.GetEquationMgr(), module.IEquationMgr)
+                trace = PrivateTrace(state / 'owned-equation-setup.trace.jsonl')
+                setup_owned_equations(manager, trace)
             doc = next(row for row in documents.list()['documents'] if row['title'] == model.GetTitle())
             context = {'document_id': doc['document_id'], 'configuration': 'Основная'}
             setup, setup_ui = native_snapshot(), ui_snapshot(sw, module)
@@ -116,6 +154,14 @@ def check(state, report, gate):
                 results.append({'options': result['options'], 'candidate_count': len(result['structural_candidate_nodes']),
                                 'seconds': round(time.monotonic() - started, 3), 'revision': result['revision']})
             assert len({row['revision'] for row in results}) == 4
+            if deletion_context:
+                inventory = catalog.deletion_context(**context)
+                verify_equation_context(inventory, manager)
+                assert inventory['dependency_graph'] == graph
+                assert catalog.deletion_context(**context) == inventory
+                report.update(deletion_context=inventory, enabled_and_disabled_native_equations_verified=True,
+                    empty_native_reference_arrays_verified=True, nonempty_native_external_references_verified=False,
+                    nonempty_native_auxiliary_references_verified=False)
             assert native_snapshot() == setup and ui_snapshot(sw, module) == setup_ui
             after_body = exact_solid(model, module)
             assert {'extrema': native_extrema_m(after_body), 'volume': float(after_body.GetMassProperties(1.)[3])} == geometry
@@ -128,7 +174,7 @@ def check(state, report, gate):
             raise
         finally:
             errors = []
-            for resource in (documents, store):
+            for resource in (documents, store, trace):
                 if resource is not None:
                     try:
                         resource.close()
@@ -153,6 +199,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--state-dir', type=Path, required=True)
     parser.add_argument('--report', type=Path, required=True)
+    parser.add_argument('--deletion-context', action='store_true')
     args = parser.parse_args()
     private = Path(__file__).resolve().parent.parent / 'work'
     assert all(path.resolve().is_relative_to(private) for path in (args.state_dir, args.report))
@@ -162,7 +209,7 @@ def main():
     try:
         pythoncom.CoInitialize()
         initialized = True
-        check(args.state_dir, report, gate)
+        check(args.state_dir, report, gate, deletion_context=args.deletion_context)
     except BaseException as error:
         report.update(accepted=False, error_type=type(error).__name__,
                       fixture_retention_required=not gate.can_cleanup(), automatic_replay_attempted=False)

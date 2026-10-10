@@ -172,6 +172,10 @@ class FeatureCatalog:
         from .feature_dependency_graph import dependency_graph
         return dependency_graph(self, document_id, configuration)
 
+    def deletion_context(self, document_id, configuration):
+        from .feature_deletion_context import deletion_context
+        return deletion_context(self, document_id, configuration)
+
     def deletion_structure(self, document_id, configuration, object_ids, include_children, include_absorbed):
         """Internal structural candidates; full impact and deletion remain unimplemented."""
         from .feature_deletion_structure import structural_candidates, validate_request
