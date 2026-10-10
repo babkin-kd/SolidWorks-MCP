@@ -768,7 +768,7 @@ wheels = [
 
 [[package]]
 name = "solidworks-mcp"
-version = "2.0.0.dev52"
+version = "2.0.0.dev53"
 source = { editable = "." }
 dependencies = [
     { name = "mcp" },

@@ -84,10 +84,10 @@ class SketchEntityBinder:
     def __call__(self, raw, name):
         if self._closed:
             raise rejected('sketch_entity_capture_closed', 'A closed binding capture cannot be reused.')
-        # ISketchLine exposes endpoints/infinite state, not ISketchSegment's
-        # GetID/GetSketch/Status. Bind the base interface before the typed view.
-        if raw is not None and name == 'ISketchLine':
-            return self.wrap(self(raw, 'ISketchSegment'), 'ISketchLine')
+        # Typed line/arc views do not expose ISketchSegment's GetID/owner/status.
+        # Bind the current persistent base entity before either typed view.
+        if raw is not None and name in ('ISketchLine', 'ISketchArc'):
+            return self.wrap(self(raw, 'ISketchSegment'), name)
         obj = self.wrap(raw, name)
         if obj is None or name not in ('ISketchPoint', 'ISketchSegment'):
             return obj
@@ -155,6 +155,8 @@ def _identifier(raw):
 
 
 class LinearSketchReader:
+    scope = SCOPE
+
     def __init__(self, sketch, origin, *, wrap, identity):
         self.sketch, self.origin, self.wrap, self.identity = sketch, origin, wrap, identity
         self.sketch_token, self.origin_token = identity(sketch), identity(origin)
@@ -202,6 +204,26 @@ class LinearSketchReader:
             raise rejected('sketch_relation_entity_unsupported', 'Relation line is outside the complete canonical segment capture.')
         return key
 
+    def _read_segment(self, raw):
+        segment = self.wrap(raw, 'ISketchSegment')
+        if _integer(segment.GetType(), high=1000) != 0:
+            raise rejected('sketch_curve_unsupported', 'Complete arc/spline/conic capture is not implemented; no partial linear result.')
+        owner = self.wrap(segment.GetSketch(), 'ISketch')
+        if owner is None or self.identity(owner) != self.sketch_token:
+            raise rejected('sketch_external_entity_unsupported', 'A segment belongs to another sketch.')
+        line = self.wrap(segment, 'ISketchLine')
+        identifier = _identifier(segment)
+        key = 'line:' + ':'.join(map(str, identifier))
+        if key in self.lines:
+            raise rejected('sketch_entity_identity_collision', 'Repeated/colliding native line in the complete array.')
+        start, end = self._point(line.GetStartPoint2()), self._point(line.GetEndPoint2())
+        if start == end or 'model_origin' in (start, end):
+            raise rejected('sketch_capture_invalid', 'Finite native lines need distinct own endpoints.')
+        self.lines[key] = {'key': key, 'native_id': identifier, 'kind': 'line',
+            'construction': _boolean(segment.ConstructionGeometry), 'infinite': _boolean(line.Infinite),
+            'constraint_status': _integer(segment.Status, high=10), 'start': start, 'end': end}
+        self.members[key] = self.identity(segment)
+
     def read(self):
         if _boolean(self.sketch.Is3D()):
             raise rejected('sketch_3d_unsupported', 'The initial complete sketch scope is planar.')
@@ -221,24 +243,7 @@ class LinearSketchReader:
         if len(self.points) != count:
             raise rejected('sketch_entity_identity_collision', 'Repeated native user point in the complete array.')
         for raw in _array(self.sketch.GetSketchSegments(), 2000):
-            segment = self.wrap(raw, 'ISketchSegment')
-            if _integer(segment.GetType(), high=1000) != 0:
-                raise rejected('sketch_curve_unsupported', 'Complete arc/spline/conic capture is not implemented; no partial linear result.')
-            owner = self.wrap(segment.GetSketch(), 'ISketch')
-            if owner is None or self.identity(owner) != self.sketch_token:
-                raise rejected('sketch_external_entity_unsupported', 'A segment belongs to another sketch.')
-            line = self.wrap(segment, 'ISketchLine')
-            identifier = _identifier(segment)
-            key = 'line:' + ':'.join(map(str, identifier))
-            if key in self.lines:
-                raise rejected('sketch_entity_identity_collision', 'Repeated/colliding native line in the complete array.')
-            start, end = self._point(line.GetStartPoint2()), self._point(line.GetEndPoint2())
-            if start == end or 'model_origin' in (start, end):
-                raise rejected('sketch_capture_invalid', 'Finite native lines need distinct own endpoints.')
-            self.lines[key] = {'key': key, 'native_id': identifier, 'kind': 'line',
-                'construction': _boolean(segment.ConstructionGeometry), 'infinite': _boolean(line.Infinite),
-                'constraint_status': _integer(segment.Status, high=10), 'start': start, 'end': end}
-            self.members[key] = self.identity(segment)
+            self._read_segment(raw)
         if len(self.points) != count:
             raise rejected('sketch_capture_invalid', 'A line endpoint was missing from the complete user-point array.')
         manager = self.wrap(self.sketch.RelationManager, 'ISketchRelationManager')
@@ -286,7 +291,7 @@ class LinearSketchReader:
             self.members['relation:' + str(index)] = token
         if _integer(self.sketch.GetSketchPointsCount2(), high=2000) != len(points):
             raise rejected('sketch_capture_changed', 'Sketch user-point count changed while reading.')
-        return {'scope': SCOPE, 'is_3d': False, 'constraint_status': _integer(self.sketch.GetConstrainedStatus(), high=10),
+        return {'scope': self.scope, 'is_3d': False, 'constraint_status': _integer(self.sketch.GetConstrainedStatus(), high=10),
                 'relation_identity_policy': 'complete_semantics_with_resolved_native_entities_v1',
                 'model_origin_point': self.origin_snapshot,
                 'points': [self.points[key] for key in sorted(self.points)],

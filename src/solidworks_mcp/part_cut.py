@@ -63,6 +63,24 @@ class CornerCut:
 class PartCutCatalog:
     """Explicit candidate with durable execution and scoped owned restoration."""
 
+    definition_type = CornerCut
+    scope = SCOPE
+
+    def _new_receipt(self, model, features, controls):
+        return self.adapter.new_corner_cut_receipt(model,features,controls)
+
+    def _apply_cut(self, model, plane, definition, receipt):
+        return self.adapter.create_corner_cut(model,plane,definition,receipt)
+
+    def _cut_evidence(self, model, receipt):
+        return self.adapter.corner_cut_evidence(model,receipt)
+
+    def _restore_cut(self, model, receipt):
+        return self.adapter.restore_corner_cut(model,receipt)
+
+    def _body_matches(self, geometry, expected):
+        return corner_body_matches(geometry,expected)
+
     def __init__(self, sketches):
         self.sketches, self.dimensions = sketches, sketches.dimensions
         self.adapter = self.dimensions.adapter
@@ -92,7 +110,7 @@ class PartCutCatalog:
         return captured, ref.persistent_id, token, controls, parameters, expected
 
     def _prepare(self, document_id, configuration, **parameters):
-        definition = CornerCut.validate(**parameters)  # Before any native access.
+        definition = self.definition_type.validate(**parameters)  # Before any native access.
         first = self._capture(document_id, configuration, definition)
         second = self._capture(document_id, configuration, definition)
         same = (self.dimensions._same_capture(first[0].dimensions, second[0].dimensions)
@@ -102,11 +120,11 @@ class PartCutCatalog:
         if not same:
             raise rejected('cut_target_changed', 'Complete base/plane/control/expected-shape proof changed during preparation.')
         captured, pid, _, controls, base, expected = first
-        payload = {'scope': SCOPE, 'document_id': document_id, 'configuration': configuration,
+        payload = {'scope': self.scope, 'document_id': document_id, 'configuration': configuration,
                    'base_revision': captured.revision, 'definition': asdict(definition),
                    'plane_pid_hex': pid.hex(), 'controls': controls, 'base_parameters': base,
                    'expected_geometry': expected}
-        public = {'document_id': document_id, 'configuration': configuration, 'revision_scope': SCOPE,
+        public = {'document_id': document_id, 'configuration': configuration, 'revision_scope': self.scope,
                 'revision': 'rev_' + hashlib.sha256(_json(payload).encode('utf8')).hexdigest(),
                 'definition': asdict(definition), 'expected_geometry': expected,
                 'native_creation_available': True}
@@ -119,7 +137,7 @@ class PartCutCatalog:
         readings = []
         for _ in range(2):
             captured = self.sketches._capture(document_id, configuration, definition.object_id)
-            evidence, members = self.adapter.corner_cut_evidence(captured.dimensions.state[0].model, receipt)
+            evidence, members = self._cut_evidence(captured.dimensions.state[0].model, receipt)
             readings.append((captured, evidence, members))
         first, second = readings
         # Independent mass values may differ by solver ULP; full BREP and sketch
@@ -191,7 +209,10 @@ class PartCutCatalog:
                 and all(row['owner']['owner_native_id'] == after['created']['cut_native_id'] for row in rows))
 
     def create_corner_cut(self, operation_id, document_id, configuration, expected_revision, **parameters):
-        definition = CornerCut.validate(**parameters)
+        return self._create_cut(operation_id,document_id,configuration,expected_revision,**parameters)
+
+    def _create_cut(self, operation_id, document_id, configuration, expected_revision, **parameters):
+        definition = self.definition_type.validate(**parameters)
         if self.dimensions.mutation_guard is None:
             raise rejected('mutation_guard_unavailable', 'An owning-STA model guard is required for native cuts.')
         target = {}
@@ -206,19 +227,19 @@ class PartCutCatalog:
             plane, reference = self.dimensions.features._resolve(entry, configuration, identity, features, definition.plane_object_id)
             if reference.persistent_id != captured[1] or self.adapter.identity(plane) != captured[2]:
                 raise rejected('cut_target_changed', 'The explicit native plane changed after preparation.')
-            receipt = self.adapter.new_corner_cut_receipt(entry.model, features, captured[3])
+            receipt = self._new_receipt(entry.model, features, captured[3])
             self.dimensions._close_native_proof(entry, base.dimensions.event_sequence)
             target.update(entry=entry, plane=plane, receipt=receipt)
-            return PreparedMutation(public['revision'], {'scope': SCOPE, 'definition': asdict(definition),
+            return PreparedMutation(public['revision'], {'scope': self.scope, 'definition': asdict(definition),
                 'semantic': semantic, 'base_sketch': base.snapshot, 'controls': captured[3],
                 'body_name': receipt.baseline_body_name, 'expected_geometry': captured[5]})
 
         def validate(prepared):
-            return self.prepare_corner_cut(document_id, configuration, **asdict(definition))['revision'] == prepared.revision
+            return self._prepare(document_id, configuration, **asdict(definition))[0]['revision'] == prepared.revision
 
         def apply(prepared):
             target['entry'].features['mutation_sequence'] = target['entry'].features.get('mutation_sequence', 0) + 1
-            self.adapter.create_corner_cut(target['entry'].model, target['plane'], definition, target['receipt'])
+            self._apply_cut(target['entry'].model, target['plane'], definition, target['receipt'])
             return {'sketch_name': definition.sketch_name, 'feature_name': definition.feature_name}
 
         def inspect(prepared):
@@ -230,7 +251,7 @@ class PartCutCatalog:
                     and evidence['controls'] == before['controls'] and evidence['body_name'] == before['body_name']
                     and self._baseline_unchanged(before, after) and self._owned_features(before, after, definition)
                     and self._valid_cut_sketch(before, after, definition, configuration)
-                    and corner_body_matches(after['semantic']['geometry'], before['expected_geometry'])
+                    and self._body_matches(after['semantic']['geometry'], before['expected_geometry'])
                     and all(math.isclose(evidence[key], before['expected_geometry'][key], rel_tol=1e-10, abs_tol=1e-8)
                             for key in ('volume_mm3', 'surface_area_mm2')))
 
@@ -241,11 +262,11 @@ class PartCutCatalog:
                 raise rejected('cut_restore_unsafe', 'Foreign metadata, constraints or controls prevent scoped restoration.')
             if current['created'].get('complete'):
                 if (not self._valid_cut_sketch(before, current, definition, configuration)
-                        or not corner_body_matches(current['semantic']['geometry'], before['expected_geometry'])):
+                        or not self._body_matches(current['semantic']['geometry'], before['expected_geometry'])):
                     raise rejected('cut_restore_unsafe', 'Current owned cut sketch/body differs from the requested shape.')
             elif current['semantic']['geometry'] != before['semantic']['geometry']:
                 raise rejected('cut_restore_unsafe', 'Unconfirmed foreign body effects prevent restoration.')
-            self.adapter.restore_corner_cut(target['entry'].model, target['receipt'])
+            self._restore_cut(target['entry'].model, target['receipt'])
 
         return self.dimensions.coordinator.execute(operation_id, document_id=document_id, configuration=configuration,
             expected_revision=expected_revision, prepare=prepare, validate=validate, apply=apply, inspect=inspect,

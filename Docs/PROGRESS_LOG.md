@@ -1,5 +1,11 @@
 # История локальных проверок первой стадии
 
+## 10.10.2026 — dev53: исходный сценарий отверстия и MCP-фасады
+
+Подготовлены полный circle reader с LONG IsCircle, точными curve/radius/normal/rotation и всем constraint network; независимый X/Y/diameter classifier, persistent binder/plane/origin proof; domain/native through-all cut/restore на общем проверяемом протоколе углового выреза. Подключены `part_prepare_through_hole`/`part_create_through_hole`, lazy owning-STA runtime и освобождение references. Исходный каталог32/9 mutations, scope `single_base_circular_through_hole_v1`; census8/14/7 выбирает полный reader и не заменяет его.
+
+**2875 pure passed, 323 CAD deselected**. Первый полный прогон: 2874 passed/1 failed из-за версии Registry-шаблона; после исправления итоговый прошёл. Circle/linear/binder/sketch/constraints связанный набор222 passed; domain/SQLite commit/stale/request_id/rollback/unknown/foreign проверены искусственно; MCP/metadata/verifier gates58 passed. Подготовлены internal/public installed-wheel верификаторы с V/A/полным census и SDK job-tracking preflight. Реальные CAD-операции этого кандидата ещё не запускались, установленный dev52/v1 сохранены; wheel/metadata/native-приёмка впереди. Исторические результаты не засчитываются за dev53. Один агент, без push/CI, стадии открыты.
+
 ## 10.10.2026 — отверстие: исходные BREP и инженерные постусловия
 
 После принятого dev52 продолжена цепочка «пластина → одно сквозное круглое отверстие». Подготовлены полный planar/cylinder BREP-reader и `ThroughHole`: явные ссылки, X/Y/диаметр, русские имена, minimum material margin 0,001 мм. Shape matcher проверяет полную конкретную границу; массы/census недостаточно. Исходники пока не подключены к каталогу; установленный dev52 и 30 tools/8 mutations сохранены.

@@ -29,6 +29,17 @@ class CadPartCutMixin:
             baseline_body_identity=self.identity(bodies[0]), baseline_body_name=str(bodies[0].Name))
 
     def create_corner_cut(self, model, plane, definition, receipt):
+        from .session import SolidWorksSession
+        def draw(manager):
+            w,h = definition.width_mm/1000.,definition.height_mm/1000.
+            return SolidWorksSession._draw_polyline(manager,((0.,0.),(w,0.),(w,h),(0.,h)))
+        def define(definer, lines):
+            names = {(axis,index):name for axis,name in (('x','Ширина выреза'),('y','Высота выреза'))
+                     for index in range(8)}
+            return definer.define(lines,names=names,origin_mm=(0.,0.))
+        return self._create_through_cut(model,plane,definition,receipt,draw,define)
+
+    def _create_through_cut(self, model, plane, definition, receipt, draw_profile, define_profile):
         self._base_target(model, receipt)
         if self.part_creation_controls(model) != receipt.controls:
             raise rejected('cut_controls_changed', 'Native sketch controls changed before construction.')
@@ -38,7 +49,6 @@ class CadPartCutMixin:
         manager = binding.wrap(model.SketchManager, self._module.ISketchManager)
         if manager.ActiveSketch is not None:
             raise rejected('cut_open_sketch', 'An unrelated sketch is active.')
-        from .session import SolidWorksSession
         from .sketch_constraints import SketchDefiner
         with self._base_selection(model, receipt):
             if not plane.Select2(False, 0):
@@ -53,19 +63,16 @@ class CadPartCutMixin:
             feature.Name = definition.sketch_name
             if feature.Name != definition.sketch_name:
                 raise rejected('cut_name_mismatch', 'The requested Russian sketch name was not retained.')
-            w, h = definition.width_mm / 1000., definition.height_mm / 1000.
-            lines = SolidWorksSession._draw_polyline(manager, ((0., 0.), (w, 0.), (w, h), (0., h)))
+            drawn = draw_profile(manager)
             origins = [item for item in self.features(model) if item.GetTypeName2() == 'OriginProfileFeature']
             if len(origins) != 1:
                 raise rejected('cut_origin_unavailable', 'The exact unique model origin is unavailable.')
             points = binding.wrap(origins[0].GetSpecificFeature2(), self._module.ISketch).GetSketchPoints2()
             if points is None or len(points) != 1:
                 raise rejected('cut_origin_unavailable', 'The exact unique native model-origin point is unavailable.')
-            names = {(axis, index): name for axis, name in (('x', 'Ширина выреза'), ('y', 'Высота выреза'))
-                     for index in range(8)}
             definer = SketchDefiner(model, self._module, manager, sketch,
                                    binding.wrap(points[0], self._module.ISketchPoint))
-            definer.define(lines, names=names, origin_mm=(0., 0.))
+            define_profile(definer,drawn)
             if definer.fully_defined() is not True:
                 raise rejected('cut_sketch_underdefined', 'Native constraints did not fully define the rectangle.')
             self._base_target(model, receipt)
@@ -100,6 +107,9 @@ class CadPartCutMixin:
             raise rejected('cut_controls_changed', 'Original sketch controls were not preserved.')
 
     def corner_cut_evidence(self, model, receipt):
+        return self._through_cut_evidence(model,receipt,self.sketch_snapshot)
+
+    def _through_cut_evidence(self, model, receipt, sketch_reader):
         self._base_target(model, receipt)
         if receipt.pending_creation or receipt.selection_uncertain:
             raise ExecutionFailure('cut_effect_unconfirmed', 'Native creation/selection remains unconfirmed.', uncertain=True)
@@ -111,7 +121,7 @@ class CadPartCutMixin:
                 raise rejected('cut_owned_feature_not_current', 'An exact retained feature disappeared.')
         if receipt.sketch is None:
             return {'restored': False, 'complete': False}, ()
-        snapshot, members = self.sketch_snapshot(model, receipt.sketch)
+        snapshot, members = sketch_reader(model, receipt.sketch)
         complete = receipt.cut is not None and receipt.body is not None
         result = {'restored': False, 'complete': complete,
                   'sketch_native_id': int(receipt.sketch.GetID()),

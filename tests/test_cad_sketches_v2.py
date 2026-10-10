@@ -56,3 +56,42 @@ def test_ambiguous_or_retargeted_reference_is_rejected(monkeypatch,fault):
     if fault=='retargeted':raw.pid=b'foreign'
     if fault=='wrong_roundtrip':adapter.resolve_persistent_id=lambda *args:NS()
     with pytest.raises(ExecutionFailure):adapter.sketch_snapshot(model,profile)
+
+
+def circle_fixture():
+    from test_circular_sketch_v2 import CircleSketch
+    model,profile,raw=fixture()
+    sketch=CircleSketch()
+    for index,item in enumerate(sketch.points+[sketch.origin,sketch.projected]+sketch.lines):
+        item.pid=('circle-entity:'+str(index)).encode()
+    sketch.GetReferenceEntity=lambda kind:(raw,4)
+    sketch.ModelToSketchTransform=NS(ArrayData=IDENTITY)
+    profile.GetSpecificFeature2=lambda:sketch
+    model[2].GetSpecificFeature2=lambda:NS(GetSketchPoints2=lambda:[sketch.origin])
+    return model,profile,sketch
+
+
+def test_circle_uses_the_same_exact_plane_origin_and_persistent_entity_proof(monkeypatch):
+    monkeypatch.setattr(native.binding,'wrap',lambda raw,cls:raw)
+    monkeypatch.setattr(Adapter._module,'ISketchArc',object(),raising=False)
+    monkeypatch.setattr(Adapter._module,'ICurve',object(),raising=False)
+    model,profile,sketch=circle_fixture()
+    snapshot,members=Adapter().circular_sketch_snapshot(model,profile)
+    assert snapshot['scope']=='circular_planar_sketch_geometry_v1'
+    assert snapshot['reference_plane']['pid_hex']==b'plane'.hex()
+    assert dict(members)['circle:0:1']==id(sketch.lines[0])
+    assert {row['kind'] for row in snapshot['entity_references']}=={'point','segment'}
+    with pytest.raises(ExecutionFailure):Adapter().sketch_snapshot(model,profile)
+
+
+@pytest.mark.parametrize('fault',['missing_circle_pid','retargeted_plane','missing_origin','foreign_circle_owner'])
+def test_circle_adapter_rejects_unproven_exact_context(monkeypatch,fault):
+    monkeypatch.setattr(native.binding,'wrap',lambda raw,cls:raw)
+    monkeypatch.setattr(Adapter._module,'ISketchArc',object(),raising=False)
+    monkeypatch.setattr(Adapter._module,'ICurve',object(),raising=False)
+    model,profile,sketch=circle_fixture()
+    if fault=='missing_circle_pid':sketch.lines[0].pid=b''
+    if fault=='retargeted_plane':sketch.GetReferenceEntity=lambda kind:(NS(pid=b'other-plane'),4)
+    if fault=='missing_origin':model.pop()
+    if fault=='foreign_circle_owner':sketch.lines[0].owner=object()
+    with pytest.raises(ExecutionFailure):Adapter().circular_sketch_snapshot(model,profile)

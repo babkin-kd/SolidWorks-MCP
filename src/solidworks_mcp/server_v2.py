@@ -22,6 +22,7 @@ from .contracts import ResponseEnvelope
 from .dimension_tools_v2 import register_dimension_tools
 from .part_tools_v2 import register_part_tools
 from .part_cut_tools_v2 import register_part_cut_tools
+from .part_hole_tools_v2 import register_part_hole_tools
 from .part_revolve_tools_v2 import register_part_revolve_tools
 from .document_creation_tools_v2 import register_document_creation_tools
 from .sketch_tools_v2 import register_sketch_tools
@@ -89,12 +90,13 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
                              'part_linear_sketch_reads': True, 'rectangular_sketch_dimensions': True,
                              'part_corner_through_cut': True,
                              'part_full_turn_base_revolve': True,
+                             'part_circular_through_hole': True,
                              'part_exports': True,
                              'pdm': False, 'simulation': False},
             'export_output_configured': runtime.export_output_configured,
-            'implemented_mutations': ['feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve'],
+            'implemented_mutations': ['feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole'],
             'mutation_revision_scopes': ['part_feature_tree_v1', 'part_dimension_values_v1',
-                                         'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1'],
+                                         'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1', 'single_base_circular_through_hole_v1'],
             'journal_schema_version': JOURNAL_SCHEMA_VERSION,
         })
 
@@ -248,6 +250,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
     register_dimension_tools(app, runtime, response, failure)
     register_part_tools(app, runtime, response, failure)
     register_part_cut_tools(app, runtime, response, failure)
+    register_part_hole_tools(app, runtime, response, failure)
     register_part_revolve_tools(app, runtime, response, failure)
     register_document_creation_tools(app, runtime, response, failure)
     register_sketch_tools(app, runtime, response, failure)

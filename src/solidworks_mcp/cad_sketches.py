@@ -20,6 +20,13 @@ class CadSketchesMixin:
         return {'volume_mm3': values[3]*1e9, 'surface_area_mm2': values[4]*1e6}
 
     def sketch_snapshot(self, model, feature):
+        return self._sketch_snapshot(model,feature,LinearSketchReader)
+
+    def circular_sketch_snapshot(self, model, feature):
+        from .circular_sketch import CircularSketchReader
+        return self._sketch_snapshot(model,feature,CircularSketchReader)
+
+    def _sketch_snapshot(self, model, feature, reader_type):
         if feature.GetTypeName2() != 'ProfileFeature':
             raise rejected('sketch_type_unsupported', 'The initial reader supports explicit planar profile features only.')
         sketch = binding.wrap(feature.GetSpecificFeature2(), self._module.ISketch)
@@ -56,7 +63,7 @@ class CadSketchesMixin:
             return binding.wrap(raw, getattr(self._module, name))
         binder = SketchEntityBinder(wrap=lambda raw,name:binding.wrap(raw,getattr(self._module,name)),
             reference=lambda obj:self.persistent_id(model,obj),resolve=resolve,identity=self.identity,coalesce=True)
-        reader = LinearSketchReader(sketch, binder(points[0], 'ISketchPoint'), identity=self.identity, wrap=binder)
+        reader = reader_type(sketch, binder(points[0], 'ISketchPoint'), identity=self.identity, wrap=binder)
         snapshot, members = reader.read()
         binder.close()
         transform = binding.wrap(sketch.ModelToSketchTransform, self._module.IMathTransform)

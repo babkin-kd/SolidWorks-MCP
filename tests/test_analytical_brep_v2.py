@@ -29,6 +29,14 @@ def test_counts_never_accept_a_partial_curve_or_hide_native_reader_failure():
         capture(body)
 
 
+def test_single_hole_census_selects_the_complete_native_reader():
+    from test_hole_brep_v2 import plate,read as hole_read
+    body=plate()
+    assert capture(body)==hole_read(body)
+    body.faces[-1].sense=False
+    with pytest.raises(PlanarBrepError):capture(body)
+
+
 @pytest.mark.parametrize('value',[True,-1,None,'0',0.])
 def test_invalid_census_cannot_select_a_reader(value):
     body = cylinder()

@@ -1,8 +1,8 @@
 """Engineering definition and full-boundary proof for a future through-hole tool.
 
-This module performs no CAD writes and is not registered in the MCP catalog.
-The native writer, circular sketch proof and durable execution remain separate
-requirements before publication or installed-wheel acceptance.
+Input validation and shape matching perform no CAD calls. The internal domain
+delegates native writes only through the durable coordinator and owning-STA
+adapter. No MCP tool is registered here; installed/native acceptance is pending.
 """
 
 from dataclasses import dataclass
@@ -13,6 +13,8 @@ from .cad_hole_brep import HOLE_BREP_SCOPE
 from .documents import rejected
 from .features import russian_name
 from .part_creation import _positive_length, validated_plane_transform
+from .part_cut import PartCutCatalog
+from .circular_sketch import circle_profile_parameters
 
 
 SCOPE = 'single_base_circular_through_hole_v1'
@@ -167,3 +169,48 @@ def hole_body_matches(geometry,expected):
         return not remaining and walls==1
     except (KeyError,IndexError,TypeError,ValueError,OverflowError):
         return False
+
+
+class PartHoleCatalog(PartCutCatalog):
+    """Circle-specific proof over the shared guarded through-cut protocol."""
+    definition_type = ThroughHole
+    scope = SCOPE
+
+    def prepare_through_hole(self, document_id, configuration, **parameters):
+        return self._prepare(document_id,configuration,**parameters)[0]
+
+    def create_through_hole(self, operation_id, document_id, configuration, expected_revision, **parameters):
+        return self._create_cut(operation_id,document_id,configuration,expected_revision,**parameters)
+
+    def _new_receipt(self, model, features, controls):
+        return self.adapter.new_through_hole_receipt(model,features,controls)
+
+    def _apply_cut(self, model, plane, definition, receipt):
+        return self.adapter.create_through_hole(model,plane,definition,receipt)
+
+    def _cut_evidence(self, model, receipt):
+        return self.adapter.through_hole_evidence(model,receipt)
+
+    def _restore_cut(self, model, receipt):
+        return self.adapter.restore_through_hole(model,receipt)
+
+    def _body_matches(self, geometry, expected):
+        return hole_body_matches(geometry,expected)
+
+    @staticmethod
+    def _valid_cut_sketch(before, after, definition, configuration):
+        snapshot = after['created'].get('sketch')
+        if snapshot is None or any(snapshot[key]!=before['base_sketch'][key]
+                for key in ('reference_plane','model_to_sketch','model_origin','model_origin_point')):
+            return False
+        parameters = circle_profile_parameters(snapshot,after['semantic'],configuration)
+        wanted = {'centre_x_m':definition.centre_x_mm/1000.,'centre_y_m':definition.centre_y_mm/1000.,
+                  'diameter_m':definition.diameter_mm/1000.}
+        if any(not math.isclose(parameters[key],value,rel_tol=0.,abs_tol=1e-12) for key,value in wanted.items()):
+            return False
+        rows = [row for row in after['semantic']['dimensions'] if row['owner']
+                and row['owner']['native_id']==after['created']['sketch_native_id']]
+        old_names = {row['full_name'] for row in before['semantic']['dimensions']}
+        extra = [row for row in after['semantic']['dimensions'] if row['full_name'] not in old_names]
+        return (len(extra)==len(rows)==3 and {row['name'] for row in rows}=={'Центр X','Центр Y','Диаметр'}
+                and all(row['owner']['owner_native_id']==after['created']['cut_native_id'] for row in rows))
