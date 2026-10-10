@@ -2,6 +2,7 @@
 
 import math
 import random
+import struct
 
 import pytest
 
@@ -56,6 +57,7 @@ def rounded_body(width=.04,height=.02,depth=.01,radius=.002):
             if edge.start.point[0]!=0.: edge.start,edge.end=edge.end,edge.start
             edge.curve=Arc((radius,radius,edge.start.point[2]),radius)
             edge.parameter_data=Trim(edge)
+            edge.Evaluate2=lambda u,d,curve=edge.curve:curve.Evaluate2(u,d)+(struct.unpack('<d',struct.pack('<ii',1,32766))[0],)
         else:
             edge.curve.IsCircle=lambda: False
     # make_body's old coedge senses reflected its original edge orientation.
@@ -86,7 +88,13 @@ def transform_body(body,rotation,translation):
         def GetLength3(self,a,b):return self.original.GetLength3(a,b)
     for vertex in body.vertices:vertex.point=point(vertex.point)
     for edge in body.edges:
-        if isinstance(edge.curve,Arc):edge.curve=TransformedArc(edge.curve)
+        if isinstance(edge.curve,Arc):
+            edge.curve=TransformedArc(edge.curve)
+            original=edge.Evaluate2
+            def evaluate(u,d,original=original):
+                p=original(u,d)
+                return point(p[:3])+vector(p[3:6])+p[6:]
+            edge.Evaluate2=evaluate
     for face in body.faces:
         p=face.surface.params
         face.surface.params=(vector(p[:3])+point(p[3:6]) if face.surface.kind=='plane'
@@ -142,4 +150,24 @@ def test_complete_quarter_arc_evidence_retains_native_parameter_phase():
     arc.parameter_data.UMinValue+=2.*math.pi
     arc.parameter_data.UMaxValue+=2.*math.pi
     assert read(body)!=before
+
+
+def test_base_curve_parameter_phase_is_not_substituted_for_edge_trim_phase():
+    body=rounded_body();before=read(body)
+    for edge in body.edges:
+        if isinstance(edge.curve,Arc):
+            # The native ICurve may have a different basis; edge evaluation has
+            # its own phase and remains the only applicable trim proof.
+            edge.curve.Evaluate2=lambda u,d:(0.,)*6
+            centre=edge.curve.centre;r=edge.curve.radius
+            edge.Evaluate2=lambda u,d,c=centre,r=r:(c[0]+r*math.cos(u),c[1]+r*math.sin(u),c[2],
+                -r*math.sin(u),r*math.cos(u),0.,struct.unpack('<d',struct.pack('<ii',1,2146959360))[0])
+    assert read(body)==before
+
+
+@pytest.mark.parametrize('status,words',[(0,0),(2,32766),(-1,1)])
+def test_unsuccessful_native_edge_status_never_proves_an_arc(status,words):
+    body=rounded_body();edge=next(e for e in body.edges if isinstance(e.curve,Arc));original=edge.Evaluate2
+    edge.Evaluate2=lambda u,d:original(u,d)[:6]+(struct.unpack('<d',struct.pack('<ii',status,words))[0],)
+    with pytest.raises(PlanarBrepError):read(body)
 

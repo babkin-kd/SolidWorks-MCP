@@ -1,4 +1,4 @@
-# Скругление явно выбранного ребра — кандидат dev59
+# Скругление явно выбранного ребра — кандидат dev60
 
 Блок пункта 2.1 PLAN.md: создание одного постоянного скругления полного ребра
 прямоугольного основания. Три стадии плана остаются открытыми. Импорт и экспорт
@@ -48,7 +48,7 @@ COM; повторный request_id возвращает прежнее зада�
 
 ## Локальная проверка
 
-3107 pure-тестов пройдены, 323 native-теста исключены: `work/pure-dev59-final-2.log`.
+3111 pure-тестов пройдены, 323 native-теста исключены: `work/pure-dev60-final.log`.
 Искусственный native-shaped BREP проверяет все двенадцать рёбер, поворот
 плоскости, ошибочные дуги/поверхности/связи. Доменный сценарий проверяет
 checkpoint, stale, idempotency, известное восстановление и отказ от удаления
@@ -61,5 +61,29 @@ checkpoint, stale, idempotency, известное восстановление 
 - [FeatureFillet: simple type и selection marks](https://help.solidworks.com/2023/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IFeatureManager~FeatureFillet.html)
 - [ISimpleFilletFeatureData2](https://help.solidworks.com/2023/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.ISimpleFilletFeatureData2_members.html)
 
-Сигнатуры `FeatureFillet3`, `ICurve.Evaluate2`, `ICurve.GetLength3` и native
+Сигнатуры `FeatureFillet3`, `IEdge.Evaluate2`, `ICurve.GetLength3` и native
 определения дополнительно сверены с локальной type library SolidWorks 2023.
+
+## Отказ dev59 и исправление native-контракта
+
+Первый wheel dev59 не принят. Проверка остановилась на известном внедрённом
+сбое при радиусе 1,5 мм: считыватель использовал фазу `ICurve.Evaluate2` для
+trim-интервала ребра. Read-only native-пробник подтвердил несовпадение фаз
+базовой кривой и ребра. Используется именно `IEdge.Evaluate2`: шесть координат
+и packed status, проверяется документированный нижний long=1. Верхнее слово
+может содержать неопределённые биты, не является координатой и не включается
+в ревизию. Это также предотвращает ложное изменение ревизии при NaN верхних
+битов. [IEdge.Evaluate2](https://help.solidworks.com/2016/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IEdge~Evaluate2.html)
+
+`FilletItemsCount` относится к нескольким радиусам и для постоянного радиуса
+возвращает -1; количество выбранных рёбер проверяет `GetEdgeCount` (=1).
+Это подтверждено native-пробником и [официальным контрактом](https://help.solidworks.com/2024/English/api/sldworksapi/SOLIDWORKS.Interop.sldworks~SOLIDWORKS.Interop.sldworks.ISimpleFilletFeatureData2~FilletItemsCount.html).
+
+Отказ и unknown-журнал dev59 сохраняются, не превращаются в успешную приёмку.
+Отчёт: `work/native-fillet-dev59-1/report.json`; probe и отдельный read-only
+аудит находятся рядом. Патч считывателя доказал полную ожидаемую BREP и
+неизменность исходного эскиза/дерева для разрешённой очистки собственных
+контрольных документов. Это не CAD-приёмка исправленного установленного wheel.
+Обе собственные unsaved детали закрыты после повторного terminal-аудита;
+пустой/free baseline восстановлен. SHA256 исходного unknown-журнала остался
+`14817507c34dbd2f83c167baac3ba6d7279806508903b2908e3dfa7cb7058f86`.

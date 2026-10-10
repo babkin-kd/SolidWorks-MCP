@@ -45,7 +45,7 @@ def setup(sketch_setup):
         row=dimension(60,value=definition.radius_mm/1000.);row.owner=value.owned
         row.state.update(name='Радиус',full_name='Радиус@'+definition.feature_name,owner=deepcopy(value.owned.state))
         part.dimensions.append(row)
-        value.parameters=dict(type=0,radius_m=definition.radius_mm/1000.,edge_count=1,items_count=1,
+        value.parameters=dict(type=0,radius_m=definition.radius_mm/1000.,edge_count=1,items_count=-1,
             feature_count=0,loop_count=0,hold_line_count=0,multiple_radius=False,propagate=False,
             partial=False,asymmetric=False,curvature_continuous=False,conic_type=0,edge_matches=True)
         part.state['bodies']=[read(rounded_body(radius=definition.radius_mm/1000.))]

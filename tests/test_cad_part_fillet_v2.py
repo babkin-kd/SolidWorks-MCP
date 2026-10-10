@@ -15,7 +15,7 @@ def setup(pattern_setup):
     adapter._module.ISimpleFilletFeatureData2=object
     receipt.fillet=receipt.pattern;receipt.fillet_identity=receipt.pattern_identity;receipt.edge_pid=b'edge'
     data.Edges=[data.D1Axis]
-    data.Type=0;data.DefaultRadius=.002;data.FilletItemsCount=1
+    data.Type=0;data.DefaultRadius=.002;data.FilletItemsCount=-1
     data.GetEdgeCount=lambda:1;data.GetFeatureCount=lambda:0;data.GetLoopCount=lambda:0;data.GetHoldLineCount=lambda:0
     data.IsMultipleRadius=data.PropagateToTangentFaces=data.EnablePartialEdgeParameters=False
     data.AsymmetricFillet=data.CurvatureContinuous=False;data.ConicTypeForCrossSectionProfile=0

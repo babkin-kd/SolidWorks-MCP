@@ -6,6 +6,7 @@ loop/coedge/root censuses and solid checks are shared with the hole reader.
 """
 
 import math
+import struct
 
 from .cad_planar_brep import PlanarBrepError, _hex, _cross, _plane_consistent, _points_consistent
 from .cad_cylinder_brep import _dot, _subtract, _unit
@@ -52,7 +53,21 @@ def _arc(r,edge,points,vertex_index):
         radial=_subtract(point,parameters[:3])
         if abs(_dot(radial,parameters[3:6]))>tolerance or abs(math.sqrt(_dot(radial,radial))-radius)>tolerance:
             _fail('Arc trim endpoint does not lie on the full native circle.')
-        raw=r.numbers(r.call(curve,'Evaluate2',value,1),6,'native arc point/tangent')
+        # IEdge parameters come from ICurveParamData. The returned base ICurve
+        # can use a different circle phase; evaluating it at edge trim values
+        # would prove a different arc. IEdge.Evaluate2 returns six coordinates
+        # plus a packed status double. Only the documented lower long is valid;
+        # the upper word can be uninitialized and is never revision material.
+        evaluation=r.call(edge,'Evaluate2',value,1)
+        if not isinstance(evaluation,(tuple,list)) or len(evaluation)!=7:
+            _fail('Native edge point/tangent evaluation requires six doubles and packed status.')
+        status=evaluation[6]
+        # Packed bits are not a coordinate. Its unspecified upper word may even
+        # encode NaN; geometry finiteness applies to the six real coordinates.
+        if type(status) is not float:_fail('Native packed edge status must be a double.')
+        if struct.unpack('<ii',struct.pack('<d',status))[0]!=1:
+            _fail('Native edge evaluation did not report successful trim evaluation.')
+        raw=r.numbers(evaluation[:6],6,'native edge arc point/tangent')
         if not _points_consistent(raw[:3],point,tolerance):_fail('Native parameter evaluation differs from trim endpoints.')
         tangent=raw[3:]
         reference=_cross(parameters[3:6],radial)
@@ -72,7 +87,7 @@ def _arc(r,edge,points,vertex_index):
         trim=dict(curve_type=kind,same_direction_as_edge=sense,start_point=list(_hex(start)),
             end_point=list(_hex(end)),u_min=interval[0].hex(),u_max=interval[1].hex(),
             evaluations_si=[list(_hex(row)) for row in evaluated],length_si=length.hex(),
-            parameter_direction=signs[0]),
+            parameter_direction=signs[0],evaluation_scope='edge_trim_with_validated_packed_status_v1',evaluation_status=1),
         key=(1,tuple(sorted((vertex_index[a],vertex_index[b]))),_hex(parameters),_hex(interval),sense))
 
 

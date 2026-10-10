@@ -90,7 +90,9 @@ class PartFilletCatalog:
     @staticmethod
     def _native_parameters(after,definition):
         p=after['created'].get('parameters',{})
-        return (p.get('type')==0 and p.get('edge_count')==1 and p.get('items_count')==1
+        # FilletItemsCount describes multiple-radius items, not selected edges.
+        # The documented constant-radius sentinel is -1; GetEdgeCount proves 1.
+        return (p.get('type')==0 and p.get('edge_count')==1 and p.get('items_count')==-1
             and p.get('feature_count')==0 and p.get('loop_count')==0 and p.get('hold_line_count')==0
             and p.get('edge_matches') is True and p.get('multiple_radius') is False
             and p.get('propagate') is False and p.get('partial') is False and p.get('asymmetric') is False
