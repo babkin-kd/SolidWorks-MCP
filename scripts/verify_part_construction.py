@@ -60,6 +60,7 @@ def main():
     parser.add_argument('--expected-version', required=True)
     parser.add_argument('--expected-git-sha', required=True)
     parser.add_argument('--state-dir', type=Path, required=True)
+    parser.add_argument('--plane-index', type=int, choices=(1, 2, 3), default=1)
     args = parser.parse_args()
     if not args.run_solidworks:
         parser.error('Native checks require explicit --run-solidworks; no connection attempted.')
@@ -79,6 +80,7 @@ def main():
               'wheel': wheel, 'verifier_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               'cases': [], 'owned_documents': [], 'part_creation_accepted': False,
               'public_mcp_creation_accepted': False}
+    report['principal_plane_index'] = args.plane_index
     def persist():
         (state / 'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf8')
     owned, adapter, documents, store = [], None, None, None
@@ -148,10 +150,10 @@ def main():
             assert_non_stl_preferences(lambda: application_preferences(sw), preferences, report, 'preferences_' + label)
             report['cases'].append({'label': label, 'passed': True, 'job': job})
             persist()
-        parameters = dict(plane_object_id=planes[0]['object_id'], width_mm=40., height_mm=20., depth_mm=10.)
+        parameters = dict(plane_object_id=planes[args.plane_index - 1]['object_id'], width_mm=40., height_mm=20., depth_mm=10.)
         # Fixture-only selection establishes a nonempty, marked original list.
         entry, identity, objects, *_ = dimensions.features._state(ids[0], 'Основная')
-        selected_plane, _ = dimensions.features._resolve(entry, 'Основная', identity, objects, planes[1]['object_id'])
+        selected_plane, _ = dimensions.features._resolve(entry, 'Основная', identity, objects, planes[args.plane_index % 3]['object_id'])
         assert selected_plane.Select2(False, 7)
         selection = binding.wrap(first.SelectionManager, module.ISelectionMgr)
         original_selection = adapter._mass_selection_snapshot(selection)
