@@ -51,7 +51,7 @@ class Application:
         assert setting == SW_TOGGLE_3D_INTERCONNECT
         self.sets.append(value)
         self.interconnect = value
-        return self.setter_hook(value) if self.setter_hook else True
+        return self.setter_hook(value) if self.setter_hook else None  # Native VT_VOID.
 
 
 def scope(app):
@@ -229,7 +229,7 @@ def test_restoration_and_cleanup_failures_do_not_hide_the_primary_com_error(monk
     app = Application([original])
     result = session(app, original, monkeypatch)
     error = pythoncom.com_error(-2147467259, 'Primary load failure', None, None)
-    app.setter_hook = lambda value: False if value else True
+    app.setter_hook = lambda value: setattr(app, 'interconnect', False) if value else None
     def load(*args):
         app.documents.append(Document('Временная'))
         raise error
@@ -333,7 +333,7 @@ def test_restoration_failure_after_success_still_blocks_next_import(monkeypatch)
         app.documents.append(imported)
         return imported, 0
     result._load_file = load
-    app.setter_hook = lambda value: not value
+    app.setter_hook = lambda value: setattr(app, 'interconnect', False) if value else None
     with pytest.raises(SolidWorksError, match='restoration was not confirmed'):
         result.open_assembly('supplier.step')
     assert result._import_reconciliation_required is True
@@ -362,3 +362,15 @@ def test_guard_acquisition_failure_is_not_blindly_restored_or_retried(monkeypatc
     with pytest.raises(SolidWorksError, match='previous import'):
         result.open_part('supplier.step')
     assert calls == [True]
+
+
+def test_void_preference_setter_without_effect_is_rejected_by_readback(monkeypatch):
+    original = Document('Рабочая')
+    app = Application([original])
+    result = session(app, original, monkeypatch)
+    app.setter_hook = lambda value: setattr(app, 'interconnect', True) if not value else None
+    result._load_file = lambda *args: pytest.fail('Load must not run if disabling had no observed effect.')
+    with pytest.raises(SolidWorksError, match='Could not disable'):
+        result.open_assembly('supplier.step')
+    assert app.interconnect is True and app.sets == [False, True]
+    assert app.closes == [] and result._import_reconciliation_required is False

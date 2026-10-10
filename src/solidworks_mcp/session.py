@@ -470,8 +470,8 @@ class SolidWorksSession(SheetMetalMixin):
         restore_attempted = doc_type == SW_DOC_ASSEMBLY and interconnect
         try:
             if restore_attempted:
-                status = sw.SetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT, False)
-                if not status or bool(sw.GetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT)):
+                sw.SetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT, False)  # Native void.
+                if bool(sw.GetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT)):
                     raise SolidWorksError("Could not disable 3D Interconnect for this assembly import.")
             doc, errors = self._load_file(sw, abs_path)
             model = binding.wrap(doc, self._mod.IModelDoc2)
@@ -488,8 +488,8 @@ class SolidWorksSession(SheetMetalMixin):
             primary = sys.exc_info()[1]
             if restore_attempted:
                 try:
-                    status = sw.SetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT, interconnect)
-                    if not status or bool(sw.GetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT)) != interconnect:
+                    sw.SetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT, interconnect)  # Native void.
+                    if bool(sw.GetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT)) != interconnect:
                         raise SolidWorksError("3D Interconnect restoration was not confirmed.")
                 except BaseException as restoration_error:
                     self._import_reconciliation_required = True
