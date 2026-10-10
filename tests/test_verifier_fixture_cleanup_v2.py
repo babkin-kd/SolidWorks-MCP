@@ -19,6 +19,30 @@ proven = utility['inline_job_cleanup_proven']
 GUARD = {'original_state': 0, 'locked_state': 2, 'released_state': 0}
 
 
+def application_guard():
+    return {'scope': 'application_document_create_guard_v1', 'original_command_in_progress': False,
+            'acquired': True, 'released': True, 'selection_preserved': True, 'model_guards': [deepcopy(GUARD)]}
+
+
+def test_explicit_application_guard_proof_is_separate_from_model_lock():
+    job = terminal()
+    guard = application_guard()
+    job['mutation']['verification']['evidence']['execution_guard'] = guard
+    job['result']['execution_guard'] = deepcopy(guard)
+    assert proven(job)
+
+
+@pytest.mark.parametrize('key,wrong', [('original_command_in_progress', 0), ('acquired', 1), ('released', False),
+                                     ('selection_preserved', None), ('model_guards', [{}]), ('model_guards', ())])
+def test_incomplete_application_guard_never_authorizes_cleanup(key, wrong):
+    job = terminal()
+    guard = application_guard()
+    guard[key] = wrong
+    job['mutation']['verification']['evidence']['execution_guard'] = guard
+    job['result']['execution_guard'] = deepcopy(guard)
+    assert not proven(job)
+
+
 def terminal(status='succeeded', phase='committed'):
     return {'operation_id': 'owned-operation', 'status': status,
         'error': None if status == 'succeeded' else {'requires_reconciliation': False},

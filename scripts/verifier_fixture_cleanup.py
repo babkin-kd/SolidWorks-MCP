@@ -16,6 +16,13 @@ def fixture_cleanup_allowed(cleanup_gate):
 
 
 def _released_guard(guard):
+    if isinstance(guard, dict) and guard.get('scope') == 'application_document_create_guard_v1':
+        keys = {'scope', 'original_command_in_progress', 'acquired', 'released', 'model_guards', 'selection_preserved'}
+        return (set(guard) == keys and guard['original_command_in_progress'] is False
+                and guard['acquired'] is True and guard['released'] is True and guard['selection_preserved'] is True
+                and type(guard['model_guards']) is list and len(guard['model_guards']) <= 1000
+                and all(isinstance(item, dict) and 'scope' not in item and _released_guard(item)
+                        for item in guard['model_guards']))
     expected = {'original_state': 0, 'locked_state': 2, 'released_state': 0}
     return isinstance(guard, dict) and set(guard) == set(expected) and all(
         type(guard[key]) is int and guard[key] == value for key, value in expected.items())

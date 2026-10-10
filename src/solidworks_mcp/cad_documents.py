@@ -9,12 +9,13 @@ from .cad_features import CadFeaturesMixin
 from .cad_dimensions import CadDimensionsMixin
 from .cad_deletion_context import CadDeletionContextMixin
 from .cad_part_creation import CadPartCreationMixin
+from .cad_document_creation import CadDocumentCreationMixin
 from .documents import rejected
 from .errors import SolidWorksError
 from .ui_guard import ModelUiGuard
 
 
-class SolidWorksDocuments(CadMassPropertiesMixin, CadGeometryMixin, CadFeaturesMixin, CadDimensionsMixin, CadDeletionContextMixin, CadPartCreationMixin):
+class SolidWorksDocuments(CadMassPropertiesMixin, CadGeometryMixin, CadFeaturesMixin, CadDimensionsMixin, CadDeletionContextMixin, CadPartCreationMixin, CadDocumentCreationMixin):
     def mutation_guard(self, model):
         return ModelUiGuard(model)
 
