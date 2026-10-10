@@ -115,3 +115,53 @@ def test_actual_cli_failure_preserves_context_in_requested_report_and_original_e
     facts = json.loads(args.report.read_text())
     assert facts['owned_fixture_retained_count'] == 2 and facts['fixture_retention_required'] is True
     assert facts['accepted'] is False and facts['original_document_baseline_restored'] is False
+
+
+@pytest.mark.parametrize('field', sorted(diagnostics.DEFERRED_STL_FIELDS))
+def test_deferred_stl_changes_retained_without_claiming_full_restoration(field):
+    before = {'dimension_input': True, 'step_ap': 214, field: 1.}
+    after = {**before, field: 2.}
+    report, calls = {}, []
+    def read():
+        calls.append('read')
+        return after
+    diagnostics.assert_non_stl_preferences(read, before, report, 'comparison')
+    facts = report['comparison']
+    assert calls == ['read'] and facts['before'] == before and facts['after'] == after
+    assert facts['changed_fields'] == [field] and facts['scope_changed_fields'] == []
+    assert facts['scope_exactly_equal'] and not facts['all_preferences_exactly_equal']
+    assert facts['stl_preferences_verified'] is False
+    assert facts['checked_fields'] == ['dimension_input', 'step_ap']
+
+
+@pytest.mark.parametrize('after', [
+    {'stl_deviation': 2., 'dimension_input': 1, 'step_ap': 214},
+    {'stl_deviation': 2., 'dimension_input': True, 'step_ap': 242},
+    {'stl_deviation': 2., 'dimension_input': True},
+    {'stl_deviation': 2., 'dimension_input': True, 'step_ap': 214, 'stl_unrecognized': 1},
+])
+def test_non_stl_mismatch_or_unknown_field_still_blocks(after):
+    before = {'stl_deviation': 1., 'dimension_input': True, 'step_ap': 214}
+    report = {}
+    with pytest.raises(AssertionError):
+        diagnostics.assert_non_stl_preferences(lambda: after, before, report, 'comparison')
+    facts = report['comparison']
+    assert facts['scope_changed_fields'] and not facts['scope_exactly_equal']
+    assert facts['before'] == before and facts['after'] == after
+
+
+def test_non_stl_read_failure_preserves_original_error_without_another_read():
+    error, calls, report = OSError('Snapshot failed'), [], {}
+    def fail():
+        calls.append('read')
+        raise error
+    with pytest.raises(OSError) as raised:
+        diagnostics.assert_non_stl_preferences(fail, {'dimension_input': True}, report, 'comparison')
+    assert raised.value is error and calls == ['read']
+    assert not report['comparison']['snapshot_read']
+
+
+def test_non_stl_scope_cannot_accept_an_empty_check():
+    with pytest.raises(ValueError):
+        diagnostics.assert_non_stl_preferences(lambda: {'stl_deviation': 2.},
+            {'stl_deviation': 1.}, {}, 'comparison')

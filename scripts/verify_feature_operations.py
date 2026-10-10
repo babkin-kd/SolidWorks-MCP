@@ -27,6 +27,7 @@ from solidworks_mcp.build_info import source_digest
 from verify_document_reads import native_snapshot
 from verify_geometry_reads import fixtures
 from verify_export_operations import application_preferences, ui_snapshot, user_file_metadata
+from verifier_dimension_diagnostics import assert_non_stl_preferences
 from verifier_lifecycle import ToolSpec, open_supervised_session
 
 
@@ -299,9 +300,12 @@ async def check(state):
     assert cleanup.can_cleanup(), 'Retain fixtures without original native baseline reads.'
     assert native_snapshot() == original
     assert ui_snapshot(sw, module) == original_ui
-    assert application_preferences(sw) == original_preferences
+    assert_non_stl_preferences(lambda: application_preferences(sw), original_preferences,
+                               report, 'original_preferences_comparison')
     assert user_file_metadata(original) == original_files
-    report.update(accepted=True, original_document_baseline_restored=True, original_preferences_and_ui_restored=True)
+    report.update(accepted=True, original_document_baseline_restored=True, original_preferences_and_ui_restored=False,
+                  non_stl_preferences_and_ui_restored=True, stl_preferences_verified=False,
+                  preference_acceptance_scope='application_preferences_except_stl_v1')
     return report
 
 

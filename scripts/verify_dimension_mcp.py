@@ -29,7 +29,7 @@ from verify_document_reads import native_snapshot
 from verify_export_operations import application_preferences, exact_solid, native_extrema_m, ui_snapshot, user_file_metadata
 from verify_geometry_reads import fixtures
 from verifier_lifecycle import ToolSpec, open_supervised_session
-from verifier_dimension_diagnostics import assert_preference_snapshot, write_failure_report
+from verifier_dimension_diagnostics import assert_non_stl_preferences, write_failure_report
 
 
 TOOLS = {'dimension_list', 'dimension_get', 'dimension_set_value'}
@@ -189,7 +189,9 @@ async def check(state, internal_report, *, failure_report=None):
     report = failure_report if failure_report is not None else {}
     report.update(provenance, public_mcp_dimension_acceptance=False,
                   original_document_baseline_restored=False,
-                  original_preferences_and_ui_restored=False)
+                  original_preferences_and_ui_restored=False,
+                  non_stl_preferences_and_ui_restored=False, stl_preferences_verified=False,
+                  preference_acceptance_scope='application_preferences_except_stl_v1')
     params = StdioServerParameters(command=str(Path(sys.executable).with_name('solidworks-mcp-v2.exe')),
                                    args=['--state-dir', str(state)])
     cleanup = SessionCleanupGate()
@@ -221,7 +223,7 @@ async def check(state, internal_report, *, failure_report=None):
                 assert current[2] == target_identity, 'MCP implicitly activated another document.'
                 assert [row for row in current[3] if row[0] != target_identity] == other_states
                 assert ui_snapshot(sw, module) == setup_ui
-                assert_preference_snapshot(lambda: application_preferences(sw), setup_preferences,
+                assert_non_stl_preferences(lambda: application_preferences(sw), setup_preferences,
                                            report, 'owned_fixture_preferences_comparison')
                 return {'dimensions_mm': size, 'volume_mm3': volume}
 
@@ -350,11 +352,12 @@ async def check(state, internal_report, *, failure_report=None):
     assert cleanup.can_cleanup(), 'Retain fixtures without original native baseline reads.'
     assert native_snapshot() == original
     assert ui_snapshot(sw, module) == original_ui
-    assert_preference_snapshot(lambda: application_preferences(sw), original_preferences,
+    assert_non_stl_preferences(lambda: application_preferences(sw), original_preferences,
                                report, 'original_preferences_comparison')
     assert user_file_metadata(original) == original_files
     report.update(public_mcp_dimension_acceptance=True, original_document_baseline_restored=True,
-                  original_preferences_and_ui_restored=True, actual_native_failure_or_rollback_tested_via_mcp=False)
+                  original_preferences_and_ui_restored=False, non_stl_preferences_and_ui_restored=True,
+                  stl_preferences_verified=False, actual_native_failure_or_rollback_tested_via_mcp=False)
     return report
 
 

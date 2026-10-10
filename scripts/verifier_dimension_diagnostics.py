@@ -45,6 +45,43 @@ def assert_preference_snapshot(reader, expected, report, field):
         raise AssertionError('Independent application preferences changed; private snapshots retained.')
 
 
+# Explicit user deferral: never infer exclusions from a prefix or caller input.
+DEFERRED_STL_FIELDS = frozenset({
+    'stl_units', 'stl_binary', 'stl_dont_translate_to_positive', 'stl_show_info',
+    'stl_preview', 'stl_quality', 'stl_deviation', 'stl_angle',
+})
+
+
+def assert_non_stl_preferences(reader, expected, report, field):
+    """Retain full raw evidence; require exact equality outside deferred STL."""
+    before = _snapshot(expected)
+    facts = {'scope': 'application_preferences_except_stl_v1',
+             'excluded_fields': sorted(DEFERRED_STL_FIELDS),
+             'stl_preferences_verified': False, 'cause_inferred': False,
+             'before': before, 'after': None, 'snapshot_read': False,
+             'scope_exactly_equal': False, 'all_preferences_exactly_equal': False}
+    report[field] = facts
+    try:
+        after = _snapshot(reader())
+    except BaseException as error:
+        facts['snapshot_read_error_type'] = type(error).__name__[:80]
+        raise
+    facts.update(after=after, snapshot_read=True)
+    changed = [key for key in sorted(before.keys() | after.keys())
+               if key not in before or key not in after
+               or type(before[key]) is not type(after[key]) or before[key] != after[key]]
+    checked = sorted((before.keys() | after.keys()) - DEFERRED_STL_FIELDS)
+    if not checked:
+        raise ValueError('Non-STL preference scope must not be empty.')
+    scoped_changed = [key for key in changed if key not in DEFERRED_STL_FIELDS]
+    facts.update(changed_fields=changed, checked_fields=checked,
+                 scope_changed_fields=scoped_changed,
+                 scope_exactly_equal=not scoped_changed,
+                 all_preferences_exactly_equal=not changed)
+    if scoped_changed:
+        raise AssertionError('Independent non-STL preferences changed; private snapshots retained.')
+
+
 def write_failure_report(path, report, primary_error):
     """A failed diagnostic write must not mask the original verifier failure."""
     report.update(accepted=False, public_mcp_dimension_acceptance=False,
