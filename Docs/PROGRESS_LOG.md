@@ -1,5 +1,26 @@
 # Ход разработки
 
+## 10.10.2026 — dev58: линейный массив принят через native и MCP
+
+Завершён ограниченный инженерный блок нового native LPattern существующего
+сквозного отверстия. Доменная часть и MCP-фасад включены в один итоговый wheel:
+36 инструментов /11 мутаций. Pure3023 passed /323 CAD deselected, installed
+metadata36 принят. **Internal native8 /public MCP9 passed, оба accepted=true**.
+
+Проверены X3/шаг10 (V7151,7699835307585 мм³, A3195,8406743523146 мм²,8/18/9),
+Y2/шаг6,5 с полной формой перед восстановлением, сохранение исходных эскизов/
+шести размеров, stale/material prewrite, request_id, полные BREP и independent
+native mass, диагностический circle native_id. Persistent body round-trip выдержал
+реальный AccessSelections rollback. Свои документы закрыты, baseline пуст/free.
+
+Источник wheel `a03e40bc533d889aa85c5dd32535b1bc40e249b3`, SHA256 `88260b523c9cb386eb2d0eef4b74fda9105bd9ab86dba2a095beb8759a19912e`,
+digest `c2f71e0cafaa1e3ad927d6d69e06cb404f3541902f73e63654d02ac07244eec2`.
+Отчёты: `work/native-pattern-dev58-1/report.json`,
+`work/native-pattern-mcp-dev58-1/report.json`; контракт [PART_PATTERN.md](PART_PATTERN.md).
+Dev57 остаётся непринятым, его unknown/journal и аудит очистки сохранены.
+Все стадии открыты; импорт/экспорт отложены. Один агент, без push/CI.
+
+
 ## 10.10.2026 — массив отверстий: dev57 не принят, исправление dev58
 
 Доменная операция, native-адаптер и MCP-фасад одномерного массива подготовлены

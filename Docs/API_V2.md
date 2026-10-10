@@ -2,14 +2,15 @@
 
 Рабочий исходник — **кандидат dev58**: добавлены
 `part_prepare_linear_hole_pattern` и `part_create_linear_hole_pattern`, каталог
-36 инструментов /11 мутаций. Pure3020 passed /323 CAD deselected, installed
-metadata36 принят. Native-приёмка массива пока выполняется; последним принятым
-инженерным блоком остаётся dev56. Новый контракт: [PART_PATTERN.md](PART_PATTERN.md).
-Исправлено дублирующее поле native_id окружности; его CAD-проверка входит в блок
+36 инструментов /11 мутаций. Pure3023 passed /323 CAD deselected, installed
+metadata36 принят; **internal native8 /public MCP9 passed, оба accepted=true**
+на одном точном wheel. Сохранение исходной модели, own cleanup и free baseline
+подтверждены. Новый контракт: [PART_PATTERN.md](PART_PATTERN.md).
+Исправлено дублирующее поле native_id окружности; его CAD-проверка прошла внутри блока
 массива. Все стадии и импорт/экспорт сохраняют согласованный статус.
 
 
-Текущий установленный кандидат **dev56** добавляет
+Ранее принятый установленный кандидат **dev56** добавляет
 `part_prepare_hole_dimension_change` и `part_set_hole_dimension`: собственные
 X/Y центра и диаметр существующего единственного сквозного отверстия в явной
 прямоугольной базе. Каталог **34 инструмента / 10 мутаций**, новая область
@@ -17,8 +18,8 @@ X/Y центра и диаметр существующего единствен
 deselected**, installed metadata принят; **internal native10 / public MCP9
 passed, оба accepted=true** на одном точном wheel. Контрольные документы закрыты,
 baseline восстановлен. Контракт: [PART_HOLE_EDIT.md](PART_HOLE_EDIT.md).
-Стадии остаются открытыми; следующим исправляется дублирующее diagnostic-поле
-native_id окружности, описанное в контракте. Следующее описание dev55 сохраняет
+Стадии остаются открытыми. Выявленное в dev56 diagnostic-поле
+native_id окружности исправлено и подтверждено в native/MCP-блоке dev58. Следующее описание dev55 сохраняет
 предыдущий принятый результат, отдельный от dev56.
 
 Ранее установленный **dev55** принят в ограниченной инженерной цепочке новая деталь → пластина40 × 20 × 10 мм → Ø6 при X=10/Y=10. **2906 pure passed, 323 CAD deselected; metadata32 tools; internal native10 / public MCP stdio7 passed, оба accepted=true** на одном точном wheel. Общий guard проверен также на толщине12→10, русском rename, busy-отказе, stale и scoped restoration после намеренного сбоя. Собственные контрольные документы закрыты, CommandInProgress восстановлен, сессия пуста/free. Новых инструментов нет: каталог32/9; рабочая v1 и исторические wheel сохранены. Стадии открыты. Для model-мутаций собственный CommandInProgress включается после durable checkpoint; existing True отклоняется как application_busy без записи, unconfirmed release оставляет unknown/application hold. Подготовительные read jobs не переключают флаг. Приёмка dev55 относится к названным native-сценариям, не распространяется автоматически на экспорт или все прошлые операции. Точные артефакты и времена: [ENGINEERING_BENCHMARKS.md](ENGINEERING_BENCHMARKS.md).

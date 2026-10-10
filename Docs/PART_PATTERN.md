@@ -1,7 +1,11 @@
 # Линейный массив сквозных отверстий
 
-Кандидат dev58, native-приёмка пока не выполнена. Последний принятый блок —
-редактор отверстия dev56; его результаты не переносятся на новый wheel.
+**Dev58 принят в ограниченном инженерном блоке:** 3023 pure passed /323 CAD
+deselected; installed metadata36 инструментов /11 мутаций. На одном точном wheel
+internal native8 и public MCP9 passed, оба accepted=true. Подтверждены массив
+X3/шаг10, массив Y2/шаг6,5 с восстановлением, stale, запас материала, request_id
+и исправленный native_id окружности. Свои документы закрыты, baseline восстановлен.
+Предыдущий dev56 остаётся отдельным принятым результатом редактора отверстия.
 Все три стадии PLAN.md остаются открыты. Импорт и экспорт отложены.
 
 ## Инженерный сценарий
@@ -86,3 +90,27 @@ read-only аудит подтвердил все terminal jobs, собствен
 round-trip к текущему IBody2 и native IsSamePersistentID. Полный BREP/источники
 по-прежнему обязательны. Три регрессии проверяют замену обёртки того же тела,
 отказ чужому persistent body при одинаковых массе/имени и scalar read без rollback.
+
+
+## Точная приёмка dev58
+
+- Чистый источник wheel: `a03e40bc533d889aa85c5dd32535b1bc40e249b3`.
+- Wheel SHA256: `88260b523c9cb386eb2d0eef4b74fda9105bd9ab86dba2a095beb8759a19912e`.
+- Source digest: `c2f71e0cafaa1e3ad927d6d69e06cb404f3541902f73e63654d02ac07244eec2`.
+- Pure: `work/pure-dev58-final.log`, 3023 passed /323 CAD deselected; 33,41 с.
+- Installed metadata: `work/metadata-dev58-1.report.json`, accepted=true, CAD не вызывался.
+- Internal: `work/native-pattern-dev58-1/report.json`, scope
+  `internal_linear_through_hole_pattern_native_v1`, 8 passed, accepted=true.
+- Public SDK/stdio: `work/native-pattern-mcp-dev58-1/report.json`, scope
+  `public_linear_through_hole_pattern_native_v1`, 9 passed, accepted=true.
+
+Итоговая пластина40 ×20 ×10 мм: три отверстия Ø6, X=10/20/30 мм, Y=10 мм;
+V=7151,7699835307585 мм³, A=3195,8406743523146 мм², census8/18/9.
+Проверены полные контуры и стенки всех отверстий, native параметры и независимые
+меры. Сценарий Y2/шаг6,5 доказывает полную ожидаемую форму перед scoped deletion
+и точное восстановление исходной одноотверстной базы. Native IDs окружности и
+периодической точки различаются, key окружности соответствует её native_id.
+
+Приёмка относится к названным ограниченным сценариям и точному wheel. Пропущенные
+CAD-тесты, произвольные массивы и все исторические CAD-операции на dev58 не
+объявляются пройденными. Общие стадии PLAN.md остаются открыты.
