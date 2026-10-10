@@ -446,3 +446,71 @@ def test_untracked_dependency_is_not_implicitly_adopted():
     with pytest.raises(RuntimeError, match='outside the captured'):
         cleanup.cleanup()
     assert app.closes == []
+
+
+def lazy_scope(app):
+    def children(document):
+        for child in document.children:
+            if child not in app.documents:
+                app.documents.append(child)
+        return document.children
+    return ImportDocumentCleanup(app, lambda: list(app.documents), lambda d: d.token,
+                                 lambda: True, children)
+
+
+def test_lazy_dependencies_are_captured_from_native_inventory_before_close():
+    app = Application()
+    cleanup = lazy_scope(app)
+    root, inner, part = Document('Сборка', 2), Document('Подсборка', 2), Document('Деталь')
+    root.children, inner.children = [inner], [part]
+    app.documents.append(root)
+    cleanup.cleanup()
+    assert app.closes == ['Сборка', 'Подсборка', 'Деталь'] and app.documents == []
+
+
+def test_lazy_preexisting_children_are_protected_by_initial_inventory():
+    root, part = Document('Рабочая сборка', 2), Document('Рабочая деталь')
+    root.children = [part]
+    app = Application([root])
+    cleanup = lazy_scope(app)
+    app.documents.append(Document('Импортированная деталь'))
+    cleanup.cleanup()
+    assert app.documents == [root, part] and app.closes == ['Импортированная деталь']
+
+
+def test_dependency_inventory_growth_is_bounded_before_close():
+    app = Application()
+    cleanup = scope(app)
+    app.documents.append(Document('Сборка', 2))
+    calls = []
+    def children(document):
+        calls.append(document)
+        app.documents.append(Document('Деталь ' + str(len(calls))))
+        return ()
+    cleanup.child_documents = children
+    with pytest.raises(RuntimeError, match='did not stabilize'):
+        cleanup.cleanup()
+    assert app.closes == [] and len(calls) == 255
+
+
+def test_dependency_resolution_cannot_hide_changes_to_original():
+    original = Document('Рабочая')
+    app = Application([original])
+    cleanup = scope(app)
+    app.documents.append(Document('Сборка', 2))
+    def children(document):
+        original.stamp += 1
+        return ()
+    cleanup.child_documents = children
+    with pytest.raises(RuntimeError, match='changed during dependency inventory'):
+        cleanup.cleanup()
+    assert app.closes == []
+
+
+def test_foreign_guard_does_not_resolve_dependencies():
+    app = Application([Document('Рабочая сборка', 2)])
+    cleanup = ImportDocumentCleanup(app, lambda: list(app.documents), lambda d: d.token,
+                                    lambda: False, lambda d: pytest.fail('Foreign interval.'))
+    with pytest.raises(RuntimeError, match='exclusive automation interval'):
+        cleanup.cleanup()
+    assert app.closes == []

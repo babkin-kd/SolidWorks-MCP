@@ -18,6 +18,26 @@ class ImportDocumentCleanup:
         self.before = self.snapshot()
 
     def snapshot(self):
+        current = self.capture_documents()
+        if not self.guarded:
+            return current
+        # GetModelDoc2 can materialize component documents in GetDocuments.
+        # Resolve to a bounded fixed point, but own only documents actually
+        # reported by that inventory, never an arbitrary returned dependency.
+        for _ in range(8):
+            if not self.owned_interval() or not bool(self.application.CommandInProgress):
+                raise RuntimeError('Import automation interval ended during inventory.')
+            for document in self.documents():
+                tuple(self.child_documents(document))
+            after = self.capture_documents()
+            if any(self.find(after, token) != facts for token, facts in current):
+                raise RuntimeError('Import document changed during dependency inventory.')
+            if len(after) == len(current):
+                return after
+            current = after
+        raise RuntimeError('Import document inventory did not stabilize; documents were retained.')
+
+    def capture_documents(self):
         result = []
         for document in self.documents():
             token = self.identity(document)  # Retain canonical IUnknown; no pointer reuse.
