@@ -15,7 +15,7 @@ TOOLS = frozenset({'system_get_info', 'job_get', 'job_list', 'job_cancel',
     'document_list', 'document_get', 'body_list', 'face_list', 'edge_list', 'geometry_get',
     'feature_list', 'feature_get', 'feature_rename', 'dimension_list', 'dimension_get',
     'dimension_set_value', 'export_prepare', 'export_part', 'part_prepare_base_extrusion', 'part_create_base_extrusion',
-    'document_list_templates', 'document_prepare_create_part', 'document_create_part', 'sketch_get', 'sketch_prepare_dimension_change', 'sketch_set_dimension', 'part_prepare_corner_cut', 'part_create_corner_cut', 'part_prepare_base_revolve', 'part_create_base_revolve', 'part_prepare_through_hole', 'part_create_through_hole', 'part_prepare_hole_dimension_change', 'part_set_hole_dimension', 'part_prepare_linear_hole_pattern', 'part_create_linear_hole_pattern'})
+    'document_list_templates', 'document_prepare_create_part', 'document_create_part', 'sketch_get', 'sketch_prepare_dimension_change', 'sketch_set_dimension', 'part_prepare_corner_cut', 'part_create_corner_cut', 'part_prepare_base_revolve', 'part_create_base_revolve', 'part_prepare_through_hole', 'part_create_through_hole', 'part_prepare_hole_dimension_change', 'part_set_hole_dimension', 'part_prepare_linear_hole_pattern', 'part_create_linear_hole_pattern', 'part_prepare_edge_fillet', 'part_create_edge_fillet'})
 
 
 def installed_identity(wheel):
@@ -52,10 +52,10 @@ def verify_metadata(tools, info, wheel):
             'MCP source digest mismatch.')
     require(info['schema_version'] == '2.0-dev', 'Unexpected API schema version.')
     require(info['mutation_revision_scopes'] == ['part_feature_tree_v1', 'part_dimension_values_v1',
-                                                 'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1', 'single_base_circular_through_hole_v1', 'single_base_circular_through_hole_dimension_v1', 'single_base_linear_through_hole_pattern_v1'],
+                                                 'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1', 'single_base_circular_through_hole_v1', 'single_base_circular_through_hole_dimension_v1', 'single_base_linear_through_hole_pattern_v1', 'single_base_selected_edge_fillet_v1'],
             'Unexpected mutation revision scopes.')
     require(info['development_candidate'] is True, 'Expected a development candidate.')
-    require(info['implemented_mutations'] == ['feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern'],
+    require(info['implemented_mutations'] == ['feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet'],
             'Unexpected implemented mutation catalog.')
     require(info['capabilities']['pdm'] is False and info['capabilities']['simulation'] is False,
             'Unimplemented modules must not be advertised.')

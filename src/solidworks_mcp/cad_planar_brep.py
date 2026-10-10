@@ -131,9 +131,9 @@ class _Reader:
         self.identity_comparisons = 0
         self.polygon_comparisons = 0
 
-    def call(self, obj, name):
+    def call(self, obj, name, *arguments):
         try:
-            return getattr(obj, name)()
+            return getattr(obj, name)(*arguments)
         except PlanarBrepError:
             raise
         except Exception as exc:

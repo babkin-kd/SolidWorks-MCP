@@ -46,6 +46,13 @@ class Adapter(SolidWorksDocuments):
     inject_cut = False
     inject_edit = False
     inject_pattern = False
+    inject_fillet = False
+
+    def create_edge_fillet(self,*args):
+        super().create_edge_fillet(*args)
+        if self.inject_fillet:
+            self.inject_fillet=False
+            raise RuntimeError('Known verifier failure after exact own fillet retention and rebuild.')
 
     def create_linear_hole_pattern(self,*args):
         super().create_linear_hole_pattern(*args)
@@ -73,12 +80,13 @@ def main():
     parser.add_argument('--run-solidworks', action='store_true')
     parser.add_argument('--hole-edit-only', action='store_true', help='Complete editing block; older guard/cut fault cases are not run or counted.')
     parser.add_argument('--pattern-only',action='store_true',help='Complete native linear hole pattern block; hole-edit cases are not counted.')
+    parser.add_argument('--fillet-only',action='store_true',help='Complete native selected-edge fillet block; hole/pattern cases are not counted.')
     parser.add_argument('--wheel', type=Path, required=True)
     parser.add_argument('--expected-version', required=True)
     parser.add_argument('--expected-git-sha', required=True)
     parser.add_argument('--state-dir', type=Path, required=True)
     args = parser.parse_args()
-    if args.pattern_only and args.hole_edit_only:parser.error('Choose one engineering block.')
+    if sum((args.pattern_only,args.hole_edit_only,args.fillet_only))>1:parser.error('Choose one engineering block.')
     if not args.run_solidworks: parser.error('Explicit native opt-in required.')
     assert not os.environ.get('PYTHONPATH'), 'Installed package only, without source PYTHONPATH.'
     package = Path(solidworks_mcp.__file__).resolve().parent
@@ -90,7 +98,7 @@ def main():
     private = (Path(__file__).resolve().parents[1] / 'work').resolve()
     assert state.is_relative_to(private) and state != private
     state.mkdir(parents=True, exist_ok=False)
-    report = {'accepted': False, 'scope': ('internal_linear_through_hole_pattern_native_v1' if args.pattern_only else 'internal_circular_through_hole_edit_native_v1' if args.hole_edit_only else 'internal_circular_through_hole_native_v1'), 'wheel': wheel,
+    report = {'accepted': False, 'scope': ('internal_selected_edge_fillet_native_v1' if args.fillet_only else 'internal_linear_through_hole_pattern_native_v1' if args.pattern_only else 'internal_circular_through_hole_edit_native_v1' if args.hole_edit_only else 'internal_circular_through_hole_native_v1'), 'wheel': wheel,
               'verifier_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               'cases': [], 'owned_documents': [], 'public_mcp_creation_accepted': False}
     def persist():
@@ -186,6 +194,16 @@ def main():
             context={key: arguments[key] for key in ('document_id', 'configuration', 'expected_revision')},
             mutates=True, pass_operation_id=True, verify=lambda result: result['verified'] is True)
         record('plate_in_server_created_document_40_20_10', built)
+        if args.fillet_only:
+            from verifier_part_fillet import exercise_fillet
+            report['fillet_helper_sha256']=hashlib.sha256(Path(__file__).with_name('verifier_part_fillet.py').read_bytes()).hexdigest()
+            sketch_id=next(row['object_id'] for row in dimensions.features.list(second_id,'Основная')['items'] if row['feature_type']=='ProfileFeature')
+            exercise_fillet(adapter,documents,dimensions,store,runner,gate,second_model,
+                dict(document_id=second_id,configuration='Основная',object_id=sketch_id),record,report)
+            snap,facts=source_state(sw,module)
+            assert [(row,fact) for row,fact in zip(snap[3],facts) if row[0]==first_identity]==original
+            report['core_suite_passed']=True
+            return
         if not (args.hole_edit_only or args.pattern_only):
             # The shared guard changed: exercise existing dimension and rename
             # paths on this same fixture, without another physical acceptance set.

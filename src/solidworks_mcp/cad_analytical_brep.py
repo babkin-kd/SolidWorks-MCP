@@ -3,9 +3,10 @@
 from .cad_planar_brep import PlanarBrepLimits, _Reader, planar_body_snapshot
 from .cad_cylinder_brep import cylinder_body_snapshot
 from .cad_hole_brep import hole_body_snapshot
+from .cad_arc_brep import finite_arc_body_snapshot
 
 
-ANALYTICAL_BREP_SCOPE = 'planar_cylinder_or_through_hole_body_set_v2'
+ANALYTICAL_BREP_SCOPE = 'planar_cylinder_hole_or_edge_round_body_set_v3'
 
 
 def analytical_body_snapshot(body, *, identity, wrap=None, limits=None):
@@ -21,4 +22,6 @@ def analytical_body_snapshot(body, *, identity, wrap=None, limits=None):
     holes = census[2] - 6
     if holes >= 1 and census == (8, 12 + 2 * holes, 6 + holes):
         capture = hole_body_snapshot
+    if census == (10,15,7):
+        capture = finite_arc_body_snapshot
     return capture(body, identity=identity, wrap=wrap, limits=limits)

@@ -130,6 +130,12 @@ def _circle_inside(r, circle, polygon, normal):
 
 
 def hole_body_snapshot(body, *, identity, wrap=None, limits=None):
+    return _mixed_body_snapshot(body,identity=identity,wrap=wrap,limits=limits)
+
+
+def _mixed_body_snapshot(body, *, identity, wrap=None, limits=None, finite_arcs=False):
+    if finite_arcs:
+        from .cad_arc_brep import _arc, _validate_planar_arcs, _validate_cylinder_quad, ARC_BREP_SCOPE
     r = _Reader(identity,wrap,limits or PlanarBrepLimits())
     body = r.obj(body,'IBody2')
     body_key = r.key(body,'IBody2')
@@ -163,16 +169,17 @@ def hole_body_snapshot(body, *, identity, wrap=None, limits=None):
         line,circle = r.flag(r.call(curve,'IsLine'),'IsLine'),r.flag(r.call(curve,'IsCircle'),'IsCircle')
         if line == circle:
             _fail('Every native boundary edge must be exactly a line or full circle.','hole_brep_unsupported')
-        record = _line(r,edge,points,vertex_index) if line else _circle(r,edge)
+        record = _line(r,edge,points,vertex_index) if line else (
+            _arc(r,edge,points,vertex_index) if finite_arcs else _circle(r,edge))
         record.update(tolerance=r.tolerance(edge),uses=[])
-        if line:
+        if line or finite_arcs:
             if record['key'] in pairs:
                 _fail('Distinct finite native edges have identical endpoints.')
             pairs.add(record['key'])
             incidence[record['start']].add(key)
             incidence[record['end']].add(key)
         edge_data[key] = record
-    if not any(row['kind']=='circle' for row in edge_data.values()):
+    if not any(row['kind']==('arc' if finite_arcs else 'circle') for row in edge_data.values()):
         _fail('This scope requires at least one cylindrical through hole.','hole_brep_unsupported')
     edge_order = sorted(edge_keys,key=lambda key:edge_data[key]['key'])
     if len({edge_data[key]['key'] for key in edge_keys}) != len(edge_keys):
@@ -194,7 +201,7 @@ def hole_body_snapshot(body, *, identity, wrap=None, limits=None):
         parameters = r.numbers(r.prop(surface,'PlaneParams' if plane else 'CylinderParams'),6 if plane else 7,'surface parameters')
         _unit(parameters[:3] if plane else parameters[3:6])
         sense = r.flag(r.call(face,'FaceInSurfaceSense'),'FaceInSurfaceSense')
-        if cylinder and (not sense or parameters[6] <= 0):
+        if cylinder and ((not finite_arcs and not sense) or parameters[6] <= 0):
             _fail('A through-hole cylinder requires a positive radius and inward native orientation.','hole_brep_unsupported')
         count = r.count(face,'GetLoopCount',r.limits.max_loops)
         if len(loop_data)+count > r.limits.max_loops:
@@ -249,16 +256,16 @@ def hole_body_snapshot(body, *, identity, wrap=None, limits=None):
                 _fail('The complete oriented coedge cycle disagrees with enumeration.')
             periodic = count == 1
             if (periodic and edge_data[coedges[ordered[0]]['edge']]['kind'] != 'circle') or (
-                    not periodic and any(edge_data[coedges[key]['edge']]['kind'] != 'line' for key in ordered)):
+                    not periodic and not finite_arcs and any(edge_data[coedges[key]['edge']]['kind'] != 'line' for key in ordered)):
                 _fail('A supported loop is one full circle or a complete finite linear polygon.','hole_brep_unsupported')
             loop_vertices = [] if periodic else [coedges[key]['start'] for key in ordered]
             if not periodic:
-                if len(set(loop_vertices)) != count or not outer or not plane:
+                if len(set(loop_vertices)) != count or not outer or (not finite_arcs and not plane):
                     _fail('A planar finite outer loop must visit every native vertex exactly once.','hole_brep_unsupported')
                 for a,b in zip(ordered,ordered[1:]+ordered[:1]):
                     if coedges[a]['end'] != coedges[b]['start']:
                         _fail('Native finite coedges do not form a continuous oriented loop.')
-                if any(not _plane_consistent(points[key],parameters,r.limits.consistency_tolerance_m) for key in loop_vertices):
+                if plane and any(not _plane_consistent(points[key],parameters,r.limits.consistency_tolerance_m) for key in loop_vertices):
                     _fail('A polygon vertex does not lie on its exact planar surface.')
             elif outer != cylinder:
                 _fail('Circular cap loops must be inner; the cylindrical boundaries must be outer.')
@@ -281,6 +288,8 @@ def hole_body_snapshot(body, *, identity, wrap=None, limits=None):
             if len(linear) != 1:
                 _fail('Each planar face requires one complete finite outer polygon.','hole_brep_unsupported')
             _validate_polygons(r,linear,parameters[:3],sense,points)
+            if finite_arcs:
+                _validate_planar_arcs(r,linear[0],parameters,sense,coedges,edge_data)
             circles = [edge_data[coedges[loop_data[key]['ordered'][0]]['edge']]['parameters']
                        for key in face_loops if loop_data[key]['periodic']]
             outward = tuple(-value if sense else value for value in parameters[:3])
@@ -296,13 +305,18 @@ def hole_body_snapshot(body, *, identity, wrap=None, limits=None):
                     radius = Fraction(a[6])+Fraction(b[6])+Fraction(r.limits.consistency_tolerance_m)
                     if sum(value*value for value in delta) <= radius**2:
                         _fail('Circular inner loops overlap, nest or touch.')
+        elif finite_arcs:
+            if len(linear)!=1 or len(face_loops)!=1:
+                _fail('Finite cylindrical wall requires one complete closed outer loop.','arc_brep_unsupported')
+            _validate_cylinder_quad(r,linear[0],parameters,sense,points,coedges,edge_data)
         elif linear or len(face_loops) != 2:
             _fail('A periodic cylindrical wall must have exactly two full circular boundary loops.','hole_brep_unsupported')
         face_loops.sort(key=lambda key:loop_data[key]['key'])
         face_data[face_key] = {'kind':surface_kind,'parameters':parameters,'sense':sense,'loops':face_loops,
             'native':face,'edges':face_edges,'key':(0 if plane else 1,_hex(parameters),sense,tuple(loop_data[key]['key'] for key in face_loops))}
 
-    _validate_holes(r,face_data,loop_data,coedges,edge_data)
+    if not finite_arcs:
+        _validate_holes(r,face_data,loop_data,coedges,edge_data)
     for edge,key in zip(edges,edge_keys):
         uses = edge_data[key]['uses']
         _,declared = r.array(edge,'GetCoEdges','ICoEdge',2)
@@ -319,7 +333,7 @@ def hole_body_snapshot(body, *, identity, wrap=None, limits=None):
     positions = {use:[face_index[face],index,offset] for face in face_order
                  for index,loop in enumerate(face_data[face]['loops']) for offset,use in enumerate(loop_data[loop]['ordered'])}
     _close_census(r,body,census,counts,stamp,vertices,vertex_keys,edges,edge_keys,faces,face_keys,face_data,loop_data,coedges)
-    return {'scope':HOLE_BREP_SCOPE,'coordinate_frame':'part_model','length_unit':'m',
+    return {'scope':ARC_BREP_SCOPE if finite_arcs else HOLE_BREP_SCOPE,'coordinate_frame':'part_model','length_unit':'m',
         'number_encoding':'ieee754_binary64_hex_exact','vertices':[list(_hex(points[key])) for key in vertex_order],
         'vertex_tolerances':[tolerances[key] for key in vertex_order],
         'edges':[{'kind':edge_data[key]['kind'],

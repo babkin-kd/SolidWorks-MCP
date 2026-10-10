@@ -28,9 +28,10 @@ from verifier_lifecycle import ToolSpec, open_supervised_session
 from verify_dimension_mcp import SessionCleanupGate, require_native_cleanup, call, succeeded
 from verify_part_mcp import TOOL_SPECS as PART_SPECS
 from verifier_part_pattern_mcp import TOOL_SPECS as PATTERN_SPECS
+from verifier_part_fillet_mcp import TOOL_SPECS as FILLET_SPECS
 
 
-TOOL_SPECS = {**PART_SPECS, **PATTERN_SPECS,
+TOOL_SPECS = {**PART_SPECS, **PATTERN_SPECS, **FILLET_SPECS,
     'dimension_list': ToolSpec('dimension.list',False,argument_defaults={'limit':100,'cursor':''}),
     'part_prepare_hole_dimension_change': ToolSpec('part.prepare_hole_dimension_change',False,float_arguments=frozenset({'value_mm'})),
     'part_set_hole_dimension': ToolSpec('part.set_hole_dimension',True,float_arguments=frozenset({'value_mm'}),prewrite_failure_codes=frozenset({'stale_revision'})),
@@ -52,7 +53,7 @@ TOOL_SPECS = {**PART_SPECS, **PATTERN_SPECS,
         constant_args={'configuration': ''}, prewrite_failure_codes=frozenset({'stale_revision'}))}
 
 
-async def exercise(state, sw, module, owned, report, persist, gate, pattern_only=False):
+async def exercise(state, sw, module, owned, report, persist, gate, pattern_only=False,fillet_only=False):
     params = StdioServerParameters(command=str(Path(sys.executable).with_name('solidworks-mcp-v2.exe')),
                                    args=['--state-dir', str(state / 'mcp')])
     @asynccontextmanager
@@ -64,7 +65,7 @@ async def exercise(state, sw, module, owned, report, persist, gate, pattern_only
                 assert info['build_matches_source'] is True and info['package_version'] == report['wheel']['package_version']
                 assert info['build']['git_sha'] == report['wheel']['git_sha'] and info['source_digest'] == report['wheel']['source_digest']
                 tools = (await raw.list_tools()).tools
-                assert len(tools) == 36 and all(tool.outputSchema for tool in tools)
+                assert len(tools) == 38 and all(tool.outputSchema for tool in tools)
                 assert set(TOOL_SPECS) <= {tool.name for tool in tools}
                 report['tool_count'] = len(tools)
                 yield raw
@@ -153,6 +154,12 @@ async def exercise(state, sw, module, owned, report, persist, gate, pattern_only
         check_first()
         tree = succeeded(await call(client, 'feature_list', **context))
         sketch_id = next(row['object_id'] for row in tree['items'] if row['feature_type']=='ProfileFeature')
+        if fillet_only:
+            from verifier_part_fillet_mcp import exercise_fillet
+            await exercise_fillet(client,context,sketch_id,prepared,second,module,record,report)
+            check_first()
+            report['core_suite_passed']=True
+            return
         arguments = dict(context, object_id=sketch_id, plane_object_id=plane['object_id'],
                          centre_x_mm=10., centre_y_mm=10., diameter_mm=6.)
         prepared = succeeded(await call(client, 'part_prepare_through_hole', **arguments))
@@ -219,12 +226,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-solidworks', action='store_true')
     parser.add_argument('--pattern-only',action='store_true')
+    parser.add_argument('--fillet-only',action='store_true')
     parser.add_argument('--wheel', type=Path, required=True)
     parser.add_argument('--expected-version', required=True)
     parser.add_argument('--expected-git-sha', required=True)
     parser.add_argument('--state-dir', type=Path, required=True)
     parser.add_argument('--internal-report', type=Path, required=True)
     args = parser.parse_args()
+    if args.pattern_only and args.fillet_only:parser.error('Choose one engineering block.')
     if not args.run_solidworks: parser.error('Explicit native opt-in required.')
     assert not os.environ.get('PYTHONPATH')
     package = Path(solidworks_mcp.__file__).resolve().parent
@@ -237,7 +246,13 @@ def main():
     assert all(internal['wheel'][key] == wheel[key] for key in ('git_sha','source_digest','package_version','wheel_sha256'))
     assert internal['fixtures_closed'] is True and internal['command_flag_baseline_restored'] is True
     assert internal['verifier_sha256'] == hashlib.sha256(Path(__file__).with_name('verify_part_hole.py').read_bytes()).hexdigest()
-    if args.pattern_only:
+    if args.fillet_only:
+        assert internal['scope']=='internal_selected_edge_fillet_native_v1' and internal['fillet_suite_passed'] is True
+        assert internal['fillet_helper_sha256']==hashlib.sha256(Path(__file__).with_name('verifier_part_fillet.py').read_bytes()).hexdigest()
+        assert {'new_part_from_empty_session','new_part_preserves_existing_document','plate_in_server_created_document_40_20_10',
+            'fillet_material_prewrite_rejected','fillet_stale_prewrite_rejected','fillet_known_failure_scoped_restoration',
+            'native_selected_edge_fillet_r2'}<={row['label'] for row in internal['cases'] if row['passed'] is True}
+    elif args.pattern_only:
         assert internal['scope']=='internal_linear_through_hole_pattern_native_v1' and internal['pattern_suite_passed'] is True
         assert internal['circle_native_id_metadata_fixed'] is True
         assert internal['pattern_helper_sha256']==hashlib.sha256(Path(__file__).with_name('verifier_part_pattern.py').read_bytes()).hexdigest()
@@ -258,7 +273,7 @@ def main():
     private = (Path(__file__).resolve().parents[1] / 'work').resolve()
     assert state.is_relative_to(private) and state != private
     state.mkdir(parents=True, exist_ok=False)
-    report = {'accepted': False, 'scope': 'public_linear_through_hole_pattern_native_v1' if args.pattern_only else 'public_circular_through_hole_native_v1', 'wheel': wheel,
+    report = {'accepted': False, 'scope': 'public_selected_edge_fillet_native_v1' if args.fillet_only else 'public_linear_through_hole_pattern_native_v1' if args.pattern_only else 'public_circular_through_hole_native_v1', 'wheel': wheel,
         'verifier_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), 'internal_report': str(args.internal_report),
         'cases': [], 'owned_documents': [], 'public_mcp_hole_accepted': False}
     def persist():
@@ -271,7 +286,7 @@ def main():
         assert not sw.GetDocuments() and sw.CommandInProgress is False, 'Empty/free native baseline required.'
         baseline = native_snapshot()
         report['preferences'] = application_preferences(sw)
-        asyncio.run(exercise(state, sw, module, owned, report, persist, gate,args.pattern_only))
+        asyncio.run(exercise(state, sw, module, owned, report, persist, gate,args.pattern_only,args.fillet_only))
     except BaseException as exc:
         report['failure'] = {'type': type(exc).__name__, 'message': str(exc)}
         raise

@@ -67,6 +67,11 @@ def test_public_hole_harness_tracks_all_literal_calls_before_sdk_dispatch():
         and any(isinstance(target,ast.Name) and target.id=='TOOL_SPECS' for target in node.targets))
     exec(compile(ast.Module(body=[helper_assignment],type_ignores=[]),'pattern_specs','exec'),namespace)
     namespace['PATTERN_SPECS']=namespace['TOOL_SPECS']
+    fillet=ast.parse((ROOT/'scripts/verifier_part_fillet_mcp.py').read_text(encoding='utf8'))
+    fillet_assignment=next(node for node in fillet.body if isinstance(node,ast.Assign)
+        and any(isinstance(target,ast.Name) and target.id=='TOOL_SPECS' for target in node.targets))
+    exec(compile(ast.Module(body=[fillet_assignment],type_ignores=[]),'fillet_specs','exec'),namespace)
+    namespace['FILLET_SPECS']=namespace['TOOL_SPECS']
     exec(compile(ast.Module(body=[assignment],type_ignores=[]),str(script),'exec'),namespace)
     specs=namespace['TOOL_SPECS']
     called={node.args[1].value for node in ast.walk(tree) if isinstance(node,ast.Call)
@@ -76,6 +81,12 @@ def test_public_hole_harness_tracks_all_literal_calls_before_sdk_dispatch():
         and isinstance(node.func,ast.Name) and node.func.id=='call' and len(node.args)>=2
         and isinstance(node.args[1],ast.Constant)}
     assert called<=specs.keys()
+    fillet_called={node.args[1].value for node in ast.walk(fillet) if isinstance(node,ast.Call)
+        and isinstance(node.func,ast.Name) and node.func.id=='call' and len(node.args)>=2
+        and isinstance(node.args[1],ast.Constant)}
+    assert fillet_called<=specs.keys()
+    assert specs['part_create_edge_fillet'].argument_defaults=={'feature_name':'Скругление ребра'}
+    assert specs['part_create_edge_fillet'].float_arguments==frozenset({'radius_mm'})
     assert specs['body_list'].constant_args=={'kind':'body'}
     assert specs['body_list'].argument_defaults=={'body_type':'all','limit':100,'cursor':''}
     assert specs['edge_list'].constant_args=={'kind':'edge'}
