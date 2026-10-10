@@ -20,6 +20,9 @@ class Adapter(DimensionsAdapter):
         self.frame = IDENTITY
         self.plane_hook = None
 
+    def part_creation_controls(self, wrapper):
+        return {'add_to_db': False, 'auto_solve': True, 'display_when_added': True, 'dimension_input': False}
+
     def dimension_geometry_snapshot(self, wrapper):
         return {'representation': 'fake_complete_empty_geometry',
                 'bodies': deepcopy(self.original(wrapper).state.get('bodies', []))}
