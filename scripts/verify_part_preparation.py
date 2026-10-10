@@ -120,7 +120,8 @@ def main():
                 assert error is None and result['native_creation_available'] is False
                 assert result['expected_geometry']['volume_mm3'] == parameters['width_mm'] * parameters['height_mm'] * parameters['depth_mm']
             confirm_source(before, source_state(sw, module))
-            assert_non_stl_preferences(before_preferences, application_preferences(sw))
+            assert_non_stl_preferences(lambda: application_preferences(sw), before_preferences,
+                                       report, 'preferences_' + label)
             report['cases'].append({'label': label, 'passed': True, 'result': result})
             persist()
         parameters = dict(plane_object_id=planes[0]['object_id'], width_mm=40., height_mm=20., depth_mm=10.)
@@ -155,7 +156,8 @@ def main():
                     current = [binding.wrap(raw, binding.module().IModelDoc2) for raw in sw.GetDocuments() or ()]
                     assert not any(item._oleobj_.QueryInterface(pythoncom.IID_IUnknown) == identity for item in current)
                 assert native_snapshot() == baseline
-                assert_non_stl_preferences(preferences, application_preferences(sw))
+                assert_non_stl_preferences(lambda: application_preferences(sw), preferences,
+                                           report, 'preferences_after_cleanup')
                 report['fixtures_closed'] = True
         except BaseException as exc:
             report['cleanup_failure'] = {'type': type(exc).__name__, 'message': str(exc)}
