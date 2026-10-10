@@ -200,3 +200,5 @@ Dev33: выделение защищено Suspend/ResumeSelectionList; перв
 Итоговый полный pure-набор dev54: **2885 passed, 323 CAD deselected**, 29,39 с. Это проверка исходников, не native-приёмка.
 
 Полный итоговый pure-набор исходного dev55: **2892 passed, 323 CAD deselected**, 28,77 с. Это не native-приёмка.
+
+Dev55 первый internal native остановился после двух записанных случаев: создание пластины завершилось succeeded/committed с полным освобождением guard, но helper очистки не распознал новый scope. Прогон accepted=false и сохранён. После терминального процесса durable/job и фактическая геометрия сверены; только два собственных документа закрыты, baseline пуст/free. Исправлены оба verifier gates: точный новый scope/одна модель/все typed release-поля; busy допускается только как failed/not_started с native_mutation_started=false и untouched evidence, без разрешения сбрасывать чужой флаг. Связанные126 passed; после дополнения missing-error случая полный набор **2905 passed, 323 CAD deselected**,29,14 с. Код установленного wheel dev55 не менялся, новой сборки не требуется; свежая same-wheel native-приёмка впереди.
