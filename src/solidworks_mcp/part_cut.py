@@ -162,7 +162,9 @@ class PartCutCatalog:
         added = [row for row in after['semantic']['tree']['features'] if row['native_id'] not in old_ids]
         expected = {evidence.get('sketch_native_id'): (definition.sketch_name, 'ProfileFeature')}
         if evidence.get('cut_native_id') is not None:
-            expected[evidence['cut_native_id']] = (definition.feature_name, 'Cut')
+            if evidence.get('cut_type_name2') not in ('Cut', 'ICE') or evidence.get('cut_type_name') != 'Cut':
+                return False
+            expected[evidence['cut_native_id']] = (definition.feature_name, evidence['cut_type_name2'])
         if None in expected:
             return not added
         return (len(added) == len(expected)

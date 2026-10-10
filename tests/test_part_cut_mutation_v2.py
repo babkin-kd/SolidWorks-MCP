@@ -39,6 +39,7 @@ def setup(sketch_setup):
     part = adapter.models[0]
     snapshot_original = adapter.sketch_snapshot
     adapter.cut_writes, adapter.cut_restores, adapter.cut_fault = 0, 0, None
+    adapter.cut_native_type2, adapter.cut_native_type = 'Cut', 'Cut'
     adapter.cut_receipts = []
 
     def receipt(model, features, controls):
@@ -54,7 +55,7 @@ def setup(sketch_setup):
         adapter.cut_writes += 1
         value.definition = definition
         sketch = feature(20, definition.sketch_name, kind='ProfileFeature')
-        cut = feature(21, definition.feature_name, kind='Cut')
+        cut = feature(21, definition.feature_name, kind=adapter.cut_native_type2)
         sketch.state['owner_native_id'] = 21
         value.owned = [sketch, cut]
         part.features += value.owned
@@ -98,6 +99,7 @@ def setup(sketch_setup):
         if value.restored: return {'restored':True,'complete':False},()
         result, members = snapshot(model, value.owned[0])
         return {'complete':value.complete,'restored':False,'sketch_native_id':20,'cut_native_id':21,
+            'cut_type_name2':adapter.cut_native_type2,'cut_type_name':adapter.cut_native_type,
             'sketch':result,'fully_defined':True,'controls':value.controls,'body_name':value.baseline_body_name,
             'volume_mm3':value.expected['volume_mm3'],'surface_area_mm2':value.expected['surface_area_mm2']},members
 
@@ -141,6 +143,19 @@ def test_stale_revision_fails_without_native_cut_or_restore(setup):
     result = run(expected_revision='rev_stale')
     assert result['status'] == 'failed' and result['error']['code'] == 'stale_revision'
     assert adapter.cut_writes == adapter.cut_restores == 0
+
+
+def test_instant3d_cut_requires_the_exact_underlying_native_cut_type(setup):
+    adapter, _, run, _ = setup
+    adapter.cut_native_type2 = 'ICE'
+    assert run()['status'] == 'succeeded'
+
+
+def test_instant3d_non_cut_never_adopted_or_deleted_as_a_cut(setup):
+    adapter, _, run, _ = setup
+    adapter.cut_native_type2, adapter.cut_native_type = 'ICE', 'Boss'
+    result = run()
+    assert result['status'] == 'unknown' and adapter.cut_restores == 0
 
 
 def test_runtime_routes_cut_on_existing_owning_worker_and_releases_handles(setup):

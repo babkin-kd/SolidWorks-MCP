@@ -82,6 +82,8 @@ class CadPartCutMixin:
                 False, False, False, False, 0., 0., False, False, False, False,
                 False, True, True, False, False, False, 0, 0., False, False)
             cut = self._retain_base_feature(model, receipt, 'cut', raw)
+            if cut.GetTypeName2() not in ('Cut', 'ICE') or cut.GetTypeName() != 'Cut':
+                raise rejected('cut_native_type_mismatch', 'The exact returned feature is not a native extruded cut.')
             cut.Name = definition.feature_name
             if cut.Name != definition.feature_name:
                 raise rejected('cut_name_mismatch', 'The requested Russian cut name was not retained.')
@@ -114,6 +116,8 @@ class CadPartCutMixin:
         result = {'restored': False, 'complete': complete,
                   'sketch_native_id': int(receipt.sketch.GetID()),
                   'cut_native_id': int(receipt.cut.GetID()) if receipt.cut is not None else None,
+                  'cut_type_name2': str(receipt.cut.GetTypeName2()) if receipt.cut is not None else None,
+                  'cut_type_name': str(receipt.cut.GetTypeName()) if receipt.cut is not None else None,
                   'sketch': snapshot, 'controls': self.part_creation_controls(model),
                   'fully_defined': snapshot['constraint_status'] == SW_FULLY_CONSTRAINED}
         if complete:
