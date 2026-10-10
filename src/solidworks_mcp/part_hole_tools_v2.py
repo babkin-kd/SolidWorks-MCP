@@ -57,3 +57,37 @@ def register_part_hole_tools(app, runtime, response, failure):
             'object_id':object_id,'plane_object_id':plane_object_id,'centre_x_mm':centre_x_mm,
             'centre_y_mm':centre_y_mm,'diameter_mm':diameter_mm,'sketch_name':sketch_name,
             'feature_name':feature_name},timeout_s,mutates=True)
+
+    @app.tool()
+    async def part_prepare_hole_dimension_change(request_id:str,document_id:str,configuration:str,
+            base_object_id:str,object_id:str,dimension_id:str,value_mm:Length,timeout_s:Wait=10)->ResponseEnvelope:
+        """Prepare an existing through-hole X/Y or diameter edit, in millimetres.
+
+        Explicit base_object_id is the rectangular BASE sketch; object_id is the
+        existing circular sketch; dimension_id comes from dimension_list and must
+        be its exact independent centre X, centre Y or diameter driver. Read only.
+        One base/one through-hole, fully defined single-config part, >=0.001 mm
+        material on every side. Returns input-bound revision and complete expected
+        shape. No implicit document, selection, name lookup or configuration.
+        """
+        return await dispatch(request_id,'part.prepare_hole_dimension_change',{
+            'document_id':document_id,'configuration':configuration,'base_object_id':base_object_id,
+            'object_id':object_id,'dimension_id':dimension_id,'value_mm':value_mm},timeout_s)
+
+    @app.tool()
+    async def part_set_hole_dimension(request_id:str,document_id:str,configuration:str,expected_revision:str,
+            base_object_id:str,object_id:str,dimension_id:str,value_mm:Length,timeout_s:Wait=10)->ResponseEnvelope:
+        """Set the prepared own hole driver and prove full constraints/body after rebuild.
+
+        Uses identical explicit targets/input and revision from preparation.
+        Checkpoint before CAD/UI writes; verifies unchanged base, other dimensions,
+        constraints, controls/body name, full BREP and independent native measures.
+        Known attributable failure restores only the exact own scalar; foreign or
+        unreadable effects hold the application and are never replayed. Reusing
+        request_id returns the same job. Waiting timeout does not cancel COM.
+        Excludes multiple/blind/oblique/tapped holes and arbitrary imported parts.
+        """
+        return await dispatch(request_id,'part.set_hole_dimension',{
+            'document_id':document_id,'configuration':configuration,'expected_revision':expected_revision,
+            'base_object_id':base_object_id,'object_id':object_id,'dimension_id':dimension_id,
+            'value_mm':value_mm},timeout_s,mutates=True)

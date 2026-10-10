@@ -91,12 +91,13 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
                              'part_corner_through_cut': True,
                              'part_full_turn_base_revolve': True,
                              'part_circular_through_hole': True,
+                             'part_circular_through_hole_dimension': True,
                              'part_exports': True,
                              'pdm': False, 'simulation': False},
             'export_output_configured': runtime.export_output_configured,
-            'implemented_mutations': ['feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole'],
+            'implemented_mutations': ['feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension'],
             'mutation_revision_scopes': ['part_feature_tree_v1', 'part_dimension_values_v1',
-                                         'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1', 'single_base_circular_through_hole_v1'],
+                                         'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1', 'single_base_circular_through_hole_v1', 'single_base_circular_through_hole_dimension_v1'],
             'journal_schema_version': JOURNAL_SCHEMA_VERSION,
         })
 

@@ -1,9 +1,16 @@
 """Own-circle through cut over the shared native handle/selection/restore path."""
 
 from . import binding
+from .documents import rejected
 
 
 class CadPartHoleMixin:
+    def hole_edit_controls(self, model):
+        bodies = self.bodies(model, 'all')
+        if len(bodies) != 1 or bodies[0].GetType() != 0:
+            raise rejected('hole_edit_body_scope', 'One exact solid body is required.')
+        return {'body_name': str(bodies[0].Name), 'sketch_controls': self.part_creation_controls(model)}
+
     def new_through_hole_receipt(self, model, features, controls):
         return self.new_corner_cut_receipt(model,features,controls)
 

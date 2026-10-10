@@ -59,3 +59,29 @@ def test_creation_never_infers_an_omitted_target_or_revision(setup,key):
     del payload[key]
     with pytest.raises(ToolError):asyncio.run(app.call_tool('part_create_through_hole',payload))
     assert runtime.calls==[]
+
+
+@pytest.mark.parametrize('tool,method,operation',[
+    ('part_prepare_hole_dimension_change','read','part.prepare_hole_dimension_change'),
+    ('part_set_hole_dimension','mutate','part.set_hole_dimension')])
+def test_hole_edit_explicit_targets_are_dispatched(setup,tool,method,operation):
+    app,runtime=setup
+    args={'request_id':'edit','document_id':'doc_explicit','configuration':'Основная',
+        'base_object_id':'feat_'+'a'*32,'object_id':'feat_'+'b'*32,
+        'dimension_id':'dim_'+'c'*32,'value_mm':8.,'timeout_s':0.}
+    if method=='mutate':args['expected_revision']='rev_explicit'
+    _,result=asyncio.run(app.call_tool(tool,args))
+    assert runtime.calls==[(method,'edit',operation,{key:value for key,value in args.items()
+        if key not in ('request_id','timeout_s')},0.)]
+    assert result['status']=='succeeded'
+
+
+@pytest.mark.parametrize('tool',['part_prepare_hole_dimension_change','part_set_hole_dimension'])
+@pytest.mark.parametrize('value',[True,'8',float('nan'),float('inf'),.0001,10000001.])
+def test_hole_edit_invalid_length_never_dispatches(setup,tool,value):
+    app,runtime=setup
+    args={'request_id':'edit','document_id':'doc','configuration':'Основная',
+        'base_object_id':'feat_base','object_id':'feat_circle','dimension_id':'dim_circle',
+        'value_mm':value,'expected_revision':'rev_explicit'}
+    with pytest.raises(ToolError):asyncio.run(app.call_tool(tool,args))
+    assert runtime.calls==[]

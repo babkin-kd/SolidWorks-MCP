@@ -21,6 +21,7 @@ from solidworks_mcp.dimensions import DimensionCatalog
 from solidworks_mcp.features import FeatureCatalog
 from solidworks_mcp.part_creation import PartCreationCatalog
 from solidworks_mcp.part_hole import PartHoleCatalog
+from solidworks_mcp.part_hole_edit import PartHoleEditCatalog
 from solidworks_mcp.sketches import SketchCatalog, same_sketch_geometry
 from solidworks_mcp.jobs import JobRunner, JobStore
 from verify_document_reads import native_snapshot
@@ -34,6 +35,15 @@ from verify_part_construction import Worker
 
 class Adapter(SolidWorksDocuments):
     inject_cut = False
+    inject_edit = False
+
+    def rebuild_dimension_document(self, *args):
+        result = super().rebuild_dimension_document(*args)
+        if self.inject_edit:
+            self.inject_edit = False
+            assert result is True
+            raise RuntimeError('Known verifier failure after solving the own circle driver.')
+        return result
 
     def create_through_hole(self, *args):
         super().create_through_hole(*args)
@@ -95,7 +105,7 @@ def main():
             assert sw.CommandInProgress is own_flag
             verification = (job.get('mutation') or {}).get('verification') or {}
             evidence = verification.get('evidence', {}).get('execution_guard')
-            if label.startswith(('plate_in_server_created','guarded_','hole_known_failure','native_circular')):
+            if label.startswith(('plate_in_server_created','guarded_','hole_known_failure','native_circular','hole_edit_')) and expected=='succeeded':
                 assert evidence and evidence['scope']=='application_model_mutation_guard_v1'
             if label=='existing_command_flag_not_borrowed':
                 assert untouched_busy_guard(evidence)
@@ -231,6 +241,43 @@ def main():
         assert (native.GetVertexCount(), native.GetEdgeCount(), native.GetFaceCount()) == (8, 14, 7)
         report['volume_after_cut_mm3'] = float(values[3])*1e9
         report['surface_after_cut_mm2'] = float(values[4])*1e6
+        edits = PartHoleEditCatalog(sketches)
+        circle_id = next(row['object_id'] for row in dimensions.features.list(second_id,'Основная')['items']
+            if row['native_id']==result['result']['after']['created']['sketch_native_id'])
+        rows = dimensions.list(second_id,'Основная')['items']
+        edit_targets = dict(document_id=second_id,configuration='Основная',base_object_id=sketch_id,object_id=circle_id)
+        ids = {row['name']:row['object_id'] for row in rows if row['owner'] and row['owner']['native_id']==result['result']['after']['created']['sketch_native_id']}
+        def edit(name,value,*,revision=None):
+            arguments = dict(edit_targets,dimension_id=ids[name],value_mm=value)
+            if revision is None:
+                revision=edits.prepare_dimension_change(**arguments)['revision']
+            arguments['expected_revision']=revision
+            return guarded_inline_submit(gate,runner,store,uuid.uuid4().hex,'part.set_hole_dimension',arguments,
+                lambda op:edits.set_dimension(op,**arguments),
+                context={key:arguments[key] for key in ('document_id','configuration','expected_revision')},
+                mutates=True,pass_operation_id=True,verify=lambda value:value['verified'] is True)
+        outside = edit('Диаметр',20.,revision='rev_explicit')
+        record('hole_edit_material_prewrite_rejected',outside,'failed')
+        assert outside['error']['code']=='hole_outside_material' and outside['mutation']['phase']=='not_started'
+        stale = edit('Центр X',12.,revision='rev_stale')
+        record('hole_edit_stale_prewrite_rejected',stale,'failed')
+        assert stale['error']['code']=='stale_revision' and stale['mutation']['phase']=='not_started'
+        adapter.inject_edit=True
+        rolled=edit('Диаметр',8.)
+        record('hole_edit_known_failure_scoped_restoration',rolled,'failed')
+        assert rolled['mutation']['phase']=='rolled_back'
+        for name,value,label in (('Центр X',12.,'hole_edit_x12'),('Центр Y',11.,'hole_edit_y11'),('Диаметр',8.,'hole_edit_d8')):
+            changed=edit(name,value)
+            record(label,changed)
+            assert changed['mutation']['phase']=='committed'
+        native=binding.wrap(adapter.bodies(second_model,'all')[0],module.IBody2)
+        values=native.GetMassProperties(1.)
+        assert math.isclose(float(values[3])*1e9,8000.-math.pi*4.**2*10.,rel_tol=1e-10)
+        assert math.isclose(float(values[4])*1e6,2800.-2.*math.pi*4.**2+2.*math.pi*4.*10.,rel_tol=1e-10)
+        assert (native.GetVertexCount(),native.GetEdgeCount(),native.GetFaceCount())==(8,14,7)
+        report['hole_edit_volume_mm3']=float(values[3])*1e9
+        report['hole_edit_surface_area_mm2']=float(values[4])*1e6
+        report['hole_edit_suite_passed']=True
         snap, facts = source_state(sw, module)
         assert [(row, fact) for row, fact in zip(snap[3], facts) if row[0] == first_identity] == original
         report['core_suite_passed'] = True

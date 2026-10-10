@@ -131,7 +131,8 @@ def rectangle_profile_parameters(snapshot, semantic, configuration):
     return {'width_m': width, 'height_m': height, 'axes': axes}
 
 
-def rectangle_parameters(snapshot, semantic, configuration):
+def rectangle_extrusion_parameters(snapshot, semantic, configuration):
+    """Prove the independent base profile/depth/frame, without a body claim."""
     profile = rectangle_profile_parameters(snapshot, semantic, configuration)
     width, height, axes = (profile[key] for key in ('width_m', 'height_m', 'axes'))
     fail = lambda message: rejected('unsupported_rectangular_sketch', message)
@@ -151,8 +152,13 @@ def rectangle_parameters(snapshot, semantic, configuration):
     if any(abs(local[i*3+j]-frame[j*3+i]) > 1e-12 for i in range(3) for j in range(3)):
         raise fail('Model-to-sketch and exact plane transforms do not form the same rigid frame.')
     result = {'width_m': width, 'height_m': height, 'depth_m': depth, 'axes': axes, 'plane_transform': list(frame)}
+    return result
+
+
+def rectangle_parameters(snapshot, semantic, configuration):
+    result = rectangle_extrusion_parameters(snapshot, semantic, configuration)
     if not rectangular_body_matches(semantic['geometry'], result):
-        raise fail('Complete body boundary does not match this single positive blind base.')
+        raise rejected('unsupported_rectangular_sketch', 'Complete body boundary does not match this single positive blind base.')
     return result
 
 
@@ -190,12 +196,18 @@ class SketchCatalog:
 
     def _capture(self, document_id, configuration, object_id):
         captured = self.dimensions._capture(document_id, configuration)
+        return self._capture_from_dimensions(captured, document_id, configuration, object_id)
+
+    def _read_snapshot(self, model, feature):
+        return self.adapter.sketch_snapshot(model, feature)
+
+    def _capture_from_dimensions(self, captured, document_id, configuration, object_id):
         entry, identity, records, semantic, dimension_revision = captured.state
         objects = self.adapter.features(entry.model)
         if tuple(self.adapter.identity(item) for item in objects) != captured.feature_identities:
             raise rejected('document_changed_during_read', 'Sketch feature identities changed after the complete dimension capture.')
         feature, ref = self.dimensions.features._resolve(entry, configuration, identity, objects, object_id)
-        snapshot, members = self.adapter.sketch_snapshot(entry.model, feature)
+        snapshot, members = self._read_snapshot(entry.model, feature)
         for relation in snapshot['relations']:
             if relation['dimension_full_name'] is not None:
                 matches = [record for record, row in zip(records, semantic['dimensions']) if row['full_name'] == relation['dimension_full_name']]

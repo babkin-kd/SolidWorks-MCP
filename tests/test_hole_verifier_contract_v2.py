@@ -59,6 +59,10 @@ def test_public_hole_harness_tracks_all_literal_calls_before_sdk_dispatch():
     assert create.float_arguments==frozenset({'centre_x_mm','centre_y_mm','diameter_mm'})
     assert create.argument_defaults=={'sketch_name':'Эскиз отверстия','feature_name':'Сквозное отверстие'}
     assert create.prewrite_failure_codes==frozenset({'stale_revision'})
+    edit=specs['part_set_hole_dimension']
+    assert edit.operation=='part.set_hole_dimension' and edit.mutates is True
+    assert edit.float_arguments==frozenset({'value_mm'})
+    assert edit.prewrite_failure_codes==frozenset({'stale_revision'})
     document=specs['document_create_part']
     assert document.argument_map=={'application_id':'document_id'} and document.constant_args=={'configuration':''}
 
