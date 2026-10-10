@@ -7,7 +7,7 @@ from .cad_deletion_context import SCOPE as CAPTURE_SCOPE, EXTERNAL_FIELDS, MAX_T
 from .documents import rejected
 from .jobs import _json
 
-SCOPE = 'part_feature_deletion_context_v1'
+SCOPE = 'part_feature_deletion_context_v2'
 UNVERIFIED = ('equation_dimension_feature_bindings', 'equation_configuration_membership',
               'other_configuration_feature_states', 'annotations_and_drawings',
               'incoming_external_document_references', 'external_reference_native_feature_bindings',
@@ -26,8 +26,8 @@ def context_semantics(value):
     if type(value['scope']) is not str or value['scope'] != CAPTURE_SCOPE:
         raise rejected('feature_context_capture_invalid', 'Wrong native feature context scope.')
     eq = value['equations']
-    _keys(eq, ('count', 'disabled_count', 'properties', 'rows'))
-    count, disabled = _count(eq['count']), _count(eq['disabled_count'])
+    _keys(eq, ('enumerated_count', 'disabled_count', 'disabled_definitions_captured', 'properties', 'rows'))
+    count, disabled = _count(eq['enumerated_count']), _count(eq['disabled_count'])
     _keys(eq['properties'], ('linked_to_file', 'file_path', 'automatic_rebuild', 'automatic_solve_order', 'angular_equation_units'))
     for field in ('linked_to_file', 'automatic_rebuild', 'automatic_solve_order'):
         _boolean(eq['properties'][field])
@@ -43,8 +43,8 @@ def context_semantics(value):
         _boolean(row['disabled'])
         _boolean(row['global_variable'])
         _integer(row['configuration_option'])
-    if disabled != sum(row['disabled'] for row in eq['rows']):
-        raise rejected('feature_context_capture_invalid', 'Disabled equation coverage is incomplete.')
+    if type(eq['disabled_definitions_captured']) is not bool or eq['disabled_definitions_captured'] is not (disabled == 0):
+        raise rejected('feature_context_capture_invalid', 'Unavailable disabled definitions cannot be certified as captured.')
     for section, fields in (('external_references', EXTERNAL_FIELDS), ('auxiliary_references', ('feature_name', 'file_path'))):
         table = value[section]
         _keys(table, ('count', 'rows'))
@@ -87,9 +87,13 @@ def deletion_context(catalog, document_id, configuration):
         raise rejected('document_changed_during_read', 'Feature graph or nonstructural context changed during collection.')
     revision = 'rev_' + hashlib.sha256(_json({'scope': SCOPE, 'graph_revision': graph['revision'],
                                             'context': context}).encode('utf8')).hexdigest()
+    blockers = [{'code': 'unverified_impact_scope', 'scope': scope} for scope in UNVERIFIED]
+    if context['equations']['disabled_count']:
+        blockers.append({'code': 'disabled_equation_definitions_unavailable',
+                         'reported_disabled_count': context['equations']['disabled_count']})
     return {'document_id': document_id, 'configuration': configuration, 'revision_scope': SCOPE,
             'revision': revision, 'dependency_graph': graph, 'native_context': context,
             'native_inventory_capture_closed': True, 'native_inventory_read_count': 2,
             'row_indices_and_names_are_writable_anchors': False,
-            'blockers': [{'code': 'unverified_impact_scope', 'scope': scope} for scope in UNVERIFIED],
+            'blockers': blockers,
             'deletion_impact_complete': False, 'deletion_authorized': False}

@@ -6,7 +6,7 @@ feature. This inventory is part of deletion-impact work, not deletion authority.
 
 from .documents import rejected
 
-SCOPE = 'native_feature_deletion_context_v1'
+SCOPE = 'native_feature_deletion_context_v2'
 MAX_ROWS = 5000
 MAX_TEXT = 16384
 MAX_TEXT_TOTAL = 2097152
@@ -80,9 +80,8 @@ class CadDeletionContextMixin:
                  'global_variable': _boolean(manager.GlobalVariable(index)),
                  'configuration_option': _integer(manager.GetConfigurationOption(index))}
                 for index in range(count)]
-        if (_count(manager.GetCount()) != count or _count(manager.GetDisabledEquationCount()) != disabled
-                or sum(row['disabled'] for row in rows) != disabled):
-            raise rejected('document_changed_during_read', 'Equation inventory count/disabled coverage changed.')
+        if (_count(manager.GetCount()) != count or _count(manager.GetDisabledEquationCount()) != disabled):
+            raise rejected('document_changed_during_read', 'Equation inventory counters changed.')
         extension = self._extension(model)
         external_count = _count(extension.ListExternalFileReferencesCount())
         validators = (read_text, read_text, read_text, read_text, _integer, read_text, read_text, _integer, read_text)
@@ -93,7 +92,8 @@ class CadDeletionContextMixin:
         auxiliary = _columns(model.ListAuxiliaryExternalFileReferences(), auxiliary_count, (read_text, read_text))
         if _count(model.ListAuxiliaryExternalFileReferencesCount()) != auxiliary_count:
             raise rejected('document_changed_during_read', 'Auxiliary reference count changed during capture.')
-        result = {'scope': SCOPE, 'equations': {'count': count, 'disabled_count': disabled,
+        result = {'scope': SCOPE, 'equations': {'enumerated_count': count, 'disabled_count': disabled,
+                    'disabled_definitions_captured': disabled == 0,
                     'properties': properties, 'rows': rows},
                   'external_references': {'count': external_count, 'rows': [
                     {'row_index': index, **dict(zip(EXTERNAL_FIELDS, values))}

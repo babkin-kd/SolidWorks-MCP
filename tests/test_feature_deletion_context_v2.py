@@ -17,11 +17,10 @@ from test_feature_dependency_graph_v2 import install
 
 def capture():
     return {'scope': native.SCOPE,
-        'equations': {'count': 2, 'disabled_count': 1, 'properties': {
+        'equations': {'enumerated_count': 1, 'disabled_count': 1, 'disabled_definitions_captured': False, 'properties': {
             'linked_to_file': True, 'file_path': 'private/equations.txt', 'automatic_rebuild': False,
             'automatic_solve_order': True, 'angular_equation_units': 0}, 'rows': [
-            {'row_index': 0, 'expression': '"Высота" = 9', 'disabled': False, 'global_variable': True, 'configuration_option': 1},
-            {'row_index': 1, 'expression': '"D1@Эскиз" = "Высота"', 'disabled': True, 'global_variable': False, 'configuration_option': 3}]},
+            {'row_index': 0, 'expression': '"Высота" = 9', 'disabled': False, 'global_variable': True, 'configuration_option': 1}]},
         'external_references': {'count': 1, 'rows': [{'row_index': 0,
             **dict(zip(native.EXTERNAL_FIELDS, ('private/Основа.SLDPRT', '', 'Базовая деталь', 'Тело', 5, 'Тело@Основа', '', 3, 'Основная')))}]},
         'auxiliary_references': {'count': 1, 'rows': [{'row_index': 0, 'feature_name': 'Макроэлемент', 'file_path': 'private/script.dll'}]}}
@@ -34,7 +33,7 @@ class Manager:
                            ('AutomaticRebuild', 'automatic_rebuild'), ('AutomaticSolveOrder', 'automatic_solve_order'),
                            ('AngularEquationUnits', 'angular_equation_units')]:
             setattr(self, field, data['properties'][key])
-    def GetCount(self): return self.data['count']
+    def GetCount(self): return self.data['enumerated_count']
     def GetDisabledEquationCount(self): return self.data['disabled_count']
     def Equation(self, index): return self.data['rows'][index]['expression']
     def Disabled(self, index): return self.data['rows'][index]['disabled']
@@ -65,7 +64,7 @@ def driver():
     return Driver(capture())
 
 
-def test_native_collector_captures_enabled_disabled_and_both_reference_categories(driver):
+def test_native_collector_keeps_enabled_rows_disabled_counter_and_both_reference_categories(driver):
     actual = driver.feature_deletion_context(driver)
     assert actual == capture()
     assert context_semantics(actual) == actual
@@ -73,9 +72,9 @@ def test_native_collector_captures_enabled_disabled_and_both_reference_categorie
 
 def test_native_zero_counts_and_null_parallel_arrays_are_explicit_empty_inventory(driver):
     value = driver.value
-    for key in ('equations', 'external_references', 'auxiliary_references'):
+    for key in ('external_references', 'auxiliary_references'):
         value[key].update(count=0, rows=[])
-    value['equations']['disabled_count'] = 0
+    value['equations'].update(enumerated_count=0, rows=[], disabled_count=0, disabled_definitions_captured=True)
     result = driver.feature_deletion_context(driver)
     assert all(result[key]['rows'] == [] for key in ('equations', 'external_references', 'auxiliary_references'))
 
@@ -87,14 +86,12 @@ def test_native_bad_count_rejected_before_equation_traversal(driver, value):
     with pytest.raises(ExecutionFailure): driver.feature_deletion_context(driver)
 
 
-@pytest.mark.parametrize('fault', ['count_changed', 'disabled_changed', 'missing_disabled', 'columns_short', 'array_length', 'status_bool', 'configuration_bool', 'string_object', 'expression_budget', 'aggregate_budget'])
+@pytest.mark.parametrize('fault', ['count_changed', 'disabled_changed', 'columns_short', 'array_length', 'status_bool', 'configuration_bool', 'string_object', 'expression_budget', 'aggregate_budget'])
 def test_native_incomplete_or_unsafe_rows_fail_closed(driver, fault):
     if fault == 'count_changed':
-        counts = iter([2, 3]); driver.manager.GetCount = lambda: next(counts)
+        counts = iter([1, 2]); driver.manager.GetCount = lambda: next(counts)
     elif fault == 'disabled_changed':
         counts = iter([1, 0]); driver.manager.GetDisabledEquationCount = lambda: next(counts)
-    elif fault == 'missing_disabled':
-        driver.manager.GetDisabledEquationCount = lambda: 2
     elif fault == 'columns_short':
         driver.ListExternalFileReferences2 = lambda: ([],)
     elif fault == 'array_length':
@@ -112,7 +109,7 @@ def test_native_incomplete_or_unsafe_rows_fail_closed(driver, fault):
         driver.value['equations']['rows'][0]['expression'] = 'x' * (native.MAX_TEXT + 1)
     else:
         rows = [{**driver.value['equations']['rows'][0], 'row_index': i, 'expression': 'x'*native.MAX_TEXT} for i in range(130)]
-        driver.value['equations'].update(count=len(rows), disabled_count=0, rows=rows)
+        driver.value['equations'].update(enumerated_count=len(rows), disabled_count=0, rows=rows, disabled_definitions_captured=True)
     with pytest.raises(ExecutionFailure): driver.feature_deletion_context(driver)
 
 
@@ -121,8 +118,8 @@ def test_domain_schema_never_accepts_incomplete_or_forged_capture(fault):
     value = capture()
     if fault == 'scope': value['scope'] = None
     elif fault == 'extra': value['unverified'] = True
-    elif fault == 'count': value['equations']['count'] = True
-    elif fault == 'disabled': value['equations']['disabled_count'] = 2
+    elif fault == 'count': value['equations']['enumerated_count'] = True
+    elif fault == 'disabled': value['equations']['disabled_definitions_captured'] = True
     elif fault == 'row_index': value['equations']['rows'][0]['row_index'] = False
     elif fault == 'missing_column': value['external_references']['rows'][0].pop('model_path')
     elif fault == 'integer_type': value['external_references']['rows'][0]['status'] = True
@@ -153,7 +150,8 @@ def test_context_binds_two_native_inventories_to_stable_graph_and_revision_witho
     assert first['row_indices_and_names_are_writable_anchors'] is False
     assert first['deletion_impact_complete'] is first['deletion_authorized'] is False
     assert adapter.writes == [] and store.list()['items'] == []
-    assert 'incoming_external_document_references' in {row['scope'] for row in first['blockers']}
+    assert any(row['code'] == 'disabled_equation_definitions_unavailable' for row in first['blockers'])
+    assert 'incoming_external_document_references' in {row.get('scope') for row in first['blockers']}
 
 
 @pytest.mark.parametrize('field', ['expression', 'disabled', 'external', 'auxiliary', 'link', 'configuration_option'])
@@ -165,7 +163,7 @@ def test_nonstructural_change_without_tree_stamp_changes_revision(setup, field):
     before = catalog.deletion_context(ids[0], 'Основная')
     if field == 'expression': value['equations']['rows'][0]['expression'] = '"Высота" = 12'
     elif field == 'disabled':
-        value['equations']['rows'][0]['disabled'] = True; value['equations']['disabled_count'] = 2
+        value['equations']['disabled_count'] = 2
     elif field == 'external': value['external_references']['rows'][0]['status'] = 3
     elif field == 'auxiliary': value['auxiliary_references']['rows'][0]['file_path'] = 'private/changed.dll'
     elif field == 'link': value['equations']['properties']['file_path'] = 'private/changed.txt'
@@ -232,3 +230,12 @@ from solidworks_mcp.feature_deletion_context import context_semantics
 assert callable(context_semantics)
 """], capture_output=True, text=True, timeout=10)
     assert result.returncode == 0, result.stderr
+
+
+
+def test_disabled_only_inventory_retains_native_counter_and_blocked_missing_definitions(driver):
+    driver.value['equations'].update(enumerated_count=0, rows=[], disabled_count=3, disabled_definitions_captured=False)
+    actual = driver.feature_deletion_context(driver)
+    assert actual['equations']['disabled_count'] == 3 and actual['equations']['rows'] == []
+    assert actual['equations']['disabled_definitions_captured'] is False
+    assert context_semantics(actual) == actual

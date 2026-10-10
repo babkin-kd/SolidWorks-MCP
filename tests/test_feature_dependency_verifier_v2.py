@@ -80,7 +80,7 @@ def test_structural_mismatch_and_unsupported_authority_rejected(change):
 
 class EquationManager:
     def __init__(self, events): self.events, self.rows, self.disabled = events, [], []
-    def GetCount(self): return len(self.rows)
+    def GetCount(self): return len(self.rows)-sum(self.disabled)
     def GetDisabledEquationCount(self): return sum(self.disabled)
     def Add2(self, index, expression, solve):
         assert index == -1 and solve is False

@@ -82,7 +82,7 @@ def setup_owned_equations(manager, checkpoint):
     checkpoint({'phase': 'before_equation_disable', 'index': 1})
     manager.SetDisabled(1, True)
     assert manager.Disabled(1) is True
-    assert manager.GetCount() == 2 and manager.GetDisabledEquationCount() == 1
+    assert manager.GetCount() == 1 and manager.GetDisabledEquationCount() == 1
     checkpoint({'phase': 'equation_disable_verified', 'index': 1})
 
 
@@ -90,12 +90,14 @@ def verify_equation_context(result, manager):
     assert result['native_inventory_capture_closed'] is True
     assert result['row_indices_and_names_are_writable_anchors'] is False
     equations = result['native_context']['equations']
-    assert equations['count'] == 2 and equations['disabled_count'] == 1
+    assert equations['enumerated_count'] == 1 and equations['disabled_count'] == 1
+    assert equations['disabled_definitions_captured'] is False
     rows = [{'row_index': i, 'expression': manager.Equation(i), 'disabled': manager.Disabled(i),
              'global_variable': manager.GlobalVariable(i), 'configuration_option': manager.GetConfigurationOption(i)}
             for i in range(manager.GetCount())]
     assert equations['rows'] == rows
-    assert [row['disabled'] for row in rows] == [False, True]
+    assert [row['disabled'] for row in rows] == [False]
+    assert any(row['code'] == 'disabled_equation_definitions_unavailable' for row in result['blockers'])
     assert result['native_context']['external_references']['count'] == 0
     assert result['native_context']['auxiliary_references']['count'] == 0
     assert result['deletion_impact_complete'] is result['deletion_authorized'] is False
@@ -159,7 +161,8 @@ def check(state, report, gate, *, deletion_context=False):
                 verify_equation_context(inventory, manager)
                 assert inventory['dependency_graph'] == graph
                 assert catalog.deletion_context(**context) == inventory
-                report.update(deletion_context=inventory, enabled_and_disabled_native_equations_verified=True,
+                report.update(deletion_context=inventory, native_enumerated_equations_and_disabled_counter_verified=True,
+                    native_disabled_equation_definitions_verified=False,
                     empty_native_reference_arrays_verified=True, nonempty_native_external_references_verified=False,
                     nonempty_native_auxiliary_references_verified=False)
             assert native_snapshot() == setup and ui_snapshot(sw, module) == setup_ui
