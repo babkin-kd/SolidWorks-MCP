@@ -21,11 +21,69 @@ class SketchEntityBinder:
     Never trusts a local ID pair or identical coordinates as object identity.
     Each reference must resolve and retain the same canonical current entity.
     """
-    def __init__(self, *, wrap, reference, resolve, identity):
+    def __init__(self, *, wrap, reference, resolve, identity, coalesce=False):
         self.wrap, self.reference, self.resolve, self.identity = wrap, reference, resolve, identity
         self.bound = {}
+        self.coalesce = coalesce
+        self._entities, self._aliases = {}, []
+        self._closed = False
+
+    def _state(self, obj, name):
+        owner = self.wrap(obj.GetSketch(), 'ISketch')
+        if owner is None:
+            raise rejected('sketch_entity_reference_mismatch', 'Native sketch entity has no current owner.')
+        geometry = ((_integer(obj.Type, high=1000), _integer(obj.Status, high=10), tuple(_coordinates((obj.X, obj.Y, obj.Z), 3)))
+                    if name == 'ISketchPoint' else (_integer(obj.GetType(), high=1000), _integer(obj.Status, high=10), _boolean(obj.ConstructionGeometry)))
+        return tuple(_identifier(obj)), self.identity(owner), geometry
+
+    def _coalesced(self, obj, name):
+        category = 'point' if name == 'ISketchPoint' else 'segment'
+        token = self.identity(obj)
+        for kind, known, _, current in self._aliases:
+            if category == kind and token == known:
+                return current
+        pid = self.reference(obj)
+        if type(pid) is not bytes or not pid:
+            raise rejected('sketch_entity_reference_unavailable', 'Every native sketch point/segment requires a persistent reference.')
+        key = category, pid
+        cached = self._entities.get(key)
+        if cached is None:
+            current = self.resolve(pid, name)
+            if current is None or self.reference(current) != pid:
+                raise rejected('sketch_entity_reference_mismatch', 'Native sketch entity reference did not round-trip.')
+            current_token = self.identity(current)
+            state = self._state(current, name)
+            self._entities[key] = current, current_token, state, name
+            self.bound[key] = current_token
+            self._aliases.append((category, current_token, current, current))
+        else:
+            current, current_token, state, _ = cached
+        if token != current_token and self._state(obj, name) != state:
+            raise rejected('sketch_entity_reference_mismatch', 'Alternate interface disagrees with the complete current native entity.')
+        if token != current_token:
+            self._aliases.append((category, token, obj, current))
+        return current
+
+    def close(self):
+        """Fresh native reference/identity/state proof after one complete capture.
+
+        Coalescing is local to this capture. No cross-capture cache or identifier
+        fallback; an event-free retarget or geometry change is rejected here.
+        The caller still performs its document/configuration/event closing proof.
+        """
+        if self._closed:
+            raise rejected('sketch_entity_capture_closed', 'Sketch binding capture is one-shot.')
+        self._closed = True
+        if self.coalesce:
+            for (_, pid), (_, token, state, name) in self._entities.items():
+                current = self.resolve(pid, name)
+                if (current is None or self.reference(current) != pid or self.identity(current) != token
+                        or self._state(current, name) != state):
+                    raise rejected('sketch_entity_changed_during_read', 'Persistent entity identity/owner/geometry changed before capture closed.')
 
     def __call__(self, raw, name):
+        if self._closed:
+            raise rejected('sketch_entity_capture_closed', 'A closed binding capture cannot be reused.')
         # ISketchLine exposes endpoints/infinite state, not ISketchSegment's
         # GetID/GetSketch/Status. Bind the base interface before the typed view.
         if raw is not None and name == 'ISketchLine':
@@ -33,6 +91,8 @@ class SketchEntityBinder:
         obj = self.wrap(raw, name)
         if obj is None or name not in ('ISketchPoint', 'ISketchSegment'):
             return obj
+        if self.coalesce:
+            return self._coalesced(obj, name)
         pid = self.reference(obj)
         if type(pid) is not bytes or not pid:
             raise rejected('sketch_entity_reference_unavailable', 'Every native sketch point/segment requires a persistent reference.')

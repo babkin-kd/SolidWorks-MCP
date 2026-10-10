@@ -55,9 +55,10 @@ class CadSketchesMixin:
                 raise rejected('sketch_entity_reference_unavailable', 'Current sketch entity reference is unavailable/suppressed/deleted.')
             return binding.wrap(raw, getattr(self._module, name))
         binder = SketchEntityBinder(wrap=lambda raw,name:binding.wrap(raw,getattr(self._module,name)),
-            reference=lambda obj:self.persistent_id(model,obj),resolve=resolve,identity=self.identity)
+            reference=lambda obj:self.persistent_id(model,obj),resolve=resolve,identity=self.identity,coalesce=True)
         reader = LinearSketchReader(sketch, binder(points[0], 'ISketchPoint'), identity=self.identity, wrap=binder)
         snapshot, members = reader.read()
+        binder.close()
         transform = binding.wrap(sketch.ModelToSketchTransform, self._module.IMathTransform)
         if transform is None:
             raise rejected('sketch_transform_unavailable', 'Complete native model-to-sketch transform is required.')
