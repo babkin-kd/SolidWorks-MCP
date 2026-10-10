@@ -81,8 +81,9 @@ def test_open_assembly_refuses_a_part_file_and_closes_it(part, tmp_path):
     step = part.export(str(tmp_path / "block.step"))["path"]
     documents_before = len(part._sw.GetDocuments() or ())
 
-    with pytest.raises(SolidWorksError, match="holds a single part, not an assembly"):
+    with pytest.raises(SolidWorksError, match="holds a single part, not an assembly") as caught:
         part.open_assembly(step)
+    assert not getattr(caught.value, '__notes__', ()), caught.value.__notes__
 
     assert len(part._sw.GetDocuments() or ()) == documents_before, "the refused import stayed open"
 
@@ -108,8 +109,9 @@ def test_a_failed_import_closes_what_it_opened(assembly, blocks, tmp_path, monke
 
     monkeypatch.setattr(assembly, "_load_file", load_then_fail)
     exception = pythoncom.com_error if failure == 'injected-com-error' else SolidWorksError
-    with pytest.raises(exception):
+    with pytest.raises(exception) as caught:
         assembly.open_assembly(step)
+    assert not getattr(caught.value, '__notes__', ()), caught.value.__notes__
     left = {d.GetTitle() for d in assembly._open_documents()} - before
     assert not left, f"the failed import left documents open: {sorted(left)}"
 
@@ -121,8 +123,9 @@ def test_an_assembly_step_is_refused_and_leaves_nothing_open(assembly, blocks, t
     step = assembly.export(str(tmp_path / "pair.step"))["path"]
     documents_before = len(assembly._sw.GetDocuments() or ())
 
-    with pytest.raises(SolidWorksError, match="holds an assembly, not a part"):  # the tmp path says 'assembly' too
+    with pytest.raises(SolidWorksError, match="holds an assembly, not a part") as caught:
         assembly.open_part(step)
+    assert not getattr(caught.value, '__notes__', ()), caught.value.__notes__
 
     assert len(assembly._sw.GetDocuments() or ()) == documents_before, (
         "the refused import left its assembly or component documents open"

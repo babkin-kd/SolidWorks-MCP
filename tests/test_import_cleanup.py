@@ -22,12 +22,16 @@ class Document:
         self.modified = True
         self._oleobj_ = SimpleNamespace(QueryInterface=lambda iid: self.token)
         self.bodies = [object()]
+        self.children = []
     def GetTitle(self): return self.title
     def GetPathName(self): return self.path
     def GetType(self): return self.kind
     def GetUpdateStamp(self): return self.stamp
     def GetSaveFlag(self): return self.modified
     def GetBodies2(self, *args): return self.bodies
+    def GetComponents(self, top_only):
+        assert top_only is True
+        return [SimpleNamespace(GetModelDoc2=lambda child=child: child) for child in self.children]
 
 
 class Application:
@@ -55,7 +59,7 @@ class Application:
 
 
 def scope(app):
-    return ImportDocumentCleanup(app, lambda: list(app.documents), lambda d: d.token, lambda: True)
+    return ImportDocumentCleanup(app, lambda: list(app.documents), lambda d: d.token, lambda: True, lambda d: d.children)
 
 
 def session(app, original, monkeypatch):
@@ -63,7 +67,7 @@ def session(app, original, monkeypatch):
     result._sw = app
     result._owns_command_in_progress = True
     result._model = original
-    result._mod = SimpleNamespace(IModelDoc2=object(), IPartDoc=object())
+    result._mod = SimpleNamespace(IModelDoc2=object(), IPartDoc=object(), IAssemblyDoc=object(), IComponent2=object())
     result._ensure = lambda: app
     result._open_documents = lambda: list(app.documents)
     result._native_or_neutral = lambda *args: ('supplier.step', True)
@@ -374,3 +378,71 @@ def test_void_preference_setter_without_effect_is_rejected_by_readback(monkeypat
         result.open_assembly('supplier.step')
     assert app.interconnect is True and app.sets == [False, True]
     assert app.closes == [] and result._import_reconciliation_required is False
+
+
+def test_nested_interconnect_assemblies_close_parent_before_held_child():
+    original = Document('Рабочая')
+    app = Application([original])
+    cleanup = scope(app)
+    part = Document('Деталь')
+    inner = Document('Вложенная сборка', 2)
+    outer = Document('Внешняя сборка', 2)
+    inner.children = [part]
+    outer.children = [inner]
+    # Native inventory reports a child before its parent; grouping by type
+    # alone tries an ineffective close of the held inner assembly.
+    app.documents.extend([part, inner, outer])
+    def close(title):
+        target = next(d for d in app.documents if d.title == title)
+        if any(target in d.children for d in app.documents if d is not target):
+            return None
+        app.documents.remove(target)
+    app.close_hook = close
+    cleanup.cleanup()
+    assert app.closes == ['Внешняя сборка', 'Вложенная сборка', 'Деталь']
+    assert app.documents == [original]
+
+
+def test_shared_subassembly_is_closed_only_after_both_new_parents():
+    app = Application()
+    cleanup = scope(app)
+    shared = Document('Общая подсборка', 2)
+    a, b = Document('Первый родитель', 2), Document('Второй родитель', 2)
+    a.children = [shared, shared]  # Multiple instances are one document edge.
+    b.children = [shared]
+    app.documents[:] = [shared, a, b]
+    cleanup.cleanup()
+    assert app.closes == ['Первый родитель', 'Второй родитель', 'Общая подсборка']
+
+
+def test_preexisting_reused_component_is_excluded_from_dependency_cleanup():
+    original = Document('Библиотечная деталь')
+    app = Application([original])
+    cleanup = scope(app)
+    root = Document('Импортированная сборка', 2)
+    root.children = [original]
+    app.documents.append(root)
+    cleanup.cleanup()
+    assert app.documents == [original] and app.closes == ['Импортированная сборка']
+
+
+def test_dependency_cycle_is_rejected_before_any_close():
+    app = Application()
+    cleanup = scope(app)
+    a, b = Document('Первая сборка', 2), Document('Вторая сборка', 2)
+    a.children, b.children = [b], [a]
+    app.documents[:] = [a, b]
+    with pytest.raises(RuntimeError, match='Cyclic'):
+        cleanup.cleanup()
+    assert app.closes == []
+
+
+def test_untracked_dependency_is_not_implicitly_adopted():
+    app = Application()
+    cleanup = scope(app)
+    root = Document('Сборка', 2)
+    root.children = [Document('Неучтённый документ')]
+    app.documents.append(root)
+    with pytest.raises(RuntimeError, match='outside the captured'):
+        cleanup.cleanup()
+    assert app.closes == []

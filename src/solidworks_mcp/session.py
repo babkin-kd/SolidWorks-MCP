@@ -433,7 +433,7 @@ class SolidWorksSession(SheetMetalMixin):
             # for the entire interval, including validation and cleanup.
             cleanup = ImportDocumentCleanup(sw, self._open_documents,
                 lambda model: model._oleobj_.QueryInterface(pythoncom.IID_IUnknown),
-                lambda: self._owns_command_in_progress)
+                lambda: self._owns_command_in_progress, self._import_child_documents)
             previous = self._model
             try:
                 yield
@@ -458,6 +458,18 @@ class SolidWorksSession(SheetMetalMixin):
                 if primary is None:
                     raise
                 primary.add_note(f"Import command guard restoration is unconfirmed: {guard_error}.")
+
+    def _import_child_documents(self, model):
+        if int(model.GetType()) != SW_DOC_ASSEMBLY:
+            return []
+        result = []
+        assembly = binding.wrap(model, self._mod.IAssemblyDoc)
+        for raw in assembly.GetComponents(True) or ():
+            component = binding.wrap(raw, self._mod.IComponent2)
+            child = binding.wrap(component.GetModelDoc2(), self._mod.IModelDoc2)
+            if child is not None:
+                result.append(child)
+        return result
 
     def _import_document(self, sw, abs_path: str, doc_type: int):
         """Load a neutral document; the enclosing scope also covers validation.

@@ -8,11 +8,12 @@ no close call is retried. This does not expose a public v2 import operation.
 
 
 class ImportDocumentCleanup:
-    def __init__(self, application, documents, identity, owned_interval):
+    def __init__(self, application, documents, identity, owned_interval, child_documents=None):
         self.application = application
         self.documents = documents
         self.identity = identity
         self.owned_interval = owned_interval
+        self.child_documents = child_documents or (lambda document: ())
         self.guarded = bool(application.CommandInProgress) and bool(owned_interval())
         self.before = self.snapshot()
 
@@ -39,6 +40,40 @@ class ImportDocumentCleanup:
         if any(self.find(items, token) != facts for token, facts in self.before):
             raise RuntimeError('A pre-existing document changed; import cleanup retained documents.')
 
+    def parents_first(self, created):
+        # Close outer assemblies before referenced subassemblies, not merely
+        # all assemblies before parts. Canonical identities coalesce instances.
+        children = [set() for _ in created]
+        incoming = [0 for _ in created]
+        for document in self.documents():
+            token = self.identity(document)
+            parent = next((i for i, (other, _) in enumerate(created) if token == other), None)
+            if parent is None:
+                continue
+            for child in self.child_documents(document):
+                child_token = self.identity(child)
+                index = next((i for i, (other, _) in enumerate(created) if child_token == other), None)
+                if index is None:
+                    if self.find(self.before, child_token) is None:
+                        raise RuntimeError('Import dependency is outside the captured document inventory.')
+                    continue  # A reused pre-existing library component is never closed.
+                if index not in children[parent]:
+                    children[parent].add(index)
+                    incoming[index] += 1
+        ordered = []
+        ready = [i for i, count in enumerate(incoming) if count == 0]
+        while ready:
+            ready.sort(key=lambda i: (created[i][1]['type'] != 2, i))
+            parent = ready.pop(0)
+            ordered.append(created[parent])
+            for child in sorted(children[parent]):
+                incoming[child] -= 1
+                if incoming[child] == 0:
+                    ready.append(child)
+        if len(ordered) != len(created):
+            raise RuntimeError('Cyclic import document dependencies; documents were retained.')
+        return ordered
+
     def cleanup(self):
         if not self.guarded or not self.owned_interval() or not bool(self.application.CommandInProgress):
             raise RuntimeError('Import cleanup requires the original exclusive automation interval; '
@@ -46,7 +81,7 @@ class ImportDocumentCleanup:
         current = self.snapshot()
         self.unchanged_originals(current)
         created = [(token, facts) for token, facts in current if self.find(self.before, token) is None]
-        created.sort(key=lambda item: item[1]['type'] != 2)  # Assemblies release child parts first.
+        created = self.parents_first(created)
         for token, facts in created:
             current = self.snapshot()
             self.unchanged_originals(current)
