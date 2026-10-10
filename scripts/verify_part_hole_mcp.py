@@ -30,7 +30,7 @@ from verify_part_mcp import TOOL_SPECS as PART_SPECS
 
 
 TOOL_SPECS = {**PART_SPECS,
-    'dimension_list': ToolSpec('dimension.list',False),
+    'dimension_list': ToolSpec('dimension.list',False,argument_defaults={'limit':100,'cursor':''}),
     'part_prepare_hole_dimension_change': ToolSpec('part.prepare_hole_dimension_change',False,float_arguments=frozenset({'value_mm'})),
     'part_set_hole_dimension': ToolSpec('part.set_hole_dimension',True,float_arguments=frozenset({'value_mm'}),prewrite_failure_codes=frozenset({'stale_revision'})),
     'part_prepare_through_hole': ToolSpec('part.prepare_through_hole', False,
@@ -226,11 +226,11 @@ def main():
     assert internal['accepted'] is True and internal['core_suite_passed'] is True
     assert internal['hole_edit_suite_passed'] is True
     assert all(internal['wheel'][key] == wheel[key] for key in ('git_sha', 'source_digest', 'package_version', 'wheel_sha256'))
-    assert internal['scope'] == 'internal_circular_through_hole_native_v1'
+    assert internal['scope'] == 'internal_circular_through_hole_edit_native_v1'
     assert internal['fixtures_closed'] is True and internal['command_flag_baseline_restored'] is True
     assert internal['verifier_sha256'] == hashlib.sha256(Path(__file__).with_name('verify_part_hole.py').read_bytes()).hexdigest()
-    assert {'hole_stale_prewrite_rejected','hole_known_failure_scoped_restoration','native_circular_through_hole_d6_x10_y10',
-            'guarded_thickness_12','guarded_thickness_10','guarded_russian_feature_rename','existing_command_flag_not_borrowed',
+    assert {'new_part_from_empty_session','new_part_preserves_existing_document',
+            'plate_in_server_created_document_40_20_10','native_circular_through_hole_d6_x10_y10',
             'hole_edit_x12','hole_edit_y11','hole_edit_d8','hole_edit_known_failure_scoped_restoration',
             'hole_edit_stale_prewrite_rejected','hole_edit_material_prewrite_rejected'} <= {
         row['label'] for row in internal['cases'] if row['passed'] is True}

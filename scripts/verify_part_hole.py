@@ -33,6 +33,15 @@ from verifier_fixture_cleanup import InlineFixtureCleanupGate, guarded_inline_su
 from verify_part_construction import Worker
 
 
+def prewrite_rejection(job, code):
+    """Preparation may reject before any checkpoint; both forms are explicit."""
+    error = job.get('error') or {}
+    mutation = job.get('mutation')
+    return (job.get('status') == 'failed' and error.get('code') == code
+            and error.get('requires_reconciliation') is False
+            and (mutation is None or mutation.get('phase') == 'not_started'))
+
+
 class Adapter(SolidWorksDocuments):
     inject_cut = False
     inject_edit = False
@@ -55,6 +64,7 @@ class Adapter(SolidWorksDocuments):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-solidworks', action='store_true')
+    parser.add_argument('--hole-edit-only', action='store_true', help='Complete editing block; older guard/cut fault cases are not run or counted.')
     parser.add_argument('--wheel', type=Path, required=True)
     parser.add_argument('--expected-version', required=True)
     parser.add_argument('--expected-git-sha', required=True)
@@ -71,7 +81,7 @@ def main():
     private = (Path(__file__).resolve().parents[1] / 'work').resolve()
     assert state.is_relative_to(private) and state != private
     state.mkdir(parents=True, exist_ok=False)
-    report = {'accepted': False, 'scope': 'internal_circular_through_hole_native_v1', 'wheel': wheel,
+    report = {'accepted': False, 'scope': ('internal_circular_through_hole_edit_native_v1' if args.hole_edit_only else 'internal_circular_through_hole_native_v1'), 'wheel': wheel,
               'verifier_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               'cases': [], 'owned_documents': [], 'public_mcp_creation_accepted': False}
     def persist():
@@ -167,30 +177,31 @@ def main():
             context={key: arguments[key] for key in ('document_id', 'configuration', 'expected_revision')},
             mutates=True, pass_operation_id=True, verify=lambda result: result['verified'] is True)
         record('plate_in_server_created_document_40_20_10', built)
-        # The shared guard changed: exercise existing dimension and rename
-        # paths on this same fixture, without another physical acceptance set.
-        for thickness_mm in (12.,10.):
-            page = dimensions.list(second_id,'Основная')
-            thickness = next(row for row in page['items'] if row['name']=='Толщина')
-            arguments = dict(document_id=second_id,configuration='Основная',object_id=thickness['object_id'],
-                expected_revision=page['revision'],value=thickness_mm,unit='mm')
-            edited = guarded_inline_submit(gate,runner,store,uuid.uuid4().hex,'dimension.set_value',arguments,
-                lambda op:dimensions.set_value(op,**arguments),
+        if not args.hole_edit_only:
+            # The shared guard changed: exercise existing dimension and rename
+            # paths on this same fixture, without another physical acceptance set.
+            for thickness_mm in (12.,10.):
+                page = dimensions.list(second_id,'Основная')
+                thickness = next(row for row in page['items'] if row['name']=='Толщина')
+                arguments = dict(document_id=second_id,configuration='Основная',object_id=thickness['object_id'],
+                    expected_revision=page['revision'],value=thickness_mm,unit='mm')
+                edited = guarded_inline_submit(gate,runner,store,uuid.uuid4().hex,'dimension.set_value',arguments,
+                    lambda op:dimensions.set_value(op,**arguments),
+                    context={key:arguments[key] for key in ('document_id','configuration','expected_revision')},
+                    mutates=True,pass_operation_id=True,verify=lambda value:value['verified'] is True)
+                record('guarded_thickness_'+str(int(thickness_mm)),edited)
+                bodies = adapter.bodies(second_model,'all')
+                assert len(bodies)==1 and math.isclose(bodies[0].GetMassProperties(1.)[3]*1e9,40.*20.*thickness_mm,rel_tol=1e-10)
+            features = FeatureCatalog(documents,store,'new-document-native-verifier',mutation_guard=adapter.mutation_guard)
+            tree = features.list(second_id,'Основная')
+            extrusion = next(row for row in tree['items'] if row['feature_type']=='Extrusion')
+            arguments = dict(document_id=second_id,configuration='Основная',object_id=extrusion['object_id'],
+                expected_revision=tree['revision'],name='Основание проверки')
+            renamed = guarded_inline_submit(gate,runner,store,uuid.uuid4().hex,'feature.rename',arguments,
+                lambda op:features.rename(op,**arguments),
                 context={key:arguments[key] for key in ('document_id','configuration','expected_revision')},
                 mutates=True,pass_operation_id=True,verify=lambda value:value['verified'] is True)
-            record('guarded_thickness_'+str(int(thickness_mm)),edited)
-            bodies = adapter.bodies(second_model,'all')
-            assert len(bodies)==1 and math.isclose(bodies[0].GetMassProperties(1.)[3]*1e9,40.*20.*thickness_mm,rel_tol=1e-10)
-        features = FeatureCatalog(documents,store,'new-document-native-verifier',mutation_guard=adapter.mutation_guard)
-        tree = features.list(second_id,'Основная')
-        extrusion = next(row for row in tree['items'] if row['feature_type']=='Extrusion')
-        arguments = dict(document_id=second_id,configuration='Основная',object_id=extrusion['object_id'],
-            expected_revision=tree['revision'],name='Основание проверки')
-        renamed = guarded_inline_submit(gate,runner,store,uuid.uuid4().hex,'feature.rename',arguments,
-            lambda op:features.rename(op,**arguments),
-            context={key:arguments[key] for key in ('document_id','configuration','expected_revision')},
-            mutates=True,pass_operation_id=True,verify=lambda value:value['verified'] is True)
-        record('guarded_russian_feature_rename',renamed)
+            record('guarded_russian_feature_rename',renamed)
         sketches = SketchCatalog(dimensions)
         sketch_id = next(row['object_id'] for row in dimensions.features.list(second_id, 'Основная')['items'] if row['feature_type']=='ProfileFeature')
         cuts = PartHoleCatalog(sketches)
@@ -205,32 +216,33 @@ def main():
                 lambda op: cuts.create_through_hole(op, **args),
                 context={key: args[key] for key in ('document_id', 'configuration', 'expected_revision')},
                 mutates=True, pass_operation_id=True, verify=lambda result: result['verified'] is True)
-        record('hole_stale_prewrite_rejected', cut(stale=True), 'failed')
-        # This is the harness's own temporary flag, never a user's command.
-        arguments = dict(parameters,expected_revision=last_preparation['revision'])
-        sw.CommandInProgress = True
-        own_flag = True
-        assert sw.CommandInProgress is True
-        try:
-            busy = guarded_inline_submit(gate,runner,store,uuid.uuid4().hex,'part.create_through_hole',arguments,
-                lambda op:cuts.create_through_hole(op,**arguments),
-                context={key:arguments[key] for key in ('document_id','configuration','expected_revision')},
-                mutates=True,pass_operation_id=True,verify=lambda value:value['verified'] is True)
-            report['last_job'] = busy
-            persist()
-            assert busy['status']=='failed' and busy['error']['code']=='application_busy'
-        finally:
+        if not args.hole_edit_only:
+            record('hole_stale_prewrite_rejected', cut(stale=True), 'failed')
+            # This is the harness's own temporary flag, never a user's command.
+            arguments = dict(parameters,expected_revision=last_preparation['revision'])
+            sw.CommandInProgress = True
+            own_flag = True
             assert sw.CommandInProgress is True
-            sw.CommandInProgress = False
-            assert sw.CommandInProgress is False
-            own_flag = False
-        record('existing_command_flag_not_borrowed',busy,'failed')
-        adapter.inject_cut = True
-        failed = cut()
-        record('hole_known_failure_scoped_restoration', failed, 'failed')
-        assert failed['mutation']['phase'] == 'rolled_back'
-        assert len(adapter.features(second_model)) == len(built['result']['after']['semantic']['tree']['features'])
-        assert math.isclose(adapter.rectangle_body_measurements(second_model)['volume_mm3'], 8000., rel_tol=1e-10)
+            try:
+                busy = guarded_inline_submit(gate,runner,store,uuid.uuid4().hex,'part.create_through_hole',arguments,
+                    lambda op:cuts.create_through_hole(op,**arguments),
+                    context={key:arguments[key] for key in ('document_id','configuration','expected_revision')},
+                    mutates=True,pass_operation_id=True,verify=lambda value:value['verified'] is True)
+                report['last_job'] = busy
+                persist()
+                assert busy['status']=='failed' and busy['error']['code']=='application_busy'
+            finally:
+                assert sw.CommandInProgress is True
+                sw.CommandInProgress = False
+                assert sw.CommandInProgress is False
+                own_flag = False
+            record('existing_command_flag_not_borrowed',busy,'failed')
+            adapter.inject_cut = True
+            failed = cut()
+            record('hole_known_failure_scoped_restoration', failed, 'failed')
+            assert failed['mutation']['phase'] == 'rolled_back'
+            assert len(adapter.features(second_model)) == len(built['result']['after']['semantic']['tree']['features'])
+            assert math.isclose(adapter.rectangle_body_measurements(second_model)['volume_mm3'], 8000., rel_tol=1e-10)
         result = cut()
         record('native_circular_through_hole_d6_x10_y10', result)
         assert result['mutation']['phase'] == 'committed'
@@ -258,10 +270,10 @@ def main():
                 mutates=True,pass_operation_id=True,verify=lambda value:value['verified'] is True)
         outside = edit('Диаметр',20.,revision='rev_explicit')
         record('hole_edit_material_prewrite_rejected',outside,'failed')
-        assert outside['error']['code']=='hole_outside_material' and outside['mutation']['phase']=='not_started'
+        assert prewrite_rejection(outside, 'hole_outside_material')
         stale = edit('Центр X',12.,revision='rev_stale')
         record('hole_edit_stale_prewrite_rejected',stale,'failed')
-        assert stale['error']['code']=='stale_revision' and stale['mutation']['phase']=='not_started'
+        assert prewrite_rejection(stale, 'stale_revision')
         adapter.inject_edit=True
         rolled=edit('Диаметр',8.)
         record('hole_edit_known_failure_scoped_restoration',rolled,'failed')

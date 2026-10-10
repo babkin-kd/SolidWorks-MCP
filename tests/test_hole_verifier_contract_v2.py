@@ -11,6 +11,22 @@ import pytest
 ROOT=Path(__file__).resolve().parents[1]
 
 
+def test_hole_editor_prewrite_reject_may_precede_checkpoint():
+    tree=ast.parse((ROOT/'scripts/verify_part_hole.py').read_text(encoding='utf8'))
+    function=next(node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name=='prewrite_rejection')
+    namespace={}
+    exec(compile(ast.Module(body=[function],type_ignores=[]),'hole_prewrite','exec'),namespace)
+    check=namespace['prewrite_rejection']
+    job={'status':'failed','error':{'code':'hole_outside_material','requires_reconciliation':False}}
+    assert check(job,'hole_outside_material')
+    assert check({**job,'mutation':{'phase':'not_started'}},'hole_outside_material')
+    for phase in ('prepared','applied','committed','unknown','rolled_back'):
+        assert not check({**job,'mutation':{'phase':phase}},'hole_outside_material')
+    assert not check({**job,'status':'unknown'},'hole_outside_material')
+    assert not check({**job,'error':{**job['error'],'requires_reconciliation':True}},'hole_outside_material')
+    assert not check(job,'stale_revision')
+
+
 def internal_record():
     from test_verifier_fixture_cleanup_v2 import utility
     tree=ast.parse((ROOT/'scripts/verify_part_hole.py').read_text(encoding='utf8'))
@@ -63,6 +79,7 @@ def test_public_hole_harness_tracks_all_literal_calls_before_sdk_dispatch():
     assert edit.operation=='part.set_hole_dimension' and edit.mutates is True
     assert edit.float_arguments==frozenset({'value_mm'})
     assert edit.prewrite_failure_codes==frozenset({'stale_revision'})
+    assert specs['dimension_list'].argument_defaults=={'limit':100,'cursor':''}
     document=specs['document_create_part']
     assert document.argument_map=={'application_id':'document_id'} and document.constant_args=={'configuration':''}
 
