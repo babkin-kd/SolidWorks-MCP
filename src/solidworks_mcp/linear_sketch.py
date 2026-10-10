@@ -26,8 +26,12 @@ class SketchEntityBinder:
         self.bound = {}
 
     def __call__(self, raw, name):
+        # ISketchLine exposes endpoints/infinite state, not ISketchSegment's
+        # GetID/GetSketch/Status. Bind the base interface before the typed view.
+        if raw is not None and name == 'ISketchLine':
+            return self.wrap(self(raw, 'ISketchSegment'), 'ISketchLine')
         obj = self.wrap(raw, name)
-        if obj is None or name not in ('ISketchPoint', 'ISketchSegment', 'ISketchLine'):
+        if obj is None or name not in ('ISketchPoint', 'ISketchSegment'):
             return obj
         pid = self.reference(obj)
         if type(pid) is not bytes or not pid:

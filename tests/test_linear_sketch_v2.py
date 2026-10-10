@@ -134,6 +134,17 @@ def test_alternate_relation_interface_binds_to_exact_native_persistent_entity():
     with pytest.raises(ExecutionFailure):binder(alternate,'ISketchPoint')
 
 
+def test_typed_line_view_has_no_inherited_segment_methods():
+    owner=object()
+    line=Line(owner,0,Point(owner,0,(0.,0.,0.)),Point(owner,1,(.04,0.,0.)))
+    line.pid=b'line'
+    typed=NS(Infinite=False,GetStartPoint2=line.GetStartPoint2,GetEndPoint2=line.GetEndPoint2)
+    def wrap(raw,name):return typed if name=='ISketchLine' else raw
+    binder=SketchEntityBinder(wrap=wrap,reference=lambda raw:raw.pid,resolve=lambda pid,name:line,identity=id)
+    assert binder(line,'ISketchLine') is typed
+    assert not hasattr(typed,'GetID')
+
+
 @pytest.mark.parametrize('fault',['missing','wrong_pid','wrong_id','owner','coordinates','type'])
 def test_entity_binder_never_uses_local_hint_or_shape_as_reference(fault):
     owner=object()
