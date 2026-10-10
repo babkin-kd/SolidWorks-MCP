@@ -1,0 +1,95 @@
+"""Pure metadata gates; no console process, CAD runtime or journal is created."""
+import ast
+import copy
+import hashlib
+import json
+from pathlib import Path
+from types import SimpleNamespace
+
+from mcp.types import Tool
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def load_function(name):
+    tree = ast.parse((ROOT / 'scripts/verify_installed_metadata.py').read_text(encoding='utf8'))
+    function = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == name)
+    catalog = next(node for node in tree.body if isinstance(node, ast.Assign)
+                   and any(isinstance(target, ast.Name) and target.id == 'TOOLS' for target in node.targets))
+    def require(condition, message):
+        if not condition:
+            raise ValueError(message)
+    namespace = {'require': require, 'TOOLS': frozenset(ast.literal_eval(catalog.value.args[0])),
+                 'metadata': SimpleNamespace(version=lambda name: '1.30.0'),
+                 'hashlib': hashlib, 'json': json}
+    exec(compile(ast.Module(body=[function], type_ignores=[]), 'metadata_gate', 'exec'), namespace)
+    return namespace[function.name], namespace
+
+
+@pytest.fixture
+def example():
+    verify, namespace = load_function('verify_metadata')
+    tools = [Tool(name=name, inputSchema={'type': 'object'}, outputSchema={'type': 'object'})
+             for name in sorted(namespace['TOOLS'])]
+    wheel = {'package_version': '2.0.0.dev42', 'git_sha': 'a' * 40, 'source_digest': 'd' * 64}
+    schemas = json.dumps([tool.model_dump(mode='json', exclude_none=True) for tool in tools],
+                        sort_keys=True, ensure_ascii=False, separators=(',', ':'))
+    info = {'package_version': wheel['package_version'], 'api_version': 2,
+            'build_matches_source': True, 'build': {**wheel, 'source_dirty': False},
+            'source_digest': wheel['source_digest'], 'schema_version': '2.0-dev',
+            'mutation_revision_scopes': ['part_feature_tree_v1', 'part_dimension_values_v1', 'part_solid_brep_export_v1'],
+            'development_candidate': True, 'implemented_mutations': ['feature.rename', 'dimension.set_value', 'export.execute'],
+            'capabilities': {'pdm': False, 'simulation': False}, 'export_output_configured': False,
+            'mcp_sdk_version': '1.30.0', 'schema_hash': hashlib.sha256(schemas.encode()).hexdigest()}
+    return verify, tools, info, wheel
+
+
+def test_matching_implemented_catalog_is_only_metadata_evidence(example):
+    verify, tools, info, wheel = example
+    result = verify(tools, info, wheel)
+    assert result['public_tool_count'] == 18 and result['output_schemas_verified'] is True
+    assert 'native_acceptance' not in result
+
+
+@pytest.mark.parametrize('path,value', [
+    ('package_version', 'wrong'), ('api_version', 1), ('build_matches_source', False),
+    ('build.source_dirty', 0), ('build.git_sha', 'b' * 40), ('build.source_digest', '0' * 64),
+    ('source_digest', '0' * 64), ('schema_version', 'legacy'), ('mutation_revision_scopes', ['unbounded']),
+    ('development_candidate', False), ('implemented_mutations', ['feature.delete']),
+    ('capabilities.pdm', True), ('capabilities.simulation', True), ('export_output_configured', True),
+    ('mcp_sdk_version', 'different-environment'), ('schema_hash', '0' * 64),
+])
+def test_wrong_build_scope_or_unimplemented_module_is_not_metadata_acceptance(example, path, value):
+    verify, tools, info, wheel = example
+    info = copy.deepcopy(info)
+    target = info
+    parts = path.split('.')
+    for part in parts[:-1]:
+        target = target[part]
+    target[parts[-1]] = value
+    with pytest.raises(ValueError):
+        verify(tools, info, wheel)
+
+
+@pytest.mark.parametrize('change', ['duplicate', 'alias', 'no_output_schema'])
+def test_catalog_drift_or_missing_schema_fails(example, change):
+    verify, tools, info, wheel = example
+    tools = [tool.model_copy(deep=True) for tool in tools]
+    if change == 'duplicate':
+        tools.append(tools[0])
+    elif change == 'alias':
+        tools[0].name = 'legacy_alias'
+    else:
+        tools[0].outputSchema = None
+    with pytest.raises(ValueError):
+        verify(tools, info, wheel)
+
+
+def test_source_pythonpath_is_rejected_before_package_import(monkeypatch):
+    function, namespace = load_function('installed_identity')
+    import os
+    namespace['os'] = os
+    monkeypatch.setenv('PYTHONPATH', 'some-source-checkout')
+    with pytest.raises(ValueError, match='Unset PYTHONPATH'):
+        function({})

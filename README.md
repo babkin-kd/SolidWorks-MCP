@@ -6,17 +6,20 @@
 Правила работы: [Docs/GIT_WORKFLOW.md](Docs/GIT_WORKFLOW.md).
 Новые детали и элементы называются на русском языке; стандартные изделия для сборок подбираются из утверждённых библиотек.
 Точка входа v2 в разработке: `solidworks-mcp-v2 --state-dir <постоянный каталог состояния>`.
-В исходном кандидате `2.0.0.dev6` доступны журнал заданий, явное чтение метаданных документов, геометрии и дерева элементов деталей,
-а также переименование элемента с проверкой ревизии и результата. Создание и другие операции редактирования v2 ещё разрабатываются.
+В текущем v2 реализованы 18 публичных инструментов: журнал заданий, явное чтение документов/геометрии/элементов деталей,
+переименование на русском языке, размеры и подготовка/выполнение поддерживаемого экспорта. Области native-приёмки и ограничения
+конкретного установленного кандидата указаны в PLAN.md; создание, удаление и прочие операции переноса ещё разрабатываются.
+Форк v2 не опубликован в PyPI или MCP Registry. Справочный [registry-шаблон](Docs/registry-server.template.json) содержит
+незаполненное собственное имя PyPI-пакета; он не является доступной установкой. Выпуск кандидата: [FORK_RELEASE.md](Docs/FORK_RELEASE.md).
 Контракт кандидата: [guide_v2.md](src/solidworks_mcp/guide_v2.md).
 Статус всех legacy-инструментов: [MIGRATION_V2.md](Docs/MIGRATION_V2.md).
 Ниже сохранена документация upstream/legacy-инструментов для переноса; она не является каталогом доступных инструментов v2.
 
-This installation includes a local sheet-metal extension, version
+The separate legacy v1 installation includes a local sheet-metal extension, version
 `0.13.0+sheetmetal.2`, with seven additional tools verified on SolidWorks 2023.
 See [SHEET_METAL_LOCAL.md](SHEET_METAL_LOCAL.md) for usage, validation and recovery.
 
-[![PyPI](https://img.shields.io/pypi/v/solidworks-mcp)](https://pypi.org/project/solidworks-mcp/)
+Upstream package (not our development v2): [![PyPI](https://img.shields.io/pypi/v/solidworks-mcp)](https://pypi.org/project/solidworks-mcp/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/hjbaard/SolidWorks-MCP/blob/main/LICENSE)
 
 Let an AI agent (Claude, or any other MCP client) model real parametric parts and
@@ -25,7 +28,7 @@ modelling call returns the measured volume, mass and bounding box, so the agent
 can compare the result with the spec and correct itself instead of guessing that
 it "looks about right".
 
-<!-- mcp-name: io.github.babkin-kd/solidworks-mcp -->
+<!-- registry-template-name: io.github.babkin-kd/solidworks-mcp -->
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/hjbaard/SolidWorks-MCP/main/Docs/images/bracket.png" width="32%" alt="3D-print mounting bracket with counterbored holes, bolt circle and cable slot">
