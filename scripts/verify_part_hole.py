@@ -18,6 +18,7 @@ from solidworks_mcp.cad_documents import SolidWorksDocuments
 from solidworks_mcp.document_creation import DocumentCreationCatalog
 from solidworks_mcp.documents import DocumentCatalog
 from solidworks_mcp.dimensions import DimensionCatalog
+from solidworks_mcp.features import FeatureCatalog
 from solidworks_mcp.part_creation import PartCreationCatalog
 from solidworks_mcp.part_hole import PartHoleCatalog
 from solidworks_mcp.sketches import SketchCatalog, same_sketch_geometry
@@ -92,6 +93,15 @@ def main():
             assert gate.can_cleanup(), 'Unknown result prohibits another operation/automatic replay.'
             assert job['status'] == expected, job.get('error')
             assert sw.CommandInProgress is own_flag
+            verification = (job.get('mutation') or {}).get('verification') or {}
+            evidence = verification.get('evidence', {}).get('execution_guard')
+            if label.startswith(('plate_in_server_created','guarded_','hole_known_failure','native_circular')):
+                assert evidence and evidence['scope']=='application_model_mutation_guard_v1'
+            if evidence and evidence.get('scope') == 'application_model_mutation_guard_v1':
+                assert evidence['original_command_in_progress'] is False
+                assert evidence['acquired'] is True and evidence['released'] is True
+                assert evidence['selection_preserved'] is True
+                assert evidence['model_guards'] == [{'original_state':0,'locked_state':2,'released_state':0}]
             assert_non_stl_preferences(lambda: application_preferences(sw), preferences, report, 'preferences_' + label)
             report['cases'].append({'label': label, 'passed': True, 'job': job})
             persist()
@@ -130,10 +140,9 @@ def main():
         original = [(row, fact) for row, fact in zip(source_before[0][3], source_before[1]) if row[0] == first_identity]
         assert actual == original, 'Existing exact model metadata/geometry/selection/view changed.'
         assert sw.CommandInProgress is False
-        sw.CommandInProgress = True
-        assert sw.CommandInProgress is True
-        own_flag = True
-        report['owned_fixture_command_flag_acquired'] = True
+        # Production mutation guard must acquire/release its own flag after
+        # the durable checkpoint. No harness-wide flag hides this lifecycle.
+        report['harness_command_flag_borrowed'] = False
         plane = next(row for row in dimensions.features.list(second_id, 'Основная')['items']
                      if row['feature_type'] == 'RefPlane' and row['object_id'])
         parameters = dict(plane_object_id=plane['object_id'], width_mm=40., height_mm=20., depth_mm=10.)
@@ -144,19 +153,64 @@ def main():
             context={key: arguments[key] for key in ('document_id', 'configuration', 'expected_revision')},
             mutates=True, pass_operation_id=True, verify=lambda result: result['verified'] is True)
         record('plate_in_server_created_document_40_20_10', built)
+        # The shared guard changed: exercise existing dimension and rename
+        # paths on this same fixture, without another physical acceptance set.
+        for thickness_mm in (12.,10.):
+            page = dimensions.list(second_id,'Основная')
+            thickness = next(row for row in page['items'] if row['name']=='Толщина')
+            arguments = dict(document_id=second_id,configuration='Основная',object_id=thickness['object_id'],
+                expected_revision=page['revision'],value=thickness_mm,unit='mm')
+            edited = guarded_inline_submit(gate,runner,store,uuid.uuid4().hex,'dimension.set_value',arguments,
+                lambda op:dimensions.set_value(op,**arguments),
+                context={key:arguments[key] for key in ('document_id','configuration','expected_revision')},
+                mutates=True,pass_operation_id=True,verify=lambda value:value['verified'] is True)
+            record('guarded_thickness_'+str(int(thickness_mm)),edited)
+            bodies = adapter.bodies(second_model,'all')
+            assert len(bodies)==1 and math.isclose(bodies[0].GetMassProperties(1.)[3]*1e9,40.*20.*thickness_mm,rel_tol=1e-10)
+        features = FeatureCatalog(documents,store,'new-document-native-verifier',mutation_guard=adapter.mutation_guard)
+        tree = features.list(second_id,'Основная')
+        extrusion = next(row for row in tree['items'] if row['feature_type']=='Extrusion')
+        arguments = dict(document_id=second_id,configuration='Основная',object_id=extrusion['object_id'],
+            expected_revision=tree['revision'],name='Основание проверки')
+        renamed = guarded_inline_submit(gate,runner,store,uuid.uuid4().hex,'feature.rename',arguments,
+            lambda op:features.rename(op,**arguments),
+            context={key:arguments[key] for key in ('document_id','configuration','expected_revision')},
+            mutates=True,pass_operation_id=True,verify=lambda value:value['verified'] is True)
+        record('guarded_russian_feature_rename',renamed)
         sketches = SketchCatalog(dimensions)
         sketch_id = next(row['object_id'] for row in dimensions.features.list(second_id, 'Основная')['items'] if row['feature_type']=='ProfileFeature')
         cuts = PartHoleCatalog(sketches)
         parameters = dict(document_id=second_id, configuration='Основная', object_id=sketch_id,
                           plane_object_id=plane['object_id'], centre_x_mm=10., centre_y_mm=10., diameter_mm=6.)
+        last_preparation = {}
         def cut(*, stale=False):
             prepared = cuts.prepare_through_hole(**parameters)
+            last_preparation.update(prepared)
             args = dict(parameters, expected_revision='rev_stale' if stale else prepared['revision'])
             return guarded_inline_submit(gate, runner, store, uuid.uuid4().hex, 'part.create_through_hole', args,
                 lambda op: cuts.create_through_hole(op, **args),
                 context={key: args[key] for key in ('document_id', 'configuration', 'expected_revision')},
                 mutates=True, pass_operation_id=True, verify=lambda result: result['verified'] is True)
         record('hole_stale_prewrite_rejected', cut(stale=True), 'failed')
+        # This is the harness's own temporary flag, never a user's command.
+        arguments = dict(parameters,expected_revision=last_preparation['revision'])
+        sw.CommandInProgress = True
+        own_flag = True
+        assert sw.CommandInProgress is True
+        try:
+            busy = guarded_inline_submit(gate,runner,store,uuid.uuid4().hex,'part.create_through_hole',arguments,
+                lambda op:cuts.create_through_hole(op,**arguments),
+                context={key:arguments[key] for key in ('document_id','configuration','expected_revision')},
+                mutates=True,pass_operation_id=True,verify=lambda value:value['verified'] is True)
+            report['last_job'] = busy
+            persist()
+            assert busy['status']=='failed' and busy['error']['code']=='application_busy'
+        finally:
+            assert sw.CommandInProgress is True
+            sw.CommandInProgress = False
+            assert sw.CommandInProgress is False
+            own_flag = False
+        record('existing_command_flag_not_borrowed',busy,'failed')
         adapter.inject_cut = True
         failed = cut()
         record('hole_known_failure_scoped_restoration', failed, 'failed')
@@ -192,6 +246,7 @@ def main():
                     report["owned_fixture_command_flag_released"] = True
                     own_flag = False
                 assert sw.CommandInProgress is False
+                report['command_flag_baseline_restored'] = True
                 current = [binding.wrap(raw, binding.module().IModelDoc2) for raw in sw.GetDocuments() or ()]
                 assert len(current) == len(owned) and all(any(item._oleobj_.QueryInterface(pythoncom.IID_IUnknown) == identity
                     for _, identity in owned) for item in current)

@@ -9,6 +9,8 @@ from .ui_guard import ModelUiGuard
 
 
 class ApplicationDocumentGuard:
+    scope = 'application_document_create_guard_v1'
+
     def __init__(self, application, models, selection_scope):
         self.application = application
         self.models = tuple(models)
@@ -23,7 +25,7 @@ class ApplicationDocumentGuard:
 
     @property
     def evidence(self):
-        return {'scope': 'application_document_create_guard_v1', **self.flag,
+        return {'scope': self.scope, **self.flag,
                 'model_guards': [item.evidence for item in self.model_guards],
                 'selection_preserved': self.state == 'closed' and
                     len(self.selection_states) == len(self.models) and
@@ -110,3 +112,14 @@ class ApplicationDocumentGuard:
             return self.stack.__exit__(*exception)
         finally:
             self.state = 'closed'
+
+
+class ApplicationModelMutationGuard(ApplicationDocumentGuard):
+    """Same verified flag/lock/selection lifecycle after a mutation checkpoint.
+
+    Native CommandInProgress reduces out-of-process updates. Never borrowed:
+    a busy application is rejected before model writes, and release uncertainty
+    retains the coordinator's existing durable application-wide hold.
+    """
+
+    scope = 'application_model_mutation_guard_v1'

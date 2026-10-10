@@ -16,12 +16,14 @@ from .cad_document_creation import CadDocumentCreationMixin
 from .cad_sketches import CadSketchesMixin
 from .documents import rejected
 from .errors import SolidWorksError
-from .ui_guard import ModelUiGuard
+from .application_guard import ApplicationModelMutationGuard
+from .cad_selection_scope import preserved_selection
 
 
 class SolidWorksDocuments(CadMassPropertiesMixin, CadGeometryMixin, CadFeaturesMixin, CadDimensionsMixin, CadDeletionContextMixin, CadPartCreationMixin, CadPartCutMixin, CadPartHoleMixin, CadPartRevolveMixin, CadDocumentCreationMixin, CadSketchesMixin):
     def mutation_guard(self, model):
-        return ModelUiGuard(model)
+        return ApplicationModelMutationGuard(self._sw, [model],
+            lambda current, state: preserved_selection(self, current, state=state, label='model_mutation'))
 
     def __init__(self):
         try:

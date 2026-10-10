@@ -199,9 +199,10 @@ def main():
     assert internal['accepted'] is True and internal['core_suite_passed'] is True
     assert all(internal['wheel'][key] == wheel[key] for key in ('git_sha', 'source_digest', 'package_version', 'wheel_sha256'))
     assert internal['scope'] == 'internal_circular_through_hole_native_v1'
-    assert internal['fixtures_closed'] is True and internal['owned_fixture_command_flag_released'] is True
+    assert internal['fixtures_closed'] is True and internal['command_flag_baseline_restored'] is True
     assert internal['verifier_sha256'] == hashlib.sha256(Path(__file__).with_name('verify_part_hole.py').read_bytes()).hexdigest()
-    assert {'hole_stale_prewrite_rejected','hole_known_failure_scoped_restoration','native_circular_through_hole_d6_x10_y10'} <= {
+    assert {'hole_stale_prewrite_rejected','hole_known_failure_scoped_restoration','native_circular_through_hole_d6_x10_y10',
+            'guarded_thickness_12','guarded_thickness_10','guarded_russian_feature_rename','existing_command_flag_not_borrowed'} <= {
         row['label'] for row in internal['cases'] if row['passed'] is True}
     state = args.state_dir.resolve()
     private = (Path(__file__).resolve().parents[1] / 'work').resolve()
