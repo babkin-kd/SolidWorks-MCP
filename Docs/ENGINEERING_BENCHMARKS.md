@@ -53,3 +53,32 @@ Private CAD, SQLite и полные native-отчёты остаются в igno
 Изменён только защищённый исполнительный интервал после checkpoint: собственный CommandInProgress, UI lock и selection scope. Чужой True отклоняется, release uncertainty сохраняет hold; checkpoints, stale, два полных снимка и postconditions остаются. Первые два internal-прогона dev55 остановились на ошибках verifier-контракта/учёта busy и не приняты. Пакет wheel не менялся, helpers и record исправлены и покрыты pure-тестами; третий fresh internal и первый public приняты.
 
 Пункт1.5 остаётся открытым: полное число COM-вызовов всей модели и read jobs не измерены; безопасное переключение флага для подготовительных чтений требует отдельного durable service-scope. Эти задачи не подменяют дальнейший приоритетный функционал деталей.
+
+## Листовой flat/fold — dev62, 11.10.2026
+
+Source freeze `03ab76563b90643e3dc568f6301b30d2290a30d5`; source digest
+`9190ea543d13b8b9b2681c628dad1eab62856862686b1eeb77c67a4c2cf716d4`; wheel SHA-256
+`add1bfbec73dfbada9bc30aa362e77f3bdb8f5f9f363d0a5743337c2900abe39`. Installed wheel без source PYTHONPATH.
+Private evidence: `work/metadata-dev62-1-report.json`,
+`work/native-sheet-state-dev62-1/report.json`,
+`work/native-sheet-state-mcp-dev62-2/report.json`.
+
+Внутренний прогон1 и свежий public-прогон2 accepted=true, 7/8 кейсов.
+W40/H20/L30/t2/r2 мм, K=.42. Время — updated_at−created_at terminal-задания
+SQLite, включая очередь/обработку; это не отдельное время COM. Приватные
+журналы не публикуются. Повтор request_id не создавал второго задания/setter.
+
+| Операция | Internal, с | Public MCP, с |
+| --- | ---: | ---: |
+| Создание folded-профиля | 41,562 | 42,547 |
+| Развёртка | 92,862 | 96,055 |
+| Обратный сгиб | 65,574 | 67,458 |
+| Подготовка развёртки | Не измерена отдельно | 85,652 |
+| Подготовка обратного сгиба | Не измерена отдельно | 57,465 |
+| Stale до записи | 84,238 | Покрыто internal |
+| Known failure и восстановление | 99,793 | Покрыто internal |
+
+Два полных закрывающих чтения формы/дерева/драйверов/native-параметров сохранены.
+Стоимость read-подготовки остаётся предметом1.5; причина задержки отдельным
+профилированием этого блока не установлена. Первый public-прогон с ошибкой
+финального harness-вызова не использован как accepted-замер.

@@ -1,21 +1,29 @@
 # API v2: текущий кандидат первой стадии
 
-Текущий принятый инженерный блок — **dev61**, `sheet_prepare_l_profile` и
-`sheet_create_l_profile`; каталог **40 инструментов /13 мутаций**. Scope
-`empty_part_sheet_l_profile_v1`: пустая деталь, явная плоскость, открытый L-эскиз,
-один реальный сгиб и обязательный K-фактор. Контракт: [SHEET_PROFILE.md](SHEET_PROFILE.md).
-**3284 pure passed /323 CAD deselected**; installed metadata40 принят;
-**internal native6 /public MCP6 passed, оба accepted=true** на одном точном wheel.
-Проверены полный folded BREP/native allowance, журнал/checkpoint, ревизия,
-владение, scoped restoration, request_id и сохранение исходной модели.
-Свои документы закрыты, guard released, baseline пуст/free; все задания terminal,
-новых unknown нет. Source unknown-журналы не переписаны и не засчитаны успехом.
-Развёртка/другие профили/конфигурации — отдельные области. Стадии плана открыты;
-импорт/экспорт отложены. Приёмка dev61 не заменяет исторические native-сценарии
-скругления/массива/отверстия на их точных прежних wheel.
+Текущий принятый инженерный блок — **dev62**, `sheet_prepare_flat_state` и
+`sheet_set_flat_state`, scope `single_l_sheet_flat_state_v1`.
+Контракт: [SHEET_FLAT_STATE.md](SHEET_FLAT_STATE.md).
+
+**dev62 принят** на одном точном установленном wheel: **3435 pure passed /323 CAD
+deselected (39,86с)**, metadata42 инструментов /14 мутаций, **internal native7 /
+public MCP8 passed, оба accepted=true**. Свои документы закрыты, baseline пуст/free,
+guard released; все задания terminal, новых unknown нет. Рабочая v1 сохранена.
+Приёмка ограничена одним самостоятельным L-профилем/телом/конфигурацией с одним
+сгибом90°. Импорт/экспорт отложены; все стадии плана остаются открытыми.
+
+Приёмка подтверждает создание folded-профиля, native-развёртку и обратный сгиб,
+полную форму и исходные имена/размеры/K, stale/known restoration/request_id.
+Произвольные профили/несколько сгибов и конфигураций — отдельные области.
+Исторические операции скругления/массива/отверстия не повторялись в этом блоке.
+
+Ранее dev61: folded L-профиль, scope `empty_part_sheet_l_profile_v1`,
+3284 pure /323 CAD deselected, metadata40/13, internal6/public6 на его wheel.
+Контракт: [SHEET_PROFILE.md](SHEET_PROFILE.md).
 
 | Инструмент | Реализованная операция |
 | --- | --- |
+| `sheet_prepare_flat_state` | Два полных read-only снимка существующего L-профиля, K/fixed-face/форма/ревизия. |
+| `sheet_set_flat_state` | Flat/fold по ревизии/request_id; checkpoint/guard, полный native BREP и исходные имена; scoped restoration известного сбоя. |
 | `sheet_prepare_l_profile` | Read-only полная подготовка пустой детали/плоскости, размеров и K; ожидаемая форма и ревизия. |
 | `sheet_create_l_profile` | Создание по той же ревизии и request_id; native folded sheet metal, русские имена, полная проверка и scoped restoration при доказанном известном сбое. |
 

@@ -1,5 +1,36 @@
 # Ход разработки
 
+## 11.10.2026 — native flat/fold dev62 принят на точном wheel
+
+**dev62 принят** на одном точном установленном wheel: **3435 pure passed /323 CAD
+deselected (39,86с)**, metadata42 инструментов /14 мутаций, **internal native7 /
+public MCP8 passed, оба accepted=true**. Свои документы закрыты, baseline пуст/free,
+guard released; все задания terminal, новых unknown нет. Рабочая v1 сохранена.
+Приёмка ограничена одним самостоятельным L-профилем/телом/конфигурацией с одним
+сгибом90°. Импорт/экспорт отложены; все стадии плана остаются открытыми.
+
+Source freeze `03ab76563b90643e3dc568f6301b30d2290a30d5`; source digest
+`9190ea543d13b8b9b2681c628dad1eab62856862686b1eeb77c67a4c2cf716d4`; wheel SHA-256
+`add1bfbec73dfbada9bc30aa362e77f3bdb8f5f9f363d0a5743337c2900abe39`. Installed wheel без source PYTHONPATH.
+Private evidence: `work/metadata-dev62-1-report.json`,
+`work/native-sheet-state-dev62-1/report.json`,
+`work/native-sheet-state-mcp-dev62-2/report.json`.
+
+180 связанных pure-тестов перед freeze. Native internal7: source creation,
+stale до записи, известный сбой после фактической развёртки с полной scoped
+restoration, успешные flat/fold; исходная отдельная модель сохранена.
+Public MCP8: пользовательская цепочка и тот же request_id без второго setter.
+Native flat V=3387,663694085851 мм³/A=3733,50794035824 мм², BREP8/12/6;
+folded вернул точные исходные BREP16/28/14/размеры/параметры и русские имена.
+
+Первый public-прогон1 оставлен accepted=false: после8 успешных CAD-кейсов
+обнаружена ошибка отсутствующих аргументов require_native_cleanup. Finally
+закрыл собственные документы. Harness исправлен отдельным локальным70f87ac,
+84 связанные lifecycle/contract теста passed; production wheel не изменён.
+Свежий public-прогон2 принят. Все журналы terminal, нет новых unknown.
+Один агент, связанные изменения накоплены локально; GitHub push/CI не выполнялись.
+Следующий блок — редактирование параметров существующего sheet L-профиля.
+
 ## 11.10.2026 — source-развёртка: полная геометрия, имя списка ещё требует исправления
 
 Подготовлены flat geometry/fixed-face/revision primitives и усиленный read-only

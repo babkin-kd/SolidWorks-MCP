@@ -1,16 +1,34 @@
-# Native-развёртка — рабочий инженерный блок
+# Native-развёртка и обратный сгиб — принятый ограниченный сценарий
 
-Состояние на 11.10.2026: реализованы домен, native bridge и MCP-фасад кандидата
-**dev62**, `sheet_prepare_flat_state` / `sheet_set_flat_state`, scope
-`single_l_sheet_flat_state_v1`; каталог исходников42 инструментов /14 мутаций.
-180 связанных pure-тестов passed. Итоговый wheel ещё не принят; установленный
-принятый dev61 остаётся40/13. Рабочая v1 сохранена, все стадии открыты.
+Инструменты `sheet_prepare_flat_state` / `sheet_set_flat_state`, scope
+`single_l_sheet_flat_state_v1`. Проверены полный flat/fold BREP, native fixed-face,
+исходная сеть размеров/K, текущий body/bundle и сохранение русских имён тела
+«Тело листового уголка» и списка «Список вырезов».
 
-Новая source-доменная проба2 подтвердила полное восстановление folded-состояния,
-имён тела «Тело листового уголка» и списка «Список вырезов». Все4 задания
-terminal/committed, свой документ закрыт, baseline пуст/free. Усиленный
-fixed-face reader и полный native bundle участвовали в этой пробе. Это source,
-а не установленный wheel/public MCP приёмка. Private report:
+**dev62 принят** на одном точном установленном wheel: **3435 pure passed /323 CAD
+deselected (39,86с)**, metadata42 инструментов /14 мутаций, **internal native7 /
+public MCP8 passed, оба accepted=true**. Свои документы закрыты, baseline пуст/free,
+guard released; все задания terminal, новых unknown нет. Рабочая v1 сохранена.
+Приёмка ограничена одним самостоятельным L-профилем/телом/конфигурацией с одним
+сгибом90°. Импорт/экспорт отложены; все стадии плана остаются открытыми.
+
+Source freeze `03ab76563b90643e3dc568f6301b30d2290a30d5`; source digest
+`9190ea543d13b8b9b2681c628dad1eab62856862686b1eeb77c67a4c2cf716d4`; wheel SHA-256
+`add1bfbec73dfbada9bc30aa362e77f3bdb8f5f9f363d0a5743337c2900abe39`. Installed wheel без source PYTHONPATH.
+Private evidence: `work/metadata-dev62-1-report.json`,
+`work/native-sheet-state-dev62-1/report.json`,
+`work/native-sheet-state-mcp-dev62-2/report.json`.
+
+Internal покрывает stale до записи, известный сбой после настоящего flat setter
+и scoped restoration. Public SDK/stdio покрывает создание профиля, flat/fold,
+повтор request_id без второй CAD-операции, журнал и сохранение исходной модели.
+Public-прогон1 выполнил все8 CAD-кейсов, но остался accepted=false из-за ошибки
+аргументов завершающего cleanup-вызова. Собственные документы были закрыты finally.
+Исправлен только harness; его84 связанных теста passed. Свежий прогон2 принят
+на том же wheel. Первый отчёт сохранён без переобъявления успехом.
+
+Исторические source-пробы ниже объясняют найденные ограничения. Доменная probe2
+подтвердила полное восстановление имён и формы; её private evidence:
 `work/native-flat-domain-development-probe-2/report.json`.
 
 ## Инженерный сценарий и адресация
@@ -55,7 +73,8 @@ V≈3402,74333882308 мм³/A≈3749,59289474462 мм². Для произвол
 **В исторической примитивной source-пробе3 полное состояние не восстановлено:** SolidWorks автоматически
 переименовал тот же CutListFolder из «Список вырезов» в `Sheet<2>`. В source-пробе
 full_folded_state_restored=false; это не успешная итоговая приёмка. Имя тела
-этот пробник отдельно не снимал, его сохранение также предстоит доказать.
+этот пробник отдельно не снимал. Позднейшая доменная проба и установленная
+приёмка dev62 подтвердили сохранение обоих имён.
 
 Получены существенные ограничения native-ссылок:
 
@@ -130,9 +149,10 @@ bundle связывается через native PID/CAN/membership и singleton 
 один native-сгиб90°, поддержанный фиксированный конец. Несколько тел/сгибов,
 произвольные профили, материалы и сохранение/экспорт требуют отдельного блока.
 
-Осталось выполнить полный pure-набор, clean freeze и установленный wheel,
-metadata42/14, internal native stale/known restoration/flat/fold и public
-SDK/stdio цепочку с request_id на том же артефакте без source PYTHONPATH.
+Итоговая установленная приёмка выполнена; точные evidence и её границы приведены
+выше. Исторические source87/260 и последние180 связанных pure-тестов не заменяют
+итоговый полный набор3435 или native/MCP. Дальнейшие формы и инженерные операции
+нуждаются в своей проверке; приёмка всего2.2 не заявляется.
 
 Источники native API: [IFeature.SetSuppression2](https://help.solidworks.com/2021/english/api/sldworksapi/SOLIDWORKS.Interop.sldworks~SOLIDWORKS.Interop.sldworks.IFeature~SetSuppression2.html),
 [IFlatPatternFeatureData.FixedFace2](https://help.solidworks.com/2016/english/api/sldworksapi/SOLIDWORKS.Interop.sldworks~SOLIDWORKS.Interop.sldworks.IFlatPatternFeatureData~FixedFace2.html).
