@@ -24,6 +24,17 @@ spec.loader.exec_module(helper)
 ARGS = {'request_id': 'owned-request', 'document_id': 'doc', 'configuration': 'Основная',
         'object_id': 'dim', 'expected_revision': 'rev', 'value': 9, 'unit': 'mm', 'timeout_s': 0}
 GUARD = {'original_state': 0, 'locked_state': 2, 'released_state': 0}
+
+
+def test_application_document_guard_requires_its_own_typed_release_evidence():
+    guard = {'scope': 'application_document_create_guard_v1', 'original_command_in_progress': False,
+        'acquired': True, 'released': True, 'selection_preserved': True, 'model_guards': [deepcopy(GUARD)]}
+    assert helper.released_execution_guard(guard)
+    for key, value in [('original_command_in_progress', 0), ('acquired', 1), ('released', False),
+                       ('selection_preserved', False), ('model_guards', [{'released_state': 0}])]:
+        changed = deepcopy(guard)
+        changed[key] = value
+        assert not helper.released_execution_guard(changed)
 SPECS = {
     'document_list': helper.ToolSpec('document.list', False),
     'dimension_set_value': helper.ToolSpec('dimension.set_value', True,

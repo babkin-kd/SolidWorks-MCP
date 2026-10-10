@@ -28,6 +28,18 @@ import anyio
 TERMINAL = frozenset({'succeeded', 'failed', 'cancelled', 'unknown'})
 CONTEXT_KEYS = ('document_id', 'configuration', 'expected_observation_revision',
                 'expected_revision', 'body_id', 'object_id')
+
+
+def released_execution_guard(guard):
+    if isinstance(guard, dict) and guard.get('scope') == 'application_document_create_guard_v1':
+        keys = {'scope', 'original_command_in_progress', 'acquired', 'released', 'model_guards', 'selection_preserved'}
+        return (set(guard) == keys and guard['original_command_in_progress'] is False
+                and guard['acquired'] is True and guard['released'] is True and guard['selection_preserved'] is True
+                and type(guard['model_guards']) is list and len(guard['model_guards']) <= 1000
+                and all(isinstance(item, dict) and 'scope' not in item and released_execution_guard(item)
+                        for item in guard['model_guards']))
+    return isinstance(guard, dict) and all(type(guard.get(key)) is int and guard[key] == value
+        for key, value in (('original_state', 0), ('locked_state', 2), ('released_state', 0)))
 DIRECT_QUERIES = frozenset({'system_get_info', 'job_get', 'job_list'})
 _HISTORY_SEAL = object()
 
@@ -361,8 +373,7 @@ class VerifierSupervisor:
             before = mutation.get('before_state') or {}
             if before.get('_mutation_effect_scope') == 'application':
                 guard = (verification.get('evidence') or {}).get('execution_guard') or {}
-                if any(type(guard.get(key)) is not int or guard[key] != value
-                       for key, value in (('original_state', 0), ('locked_state', 2), ('released_state', 0))):
+                if not released_execution_guard(guard):
                     reasons.append('UI release unconfirmed')
                     safe = False
         # A coherent terminal job snapshot permits SDK teardown, while unknown

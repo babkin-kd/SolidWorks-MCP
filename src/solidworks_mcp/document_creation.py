@@ -80,7 +80,7 @@ class DocumentCreationCatalog:
         return {'application_id': self.application_id, 'templates': [{'template_id': ref.object_id,
                 'document_type': 'part', 'source': 'solidworks_configured_default',
                 'filename': Path(signature['path']).name, 'signature': signature}],
-                'native_creation_available': False}
+                'native_creation_available': True}
 
     def _template(self, template_id):
         reference = self.references.get(template_id)
@@ -132,7 +132,7 @@ class DocumentCreationCatalog:
         revision = 'rev_' + hashlib.sha256(_json(payload).encode('utf8')).hexdigest()
         return {'application_id': self.application_id, 'revision': revision, 'revision_scope': SCOPE,
                 'template_id': template_id, 'name': name, 'configuration_name': configuration_name,
-                'template': ref.signature, 'baseline': semantic, 'native_creation_available': False}
+                'template': ref.signature, 'baseline': semantic, 'native_creation_available': True}
 
     @staticmethod
     def _same_existing(before, after, *, created_id=None):

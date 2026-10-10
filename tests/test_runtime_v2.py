@@ -23,6 +23,30 @@ class Worker:
         return True
 
 
+def test_document_creation_runtime_uses_one_catalog_and_real_durable_application_context(tmp_path):
+    from solidworks_mcp.documents import DocumentCatalog
+    from test_document_creation_v2 import Adapter
+    template = tmp_path / 'Деталь.prtdot'
+    template.write_bytes(b'artificial template')
+    adapter = Adapter(template)
+    store = JobStore(tmp_path / 'documents.sqlite')
+    runtime = Runtime(store, worker_factory=Worker, catalog_factory=lambda: DocumentCatalog(adapter))
+    async def exercise():
+        listed = await runtime.read('templates', 'document.list_templates', {})
+        template_id = listed['result']['templates'][0]['template_id']
+        prepared = await runtime.read('prepare', 'document.prepare_create_part', {'template_id': template_id, 'name': 'Новая деталь'})
+        arguments = dict(document_id=prepared['result']['application_id'], configuration='',
+            template_id=template_id, name='Новая деталь', configuration_name='Основная', expected_revision=prepared['result']['revision'])
+        created = await runtime.mutate('create', 'document.create_part', arguments)
+        assert created['status'] == 'succeeded' and created['mutation']['phase'] == 'committed'
+        assert created['payload']['context']['document_id'].startswith('app_')
+        assert created['result']['after']['created_document_id'].startswith('doc_')
+        assert await runtime.mutate('create', 'document.create_part', arguments) == created
+        assert adapter.count == 1
+    try: asyncio.run(exercise())
+    finally: runtime.shutdown()
+
+
 def test_export_without_trusted_directory_does_not_start_worker_or_record_job(tmp_path):
     store = JobStore(tmp_path / 'jobs.sqlite')
     runtime = Runtime(store, worker_factory=lambda: pytest.fail('No worker before trusted output root.'))

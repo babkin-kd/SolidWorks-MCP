@@ -9,6 +9,7 @@ from .geometry import GeometryCatalog
 from .features import FeatureCatalog
 from .dimensions import DimensionCatalog
 from .part_creation import PartCreationCatalog
+from .document_creation import DocumentCreationCatalog
 from .exports_v2 import ExportCatalog
 from .jobs import JobError, JobRunner, _json
 
@@ -42,6 +43,7 @@ class Runtime:
         self._features = None
         self._dimensions = None
         self._parts = None
+        self._document_creation = None
         self._exports = None
         self._approved_output_root = approved_output_root
         self._connection_epoch = None
@@ -58,7 +60,7 @@ class Runtime:
             try:
                 self._catalog = self._catalog_factory()  # Always called on the STA.
             except Exception as exc:
-                if operation in ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion'):
+                if operation in ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part'):
                     raise rejected(getattr(exc, 'code', 'cad_connection_failed'), str(exc)) from exc
                 raise
             self._connection_epoch = 'connection_' + uuid.uuid4().hex
@@ -67,6 +69,14 @@ class Runtime:
                 return self._catalog.list()
             if operation == 'document.get':
                 return self._catalog.get(**arguments)
+            if operation in ('document.list_templates', 'document.prepare_create_part', 'document.create_part'):
+                if self._document_creation is None:
+                    self._document_creation = DocumentCreationCatalog(self._catalog, self.store, self._connection_epoch)
+                if operation == 'document.list_templates':
+                    return self._document_creation.list_templates()
+                if operation == 'document.prepare_create_part':
+                    return self._document_creation.prepare_create_part(**arguments)
+                return self._document_creation.create_part(operation_id, **arguments)
             if operation in ('geometry.list', 'geometry.get') and self._geometry is None:
                 self._geometry = GeometryCatalog(self._catalog)
             if operation == 'geometry.list':
@@ -130,10 +140,11 @@ class Runtime:
         # Validate before recording/dispatch. A bad timeout must not start CAD.
         if isinstance(timeout_s, bool) or not isinstance(timeout_s, (int, float)) or not 0 <= timeout_s <= 120:
             raise JobError('invalid_timeout', 'timeout_s must be finite and between 0 and 120.')
-        allowed = ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion') if mutates else (
+        allowed = ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part') if mutates else (
             'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies',
             'feature.deletion_structure', 'feature.deletion_context',
-            'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion')
+            'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion',
+            'document.list_templates', 'document.prepare_create_part')
         if operation not in allowed:
             raise JobError('unsupported_operation', 'No domain implementation for this operation.')
         if operation.startswith('export.') and self._approved_output_root is None:
@@ -163,6 +174,7 @@ class Runtime:
         self._features = None
         self._dimensions = None
         self._parts = None
+        self._document_creation = None
         self._exports = None
         self._connection_epoch = None
         if catalog is not None:
