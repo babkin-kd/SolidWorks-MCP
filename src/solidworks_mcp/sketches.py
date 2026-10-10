@@ -31,6 +31,13 @@ def sketch_structure(snapshot):
     return result
 
 
+def persistent_sketch_members(members):
+    # ISketchRelation has no persistent reference and GetRelations returns fresh
+    # relation wrappers every time. Retain them in the capture, but compare
+    # their complete semantics and resolved entity memberships, not addresses.
+    return tuple((key,value) for key,value in members if not key.startswith('relation:'))
+
+
 def rectangle_parameters(snapshot, semantic, configuration):
     """Classify native structure/axis relations, never dimension display names."""
     fail = lambda message: rejected('unsupported_rectangular_sketch', message)
@@ -188,7 +195,8 @@ class SketchCatalog:
     def _paired(self, document_id, configuration, object_id):
         first, second = (self._capture(document_id, configuration, object_id) for _ in range(2))
         same = (self.dimensions._same_capture(first.dimensions, second.dimensions) and first.revision == second.revision
-                and first.snapshot == second.snapshot and first.members == second.members)
+                and first.snapshot == second.snapshot
+                and persistent_sketch_members(first.members) == persistent_sketch_members(second.members))
         self.dimensions._close_native_proof(second.dimensions.state[0], second.dimensions.event_sequence)
         if not same:
             raise rejected('sketch_changed_during_read', 'Sketch/control/native identity changed during paired capture.')

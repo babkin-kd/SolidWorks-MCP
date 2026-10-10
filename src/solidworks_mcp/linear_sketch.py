@@ -227,6 +227,7 @@ class LinearSketchReader:
         if _integer(self.sketch.GetSketchPointsCount2(), high=2000) != len(points):
             raise rejected('sketch_capture_changed', 'Sketch user-point count changed while reading.')
         return {'scope': SCOPE, 'is_3d': False, 'constraint_status': _integer(self.sketch.GetConstrainedStatus(), high=10),
+                'relation_identity_policy': 'complete_semantics_with_resolved_native_entities_v1',
                 'model_origin_point': self.origin_snapshot,
                 'points': [self.points[key] for key in sorted(self.points)],
                 'segments': [self.lines[key] for key in sorted(self.lines)],

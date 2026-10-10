@@ -12,7 +12,7 @@ from solidworks_mcp.part_creation import PartCreationCatalog
 from solidworks_mcp.sketches import SketchCatalog, rectangle_parameters
 from test_document_catalog_v2 import model
 from test_feature_domain_v2 import feature
-from test_linear_sketch_v2 import Sketch
+from test_linear_sketch_v2 import Sketch, Relation
 from test_part_construction_mutation_v2 import Adapter as ConstructionAdapter, Worker
 from test_part_creation_v2 import IDENTITY
 from solidworks_mcp.linear_sketch import LinearSketchReader
@@ -156,6 +156,22 @@ def test_foreign_constraint_after_write_is_not_restored(setup):
 def test_late_sketch_getter_event_invalidates_read(setup):
     adapter,catalog,_,_,doc,obj,_=setup
     adapter.sketch_hook=lambda:setattr(adapter.watches[id(adapter.models[0].identity)],'sequence',17)
+    with pytest.raises(ExecutionFailure):catalog.get(doc,'Основная',obj)
+
+
+def test_fresh_relation_interfaces_do_not_invalidate_identical_complete_native_semantics(setup):
+    adapter,catalog,_,_,doc,obj,_=setup
+    original=catalog.get(doc,'Основная',obj)
+    def fresh():
+        adapter.sketch.relations=[Relation(row.kind,row.types,row.entities,row.definitions,row.display)
+                                 for row in adapter.sketch.relations]
+    adapter.sketch_hook=fresh
+    assert catalog.get(doc,'Основная',obj)==original
+
+
+def test_changed_relation_semantics_between_native_captures_is_rejected(setup):
+    adapter,catalog,_,_,doc,obj,_=setup
+    adapter.sketch_hook=lambda:setattr(adapter.sketch.relations[0],'Suppressed',True)
     with pytest.raises(ExecutionFailure):catalog.get(doc,'Основная',obj)
 
 
