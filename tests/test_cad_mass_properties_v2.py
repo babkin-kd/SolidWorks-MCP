@@ -195,3 +195,24 @@ def test_invalid_suspend_acknowledgement_is_not_borrowed(candidate):
         adapter.mass_properties(adapter.model, (body,))
     assert error.value.code == 'mass_selection_suspend_unconfirmed'
     assert mp.selection.calls == [] and not mp.recalculated
+
+
+def test_document_override_is_checked_before_body_scope_can_hide_it(candidate):
+    adapter, mp, body = candidate
+    mp.GetOverrideOptions = lambda: SimpleNamespace(
+        OverrideMass=not hasattr(mp, 'SelectedItems'), OverrideCenterOfMass=False)
+    with pytest.raises(ExecutionFailure) as error:
+        adapter.mass_properties(adapter.model, (body,))
+    assert error.value.code == 'mass_properties_overridden'
+    assert not hasattr(mp, 'SelectedItems') and not mp.recalculated
+    assert mp.selection.calls == ['suspend', 'resume']
+
+
+def test_override_status_is_reacquired_after_recalculation(candidate):
+    adapter, mp, body = candidate
+    mp.GetOverrideOptions = lambda: SimpleNamespace(
+        OverrideMass=mp.recalculated, OverrideCenterOfMass=False)
+    with pytest.raises(ExecutionFailure) as error:
+        adapter.mass_properties(adapter.model, (body,))
+    assert error.value.code == 'mass_properties_overridden'
+    assert mp.selection.calls == ['suspend', 'resume']

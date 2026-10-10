@@ -72,6 +72,9 @@ class CadMassPropertiesMixin:
         mp = binding.wrap(self._extension(model).CreateMassProperty2(), self._module.IMassProperty2)
         if mp is None:
             raise rejected('mass_properties_unavailable', 'SolidWorks did not create a mass calculation object.')
+        # The temporary list is empty here: inspect document-level overrides
+        # before SelectedItems switches to bodies, which excludes those flags.
+        self._mass_overrides(mp)
         mp.UseSystemUnits = True
         mp.IncludeHiddenBodiesOrComponents = True
         mp.ShowWeldBeadMass = False
@@ -80,9 +83,7 @@ class CadMassPropertiesMixin:
         mp.SelectedItems = win32com.client.VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_DISPATCH,
                                                   [body._oleobj_ for body in bodies])
         self._confirm_mass_scope(mp, bodies)
-        overrides = binding.wrap(mp.GetOverrideOptions(), self._module.IMassPropertyOverrideOptions)
-        if overrides is None or overrides.OverrideMass or overrides.OverrideCenterOfMass:
-            raise rejected('mass_properties_overridden', 'Calculated mass/center cannot be proved without unambiguous override status.')
+        self._mass_overrides(mp)
         utility = binding.wrap(self._sw.GetMathUtility(), self._module.IMathUtility)
         if utility is None:
             raise rejected('mass_properties_unavailable', 'Model coordinate transform is unavailable.')
@@ -96,11 +97,16 @@ class CadMassPropertiesMixin:
         self._confirm_mass_scope(mp, bodies)
         if not mp.UseSystemUnits or not mp.IncludeHiddenBodiesOrComponents or mp.ShowWeldBeadMass:
             raise rejected('mass_properties_scope_unconfirmed', 'Mass calculation scope changed during recalculation.')
-        if overrides.OverrideMass or overrides.OverrideCenterOfMass:
-            raise rejected('mass_properties_overridden', 'Mass/center override changed during recalculation.')
+        self._mass_overrides(mp)  # Re-read options; the previous COM object may describe an old scope.
         center = mp.CenterOfMass
         return {'volume_m3': mp.Volume, 'surface_area_m2': mp.SurfaceArea, 'mass_kg': mp.Mass,
                 'density_kg_m3': mp.Density, 'center_of_mass_m': None if center is None else tuple(center)}
+
+    def _mass_overrides(self, mp):
+        overrides = binding.wrap(mp.GetOverrideOptions(), self._module.IMassPropertyOverrideOptions)
+        if overrides is None or overrides.OverrideMass or overrides.OverrideCenterOfMass:
+            raise rejected('mass_properties_overridden',
+                'Calculated mass/center cannot be proved without unambiguous override status.')
 
     def _confirm_mass_scope(self, mp, bodies):
         actual = tuple(mp.SelectedItems or ())

@@ -212,12 +212,15 @@ def main():
             # Every following write changes only an owned disposable fixture.
             activate_owned(sw, first, first.GetTitle())
             session._model = first
-            second_feature = next(feature for feature in session._iter_features()
-                                  if feature.Name == 'Контрольный блок 2')
+            def current_second_feature():
+                return next(feature for feature in session._iter_features()
+                            if feature.Name == 'Контрольный блок 2')
             report['pending_fixture_mutation'] = 'variant_suppression'
             persist()
             assert first.ShowConfiguration2('Вариант')
+            second_feature = current_second_feature()  # IFeature can retain its old configuration scope.
             assert second_feature.SetSuppression2(0, 1, None)  # swSuppress, swThisConfiguration.
+            assert second_feature.IsSuppressed2(1, None) == (True,)
             assert first.ForceRebuild3(False)
             assert len(adapter.bodies(first, 'solid')) == 1
             report['pending_fixture_mutation'] = None
@@ -226,7 +229,10 @@ def main():
             report['pending_fixture_mutation'] = 'main_suppression'
             persist()
             assert first.ShowConfiguration2('Основная')
+            second_feature = current_second_feature()
+            assert second_feature.IsSuppressed2(1, None) == (False,)
             assert second_feature.SetSuppression2(0, 1, None)
+            assert second_feature.IsSuppressed2(1, None) == (True,)
             assert first.ForceRebuild3(False)
             assert len(adapter.bodies(first, 'solid')) == 1
             report['pending_fixture_mutation'] = None
@@ -236,6 +242,7 @@ def main():
             report['pending_fixture_mutation'] = 'restore_main_suppression'
             persist()
             assert second_feature.SetSuppression2(SW_UNSUPPRESS_DEPENDENT, 1, None)
+            assert second_feature.IsSuppressed2(1, None) == (False,)
             assert first.ForceRebuild3(False)
             assert len(adapter.bodies(first, 'solid')) == 2
             report['pending_fixture_mutation'] = None
