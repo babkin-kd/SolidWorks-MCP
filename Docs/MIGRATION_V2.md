@@ -1,6 +1,6 @@
 # Миграция legacy-инструментов в API v2
 
-Кандидат dev48 добавляет `sketch_get`, `sketch_prepare_dimension_change`, `sketch_set_dimension`: каталог из 26 реализованных инструментов. Внутренний installed dev47 принят: 11 native-сценариев, ширина 45 мм, высота 25 мм и толщина 12 мм дают 13 500 мм³; проверено восстановление после известного сбоя. Fresh same-wheel internal и public MCP приёмка dev48 ещё требуются. Общий dimension_set_value сохраняет blocker эскизов. Полный ограниченный контракт и численные допуски: [SKETCHES.md](SKETCHES.md). Импорт/экспорт остаются отложенными; стадия 1 открыта.
+Установленный dev48 принят: **2368 pure passed, 323 CAD deselected; fresh same-wheel internal 11 native passed и public MCP stdio 11 native passed, оба accepted=true**. Добавлены `sketch_get`, `sketch_prepare_dimension_change`, `sketch_set_dimension`; каталог — **26 инструментов, 6 mutations**. MCP создаёт документ и пластину 40 × 20 × 10 мм, меняет ширину на 45 мм, высоту на 25 мм и толщину на 12 мм: независимый native объём `13500.000000000004` мм³. Проверены stale-отказ, повтор request_id без второй записи и сохранность исходной детали/выделения/вида; internal дополнительно подтвердил scoped restoration после сбоя уже после реального setter/rebuild. Свои контрольные модели закрыты, флаг свободен, non-STL настройки сохранены. Scope — описанная полностью определённая прямоугольная база; общий blocker размера эскиза сохраняется. Импорт/экспорт отложены, стадия 1 открыта. См. [SKETCHES.md](SKETCHES.md).
 
 Предыдущий принятый результат:
 
