@@ -120,6 +120,66 @@ class CadFeaturesMixin:
                 'owner_native_id': int(owner.GetID()) if owner is not None else None,
                 'error_code': int(error), 'is_warning': bool(warning) if error else False}
 
+    def feature_dependencies(self, features):
+        """Capture native-reported links within an already collected feature tree.
+
+        Called on the owning STA. Indexes identify rows in this one capture;
+        public targets still require persistent references and a closing revision
+        check. Parent/child disagreement is reported explicitly. This capture
+        alone does not authorize deletion or claim a complete deletion impact.
+        """
+        if type(features) not in (list, tuple) or len(features) > 5000:
+            raise rejected('feature_budget_exceeded', 'Dependency capture supports at most 5000 feature rows.')
+        by_native_id = {}
+        for index, feature in enumerate(features):
+            identifier = feature.GetID()
+            if type(identifier) is not int or identifier in by_native_id:
+                raise rejected('feature_identity_collision', 'Dependency feature rows require unique native ID hints.')
+            by_native_id[identifier] = index
+        relations_read = 0
+
+        def member_index(raw):
+            nonlocal relations_read
+            relations_read += 1
+            if relations_read > 100000:
+                raise rejected('feature_dependency_budget_exceeded', 'Dependency relation budget is 100000.')
+            member = binding.wrap(raw, self._module.IFeature)
+            if member is None:
+                raise rejected('feature_dependency_read_failed', 'Native relation contains a null feature.')
+            identifier = member.GetID()
+            index = by_native_id.get(identifier) if type(identifier) is int else None
+            if index is None:
+                raise rejected('feature_dependency_outside_tree', 'Native dependency is outside the captured feature tree.')
+            # Native GetID is a candidate hint. Every link must prove canonical
+            # membership; matching names or integer IDs never suffice.
+            if self.identity(member) != self.identity(features[index]):
+                raise rejected('feature_identity_collision', 'Native dependency ID belongs to a different feature identity.')
+            return index
+
+        def collection(value):
+            if value is None:
+                return ()
+            if type(value) not in (list, tuple) or len(value) > 5000:
+                raise rejected('feature_dependency_read_failed', 'Expected a bounded native feature relation array.')
+            return value
+
+        parents, children, absorbed = set(), set(), set()
+        for index, feature in enumerate(features):
+            for raw in collection(feature.GetParents()):
+                parents.add((member_index(raw), index))
+            for raw in collection(feature.GetChildren()):
+                children.add((index, member_index(raw)))
+            owner = feature.GetOwnerFeature()
+            if owner is not None:
+                absorbed.add((member_index(owner), index))
+        return {'scope': 'native_feature_relation_capture_v1', 'feature_count': len(features),
+                'parent_links': [list(edge) for edge in sorted(parents)],
+                'child_links': [list(edge) for edge in sorted(children)],
+                'absorbed_links': [list(edge) for edge in sorted(absorbed)],
+                'parent_links_without_child_confirmation': [list(edge) for edge in sorted(parents - children)],
+                'child_links_without_parent_confirmation': [list(edge) for edge in sorted(children - parents)],
+                'relations_read': relations_read}
+
     def rename_feature(self, feature, name):
         feature.Name = name
         return str(feature.Name)
