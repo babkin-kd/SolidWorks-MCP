@@ -23,7 +23,6 @@ from solidworks_mcp.part_creation import BaseRectangle, validated_plane_transfor
 from solidworks_mcp.session import SolidWorksSession
 from probe_native_first_save_domain import package_evidence
 from verify_bounds_measurements import InlineSta
-from verify_component_reads import native_identity
 from verify_export_operations import activate_owned, application_preferences
 from verify_native_document_open import retire_owned, snapshot
 from verifier_dimension_diagnostics import assert_non_stl_preferences
@@ -32,6 +31,18 @@ from verifier_first_save_faults import file_witness
 
 LABELS = ['existing_destination_prewrite', 'renamed_source_stale_revision_prewrite',
           'owned_fixture_cleanup_baseline_restored']
+
+
+def owned_document_rows(models):
+    """Canonical IUnknown stays in process; only native scalar facts enter JSON."""
+    rows = []
+    for model in models:
+        row = dict(title=model.GetTitle(), path=model.GetPathName(), type=model.GetType())
+        if (type(row['title']) is not str or type(row['path']) is not str
+                or type(row['type']) is not int or row['type'] not in (1, 2, 3)):
+            raise ValueError('Owned document report needs detached native scalar facts.')
+        rows.append(row)
+    return rows
 
 
 def main():
@@ -51,6 +62,12 @@ def main():
     report = dict(scope='installed_first_save_rejections_only', accepted=False,
                   cases=[], captures=[], owned_documents=[], native_calls_live=False,
                   verifier_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                  verifier_hashes={name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
+                                   for name in ('verify_native_first_save_rejections.py', 'verifier_first_save_faults.py',
+                                                'probe_native_first_save_domain.py', 'verify_installed_metadata.py',
+                                                'verify_wheel_artifact.py', 'verify_bounds_measurements.py',
+                                                'verify_export_operations.py', 'verify_native_document_open.py',
+                                                'verifier_dimension_diagnostics.py')},
                   phase='preflight')
 
     def persist():
@@ -59,8 +76,7 @@ def main():
                                                       allow_nan=False, indent=2), encoding='utf-8')
 
     def record(models):
-        report['owned_documents'] = [dict(title=m.GetTitle(), path=m.GetPathName(),
-                                          identity=native_identity(m)) for m in models]
+        report['owned_documents'] = owned_document_rows(models)
         persist()
 
     try:
@@ -115,9 +131,13 @@ def main():
                             ('Сосед проверки отказов', (5., 6., 7.))):
             report['native_calls_live'] = True
             persist()
-            session.new_part()
+            created = session.new_part()
             model = session._model
             owned.append(model)
+            assert type(created) is dict and created['ok'] is True and type(created['title']) is str
+            report.setdefault('normal_creation_returns', []).append(created)
+            report['native_calls_live'] = False
+            persist()
             record(owned)
             assert model.SetTitle2(name) and model.GetTitle() == name
             configuration = binding.wrap(model.GetActiveConfiguration(), module.IConfiguration)
