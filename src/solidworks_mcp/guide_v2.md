@@ -580,3 +580,18 @@ component_b_id из component_list. Native ClosestDistance учитывает т
 материальных объёмов. Snapshot проверяет моменты тел, membership, конфигурации
 и трансформации на обеих границах; это observation, не полная BREP revision.
 Расстояния до точек/осей и native named frames пока не реализованы.
+
+
+### Расстояние от экземпляра детали до точки
+
+`measurement_get_component_point_distance`: explicit document/configuration/
+expected_observation_revision/component_id, point_mm в root assembly или
+переданной rigid frame (origin_mm, axes_in_model). Возвращает минимум до
+индивидуальных solid boundary, nearest_mm в той же frame, root точки,
+point_location (inside/outside/boundary) и исходные nearest_face_id/body_id.
+Внутри расстояние остаётся положительным; native entry/exit rays заменяют
+эвристику нормали. В boundary допуске0.00001 мм inside=null. Hidden normal
+solids включены, surface исключены. Подсборки как цели, named native frames
+и неподдерживаемые состояния не приняты. Closing gates включают all body/
+face membership, summaries, geometric moments, configuration/transform;
+это observation, не полная BREP mutation revision. UI/model не изменяются.

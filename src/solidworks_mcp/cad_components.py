@@ -1,5 +1,7 @@
 """Native passive resolved-instance reads; no resolution/activation/selection."""
 import math
+import pythoncom
+from win32com.client import VARIANT
 from . import binding
 from .documents import rejected
 
@@ -21,6 +23,19 @@ def component_transform(values):
 
 
 class CadComponentsMixin:
+    def face_closest_point(self, face, point_m):
+        return face.GetClosestPointOn(*point_m)
+
+    def body_point_rays(self, model, body, point_m):
+        from .point_measurement import RAY_DIRECTIONS, MAX_RAY_HITS, BOUNDARY_TOLERANCE_M
+        extension = binding.wrap(model.Extension, self._module.IModelDocExtension)
+        count = extension.RayIntersections(VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_DISPATCH, [body]),
+            VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_R8, list(point_m)*3),
+            VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_R8, [x for axis in RAY_DIRECTIONS for x in axis]),
+            5, 0., BOUNDARY_TOLERANCE_M, True)  # NORMALS=1 | ENTRY_EXIT=4; high precision, no UNBLOCK/UI pumping.
+        values = model.GetRayIntersectionsPoints() if type(count) is int and 0 < count <= MAX_RAY_HITS else None
+        return count, values
+
     def component_distance(self, model, first, second):
         # Early-bound out variants return (distance_m, point_a_m, point_b_m).
         # Passing components lets SolidWorks apply their full instance transforms.
