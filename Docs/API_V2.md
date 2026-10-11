@@ -1,18 +1,26 @@
 # API v2: текущий кандидат первой стадии
 
-Исходный кандидат dev79 добавляет complete aggregate point/axis reads,
-каталог65/18. Реализация/pure не являются native-приёмкой.
-[Контракт кандидата](COMPONENT_AGGREGATE_PROBES.md); installed/native ожидаются.
-Принятый dev78 ниже относится к своему точному wheel.
+Dev79: расстояния от полного solid-агрегата part/subassembly до точки
+и бесконечной оси приняты:4409 pure/323 CAD deselected (57,25 с), installed
+metadata65/18, internal native24/public MCP8 accepted=true на одном wheel.
+Exact4-owned cleanup, пустой/free baseline и non-STL preferences подтверждены.
+Hidden cylinder3/6/0 мм для точки и2/0 мм для оси, explicit rigid frame,
+native configuration replacement, multibody3/2 и replay проверены.
+[Контракт](COMPONENT_AGGREGATE_PROBES.md), [точная приёмка](COMPONENT_AGGREGATE_PROBES_ACCEPTANCE.md).
+Native named frames, остальные состояния/измерения сборок, масштаб1000+
+и общий N0–N6 остаются. Следующий обязательный блок — native open/save/close
+S1-15. Стадия1 открыта, расширения2 отложены; legacy20/20 учитывается отдельно.
 
-Dev78: расстояние между полными solid-агрегатами part/subassembly принято:
+
+
+Исторический dev78: расстояние между полными solid-агрегатами part/subassembly принято:
 4365 pure/323 CAD deselected (54,78с), installed metadata63/18,
 internal native19/public MCP6 accepted=true на одном wheel. Exact4-owned
 cleanup, пустой/free baseline и non-STL preferences подтверждены. Полный
 leaf census/все пары, hidden cylinder minimum84 мм, shared descendant0,
 explicit rigid frame, native смена конфигурации/rename/move проверены.
 [Контракт](COMPONENT_AGGREGATE_DISTANCE.md), [точная приёмка](COMPONENT_AGGREGATE_DISTANCE_ACCEPTANCE.md).
-Point/axis distance агрегатов, native named frames и общий N0–N6 остаются;
+На момент dev78 point/axis distance агрегатов, native named frames и общий N0–N6 оставались;
 S1-06/S1-16 и стадия1 открыты. Legacy-пилот учитывается отдельно.
 
 
@@ -212,7 +220,7 @@ Scope `single_base_rectangular_corner_through_cut_v1` требует явные 
 
 Для нового документа явной целью служит `application_id`, возвращённый текущим соединением. Подготовка связывает шаблон/его SHA256, русские имена и область metadata/активации/видимости/видов существующих документов с ревизией `new_empty_part_document_v1`. `document_create_part` отображает application ID в durable `context.document_id` при `configuration=""`; настоящий новый ID находится в `data.after.created_document_id`. Checkpoint предшествует NewDocument/изменениям UI, guard не заимствует уже установленный command flag. Известный сбой восстанавливается только закрытием точного собственного нового документа; unknown не повторяется. Документ остаётся в памяти, без сохранения файла.
 
-Контур упаковки/выпуска проверяет wheel offline и metadata-only stdio; текущий каталог v2 содержит 23 реализованных инструмента. Registry descriptor является справочным шаблоном, публичная публикация пакета форка не объявляется. Артефакт/metadata smoke отдельно не расширяет native scope и не завершает стадию. См. [FORK_RELEASE.md](FORK_RELEASE.md).
+Контур упаковки/выпуска проверяет wheel offline и metadata-only stdio; исторический каталог соответствующего wheel содержал23 реализованных инструмента. Registry descriptor является справочным шаблоном, публичная публикация пакета форка не объявляется. Артефакт/metadata smoke отдельно не расширяет native scope и не завершает стадию. См. [FORK_RELEASE.md](FORK_RELEASE.md).
 
 Локальная доработка тестового контура требует `--run-solidworks` для legacy CAD-тестов и свободной пустой CAD-сессии. Правильный pure-фильтр — `not solidworks`. Изолированная копия/удаление исследуются отдельным native-пробником: получены частичные наблюдения, но полная приёмка с восстановлением сессии пока не пройдена и публичных инструментов не добавлено. Отключённые определения уравнений остаются неподтверждёнными; native `Invalid` не выдаётся за флаг `Deleted`. См. [NATIVE_TESTING.md](NATIVE_TESTING.md). Последняя принятая сборка и её scope ниже не расширяются этой диагностикой.
 

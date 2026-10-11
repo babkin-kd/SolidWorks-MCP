@@ -1,18 +1,26 @@
 # Миграция legacy-инструментов в API v2
 
-Исходный кандидат dev79 добавляет complete aggregate point/axis reads,
-каталог65/18. Реализация/pure не являются native-приёмкой.
-[Контракт кандидата](COMPONENT_AGGREGATE_PROBES.md); installed/native ожидаются.
-Принятый dev78 ниже относится к своему точному wheel.
+Dev79: расстояния от полного solid-агрегата part/subassembly до точки
+и бесконечной оси приняты:4409 pure/323 CAD deselected (57,25 с), installed
+metadata65/18, internal native24/public MCP8 accepted=true на одном wheel.
+Exact4-owned cleanup, пустой/free baseline и non-STL preferences подтверждены.
+Hidden cylinder3/6/0 мм для точки и2/0 мм для оси, explicit rigid frame,
+native configuration replacement, multibody3/2 и replay проверены.
+[Контракт](COMPONENT_AGGREGATE_PROBES.md), [точная приёмка](COMPONENT_AGGREGATE_PROBES_ACCEPTANCE.md).
+Native named frames, остальные состояния/измерения сборок, масштаб1000+
+и общий N0–N6 остаются. Следующий обязательный блок — native open/save/close
+S1-15. Стадия1 открыта, расширения2 отложены; legacy20/20 учитывается отдельно.
 
-Dev78: расстояние между полными solid-агрегатами part/subassembly принято:
+
+
+Исторический dev78: расстояние между полными solid-агрегатами part/subassembly принято:
 4365 pure/323 CAD deselected (54,78с), installed metadata63/18,
 internal native19/public MCP6 accepted=true на одном wheel. Exact4-owned
 cleanup, пустой/free baseline и non-STL preferences подтверждены. Полный
 leaf census/все пары, hidden cylinder minimum84 мм, shared descendant0,
 explicit rigid frame, native смена конфигурации/rename/move проверены.
 [Контракт](COMPONENT_AGGREGATE_DISTANCE.md), [точная приёмка](COMPONENT_AGGREGATE_DISTANCE_ACCEPTANCE.md).
-Point/axis distance агрегатов, native named frames и общий N0–N6 остаются;
+На момент dev78 point/axis distance агрегатов, native named frames и общий N0–N6 оставались;
 S1-06/S1-16 и стадия1 открыты. Legacy-пилот учитывается отдельно.
 
 
@@ -97,7 +105,7 @@ scope. Статус «исторически принято» всегда от�
 
 Dev41 переносит создание нового документа по настроенному `.prtdot`, его подготовку и каталог шаблонов: **23 инструмента**. Принята вся цепочка MCP: новый документ → параметрическая пластина → толщина 12 мм, 9600 мм³. **2290 pure passed/323 CAD deselected; fresh same-wheel internal и public MCP — по 6 native passed, accepted=true**. Scoped closure после известного сбоя создания проверен внутренним native-запуском; публичный MCP подтвердил stale, повтор request_id без второго документа и сохранность исходной детали/выделения/вида. Свои модели закрыты. Первый baseline — пустая сессия/открытые детали без редактируемого эскиза, шаблон пустой одноконфигурационной детали. Сборки/чертежи в исходной сессии, произвольные шаблоны и размеры эскиза ещё не перенесены. Импорт/экспорт остаются отложенными. См. [PART_CREATION.md](PART_CREATION.md).
 
-Контур упаковки/выпуска проверяет wheel offline и metadata-only stdio; текущий каталог v2 содержит 26 реализованных инструментов. Registry descriptor является справочным шаблоном, а публичный пакет форка не объявляется. Артефакт/metadata smoke не расширяет native scope и не завершает стадию. См. [FORK_RELEASE.md](FORK_RELEASE.md).
+Контур упаковки/выпуска проверяет wheel offline и metadata-only stdio; исторический каталог соответствующего wheel содержал26 реализованных инструментов. Registry descriptor является справочным шаблоном, а публичный пакет форка не объявляется. Артефакт/metadata smoke не расширяет native scope и не завершает стадию. См. [FORK_RELEASE.md](FORK_RELEASE.md).
 
 Локальная доработка тестового контура требует `--run-solidworks` для legacy CAD-тестов и свободной пустой CAD-сессии. Правильный pure-фильтр — `not solidworks`. Изолированная копия/удаление исследуются отдельным native-пробником: получены частичные наблюдения, но полная приёмка с восстановлением сессии пока не пройдена и публичных инструментов не добавлено. Отключённые определения уравнений остаются неподтверждёнными; native `Invalid` не выдаётся за флаг `Deleted`. См. [NATIVE_TESTING.md](NATIVE_TESTING.md). Последняя принятая сборка и её scope ниже не расширяются этой диагностикой.
 
@@ -251,7 +259,7 @@ API-сигнатуры сверены с зарегистрированным SW
 | `set_component_transform` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `add_mate` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `check_interference` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
-| `measure_distance` | `measurement_get_component_distance`, `measurement_get_component_point_distance`, `measurement_get_component_axis_distance`, `measurement_get_component_aggregate_distance`, `measurement_get_component_aggregate_point_distance`, `measurement_get_component_aggregate_axis_distance` | Частично; dev75 distance13/6, dev76 point19/6 приняты; axis dev77 native18/public6 принят на его exact wheel | 1.4. Explicit resolved part instances/config/observation; minimum component distance, individual-boundary point distance/location, infinite-axis distance с exact directional support span и memory-only wire. Root/explicit rigid frame мм; Dev78 aggregate pair minimum принят internal19/public6 на его exact wheel. Point/axis aggregate реализованы в исходном dev79, native ожидается; named frames остаются. |
+| `measure_distance` | `measurement_get_component_distance`, `measurement_get_component_point_distance`, `measurement_get_component_axis_distance`, `measurement_get_component_aggregate_distance`, `measurement_get_component_aggregate_point_distance`, `measurement_get_component_aggregate_axis_distance` | Частично; dev75 distance13/6, dev76 point19/6 приняты; axis dev77 native18/public6 принят на его exact wheel | 1.4. Explicit resolved part instances/config/observation; minimum component distance, individual-boundary point distance/location, infinite-axis distance с exact directional support span и memory-only wire. Root/explicit rigid frame мм; Dev78 aggregate pair minimum принят internal19/public6 на его exact wheel. Point/axis aggregate dev79 приняты internal24/public8 на exact wheel; named frames остаются. |
 | `check_motion` | — | Отложено в v2 | 3.1. Несколько входов, дискретная траектория, зазоры и достоверность покрытия. |
 | `swept_region` | — | Отложено в v2 | 3.1. Несколько входов, дискретная траектория, зазоры и достоверность покрытия. |
 | `get_assembly_bounding_box` | — | Не реализовано в v2; остаток стадии 1 | 1.4: необходимые базовые операции; 2.6: компоненты/сопряжения, большие сборки и библиотеки. |

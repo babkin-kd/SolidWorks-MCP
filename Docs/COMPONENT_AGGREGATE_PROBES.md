@@ -1,6 +1,8 @@
 # Точка и бесконечная ось для агрегата компонентов
 
-Исходный кандидат dev79, native-приёмка ожидается. Реализованы
+Dev79 принят в ограниченной области:4409 pure/323 CAD deselected,
+installed metadata65/18, internal native24/public MCP8 на одном exact wheel.
+[Приёмка](COMPONENT_AGGREGATE_PROBES_ACCEPTANCE.md). Реализованы
 `measurement_get_component_aggregate_point_distance` и
 `measurement_get_component_aggregate_axis_distance`, readonly operations
 `measurement.component_aggregate_point_distance` / `measurement.component_aggregate_axis_distance`.
@@ -43,9 +45,9 @@ face census готовится до первого closest-point/ray solver. Н�
 approximate/partial results при превышении. Body/face reference budgets
 каталога сохраняются отдельно. Scaling1000+ пока требует приёмки.
 
-Подробные native24/public8 планируются на одном installed wheel: две повторные
+Подробные native24/public8 выполнены на одном installed wheel: две повторные
 подсборки, nested hidden cylinder, positive inside/boundary, explicit frame,
 native configuration replacement, multibody3/2, stale/foreign/inactive,
-surface-only отказ, request replay. Два part regression cases проверят общие
+surface-only отказ, request replay. Два part regression cases проверили общие
 point/axis helpers. Собственные модели/отчёты остаются вне публичного Git.
 Исторические dev76/dev77/dev78 не засчитываются новым dev79 доказательством.

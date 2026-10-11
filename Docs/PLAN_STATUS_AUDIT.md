@@ -1,13 +1,24 @@
 # Аудит статусов плана — 11.10.2026
 
-Dev78: расстояние между полными solid-агрегатами part/subassembly принято:
+Dev79: расстояния от полного solid-агрегата part/subassembly до точки
+и бесконечной оси приняты:4409 pure/323 CAD deselected (57,25 с), installed
+metadata65/18, internal native24/public MCP8 accepted=true на одном wheel.
+Exact4-owned cleanup, пустой/free baseline и non-STL preferences подтверждены.
+Hidden cylinder3/6/0 мм для точки и2/0 мм для оси, explicit rigid frame,
+native configuration replacement, multibody3/2 и replay проверены.
+[Контракт](COMPONENT_AGGREGATE_PROBES.md), [точная приёмка](COMPONENT_AGGREGATE_PROBES_ACCEPTANCE.md).
+Native named frames, остальные состояния/измерения сборок, масштаб1000+
+и общий N0–N6 остаются. Следующий обязательный блок — native open/save/close
+S1-15. Стадия1 открыта, расширения2 отложены; legacy20/20 учитывается отдельно.
+
+Исторический dev78: расстояние между полными solid-агрегатами part/subassembly принято:
 4365 pure/323 CAD deselected (54,78с), installed metadata63/18,
 internal native19/public MCP6 accepted=true на одном wheel. Exact4-owned
 cleanup, пустой/free baseline и non-STL preferences подтверждены. Полный
 leaf census/все пары, hidden cylinder minimum84 мм, shared descendant0,
 explicit rigid frame, native смена конфигурации/rename/move проверены.
 [Контракт](COMPONENT_AGGREGATE_DISTANCE.md), [точная приёмка](COMPONENT_AGGREGATE_DISTANCE_ACCEPTANCE.md).
-Point/axis distance агрегатов, native named frames и общий N0–N6 остаются;
+На момент dev78 point/axis distance агрегатов, native named frames и общий N0–N6 оставались;
 S1-06/S1-16 и стадия1 открыты. Legacy-пилот учитывается отдельно.
 
 
