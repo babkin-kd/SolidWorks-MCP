@@ -610,3 +610,19 @@ Normal hidden solids включены, surface исключены. Exact GetExtr
 выделение/активация/rebuild не выполняются. Zero не классифицирует пересечение.
 Подсборки как агрегат, named native frames и unresolved/assembly-cut/mesh/SpeedPak
 состояния ещё не поддерживаются. Это read-scope, а не полная BREP mutation revision.
+
+
+### Расстояния агрегатов подсборок
+
+`measurement_get_component_aggregate_distance` принимает две явные цели
+part/subassembly в root assembly с configuration/observation_revision/request_id.
+Выбираются все part leaves проверенной native parent иерархии. Измеряется минимум
+каждой пары solid leaves, включая скрытые экземпляры/тела; surface-only и empty
+leaves учитываются в census, но исключаются из минимума. Общий экземпляр в обеих
+целях даёт ноль с native solid support witness. В результате присутствуют исходные
+цели и nearest leaf IDs, body/leaf counts, обе ближайшие точки в root assembly и
+необязательной explicit rigid frame. Ноль не классифицирует interference.
+Нет selection/activation/rebuild, bbox fallback или неполного результата.
+Бюджеты:1000 leaves на цель,5000 normal bodies суммарно,10000 leaf pairs.
+Unsupported unresolved/SpeedPak/mesh/assembly-cut states и native named frames
+ещё не поддержаны. Scoped read snapshots не заменяют полную BREP mutation revision.

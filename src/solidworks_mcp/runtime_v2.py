@@ -11,6 +11,7 @@ from .component_topology import ComponentTopologyCatalog
 from .component_distance import ComponentDistanceCatalog
 from .component_point_distance import ComponentPointDistanceCatalog
 from .component_axis_distance import ComponentAxisDistanceCatalog
+from .component_aggregate_distance import ComponentAggregateDistanceCatalog
 from .mass_measurement import MassMeasurementCatalog
 from .bounds_measurement import BoundsMeasurementCatalog
 from .features import FeatureCatalog
@@ -34,7 +35,7 @@ from .jobs import JobError, JobRunner, _json
 
 
 MUTATING_OPERATIONS = ('measurement.mass', 'feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters', 'sheet.create_edge_flange', 'sheet.set_flange_flat_state')
-READ_OPERATIONS = ('measurement.component_axis_distance', 'measurement.component_point_distance', 'measurement.component_distance', 'component.topology_list', 'component.topology_get', 'component.list', 'component.get', 'component.bodies', 'measurement.bounds', 'measurement.prepare_mass', 'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies', 'feature.deletion_structure', 'feature.deletion_context', 'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion', 'document.list_templates', 'document.prepare_create_part', 'sketch.get', 'sketch.prepare_dimension_change', 'part.prepare_corner_cut', 'part.prepare_base_revolve', 'part.prepare_through_hole', 'part.prepare_hole_dimension_change', 'part.prepare_linear_hole_pattern', 'part.prepare_edge_fillet', 'sheet.prepare_l_profile', 'sheet.prepare_flat_state', 'sheet.prepare_parameters', 'sheet.prepare_edge_flange', 'sheet.prepare_flange_flat_state')
+READ_OPERATIONS = ('measurement.component_aggregate_distance', 'measurement.component_axis_distance', 'measurement.component_point_distance', 'measurement.component_distance', 'component.topology_list', 'component.topology_get', 'component.list', 'component.get', 'component.bodies', 'measurement.bounds', 'measurement.prepare_mass', 'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies', 'feature.deletion_structure', 'feature.deletion_context', 'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion', 'document.list_templates', 'document.prepare_create_part', 'sketch.get', 'sketch.prepare_dimension_change', 'part.prepare_corner_cut', 'part.prepare_base_revolve', 'part.prepare_through_hole', 'part.prepare_hole_dimension_change', 'part.prepare_linear_hole_pattern', 'part.prepare_edge_fillet', 'sheet.prepare_l_profile', 'sheet.prepare_flat_state', 'sheet.prepare_parameters', 'sheet.prepare_edge_flange', 'sheet.prepare_flange_flat_state')
 
 def _worker_factory():
     try:
@@ -70,6 +71,7 @@ class Runtime:
         self._component_distances = None
         self._component_point_distances = None
         self._component_axis_distances = None
+        self._component_aggregate_distances = None
         self._features = None
         self._dimensions = None
         self._parts = None
@@ -119,6 +121,9 @@ class Runtime:
                 if operation == 'document.prepare_create_part':
                     return self._document_creation.prepare_create_part(**arguments)
                 return self._document_creation.create_part(operation_id, **arguments)
+            if operation == 'measurement.component_aggregate_distance':
+                if self._component_aggregate_distances is None:self._component_aggregate_distances=ComponentAggregateDistanceCatalog(self._catalog)
+                return self._component_aggregate_distances.measure_aggregate(**arguments)
             if operation == 'measurement.component_axis_distance':
                 if self._component_axis_distances is None:self._component_axis_distances=ComponentAxisDistanceCatalog(self._catalog)
                 return self._component_axis_distances.measure_axis(**arguments)
@@ -316,6 +321,7 @@ class Runtime:
         self._component_distances = None
         self._component_point_distances = None
         self._component_axis_distances = None
+        self._component_aggregate_distances = None
         self._holes = None
         self._hole_edits = None
         self._patterns = None
