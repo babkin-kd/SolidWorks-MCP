@@ -57,7 +57,8 @@ class FakeSession:
 
 
 def enabled_request():
-    return SimpleNamespace(config=SimpleNamespace(getoption=lambda name, default=False: True))
+    return SimpleNamespace(config=SimpleNamespace(
+        getoption=lambda name, default=False: True if name == '--run-solidworks' else default))
 
 
 @pytest.mark.parametrize('documents,busy,message', [

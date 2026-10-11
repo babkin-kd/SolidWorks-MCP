@@ -18,6 +18,8 @@ from solidworks_mcp.session import SolidWorksSession
 def pytest_addoption(parser):
     parser.addoption('--run-solidworks', action='store_true', default=False,
                      help='Explicitly allow legacy native CAD tests on a disposable SolidWorks session.')
+    parser.addoption('--legacy-cad-pilot-report', default=None,
+                     help='Fresh private report; enable exact-owned cleanup for the bounded part pilot.')
 
 
 @pytest.fixture(scope="session")
@@ -39,15 +41,21 @@ def sw(request):
         pytest.fail('Native legacy tests require an empty disposable SolidWorks session; existing documents are retained.')
     if session._sw.CommandInProgress:
         pytest.fail('Native legacy tests cannot take over an existing CommandInProgress guard.')
+    pilot_report = request.config.getoption('--legacy-cad-pilot-report', default=None)
+    if pilot_report:
+        from legacy_cad_safety import LegacyPilotAudit
+        session._legacy_pilot_audit = LegacyPilotAudit(session, pilot_report)
     before = session._command_in_progress(True)
     try:
         yield session
     finally:
         session._command_in_progress(before)
+        if pilot_report:
+            session._legacy_pilot_audit.finish()
 
 
 @pytest.fixture
-def part(sw):
+def part(sw, request):
     """A fresh empty part for one test; closed afterwards.
 
     Every tool must leave its sketches fully defined, so a stray drag in
@@ -55,16 +63,23 @@ def part(sw):
     test to it, whatever the test itself asserts.
     """
     sw.new_part()
+    owned = sw._model
+    audit = getattr(sw, '_legacy_pilot_audit', None)
+    if audit:
+        audit.own(owned, request.node.nodeid)
     yield sw
     under_defined = []
     try:
         if sw._model is not None:
             under_defined = sw._under_defined_sketches()
     finally:
-        try:
-            sw.close_part()
-        except SolidWorksError:
-            pass
+        if audit:
+            audit.close(owned)
+        else:
+            try:
+                sw.close_part()
+            except SolidWorksError:
+                pass
     assert not under_defined, f"a tool left under-defined sketches (shown with (-) in SolidWorks): {under_defined}"
 
 
