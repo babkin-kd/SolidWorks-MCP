@@ -137,6 +137,7 @@ class FirstSaveAdapter(OpenAdapter):
         return dict(scope=SNAPSHOT_SCOPE, configuration=current.state['active_configuration'],
             configurations=deepcopy(current.state['configurations']), solid_body_count=1,
             selection_count=len(current.view['selection']),
+            native_observations={},
             clone_state=deepcopy(self.oracle_states.get(current.identity, dict(
                 complete_geometry={'box':[40,20,12],'volume':9600,'full_fake_faces':['a','b','c','d','e','f']},
                 complete_graph={'features':['Эскиз основания','Основание'],'relations':['fully_defined'],
@@ -485,7 +486,7 @@ def test_durable_step_failure_never_triggers_extra_native_or_filesystem_cleanup(
 
 def snapshot():
     return dict(scope=SNAPSHOT_SCOPE,configuration='Основная',configurations=['Основная'],solid_body_count=1,
-        selection_count=0,clone_state={'full_fake_geometry':[1,2,3]},
+        selection_count=0,native_observations={},clone_state={'full_fake_geometry':[1,2,3]},
         references=[dict(kind='body',role='solid:0',token='old')])
 
 

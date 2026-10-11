@@ -81,6 +81,7 @@ class CaptureAdapter(oracle.CadNativeFirstSaveSnapshotMixin):
         self.objects = {}
         self.configuration = self.make_configuration()
         self.state = dict(document_type='part', active_configuration='Основная',
+                          title='Контрольная деталь',path='',
                           configurations=['Основная'], needs_save=True,
                           read_only=False, update_stamp=17)
         self.context = dict(active_document=True, read_only=False,
@@ -127,9 +128,9 @@ class CaptureAdapter(oracle.CadNativeFirstSaveSnapshotMixin):
         self.dimension_rows = []
         self.annotations = []
         for index, (name, value, owner) in enumerate((
-                ('D1@Основание', .04, self.feature_rows[4]),
-                ('D2@Основание', .02, self.feature_rows[4]),
-                ('D1@Выдавливание', .01, self.feature_rows[5]))):
+                ('D1', .04, self.feature_rows[4]),
+                ('D2', .02, self.feature_rows[4]),
+                ('D1', .01, self.feature_rows[5]))):
             annotation = self.register(NS(
                 GetName=lambda i=index: f'Размер {i + 1}', GetType=lambda: 4,
                 Visible=1, GetPosition=lambda i=index: [float(i), 0., 0.]), f'annotation:{index}')
@@ -139,7 +140,9 @@ class CaptureAdapter(oracle.CadNativeFirstSaveSnapshotMixin):
                 Type2=(11, 12, 0)[index], GetText=lambda part: '',
                 GetUseDocTextFormat=lambda: True)
             row = self.register(NS(displays=[display]), f'dimension:{index}')
-            row.summary = dict(full_name=name, owner=deepcopy(owner.row), unit='mm',
+            full_name=name+'@'+owner.row['name']+'@Контрольная деталь.Part'
+            if index<2:self.sketch.dimensions[index].FullName=full_name
+            row.summary = dict(name=name,full_name=full_name, owner=deepcopy(owner.row), unit='mm',
                 values_si={'Основная': value}, driven_state=2, reference=False,
                 linked=False, design_table=False, read_only=False,
                 write_blockers=[], owner_update_stamp=17)
@@ -392,6 +395,44 @@ def test_whole_double_capture_is_detached_stable_and_does_not_change_native_stat
     first['clone_state']['features'][0]['name'] = 'Локальное изменение результата'
     assert second['clone_state']['features'][0]['name'] == 'Спереди'
     assert capture.feature_rows[0].row['name'] == 'Спереди'
+
+
+def test_document_qualification_changes_keep_exact_bound_dimension_roles(capture):
+    from solidworks_mcp.native_first_save import clone_mapping
+    source=capture.first_save_part_snapshot(capture.model)
+    capture.state['title']='Сохранённая деталь'
+    for index,item in enumerate(capture.dimension_rows):
+        item.summary['full_name']=item.summary['name']+'@'+item.summary['owner']['name']+'@Сохранённая деталь.Part'
+        if index<2:capture.sketch.dimensions[index].FullName=item.summary['full_name']
+    saved=capture.first_save_part_snapshot(capture.model)
+    assert source['native_observations']!=saved['native_observations']
+    assert source['clone_state']==saved['clone_state']
+    assert len(clone_mapping(source,saved))==41
+
+
+def test_unavailable_auto_select_is_observed_without_inventing_persisted_control(capture):
+    from solidworks_mcp.native_first_save import clone_mapping
+    source=capture.first_save_part_snapshot(capture.model)
+    definition=capture.extrude_definition();definition.AutoSelect=True
+    capture.extrude_definition=lambda:definition
+    saved=capture.first_save_part_snapshot(capture.model)
+    assert source['native_observations']['unavailable_extrusion_auto_select'] is False
+    assert saved['native_observations']['unavailable_extrusion_auto_select'] is True
+    assert source!=saved and source['clone_state']==saved['clone_state']
+    assert len(clone_mapping(source,saved))==41
+
+
+@pytest.mark.parametrize('fault',['active_scope','wrong_namespace','unknown_observation','foreign_owner','local_rename','changed_depth'])
+def test_copy_mapping_never_masks_available_controls_or_parameter_changes(capture,fault):
+    from solidworks_mcp.native_first_save import clone_mapping
+    source=capture.first_save_part_snapshot(capture.model);saved=deepcopy(source)
+    if fault=='active_scope':saved['clone_state']['extrusion']['FeatureScope']=True
+    elif fault=='wrong_namespace':saved['native_observations']['document_dimension_namespace']='Чужая деталь'
+    elif fault=='unknown_observation':saved['native_observations']['opaque_pid']='foreign'
+    elif fault=='foreign_owner':saved['native_observations']['qualified_dimensions'][0]['owner_role']='feature:0'
+    elif fault=='local_rename':saved['clone_state']['dimensions'][0]['name']='Другая ширина'
+    else:saved['clone_state']['parameters']['depth_m']=.02
+    with pytest.raises(ExecutionFailure):clone_mapping(source,saved)
 
 
 def test_readonly_inactive_reader_uses_cached_passive_capture_without_write_authority(capture):

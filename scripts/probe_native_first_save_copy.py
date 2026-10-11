@@ -103,7 +103,22 @@ def main():
             configuration = binding.wrap(model.GetActiveConfiguration(), module.IConfiguration)
             configuration.Name = 'Основная'
             assert tuple(model.GetConfigurationNames()) == ('Основная',)
-            session.add_box(*sizes, name='Основание')
+            if args.source_oracle_prototype:
+                from solidworks_mcp.part_creation import BaseRectangle
+                from solidworks_mcp.part_creation import validated_plane_transform
+                import uuid
+                builder=Candidate()
+                features=builder.features(model)
+                planes=[feature for feature in features if feature.GetTypeName2()=='RefPlane'
+                    and validated_plane_transform(builder.reference_plane_transform(feature))==
+                    validated_plane_transform((1.,0.,0.,0.,1.,0.,0.,0.,1.,0.,0.,0.,1.,0.,0.,0.))]
+                assert len(planes)==1
+                definition=BaseRectangle.validate(plane_object_id='feat_'+uuid.uuid4().hex,
+                    width_mm=sizes[0],height_mm=sizes[1],depth_mm=sizes[2])
+                receipt=builder.new_base_receipt(model,features,builder.part_creation_controls(model))
+                builder.create_base_rectangle(model,planes[0],definition,receipt)
+            else:
+                session.add_box(*sizes, name='Основание')
             for i, feature in enumerate(session._iter_features(), 1):
                 if feature.GetTypeName2() in ('RefPlane', 'ProfileFeature', '3DProfileFeature'):
                     feature.Name = f'Контрольный элемент {i}'
@@ -139,6 +154,7 @@ def main():
             source_oracle = adapter.first_save_part_snapshot(source)
             report['source_oracle'] = source_oracle
             neighbor_oracle = adapter.first_save_part_snapshot(neighbor)
+            report['neighbor_oracle'] = neighbor_oracle
             assert source_oracle == adapter.first_save_part_snapshot(source)
             assert neighbor_oracle == adapter.first_save_part_snapshot(neighbor)
             assert snapshot(sw,module) == before

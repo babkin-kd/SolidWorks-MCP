@@ -22,7 +22,7 @@ from .native_document_save import MAX_OPEN_DOCUMENTS
 SCOPE = 'native_first_save_replace_part_v1'
 SNAPSHOT_SCOPE = 'native_first_save_part_snapshot_v1'
 SNAPSHOT_KEYS = {'scope', 'configuration', 'configurations', 'solid_body_count',
-                 'selection_count', 'clone_state', 'references'}
+                 'selection_count', 'clone_state', 'references', 'native_observations'}
 
 
 def validated_part_snapshot(value):
@@ -35,6 +35,7 @@ def validated_part_snapshot(value):
             or type(value['solid_body_count']) is not int or value['solid_body_count'] != 1
             or type(value['selection_count']) is not int or not 0 <= value['selection_count'] <= MAX_OPEN_DOCUMENTS
             or type(value['clone_state']) is not dict or not value['clone_state']
+            or type(value['native_observations']) is not dict
             or type(value['references']) is not list or not 1 <= len(value['references']) <= MAX_OPEN_DOCUMENTS):
         raise rejected('first_save_snapshot_unsupported', 'A full single-configuration/solid, unselected clone oracle is required.')
     roles, tokens = set(), set()
@@ -48,10 +49,40 @@ def validated_part_snapshot(value):
             raise rejected('first_save_snapshot_unsupported', 'Structural roles and native persistent references must be bijective.')
         roles.add(role); tokens.add(token)
     _json(value)
+    if value['clone_state'].get('profile')=='single_rectangular_blind_base_v1':
+        observations=value['native_observations']
+        if (set(observations)!={'document_dimension_namespace','qualified_dimensions','unavailable_extrusion_auto_select'}
+                or type(observations['document_dimension_namespace']) is not str
+                or not observations['document_dimension_namespace']
+                or type(observations['unavailable_extrusion_auto_select']) is not bool
+                or type(observations['qualified_dimensions']) is not list or len(observations['qualified_dimensions'])!=3):
+            raise rejected('first_save_snapshot_unsupported','Only exact document qualifications and the unavailable AutoSelect observation may differ.')
+        clone=value['clone_state']
+        if (clone.get('extrusion',{}).get('FeatureScope') is not False
+                or clone['extrusion'].get('AutoSelect')!={'availability':'unavailable_feature_scope_disabled_v1'}):
+            raise rejected('first_save_snapshot_unsupported','An available feature-scope control cannot be excluded from copy equivalence.')
+        seen=set()
+        for row in observations['qualified_dimensions']:
+            if (type(row) is not dict or set(row)!={'role','full_name','name','owner_role'}
+                    or any(type(v) is not str or not v or '\0' in v for v in row.values())
+                    or row['role'] not in {'dimension:width','dimension:height','dimension:depth'}
+                    or row['role'] in seen):
+                raise rejected('first_save_snapshot_unsupported','Complete qualified dimension observations must be bijective.')
+            seen.add(row['role'])
+            dims=[d for d in clone.get('dimensions',[]) if d.get('full_name')=={'reference_role':row['role']}]
+            owners=[(index,f) for index,f in enumerate(clone.get('features',[])) if 'feature:'+str(index)==row['owner_role']]
+            if (len(dims)!=1 or len(owners)!=1 or dims[0].get('name')!=row['name']
+                    or dims[0].get('owner',{}).get('native_id')!=owners[0][1].get('native_id')
+                    or row['full_name']!=row['name']+'@'+owners[0][1]['name']+'@'+observations['document_dimension_namespace']+'.Part'
+                    or ('dimension',row['role']) not in roles):
+                raise rejected('first_save_snapshot_unsupported','Every qualification must agree with the complete bound native dimension and owner role.')
     return deepcopy(value)
 
 
 def clone_mapping(original, saved):
+    # All observations remain in source/baseline snapshots. Only the native
+    # document qualification and a documented unavailable getter live outside
+    # persisted semantic state; every other field is compared exactly.
     original, saved = validated_part_snapshot(original), validated_part_snapshot(saved)
     fields = ('configuration', 'configurations', 'solid_body_count', 'selection_count', 'clone_state')
     if any(original[key] != saved[key] for key in fields):

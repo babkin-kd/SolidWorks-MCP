@@ -30,11 +30,14 @@ part того же профиля; иной неподдержанный сос�
 STA/durable ledger/holds, no retry unknown, реальные postconditions и native
 точного wheel. Сужение продуктового scope не ослабляет эти гарантии.
 L3 находится в исходной реализации: домен/one-shot bridge и passive oracle
-ещё не интегрированы в публичный каталог. Последующий related419 pure,
-совпадающие полные passive source captures двух реальных контрольных деталей,
-отдельная Copy feasibility и реальная NTFS-проба6/6 на синтетических файлах
-не закрывают этот блок. Clone/identity mapping, фасад и same-wheel native
-приёмка остаются незавершёнными; source-пробы не являются installed gate.
+ещё не интегрированы в публичный каталог. Native source Copy-прототип3 принят:
+35,15 с, source/clone full proof,41 mappings, dirty сосед и own cleanup/baseline.
+Связанный новый source-набор289 passed/11,98 с; прежние419 относятся к своей
+контрольной точке. Прототип2 failed из-за изменения активного AutoSelect на
+legacy-основании; его исход не переписан. Новый v2 base создаётся без scope
+предсуществующих тел, недоступный getter и document qualifications наблюдаются
+явно. Составной filesystem/CAD протокол, writable final binding/source retirement,
+UI guards, фасад и same-wheel native остаются; source experiment не installed gate.
 [Фактическое продвижение и оставшиеся gates](NATIVE_FIRST_SAVE_PROGRESS.md).
 Remote CI последнего пакета failure; локальное исправление входит в pure,
 нового push нет. Исторические свидетельства ниже не являются приёмкой dev87

@@ -6,6 +6,7 @@ geometry, feature/control/data inventories fail closed before Copy.
 """
 from copy import deepcopy
 import math
+from pathlib import Path
 
 from . import binding
 from .documents import rejected
@@ -125,12 +126,38 @@ def _extrusion(adapter, feature):
             reverse_offset=_typed(data.GetReverseOffset(forward), bool),
             translate_surface=_typed(data.GetTranslateSurface(forward), bool),
             wall_thickness=_number(data.GetWallThickness(forward))))
-    if (result['BothDirections'] or result['ReverseDirection'] or result['thin_feature']
+    if (result['BothDirections'] or result['ReverseDirection'] or result['thin_feature'] or result['FeatureScope']
             or result['FromType'] != 0 or result['contour_count'] != 0
             or result['directions'][0]['end_condition'] != 0
             or any(row['draft_enabled'] for row in result['directions'])):
         _fail('First save currently supports one positive, unthinned, undrafted blind base.')
     return result
+
+
+def _dimension_roles(dimensions, parameters, feature_roles, namespace):
+    """Bound native records become width/height/depth roles, never name lookup."""
+    if len(dimensions) != 3 or type(namespace) is not str or not namespace:
+        _fail('Exactly three bound dimensions and an explicit document namespace are required.')
+    axes=parameters['axes']
+    if set(axes)!={'width','height'} or len(set(axes.values()))!=2:
+        _fail('The proven rectangle axes must bind two distinct native dimensions.')
+    roles={axes[axis]:'dimension:'+axis for axis in ('width','height')}
+    remaining=[row for row in dimensions if row['full_name'] not in roles]
+    if len(remaining)!=1:
+        _fail('The exact native base depth must be the sole remaining dimension.')
+    roles[remaining[0]['full_name']]='dimension:depth'
+    evidence=[]
+    for row in dimensions:
+        full_name,name=_typed(row['full_name'],str),_typed(row['name'],str)
+        owner=row['owner']
+        if (not name or '@' in name or owner is None or owner['native_id'] not in feature_roles
+                or full_name!=name+'@'+owner['name']+'@'+namespace+'.Part'):
+            _fail('Every qualified dimension name must agree with its proven native owner and document namespace.')
+        evidence.append(dict(role=roles[full_name],full_name=full_name,name=name,
+                             owner_role=feature_roles[owner['native_id']]))
+    if len({row['full_name'] for row in evidence})!=3 or len({row['role'] for row in evidence})!=3:
+        _fail('The complete dimension role/name inventory must be bijective.')
+    return roles,sorted(evidence,key=lambda row:row['role'])
 
 
 def _point(vertex):
@@ -427,6 +454,8 @@ class CadNativeFirstSaveSnapshotMixin:
                                           configuration, require_editable=False)
         references = []
         roles = {row['native_id']: 'feature:' + str(index) for index, row in enumerate(summaries)}
+        namespace=Path(before['path']).stem if before['path'] else before['title']
+        dimension_roles,dimension_evidence=_dimension_roles(dimensions,parameters,roles,namespace)
         for feature, row in zip(features, summaries):
             if row['feature_type'] not in FOLDERS | DISPLAY_FEATURES:
                 _pid(self, model, feature, 'feature', roles[row['native_id']], references)
@@ -440,10 +469,28 @@ class CadNativeFirstSaveSnapshotMixin:
             if (self.identity(resolved) != self.identity(self.dimension_object(item))
                     or not self.dimension_reference_is_current(model, item, anchor)):
                 _fail('Every dimension anchor must round-trip the exact current dimension and owner.')
-            references.append(dict(kind='dimension', role='dimension:' + row['full_name'], token=_json(anchor)))
+            references.append(dict(kind='dimension', role=dimension_roles[row['full_name']], token=_json(anchor)))
         # Incarnation counters are retained by the session oracle, not treated
         # as persisted CAD parameters. No opaque IDs are generically stripped.
         clone_dimensions = [{key: deepcopy(value) for key, value in row.items() if key != 'owner_update_stamp'} for row in dimensions]
+        for row in clone_dimensions:
+            row['full_name']={'reference_role':dimension_roles[row['full_name']]}
+        for row in sketch['relations']:
+            if row['dimension_full_name'] is not None:
+                name=row['dimension_full_name']
+                if name not in dimension_roles:
+                    _fail('A sketch dimension relation must bind a complete current dimension role.')
+                row['dimension_full_name']={'reference_role':dimension_roles[name]}
+        parameters=deepcopy(parameters)
+        parameters['axes']={axis:{'reference_role':dimension_roles[name]} for axis,name in parameters['axes'].items()}
+        extrusion=_extrusion(self, features[next(i for i,k in enumerate(kinds) if k in ('Extrusion','Boss'))])
+        # API documents AutoSelect as available only when FeatureScope=True.
+        # The supported single-base profile has that scope disabled. Retain
+        # the raw boolean for source preservation, but never treat it as an
+        # available persisted CAD control or silently remove an active value.
+        native_observations=dict(document_dimension_namespace=namespace,
+            qualified_dimensions=dimension_evidence,unavailable_extrusion_auto_select=extrusion['AutoSelect'])
+        extrusion['AutoSelect']={'availability':'unavailable_feature_scope_disabled_v1'}
         part = binding.wrap(model, self._module.IPartDoc)
         material = part.GetMaterialPropertyName2(configuration)
         body_material = body.GetMaterialPropertyName(configuration)
@@ -456,7 +503,7 @@ class CadNativeFirstSaveSnapshotMixin:
         clone = dict(profile='single_rectangular_blind_base_v1', features=summaries,
             dependencies=self.feature_dependencies(features), geometry=geometry,
             dimensions=clone_dimensions, sketch=sketch, parameters=parameters,
-            extrusion=_extrusion(self, features[next(i for i,k in enumerate(kinds) if k in ('Extrusion','Boss'))]),
+            extrusion=extrusion,
             controls={key: deepcopy(value) for key,value in context.items() if key not in ('active_document','read_only')},
             equation_reference_inventory=inventories, feature_external_reference_inventory=feature_refs,
             planes=[dict(role=roles[row['native_id']], transform=[_number(value) for value in self.reference_plane_transform(feature)])
@@ -477,6 +524,7 @@ class CadNativeFirstSaveSnapshotMixin:
             _fail('Native source changed during the complete passive capture.')
         result = dict(scope=SCOPE, configuration=configuration, configurations=[configuration],
             solid_body_count=1, selection_count=count, clone_state=clone,
-            references=sorted(references,key=lambda row:(row['kind'],row['role'])))
+            references=sorted(references,key=lambda row:(row['kind'],row['role'])),
+            native_observations=native_observations)
         _json(result)
         return result

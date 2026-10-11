@@ -153,7 +153,9 @@ class CadPartCreationMixin:
             receipt.pending_creation = True
             raw = timed_call('com', factory.FeatureExtrusion3, True, False, False, 0, 0, definition.depth_m, 0.,
                 False, False, False, False, 0., 0., False, False, False, False,
-                True, True, True, 0, 0., False)
+                # This factory requires an empty part: the new base has no
+                # preexisting bodies to scope or automatically select.
+                True, False, False, 0, 0., False)
             extrusion = self._retain_base_feature(model, receipt, 'extrusion', raw)
             extrusion.Name = definition.feature_name
             if extrusion.Name != definition.feature_name:
