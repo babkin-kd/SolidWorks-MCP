@@ -12,10 +12,13 @@ S1-16/S1-06 и общий gate остаются открытыми. Dev71/dev69 
 
 # API v2: текущий кандидат первой стадии
 
-Исходный кандидат dev74 подготовлен: `component_face_list`, `component_edge_list`,
-`component_topology_get`; каталог59 инструментов/18 guarded операций.
-Installed/native приёмка ещё открыта. [Контракт](COMPONENT_TOPOLOGY.md),
-[статус проверки](COMPONENT_TOPOLOGY_ACCEPTANCE.md). Dev73 ниже — принятая история.
+Установленный dev74 принят для `component_face_list`, `component_edge_list`,
+`component_topology_get`: metadata59/18,4210 pure/323 CAD deselected,
+internal native21/public MCP8 accepted=true на одном wheel; own cleanup/baseline.
+[Контракт](COMPONENT_TOPOLOGY.md), [точная приёмка](COMPONENT_TOPOLOGY_ACCEPTANCE.md).
+Scoped resolved/normal body topology, включая hidden/curved BREP и native
+rename/delete/recreate отказы, не закрывает прочие состояния/измерения и общий
+gate стадии1. Dev73 ниже — принятая история его wheel.
 
 Установленный dev73 принят для четырёх passive component-чтений: metadata56/18,
 4175 pure passed/323 CAD deselected, internal native15/public MCP6 accepted=true

@@ -20,6 +20,12 @@
 ограниченный блок диагностики1.5 принят dev69, публичная масса детали — dev71.
 Габариты детали в явном rigid frame приняты dev72.
 
+Dev74: normal instance face/edge topology принято:4210 pure/323 CAD deselected,
+metadata59/18, internal21/public8 accepted=true на одном wheel; cleanup/baseline.
+[Приёмка](Docs/COMPONENT_TOPOLOGY_ACCEPTANCE.md). Hidden/curved BREP, native rename/delete/recreate guards доказаны;
+прочие состояния, измерения сборок и общий S1/final gate остаются открытыми.
+
+
 Dev73: адресация resolved экземпляров сборок и normal solid/surface тел принята:
 4175 pure/323 CAD deselected, metadata56/18, internal15/public6 accepted=true
 на одном wheel; exact-owned cleanup/baseline подтверждены. [Приёмка](Docs/COMPONENT_READS_ACCEPTANCE.md).

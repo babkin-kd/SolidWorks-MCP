@@ -30,6 +30,12 @@ baseline подтверждены. [Приёмка](BOUNDS_MEASUREMENTS_ACCEPTAN
 assembly/component/native named frames и общий gate остаются.
 Новые расширения2.1/2.2 не начинать до закрытия стадии1.
 
+Dev74: normal instance face/edge topology принято:4210 pure/323 CAD deselected,
+metadata59/18, internal21/public8 accepted=true на одном wheel; cleanup/baseline.
+[Приёмка](COMPONENT_TOPOLOGY_ACCEPTANCE.md). Hidden/curved BREP, native rename/delete/recreate guards доказаны;
+прочие состояния, измерения сборок и общий S1/final gate остаются открытыми.
+
+
 Dev73: адресация resolved экземпляров сборок и normal solid/surface тел принята:
 4175 pure/323 CAD deselected, metadata56/18, internal15/public6 accepted=true
 на одном wheel; exact-owned cleanup/baseline подтверждены. [Приёмка](COMPONENT_READS_ACCEPTANCE.md).

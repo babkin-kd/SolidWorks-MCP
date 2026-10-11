@@ -2,11 +2,13 @@
 
 ## Актуальное состояние — 11.10.2026
 
-В исходном кандидате dev74 подготовлена topology normal instance bodies:
-`component_face_list`, `component_edge_list`, `component_topology_get`.
-Installed/native приёмка пока открыта; ниже — принятый установленный dev73.
+Установленный кандидат **dev74**:59 инструментов/18 guarded операций,
+4210 pure/323 CAD deselected, metadata/internal21/public8 accepted=true,
+own cleanup/baseline. [Topology конкретного экземпляра](COMPONENT_TOPOLOGY_ACCEPTANCE.md).
+Новые face/edge чтения normal instance bodies приняты в своём scope;
+общая область native состояний/измерений и итоговый stage1 gate остаются.
 
-Установленный кандидат **dev73**:56 инструментов/18 guarded операций;
+Исторический **dev73**:56 инструментов/18 guarded операций;
 4175 pure/323 CAD deselected, metadata/internal15/public6 accepted=true,
 own cleanup/baseline подтверждены. [Адресация экземпляров](COMPONENT_READS_ACCEPTANCE.md).
 Приёмка scoped resolved instances/normal solid-surface bodies не закрывает
@@ -186,8 +188,8 @@ API-сигнатуры сверены с зарегистрированным SW
 | `rebuild` | — | Не реализовано в v2; остаток стадии 1 | 1.4. Явный документ/конфигурация; проверка результата. Создание/редактирование — с ревизией и откатом. |
 | `get_mass_properties` | `measurement_prepare_mass` / `measurement_get_mass` | Принято в ограниченном part scope dev71 | 1.4-5 /S1-16. Durable temporary UI guard, все/выбранное solid, скрытые тела/конфигурации/overrides; internal22/public6 accepted. Assemblies/custom frames и общий итоговый gate остаются. См. MASS_MEASUREMENT_ACCEPTANCE.md. |
 | `get_bounding_box` | `measurement_get_bounds` | Принято в ограниченном part scope dev72 | 1.4-5/S1-16,1.2-5/S1-06. Native extrema всех/выбранного solid/surface, включая hidden; явный rigid frame, units/postconditions. Internal14/public6 accepted. Assembly/component/named frame и общий gate остаются. См. BOUNDS_MEASUREMENTS_ACCEPTANCE.md. |
-| `list_faces` | `face_list`, `geometry_get`, `component_face_list`, `component_topology_get` | Изменено / частично | Грани заданного тела, площадь/тип; полный набор геометрических параметров ещё требуется. Instance topology dev74 — кандидат; приёмка открыта. |
-| `list_edges` | `edge_list`, `geometry_get`, `component_edge_list`, `component_topology_get` | Изменено / частично | Рёбра заданного тела, длины/концы; остальные параметры и фильтры ещё требуется перенести. Instance topology dev74 — кандидат; приёмка открыта. |
+| `list_faces` | `face_list`, `geometry_get`, `component_face_list`, `component_topology_get` | Изменено / частично | Грани заданного тела, площадь/тип; полный набор геометрических параметров ещё требуется. Instance topology dev74 scoped принято21/8; общий native gate открыт. |
+| `list_edges` | `edge_list`, `geometry_get`, `component_edge_list`, `component_topology_get` | Изменено / частично | Рёбра заданного тела, длины/концы; остальные параметры и фильтры ещё требуется перенести. Instance topology dev74 scoped принято21/8; общий native gate открыт. |
 | `check_printability` | — | Отложено в v2 | 3.2. Единицы, frame, проверка сеток/печати; ограничения реконструкции явно задаются. |
 | `export` | `export_prepare`, `export_part` | Реализованный ограниченный код; общая приёмка отложена | 3.4. Существующий bounded solid BREP export сохранён; расширение/общая файловая приёмка не блокируют стадию1. STL отложен в3.2; производственные DXF/PDF — с соответствующим блоком2. |
 | `screenshot` | — | Отложено в v2 | 2.1/2.4. Визуальный вывод состояния; отдельная публичная операция ещё не реализована. Не входит в выбранный базовый инвентарь31 стадии1. |

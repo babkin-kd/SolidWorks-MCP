@@ -37,8 +37,10 @@ referenced configuration и текущему составу, повторно с
 Координаты body `bounding_box_mm` остаются **component_model**. Они
 приблизительные native GetBodyBox, не точные габариты сборки. Transform выдаётся
 отдельно; axis-aligned box после поворота не становится точным geometric bound.
-Assembly-cut user bodies, mesh, subassembly-wide bodies, component face/edge
-catalog, расстояния и измерения сборки требуют следующих блоков/приёмки.
+Normal component face/edge catalog принят отдельным dev74 scope:
+[контракт](COMPONENT_TOPOLOGY.md), [приёмка](COMPONENT_TOPOLOGY_ACCEPTANCE.md).
+Assembly-cut user bodies, mesh, subassembly-wide bodies, расстояния и измерения
+сборки требуют следующих блоков/приёмки.
 
 Primary API references:
 [GetBodies3](https://help.solidworks.com/2018/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IComponent2~GetBodies3.html),

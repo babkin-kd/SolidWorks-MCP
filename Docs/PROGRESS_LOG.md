@@ -888,3 +888,18 @@ non-STL prefs и terminal read-only jobs подтверждены. Два неу
 исправления verifier вне wheel, без смены package digest/без повторной сборки.
 Матрица/план/API/миграция обновлены фактически, общий stage1 gate остаётся открытым.
 Один агент; v1 не менялась; push/CI не выполнялись. Контракт/приёмка COMPONENT_READS.
+
+
+11.10.2026 — стадия1, dev74 normal instance face/edge context принят.
+Wheel source592b876d5839cef91ba6e0d629d1f86658e663e7; source digest
+ a18859006874577f13c2fbe63cf1443afcc8f797468115be83e9ecb2c41c5ac9;
+wheel SHA ca2616976905950402286644742b24234e99a6a3a54a9192870a6efb04fd55ae.
+4210 pure/323 CAD deselected (53,35с), metadata59/18, internal21/public8
+accepted=true на одном wheel с первой попытки. Roundtrip/body membership,
+разные referenced configs, hidden solid/instance, surface и cylinder geometry,
+local endpoints/closed curves, paging, native rename/delete/recreate и явные
+foreign/stale/inactive отказы подтверждены. Exact own4 cleanup, empty/free baseline,
+non-STL prefs и terminal jobs, новых unknown нет. Диагностический82-ref probe
+до сборки учтён отдельно, не как native tool acceptance. Общий stage1 gate открыт.
+Один агент, dev install, v1 не менялась; push/CI нет. Далее остатки адресации/
+измерений и общие N0–N6; новых stage2 расширений не начинать.
