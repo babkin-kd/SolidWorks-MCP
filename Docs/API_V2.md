@@ -12,6 +12,11 @@ S1-16/S1-06 и общий gate остаются открытыми. Dev71/dev69 
 
 # API v2: текущий кандидат первой стадии
 
+Исходный кандидат dev74 подготовлен: `component_face_list`, `component_edge_list`,
+`component_topology_get`; каталог59 инструментов/18 guarded операций.
+Installed/native приёмка ещё открыта. [Контракт](COMPONENT_TOPOLOGY.md),
+[статус проверки](COMPONENT_TOPOLOGY_ACCEPTANCE.md). Dev73 ниже — принятая история.
+
 Установленный dev73 принят для четырёх passive component-чтений: metadata56/18,
 4175 pure passed/323 CAD deselected, internal native15/public MCP6 accepted=true
 на одном wheel, own cleanup и baseline подтверждены. [Контракт](COMPONENT_READS.md),

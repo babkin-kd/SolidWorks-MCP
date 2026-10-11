@@ -553,3 +553,16 @@ suppressed/lightweight отвергаются без автоматическо�
 не изменяются. Страницы сверяют полный состав/метаданные/transform, бюджет100000
 компонентов, не более500 тел на экземпляр. Это не приёмка производительности1000+.
 Приёмка этой области фиксируется в COMPONENT_READS_ACCEPTANCE.md.
+
+# Геометрия конкретного экземпляра
+
+`component_face_list`, `component_edge_list`, `component_topology_get` читают
+normal native solid/surface тело по явным component_id/body_id в root сборке
+и её активной конфигурации. Opaque object_id содержит исходную native связь
+с этим экземпляром/телом. Native owner/membership и полный instance/body/topology
+snapshot сверяются повторно, включая страницы; selection/model не меняются.
+Area mm2, length/endpoints component-local mm, transform к root отдельно.
+Start/end могут совпадать на замкнутой кривой. Изменение/удаление/замена/чужие
+объекты не перепривязываются. Cursor связан с configuration/instance/body/kind.
+Это observation read scope, не полный BREP certificate/revision для мутации.
+Наследуются ограничения resolved/normal bodies; нет auto resolve/activate/rebuild.

@@ -23,6 +23,7 @@ from .contracts import ResponseEnvelope
 from .dimension_tools_v2 import register_dimension_tools
 from .measurement_tools_v2 import register_measurement_tools
 from .component_tools_v2 import register_component_tools
+from .component_topology_tools_v2 import register_component_topology_tools
 from .part_tools_v2 import register_part_tools
 from .part_cut_tools_v2 import register_part_cut_tools
 from .part_hole_tools_v2 import register_part_hole_tools
@@ -98,7 +99,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None, *, timings=None)
             'capabilities': {'job_journal': True, 'job_query': True, 'queued_job_cancellation': True,
                              'timing_diagnostics': True,
                              'cad_documents': True, 'cad_mutations': True,
-                             'resolved_assembly_instance_reads': True, 'part_geometry_reads': True, 'part_bounds_measurements': True, 'part_mass_measurements': True, 'persistent_geometry_references': True,
+                             'resolved_assembly_instance_reads': True, 'resolved_assembly_instance_topology_reads': True, 'part_geometry_reads': True, 'part_bounds_measurements': True, 'part_mass_measurements': True, 'persistent_geometry_references': True,
                              'part_feature_reads': True, 'part_feature_rename': True,
                              'part_dimension_reads': True, 'part_dimension_set_value': True,
                              'new_part_documents': True, 'part_base_extrusion': True,
@@ -274,6 +275,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None, *, timings=None)
     register_dimension_tools(app, runtime, response, failure)
     register_measurement_tools(app, runtime, response, failure)
     register_component_tools(app, runtime, response, failure)
+    register_component_topology_tools(app, runtime, response, failure)
     register_part_tools(app, runtime, response, failure)
     register_part_cut_tools(app, runtime, response, failure)
     register_part_hole_tools(app, runtime, response, failure)
