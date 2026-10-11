@@ -9,7 +9,7 @@ failed/unknown отчёты сохранены; они не переписаны
 [Точная приёмка](NATIVE_DOCUMENT_OPEN_ACCEPTANCE.md),
 [контракт](NATIVE_DOCUMENT_OPEN.md).
 
-**Новый исходный кандидат L3:** зарегистрированы
+**Установленный кандидат dev88, L3 ещё открыт:** зарегистрированы
 `document_prepare_first_save_native` и `document_first_save_native`;
 операции `document.prepare_first_save_native` / `document.first_save_native`,
 revision scope `native_first_save_replace_part_v1`. Runtime лениво создаёт домен
@@ -18,8 +18,11 @@ revision scope `native_first_save_replace_part_v1`. Runtime лениво соз�
 MCP возвращает новый document_id и явный retirement исходных object IDs;
 параметры документа/конфигурации/пути/ревизии передаются без скрытого выбора цели.
 Связанный source pure-набор366 passed (26,07 с), включая фактический stdio
-discovery/schema/guide. Это не новая установленная сборка: dev87 сохраняет
-71/21, а source-каталог добавляет два инструмента и одну мутацию.
+discovery/schema/guide. Теперь dev88 собран и установлен в dev-среду:
+metadata/stdio accepted73 tools/22 mutations без source PYTHONPATH; итоговый
+source pure5978/323 CAD deselected. Installed L3-I1 выполняется; конечные
+отказы и публичная MCP-цепочка не приняты. Исторический dev87 сохраняет свой
+accepted scope71/21. [Артефакт и контрольная точка dev88](CHECKPOINT_DEV88.md).
 [Прогресс и обязательные оставшиеся gates](NATIVE_FIRST_SAVE_PROGRESS.md).
 
 Граница стадии 1 — семь конечных блоков и сценарий простой детали:

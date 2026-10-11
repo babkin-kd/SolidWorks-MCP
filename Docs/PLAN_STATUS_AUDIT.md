@@ -56,7 +56,10 @@ mapping41, writable final, dirty сосед и own cleanup/baseline подтве
 Native_calls_live=false, owned=[]; прежний unknown не переписан.
 Текущий полный source pure5973 passed/323 CAD deselected,99,38 с; related
 metadata/runtime/MCP44 passed/4,56 с. Новый installed verifier ожидает73 tools/22
-mutations; нового wheel ещё нет. L3 и installed/native/public gates открыты.
+mutations. Dev88 теперь собран/установлен, итоговый source pure5978/323 CAD
+deselected (99,46 с), installed metadata/stdio73/22 accepted. Installed L3-I1
+начат и выполняется; L3 и конечные native/public gates открыты.
+[Точный артефакт и проверенные факты](CHECKPOINT_DEV88.md).
 Remote CI последнего пакета failure; локальное исправление входит в pure,
 нового push нет. Исторические свидетельства ниже не являются приёмкой dev87
 или итоговой стадии1; прежние «20 из22» не используются как текущий gate.
