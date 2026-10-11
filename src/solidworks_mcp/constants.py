@@ -237,6 +237,9 @@ SW_DONT_REBUILD_ACTIVE_DOC = 1
 # swOpenDocOptions_e -- silent load, no dialogs. AddComponent5 returns None for a
 # part that is not loaded yet (verified), so components are opened this way first.
 SW_OPEN_DOC_SILENT = 1
+# swOpenDocOptions_e.swOpenDocOptions_ReadOnly: verified from installed
+# swconst.tlb v31 before the native open implementation (October 2026).
+SW_OPEN_DOC_READ_ONLY = 2
 
 # swSaveAsVersion_e
 SW_SAVE_AS_CURRENT_VERSION = 0

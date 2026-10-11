@@ -1,5 +1,10 @@
 # Конечная матрица незакрытых требований стадии 1
 
+S1-15/L2 в работе: open bridge/guard/file manifest подготовлены,263 связанных
+source pure прошли. Durable domain/MCP-фасад/wheel/native open ещё не приняты;
+[статус L2](NATIVE_DOCUMENT_OPEN.md). Никакое требование этой основой не закрыто;
+20 из22 остаются открытыми полностью/частично.
+
 Dev85: clean native close принят:4673 pure перед wheel; final пакет4677/323 CAD deselected (60,07с). Installed metadata69/20,
 internal12/public MCP10 accepted=true на одном точном wheel. Полный retirement
 assembly+explicit hidden collateral, part/drawing, dirty сосед, replay/stale,

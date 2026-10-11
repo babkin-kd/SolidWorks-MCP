@@ -1,5 +1,9 @@
 # Аудит статусов плана — 11.10.2026
 
+Текущая работа L2: внутренняя основа native open подготовлена,263 связанных
+source pure прошли; domain/facade/wheel/native ещё не приняты.
+[Точный статус](NATIVE_DOCUMENT_OPEN.md). S1-15/N6 остаются открытыми.
+
 Dev85: clean native close принят:4673 pure перед wheel; final пакет4677/323 CAD deselected (60,07с). Installed metadata69/20,
 internal12/public MCP10 accepted=true на одном точном wheel. Полный retirement
 assembly+explicit hidden collateral, part/drawing, dirty сосед, replay/stale,

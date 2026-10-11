@@ -1,8 +1,13 @@
 # Проект native open/close и первого сохранения
 
-Дата: 11.10.2026. **Проект следующей реализации, без приёмки и без новых
-инструментов в каталоге.** Подготовлен параллельно приёмке Save3 dev82;
-её исход этот документ не устанавливает. Основа: [PLAN](../PLAN.md),
+Дата исходного проекта: 11.10.2026, параллельно приёмке Save3 dev82.
+Актуальное состояние: clean L1 принят dev85 по отдельному
+[контракту](NATIVE_DOCUMENT_CLOSE.md)/[приёмке](NATIVE_DOCUMENT_CLOSE_ACCEPTANCE.md).
+В L2 подготовлены внутренние bridge/guard/file manifest,263 связанных pure
+прошли; домен/фасад/installed wheel/native open ещё не приняты, новых open-tools
+в каталоге нет. [Точный статус L2](NATIVE_DOCUMENT_OPEN.md). L3 остаётся проектом.
+Ниже проект полного lifecycle; он не устанавливает исход scoped приёмок.
+Основа: [PLAN](../PLAN.md),
 [S1-15 и N6](STAGE_1_REQUIREMENTS_MATRIX.md),
 [текущий save-контракт](NATIVE_DOCUMENT_SAVE.md),
 [процесс проверки](NATIVE_TESTING.md), [пакетная отправка](GIT_WORKFLOW.md).
