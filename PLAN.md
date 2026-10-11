@@ -11,15 +11,17 @@
 **В работе — штатная отбортовка явного ребра листовой детали (2.2).**
 Подготовлен read-only домен `SheetEdgeFlangeCatalog`: явные opaque base/edge,
 два полных исходных capture, параметры, русские имена, source/body membership
-и полный revision payload. **203 связанных pure-теста passed**, включая26
+и полный revision payload. **224 связанных pure-теста passed**, включая26
 для подготовки; MCP-фасад и мутация домена ещё не подключены.
 Source14 подтвердила полный native dependency graph: новый UiBend имеет
 owner FlatPattern и единственный parent — собственный OneBend, хотя direct
-subfeature traversal его не перечисляет. Source15 выявила несовпадение COM
-объектов старого flat-семейства при новом обходе после перестроения; это ещё
-не доказанные aliases. Нужны native PID equality/roundtrip и полные свойства.
+subfeature traversal его не перечисляет. Source16 доказала соответствие alternate
+COM views по native PID equality/roundtrip и полным descriptor/owner checks;
+папка сгибов с неоднозначным PID связывается только через точный absorption.
+Source17 проверила новый production bridge: full U, оба K/параметры, русские
+имена, исходные элементы и возврат полного L подтверждены, четыре jobs succeeded.
 Все вызовы terminal, свои документы закрыты. Installed dev63 остаётся44/15;
-новый bridge, completed/partial restoration и MCP пока не приняты.
+full new-sketch evidence, partial restoration, доменный writer и MCP ещё нужны.
 
 Добавлен внутренний native bridge: typed factory, точные receipt-ссылки,
 readback обоих K/параметров и собственная completed-U restoration без Undo.

@@ -4,7 +4,8 @@
 
 Read-only domain preparation реализована в исходниках,26 новых pure-тестов;
 связанный geometry/bridge/prepare/source-parameters/ownership/restoration набор
-**203 passed**. Полного pure нового кандидата и installed-wheel приёмки нет.
+**224 passed**, включая21 тест проверки COM views и closing-проверки.
+Полного pure нового кандидата и installed-wheel приёмки нет.
 Новые tools не зарегистрированы; availability остаётся false до полного writer.
 
 Source14 установила реальную связь derived UiBend: owner — exact FlatPattern,
@@ -17,7 +18,28 @@ Source15 выявила различие COM objects retained/current у пре�
 Операция остановилась на census до naming/deletion; unknown сохранился,
 вызовы terminal и контроль закрыт. Нельзя признать эти views равными только
 по одинаковым ID/type/name. Далее — native PID equality/roundtrip плюс полные
-descriptor/owner proofs. Bridge целиком и completed-U restoration пока не приняты.
+descriptor/owner proofs.
+
+Source16 подтвердила alternate views прежнего flat-семейства: native PID equality
+и roundtrip обычных FlatPattern/ProfileFeature/UiBend возвращают точный retained
+canonical объект, полные descriptors совпадают. Для FoldUpDownSketchFolder PID
+не возвращает ни retained, ни текущий view, поэтому применяется только ранее
+реализованная стратегия точного absorption через independently PID-bound owner.
+Не используются ID/name-only aliases или межоперационный alias cache. Добавленная
+привязка применяется к complete census, body membership, naming и completed restore;
+повторно проверяет PID/descriptor/owner на closing boundary. Source16 observational,
+не проверяет новый код привязки.
+
+Source17 проверила production bridge с новой привязкой: full U BREP, оба native
+allowance/параметры, GCS3, исходные элементы, русские имена новых узлов и getter
+имени тела подтверждены. Затем exact own EdgeFlange удалён с absorbed-only flag,
+полное исходное L-состояние проверено доменным capture/transition. Все четыре
+jobs succeeded, all_calls_terminal/fixtures_closed true, failure null; baseline
+пуст/free восстановлен. Source digest
+`440551a90a45ed71b951928d33abd2ca7d3ba899dc64bafcdb0a4d8ea30cf077`.
+Это source native-проверка bridge/completed restoration, без установленного wheel
+и без нового MCP. Общий LinearSketchReader отклонил автоматическую плоскость;
+полный специальный reader/profile evidence и partial restoration ещё нужны.
 
 Блок 2.2 в работе. Установленный принятый пакет остаётся dev63, каталог44/15.
 Новые MCP-инструменты отбортовки ещё не подключены; installed-wheel приёмки нет.

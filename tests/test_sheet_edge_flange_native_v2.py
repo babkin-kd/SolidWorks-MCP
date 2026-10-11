@@ -70,6 +70,8 @@ def bridge(monkeypatch,flange):
     data=NS(**flange_options(flange));data.GetCustomBendAllowance=lambda:NS(Type=2,KFactor=.38)
     data.GetEdgeCount=lambda:1
     feature=NS(GetTypeName2=lambda:'EdgeFlange',GetDefinition=lambda:data)
+    feature.GetID=lambda:id(feature)
+    a.feature_summary=lambda f:{'feature_type':f.GetTypeName2() if hasattr(f,'GetTypeName2') else 'foreign'}
     return a,data,feature
 
 
@@ -200,7 +202,7 @@ def test_full_mass_matching_bundle_still_rejects_foreign_graph_or_original_K(bun
         if defect=='extra_feature':actual.append(NS(GetID=lambda:500,GetTypeName2=lambda:'Fillet'))
         else:actual.pop(0)
         a.features=lambda m:actual
-    elif defect=='foreign_body_member':body.GetFeatures=lambda:[object(),object(),object(),receipt.flange]
+    elif defect=='foreign_body_member':body.GetFeatures=lambda:[NS(GetID=lambda:501),NS(GetID=lambda:502),NS(GetID=lambda:503),receipt.flange]
     elif defect=='foreign_cut_body':
         cut=next(m.feature for m in receipt.source_target.members if m.role=='cut_list')
         cut.GetSpecificFeature2=lambda:NS(GetBodies=lambda:[object()])

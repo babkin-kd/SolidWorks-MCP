@@ -100,6 +100,77 @@ class NativeEdgeFlangeReceipt:
 
 
 class CadSheetEdgeFlangeMixin:
+    def _sheet_flange_feature_view_matches(self,model,view,retained,*,depth=0):
+        """Bind alternate suppressed-feature views with native PID proof.
+
+        IDs route candidates; they never authorize equivalence. The PID must
+        resolve to the retained canonical entity, with equal complete feature
+        descriptors and independently bound ownership at this read boundary.
+        """
+        if view is None or retained is None or depth>12:return False
+        if self.identity(view)==self.identity(retained):return True
+        summary=self.feature_summary(retained)
+        if self.feature_summary(view)!=summary:return False
+        left=self.persistent_id(model,view);right=self.persistent_id(model,retained)
+        if not left or not right or not self.same_persistent_id(model,left,right):return False
+        expected=self.identity(retained)
+        permitted=2 if summary['suppressed'] else 0
+        for pid in (left,right):
+            raw,status=self._extension(model).GetObjectByPersistReference3(self._persistent_variant(pid))
+            resolved=binding.wrap(raw,self._module.IFeature)
+            if type(status) is not int or status!=permitted or resolved is None or self.identity(resolved)!=expected:return False
+        a=binding.wrap(view.GetOwnerFeature(),self._module.IFeature)
+        b=binding.wrap(retained.GetOwnerFeature(),self._module.IFeature)
+        if not (a is None and b is None or a is not None and b is not None
+                and self._sheet_flange_feature_view_matches(model,a,b,depth=depth+1)):return False
+        # Close event-free getter races, including a PID retarget while reading
+        # the owner. This is evidence for this capture, never an alias cache.
+        if self.feature_summary(view)!=summary or self.feature_summary(retained)!=summary:return False
+        for feature,pid in ((view,left),(retained,right)):
+            closing=self.persistent_id(model,feature)
+            if not closing or not self.same_persistent_id(model,pid,closing):return False
+            raw,status=self._extension(model).GetObjectByPersistReference3(self._persistent_variant(closing))
+            resolved=binding.wrap(raw,self._module.IFeature)
+            if type(status) is not int or status!=permitted or resolved is None or self.identity(resolved)!=expected:return False
+        return True
+
+    def _sheet_flange_absorbed_view_matches(self,model,view,folder):
+        self._sheet_member_reference(model,folder)
+        owner=binding.wrap(view.GetOwnerFeature(),self._module.IFeature)
+        return (self.feature_summary(view)==self.feature_summary(folder.feature)
+            and self._sheet_flange_feature_view_matches(model,owner,folder.owner)
+            and sum(self.identity(f)==folder.identity for f in self._sheet_absorbed(folder.owner))==1)
+
+    def _sheet_flange_coalesce_features(self,model,views,known,target):
+        """One-shot binding; no cross-capture alias cache or PID-less fallback."""
+        by_id={}
+        for feature in known:by_id.setdefault(int(feature.GetID()),[]).append(feature)
+        result=[];bindings=[]
+        folder=next((m for m in target.members if m.role=='fold_sketch_folder'),None)
+        for view in views:
+            candidates=by_id.get(int(view.GetID()),[]);matches=[]
+            for retained in candidates:
+                if self.identity(view)==self.identity(retained):matches.append(retained);continue
+                if folder is not None and self.identity(retained)==folder.identity:
+                    # This folder's native PID resolves to another feature in
+                    # SW2023. Its unique current absorption and exact PID-bound
+                    # owner provide the documented retained-member strategy.
+                    if self._sheet_flange_absorbed_view_matches(model,view,folder):
+                        matches.append(retained)
+                elif self._sheet_flange_feature_view_matches(model,view,retained):matches.append(retained)
+            if len(matches)>1:raise rejected('sheet_flange_feature_collision','Alternate feature view binds multiple retained entities.')
+            result.append(matches[0] if matches else view)
+            if matches and self.identity(view)!=self.identity(matches[0]):bindings.append((view,matches[0]))
+        if not _same_identities([self.identity(f) for f in result],[self.identity(f) for f in result]):
+            raise rejected('sheet_flange_feature_collision','Duplicate canonical entities in the complete feature view.')
+        self._sheet_state_target_current(model,target)
+        for view,retained in bindings:
+            valid=(self._sheet_flange_absorbed_view_matches(model,view,folder)
+                if folder is not None and self.identity(retained)==folder.identity
+                else self._sheet_flange_feature_view_matches(model,view,retained))
+            if not valid:raise rejected('sheet_flange_feature_changed','An alternate feature binding changed during the capture.')
+        return result
+
     def _sheet_flange_source_parameters(self,model,target):
         base,sheet=self.sheet_profile_parameters(SimpleNamespace(extrusion=target.base,auxiliary=target.members))
         return dict(base=base,sheet=sheet,options=self.sheet_parameter_options_retained(model,target))
@@ -117,13 +188,14 @@ class CadSheetEdgeFlangeMixin:
         direct=self._sheet_absorbed(flat)
         original=[m.feature for m in target.members if m.owner is not None and self.identity(m.owner)==self.identity(flat)]
         known=[*receipt.baseline_features,receipt.flange,*(row[0] for row in receipt.owned_children)]
-        extra=[f for f in self.features(model) if not any(self.identity(f)==self.identity(old) for old in known)]
+        current=self._sheet_flange_coalesce_features(model,self.features(model),known,target)
+        extra=[f for f in current if not any(self.identity(f)==self.identity(old) for old in known)]
         if len(extra)!=1 or extra[0].GetTypeName2()!='UiBend':
             actual=[(int(f.GetID()),str(f.GetTypeName2())) for f in extra]
             raise rejected('sheet_flange_flat_membership','Exactly one new derived UiBend may extend the complete feature census. '
                 f'Readback actual={actual}, unmatched_count={len(extra)}.')
         ui=extra[0];owner=binding.wrap(ui.GetOwnerFeature(),self._module.IFeature)
-        if owner is None or self.identity(owner)!=self.identity(flat):
+        if not self._sheet_flange_feature_view_matches(model,owner,flat):
             raise rejected('sheet_flange_flat_membership','The new derived bend must have the exact original FlatPattern native owner.')
         allowed=[*original,ui] if any(self.identity(f)==self.identity(ui) for f in direct) else original
         if not _same_identities([self.identity(f) for f in direct],[self.identity(f) for f in allowed]):
@@ -134,16 +206,16 @@ class CadSheetEdgeFlangeMixin:
             raise rejected('sheet_flange_flat_membership','Complete native derived-bend dependency arrays are required.')
         parents=[binding.wrap(raw,self._module.IFeature) for raw in parents or ()]
         bend=next(f for f,_,_,kind in receipt.owned_children if kind=='OneBend')
-        if len(parents)!=1 or self.identity(parents[0])!=self.identity(bend) or children:
+        if len(parents)!=1 or not self._sheet_flange_feature_view_matches(model,parents[0],bend) or children:
             raise rejected('sheet_flange_flat_membership','The exact own OneBend must be the sole parent of the leaf derived UiBend.')
         member=receipt.flat_bend_member
         if member is None:
             pid=self.persistent_id(model,ui)
             if not pid:raise rejected('sheet_flange_flat_membership','The new suppressed native bend needs a strong feature reference.')
-            member=NativeSheetMember('flange_flat_bend',ui,self.identity(ui),pid,'owned_persistent_feature_v1',owner)
+            member=NativeSheetMember('flange_flat_bend',ui,self.identity(ui),pid,'owned_persistent_feature_v1',flat)
             self._sheet_member_reference(model,member);receipt.flat_bend_member=member
         else:
-            if self.identity(ui)!=member.identity or self.identity(owner)!=self.identity(member.owner):
+            if self.identity(ui)!=member.identity or not self._sheet_flange_feature_view_matches(model,owner,member.owner):
                 raise rejected('sheet_flange_flat_membership','A replaced or reparented flat bend cannot become owned.')
             self._sheet_member_reference(model,member)
         return ui
@@ -217,7 +289,8 @@ class CadSheetEdgeFlangeMixin:
         children=self._sheet_flange_children(model,receipt)
         for member in target.members:self._sheet_member_reference(model,member)
         ui=self._sheet_flange_flat_bend(model,receipt)
-        features=self.features(model);allowed=[*receipt.baseline_features,receipt.flange,*children,ui]
+        allowed=[*receipt.baseline_features,receipt.flange,*children,ui]
+        features=self._sheet_flange_coalesce_features(model,self.features(model),allowed,target)
         identities=[self.identity(f) for f in allowed]
         if not receipt.baseline_features or not _same_identities([self.identity(f) for f in features],identities):
             raise rejected('sheet_flange_foreign_features','Unowned added or missing features prevent adopting the flange graph.')
@@ -226,6 +299,7 @@ class CadSheetEdgeFlangeMixin:
             raise rejected('sheet_flange_body_changed','The exact retained sole sheet body must remain current.')
         actual=[binding.wrap(raw,self._module.IFeature) for raw in body.GetFeatures() or ()]
         expected=[next(m.feature for m in target.members if m.role==role) for role in ('base','sheet','flat')]+[receipt.flange]
+        actual=self._sheet_flange_coalesce_features(model,actual,expected,target)
         if not _same_identities([self.identity(f) for f in actual],[self.identity(f) for f in expected]):
             raise rejected('sheet_flange_body_membership','The sole sheet body must bind exactly the original base/sheet/flat and new flange.')
         cut=next(m.feature for m in target.members if m.role=='cut_list')
@@ -246,7 +320,9 @@ class CadSheetEdgeFlangeMixin:
             (next(f for f in bundle['children'] if f.GetTypeName2()=='OneBend'),'Сгиб отбортовки'),
             (bundle['flat_bend'],'Развёртка сгиба отбортовки'),(bundle['cut_list'],cut_list_name)]
         owned=[self.identity(f) for f,_ in desired];names=[n.casefold() for _,n in desired]
-        others={str(f.Name).casefold() for f in self.features(model) if not any(self.identity(f)==token for token in owned)}
+        known=[*receipt.baseline_features,receipt.flange,*bundle['children'],bundle['flat_bend']]
+        current=self._sheet_flange_coalesce_features(model,self.features(model),known,receipt.source_target)
+        others={str(f.Name).casefold() for f in current if not any(self.identity(f)==token for token in owned)}
         if len(set(names))!=len(names) or any(n in others for n in names):
             raise rejected('sheet_name_collision','Russian own-node names cannot collide with preserved model nodes.')
         for feature,name in desired:
@@ -290,9 +366,10 @@ class CadSheetEdgeFlangeMixin:
             if model.ForceRebuild3(False) is not True:
                 raise rejected('sheet_flange_restore_unsafe','The original L-sheet rebuild was not confirmed.')
         target,body=self.sheet_state_target(model,receipt.source_target.base,receipt.source_target)
+        current=self._sheet_flange_coalesce_features(model,self.features(model),receipt.baseline_features,target)
         if (not sheet_l_body_matches(self.dimension_geometry_snapshot(model),definition.source.expected_geometry(frame))
                 or self._sheet_flange_source_parameters(model,target)!=receipt.original_parameters
-                or not _same_identities([self.identity(f) for f in self.features(model)],[self.identity(f) for f in receipt.baseline_features])):
+                or not _same_identities([self.identity(f) for f in current],[self.identity(f) for f in receipt.baseline_features])):
             raise rejected('sheet_flange_restore_unsafe','The exact baseline features, original allowances and full L geometry must all return.')
         cut=next(m.feature for m in target.members if m.role=='cut_list')
         body.Name=body_name;cut.Name=cut_list_name

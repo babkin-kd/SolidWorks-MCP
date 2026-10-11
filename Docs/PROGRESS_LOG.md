@@ -1,5 +1,25 @@
 # Ход разработки
 
+## 11.10.2026 — привязка native feature views и возврат L после отбортовки
+
+Source16 доказала совпадение alternate views flat-семейства по native persistent
+equality/roundtrip и полным descriptors. PID FoldUpDownSketchFolder неоднозначен;
+используется только exact retained absorption через PID-bound FlatPattern.
+Привязка одноразовая, без alias cache; closing read повторяет PID/descriptor/owner
+proof и отклоняет event-free retarget. Включена в census/body/naming/restore.
+**224 связанных pure passed**,21 новых тестов views/closing/неоднозначности.
+
+Source17 production bridge: полный U, native параметры/K обоих сгибов, GCS3,
+проверенное сохранение исходных элементов и русских имён. Scoped completed-U
+deletion восстановила полный original L; проверен paired доменный capture и
+parameter transition. Все четыре jobs succeeded, failure null, all_calls_terminal
+и fixtures_closed true; baseline пуст/free восстановлен. Source digest
+`440551a90a45ed71b951928d33abd2ca7d3ba899dc64bafcdb0a4d8ea30cf077`.
+Общий sketch reader отклонил unnamed automatic reference plane; scope не расширен
+непроверенным fallback. Далее — dedicated full profile evidence, partial restore,
+домен и MCP. Это source-проверка, не installed-wheel/tool acceptance. Dev63 остаётся
+44/15, v1 сохранена; один агент, без push/CI. Импорт/экспорт и все стадии открыты.
+
 ## 11.10.2026 — подготовка отбортовки и native dependency graph
 
 В исходники добавлен read-only `SheetEdgeFlangeCatalog`: строгая проверка
