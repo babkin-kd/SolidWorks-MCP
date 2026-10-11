@@ -112,6 +112,42 @@ class CadSheetEdgeFlangeMixin:
         return NativeEdgeFlangeReceipt(target,deepcopy(self.part_creation_controls(model)),edge,
             self.identity(edge),pid,tuple(self.features(model)),deepcopy(self._sheet_flange_source_parameters(model,target)))
 
+    def _sheet_flange_flat_bend(self,model,receipt):
+        target=receipt.source_target;flat=next(m.feature for m in target.members if m.role=='flat')
+        direct=self._sheet_absorbed(flat)
+        original=[m.feature for m in target.members if m.owner is not None and self.identity(m.owner)==self.identity(flat)]
+        known=[*receipt.baseline_features,receipt.flange,*(row[0] for row in receipt.owned_children)]
+        extra=[f for f in self.features(model) if not any(self.identity(f)==self.identity(old) for old in known)]
+        if len(extra)!=1 or extra[0].GetTypeName2()!='UiBend':
+            actual=[(int(f.GetID()),str(f.GetTypeName2())) for f in extra]
+            raise rejected('sheet_flange_flat_membership','Exactly one new derived UiBend may extend the complete feature census. '
+                f'Readback actual={actual}, unmatched_count={len(extra)}.')
+        ui=extra[0];owner=binding.wrap(ui.GetOwnerFeature(),self._module.IFeature)
+        if owner is None or self.identity(owner)!=self.identity(flat):
+            raise rejected('sheet_flange_flat_membership','The new derived bend must have the exact original FlatPattern native owner.')
+        allowed=[*original,ui] if any(self.identity(f)==self.identity(ui) for f in direct) else original
+        if not _same_identities([self.identity(f) for f in direct],[self.identity(f) for f in allowed]):
+            raise rejected('sheet_flange_flat_membership','All original direct flat children must remain exact; only the proved derived bend may be added.')
+        parents=ui.GetParents();children=ui.GetChildren()
+        if (parents is not None and not isinstance(parents,(list,tuple))
+                or children is not None and not isinstance(children,(list,tuple))):
+            raise rejected('sheet_flange_flat_membership','Complete native derived-bend dependency arrays are required.')
+        parents=[binding.wrap(raw,self._module.IFeature) for raw in parents or ()]
+        bend=next(f for f,_,_,kind in receipt.owned_children if kind=='OneBend')
+        if len(parents)!=1 or self.identity(parents[0])!=self.identity(bend) or children:
+            raise rejected('sheet_flange_flat_membership','The exact own OneBend must be the sole parent of the leaf derived UiBend.')
+        member=receipt.flat_bend_member
+        if member is None:
+            pid=self.persistent_id(model,ui)
+            if not pid:raise rejected('sheet_flange_flat_membership','The new suppressed native bend needs a strong feature reference.')
+            member=NativeSheetMember('flange_flat_bend',ui,self.identity(ui),pid,'owned_persistent_feature_v1',owner)
+            self._sheet_member_reference(model,member);receipt.flat_bend_member=member
+        else:
+            if self.identity(ui)!=member.identity or self.identity(owner)!=self.identity(member.owner):
+                raise rejected('sheet_flange_flat_membership','A replaced or reparented flat bend cannot become owned.')
+            self._sheet_member_reference(model,member)
+        return ui
+
     def _sheet_flange_edge_current(self,model,receipt,definition,frame):
         self._sheet_state_target_current(model,receipt.source_target)
         edge=self.resolve_persistent_id(model,receipt.edge_pid,'edge')
@@ -180,27 +216,7 @@ class CadSheetEdgeFlangeMixin:
         target=receipt.source_target;self._sheet_state_target_current(model,target)
         children=self._sheet_flange_children(model,receipt)
         for member in target.members:self._sheet_member_reference(model,member)
-        flat=next(m.feature for m in target.members if m.role=='flat')
-        flat_children=self._sheet_absorbed(flat)
-        original=[m for m in target.members if m.owner is not None and self.identity(m.owner)==self.identity(flat)]
-        extra=[f for f in flat_children if not any(self.identity(f)==m.identity for m in original)]
-        if (len(flat_children)!=len(original)+1 or len(extra)!=1 or extra[0].GetTypeName2()!='UiBend'
-                or any(sum(self.identity(f)==m.identity for f in flat_children)!=1 for m in original)):
-            actual=[(int(f.GetID()),str(f.GetTypeName2())) for f in flat_children]
-            retained=[(m.role,int(m.feature.GetID())) for m in original]
-            raise rejected('sheet_flange_flat_membership',
-                'Only the exact new native flat bend may extend original flat absorption. '
-                f'Readback actual={actual}, retained={retained}, unmatched_count={len(extra)}.')
-        ui=extra[0];pid=self.persistent_id(model,ui)
-        member=receipt.flat_bend_member
-        if member is None:
-            if not pid:raise rejected('sheet_flange_flat_membership','The new suppressed native bend needs a strong feature reference.')
-            member=NativeSheetMember('flange_flat_bend',ui,self.identity(ui),pid,'owned_persistent_feature_v1',flat)
-            self._sheet_member_reference(model,member);receipt.flat_bend_member=member
-        else:
-            if self.identity(ui)!=member.identity:
-                raise rejected('sheet_flange_flat_membership','A replaced flat bend cannot become owned.')
-            self._sheet_member_reference(model,member)
+        ui=self._sheet_flange_flat_bend(model,receipt)
         features=self.features(model);allowed=[*receipt.baseline_features,receipt.flange,*children,ui]
         identities=[self.identity(f) for f in allowed]
         if not receipt.baseline_features or not _same_identities([self.identity(f) for f in features],identities):

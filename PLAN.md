@@ -9,6 +9,18 @@
 ### Актуальные приоритеты — решение пользователя от 10.10.2026
 
 **В работе — штатная отбортовка явного ребра листовой детали (2.2).**
+Подготовлен read-only домен `SheetEdgeFlangeCatalog`: явные opaque base/edge,
+два полных исходных capture, параметры, русские имена, source/body membership
+и полный revision payload. **203 связанных pure-теста passed**, включая26
+для подготовки; MCP-фасад и мутация домена ещё не подключены.
+Source14 подтвердила полный native dependency graph: новый UiBend имеет
+owner FlatPattern и единственный parent — собственный OneBend, хотя direct
+subfeature traversal его не перечисляет. Source15 выявила несовпадение COM
+объектов старого flat-семейства при новом обходе после перестроения; это ещё
+не доказанные aliases. Нужны native PID equality/roundtrip и полные свойства.
+Все вызовы terminal, свои документы закрыты. Installed dev63 остаётся44/15;
+новый bridge, completed/partial restoration и MCP пока не приняты.
+
 Добавлен внутренний native bridge: typed factory, точные receipt-ссылки,
 readback обоих K/параметров и собственная completed-U restoration без Undo.
 **170 связанных pure-тест passed.** Source-probe11 подтвердила U-форму,

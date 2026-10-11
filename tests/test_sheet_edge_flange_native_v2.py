@@ -138,11 +138,15 @@ def bundle_bridge(bridge):
     old_flat=[node('ProfileFeature'),node('ProfileFeature'),node('UiBend'),node('FoldUpDownSketchFolder')]
     baseline=[base,sheet,flat,cut,*old_flat];refs={}
     members=[NS(role=role,feature=f,identity=id(f),owner=None) for role,f in zip(('base','sheet','flat','cut_list'),baseline)]
-    members.extend(NS(role='old_'+str(i),feature=f,identity=id(f),owner=flat) for i,f in enumerate(old_flat))
+    members.extend(NS(role=role,feature=f,identity=id(f),owner=flat) for role,f in zip(
+        ('flat_sketch_1','flat_sketch_2','ui_bend','fold_sketch_folder'),old_flat))
+    ui.GetOwnerFeature=lambda:flat
+    ui.GetParents=lambda:[bend];ui.GetChildren=lambda:None
     body=NS(IsSheetMetal=lambda:True,GetFeatures=lambda:[base,sheet,flat,flange])
     cut.GetSpecificFeature2=lambda:NS(GetBodies=lambda:[body]);target=NS(members=members,body_pid=b'body')
     receipt=NativeEdgeFlangeReceipt(target,{},object(),1,b'edge',tuple(baseline),{'k_factor':.42},
-        sketch=profile,sketch_identity=id(profile),flange=flange,flange_identity=id(flange))
+        sketch=profile,sketch_identity=id(profile),flange=flange,flange_identity=id(flange),
+        owned_children=[(profile,id(profile),b'profile','ProfileFeature'),(bend,id(bend),b'bend','OneBend')])
     a._sheet_state_target_current=lambda m,t:events.append('context')
     a._sheet_flange_children=lambda m,r:[profile,bend]
     a._sheet_member_reference=lambda m,r:events.append('member_'+r.role)
@@ -167,12 +171,33 @@ def test_full_bundle_proof_preserves_original_members_and_retains_suppressed_ben
     assert events.count('member_flange_flat_bend')==2
 
 
+def test_derived_bend_need_not_appear_in_direct_subfeature_view(bundle_bridge):
+    a,model,receipt,_,ui,_=bundle_bridge
+    flat=next(m.feature for m in receipt.source_target.members if m.role=='flat')
+    original=a._sheet_absorbed(flat)[:-1]
+    a._sheet_absorbed=lambda f:original
+    assert a.sheet_flange_bundle(model,receipt)['flat_bend'] is ui
+    assert receipt.flat_bend_member.owner is flat
+
+
+@pytest.mark.parametrize('defect',['foreign_owner','foreign_parent','second_parent','nonleaf','partial_parents','partial_children'])
+def test_derived_bend_must_bind_exact_flat_and_own_one_bend_with_complete_dependencies(bundle_bridge,defect):
+    a,model,receipt,_,ui,_=bundle_bridge
+    if defect=='foreign_owner':ui.GetOwnerFeature=lambda:object()
+    elif defect=='foreign_parent':ui.GetParents=lambda:[object()]
+    elif defect=='second_parent':ui.GetParents=lambda:[object(),object()]
+    elif defect=='nonleaf':ui.GetChildren=lambda:[object()]
+    elif defect=='partial_parents':ui.GetParents=lambda:False
+    else:ui.GetChildren=lambda:False
+    with pytest.raises(ExecutionFailure):a.sheet_flange_bundle(model,receipt)
+
+
 @pytest.mark.parametrize('defect',['extra_feature','removed_baseline','foreign_body_member','foreign_cut_body','original_K_changed','replaced_flat_bend','partial_flat_children'])
 def test_full_mass_matching_bundle_still_rejects_foreign_graph_or_original_K(bundle_bridge,defect):
     a,model,receipt,body,ui,_=bundle_bridge
     if defect in ('extra_feature','removed_baseline'):
         actual=a.features(model)
-        if defect=='extra_feature':actual.append(object())
+        if defect=='extra_feature':actual.append(NS(GetID=lambda:500,GetTypeName2=lambda:'Fillet'))
         else:actual.pop(0)
         a.features=lambda m:actual
     elif defect=='foreign_body_member':body.GetFeatures=lambda:[object(),object(),object(),receipt.flange]

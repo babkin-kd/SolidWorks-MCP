@@ -1,5 +1,47 @@
 # Ход разработки
 
+## 11.10.2026 — подготовка отбортовки и native dependency graph
+
+В исходники добавлен read-only `SheetEdgeFlangeCatalog`: строгая проверка
+opaque base/edge, длины/r2/K2 и всех четырёх русских имён до CAD-capture;
+полный доказанный source L, источник ребра, сторона свободной кромки,
+исходный K1, параметры и expected U связываются с revision. Конфликт имён,
+неверный документ/configuration/тип/родитель ребра и flat source отклоняются.
+Prepare выполняет только чтение. `native_change_available=False`, пока полный
+доменный writer/evidence/restoration не готовы; новых MCP-tools нет.
+**203 связанных pure passed**, включая26 для доменной подготовки.
+
+Source12 доказала сохранение прежних четырёх direct flat children при U;
+source13 также не нашла новый UiBend во fold-folder view. Эти experimental jobs
+остались unknown; вызовы terminal, свои модели закрыты, baseline пуст/free.
+Source14 на проверенном primitive успешно прочитала полный граф: новый UiBend75
+owner FlatPattern48, sole parent OneBend73, leaf; OneBend73 принадлежит EdgeFlange67.
+Прямой subfeature traversal не перечисляет derived UiBend. Reader теперь ищет
+единственный новый UiBend в complete feature census, затем требует exact
+FlatPattern owner, own OneBend parent, отсутствие children и strong PID.
+Сохраняются исходные direct members; догадка о nested fold-folder удалена.
+
+Source14: full U geometry match, fully-defined sketch, три jobs succeeded,
+baseline restored/own fixtures closed, all calls terminal. Дополнительно
+прочитаны пять sketch relations:32 projection,5/5 vertical,4 horizontal,
+1 dimension; reference kind4/non-null. Вспомогательная попытка QI дала пустые
+interface lists и не используется как доказательство типов. Полный профиль
+ещё требуется связать с native entity/driver evidence.
+
+Source15 остановилась на complete census: current flat family objects не
+совпали с retained baseline COM identities. В unmatched появились прежние
+FlatPattern48/Profile46/47/UiBend57/folder56 и новый UiBend75. Это ещё не
+доказательство alias equivalence или разрешение пересоздать baseline references.
+Нужны native persistent equality/roundtrip и descriptor proof, без сравнения
+только GetID/name. Новые имена, общий reader profile и completed-U deletion в
+source15 не запускались. Job unknown сохранён, native calls terminal, собственная
+модель закрыта, baseline пуст/free. Source15 digest
+`1b577d418794d4e5b5ac27d6c5e5e7ee7710e31e8ef51274aaec201e80378c4f`.
+
+Далее — соответствие native feature views, полный профиль, scoped partial
+restoration, доменный writer и MCP-фасад до итогового wheel. Installed dev63
+и v1 сохранены; один агент, без push/CI, импорт/экспорт отложены. Все стадии открыты.
+
 ## 11.10.2026 — native bridge отбортовки подготовлен, принадлежность FlatPattern уточняется
 
 Добавлены внутренний `CadSheetEdgeFlangeMixin` и отдельный native receipt,

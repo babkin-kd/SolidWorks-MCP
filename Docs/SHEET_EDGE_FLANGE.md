@@ -1,5 +1,24 @@
 # Штатная отбортовка — разработка сценария
 
+## Текущий следующий шаг
+
+Read-only domain preparation реализована в исходниках,26 новых pure-тестов;
+связанный geometry/bridge/prepare/source-parameters/ownership/restoration набор
+**203 passed**. Полного pure нового кандидата и installed-wheel приёмки нет.
+Новые tools не зарегистрированы; availability остаётся false до полного writer.
+
+Source14 установила реальную связь derived UiBend: owner — exact FlatPattern,
+sole parent — own OneBend, children отсутствуют. Он виден в complete feature
+census и не перечисляется direct/fold-folder subfeature views. Подтверждены
+U-форма и native параметры/GCS; observational jobs succeeded, fixtures closed,
+baseline restored. Предположение о расположении внутри fold folder удалено.
+
+Source15 выявила различие COM objects retained/current у прежних flat nodes.
+Операция остановилась на census до naming/deletion; unknown сохранился,
+вызовы terminal и контроль закрыт. Нельзя признать эти views равными только
+по одинаковым ID/type/name. Далее — native PID equality/roundtrip плюс полные
+descriptor/owner proofs. Bridge целиком и completed-U restoration пока не приняты.
+
 Блок 2.2 в работе. Установленный принятый пакет остаётся dev63, каталог44/15.
 Новые MCP-инструменты отбортовки ещё не подключены; installed-wheel приёмки нет.
 
