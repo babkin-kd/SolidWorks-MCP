@@ -70,3 +70,8 @@ metadata67/19; итоговый пакет4524 pure. По новому указ�
 но упал на подготовке SQLite-теста (ignored work/ отсутствовал в чистом runner).
 Исправление/регрессия116 pure приняты локально и накапливаются для следующего
 пакета; повторного push нет. Полный результат: [CHECKPOINT_DEV82](CHECKPOINT_DEV82.md).
+
+[Локальная контрольная точка dev85](CHECKPOINT_DEV85.md): clean native close
+accepted12/10, metadata69/20 и final pure4677/323 CAD deselected.
+CI-fix88e479a включён в успешный локальный набор; remote CI всё ещё failure.
+Новый lifecycle-блок и исправления накапливаются без отдельного push.

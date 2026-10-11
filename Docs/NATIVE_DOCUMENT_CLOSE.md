@@ -1,8 +1,9 @@
 # Закрытие чистых native-документов: кандидат L1
 
 Реализованы `document_prepare_close_native` и `document_close_native`.
-Статус на подготовке dev85: pure/installed/native/MCP-приёмка выполняется;
-реализация сама по себе не закрывает S1-15 или стадию1.
+Dev85 принят: installed metadata69/20, internal12/public MCP10 на одном wheel,
+final пакет4677 pure/323 CAD deselected. [Приёмка](NATIVE_DOCUMENT_CLOSE_ACCEPTANCE.md).
+Ограниченный clean-close не закрывает целиком S1-15 или стадию1.
 
 ## Контракт
 
@@ -72,8 +73,8 @@ Guard/bridge: уничтоженный fake-target без getters, точный 
 registered types/options, полный window/model census. Такие проверки не CAD.
 
 Standalone `scripts/verify_native_document_close.py`: установленный wheel
-без PYTHONPATH, свежий private state и собственные5 моделей; планируются
-internal12/public10 случаев. Сборка/public должны совпасть по Git SHA,
+без PYTHONPATH, свежий private state и собственные5 моделей; приняты
+internal12/public10 случаев. Сборка/public совпадают по Git SHA,
 source digest, version, wheel SHA256 и hashes verifier/fixture/lifecycle helper.
 Публичная приёмка допускается только после принятого internal того же кандидата.
 На обоих прогонах проверяются retirement assembly+явный hidden collateral,

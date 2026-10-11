@@ -23,8 +23,11 @@ from verify_native_document_save import physical_state
 from verifier_lifecycle import ToolSpec,open_supervised_session
 
 SPECS={'document_list':ToolSpec('document.list',False),'document_get':ToolSpec('document.get',False),
-       'document_prepare_close_native':ToolSpec('document.prepare_close_native',False),
-       'document_close_native':ToolSpec('document.close_native',True,prewrite_failure_codes=frozenset({'stale_revision'}))}
+       'document_prepare_close_native':ToolSpec('document.prepare_close_native',False,
+           argument_defaults=dict(active_after_document_id='',allowed_hidden_document_ids=[])),
+       'document_close_native':ToolSpec('document.close_native',True,
+           argument_defaults=dict(active_after_document_id='',allowed_hidden_document_ids=[]),
+           prewrite_failure_codes=frozenset({'stale_revision'}))}
 INTERNAL_CASES=12
 PUBLIC_CASES=10
 

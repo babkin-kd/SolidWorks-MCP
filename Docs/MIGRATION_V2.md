@@ -1,5 +1,15 @@
 # Миграция legacy-инструментов в API v2
 
+Dev85: clean native close принят:4673 pure перед wheel; final пакет4677/323 CAD deselected (60,07с). Installed metadata69/20,
+internal12/public MCP10 accepted=true на одном точном wheel. Полный retirement
+assembly+explicit hidden collateral, part/drawing, dirty сосед, replay/stale,
+explicit survivor activation и empty/free baseline подтверждены.
+[Контракт](NATIVE_DOCUMENT_CLOSE.md), [приёмка](NATIVE_DOCUMENT_CLOSE_ACCEPTANCE.md).
+First save/open, dirty-owned/retained-reference close и общий N6 остаются;
+стадия1 открыта,20 из22 требований по-прежнему открыты полностью/частично.
+Прежние scoped результаты привязаны к своим wheel; legacy20/20 отдельно.
+
+
 Dev82: current native file Save3 принят для явного документа; каталог67/19.
 Internal10/public5 accepted=true на одном wheel. [Приёмка](NATIVE_DOCUMENT_SAVE_ACCEPTANCE.md).
 Первое сохранение/open/close остаются обязательными; стадия1 открыта.
