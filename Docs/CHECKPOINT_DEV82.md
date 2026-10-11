@@ -29,7 +29,10 @@ installed metadata проверены. Frozen lockfile проверяет обя
 fixation/fetch/merge актуального main. Причина прежнего dirty сообщена:
 локальный origin/main устарел, main GitHub содержит README commit
 `3ab795ec9d75e8a0055d41554cd439737b8b82f8`.
-После fetch фактический main и разрешение README фиксируются в merge-коммите.
+Fetch подтвердил актуальный origin/main `3ab795ec9d75e8a0055d41554cd439737b8b82f8`;
+его единственное изменение — README. В stage-1-fixes объединён этот main:
+сохранено актуальное описание форка, обновлены только статусы dev82 и ссылки
+на checkpoint. Конфликт ограничен README; исполняемый пакет не изменился.
 До отправки CI текущей вершины not_run. После единственного push требуется
 проверить запуск/результат unit-and-build PR15 через API; старые green runs
 не засчитываются. PR остаётся draft, main не обновляется этой отправкой.
