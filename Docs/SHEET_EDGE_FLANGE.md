@@ -2,6 +2,18 @@
 
 ## Текущий следующий шаг
 
+Source22 уточнила конкретный disconnect: `pattern_edge_points(receipt.edge)` →
+`curve.IsLine()` старого pre-insertion дескриптора, до factory. Receipt: sketch и
+driver возвращены, profile_before ещё не доказан, flange отсутствует; pending
+creation/deletion false. Unknown сохранён, все calls terminal, own fixture closed.
+
+Исходные finite line endpoints теперь фиксируются до записи в receipt; после own
+insertion старую кривую не читаем. Сохранённый descriptor связывается с current
+edge PID/geometry и полным current source/body/topology proof. Для AddEdges берётся
+свежее проверенное ребро; client reference не обновляется. **379 связанных pure
+passed**, включая disposed-curve case и отказы отсутствующего/неверного исходного
+descriptor. Native этого исправления ещё не завершён; MCP/wheel по-прежнему нет.
+
 Source21 с ограниченной source-edge привязкой также не принята: COM disconnect
 `RPC_E_DISCONNECTED` до подтверждённого результата. Job unknown сохранён,
 all_calls_terminal/fixtures_closed true. Следующий диагностический прогон

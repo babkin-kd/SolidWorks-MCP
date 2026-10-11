@@ -9,6 +9,13 @@
 ### Актуальные приоритеты — решение пользователя от 10.10.2026
 
 **В работе — штатная отбортовка явного ребра листовой детали (2.2).**
+Source22 точно установила disposed старую curve при повторном чтении исходного
+edge после own insertion, до factory. Исходный finite descriptor фиксируется до
+записи; после неё current edge проверяется по PID/geometry/body/topology и всему
+исходному L/baseline. AddEdges получает fresh proved edge, client reference не
+обновляется. **379 связанных pure passed**; native исправления ещё не завершён.
+Все source22 calls terminal, свой контроль закрыт, unknown сохранён.
+
 Source21 не принята: COM disconnect без подтверждённого результата. Unknown
 сохранён, все calls terminal, own fixture закрыт. Приватная диагностика сохраняет
 точный traceback/receipt phase для определения устаревшего объекта. Pure376 и

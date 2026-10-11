@@ -85,6 +85,7 @@ class NativeEdgeFlangeReceipt:
     edge_pid:bytes
     baseline_features:tuple
     original_parameters:dict
+    source_edge_points:tuple=()
     sketch:object=None
     sketch_identity:object=None
     sketch_pid:bytes=b''
@@ -266,7 +267,8 @@ class CadSheetEdgeFlangeMixin:
         if not pid or self.identity(self.resolve_persistent_id(model,pid,'edge'))!=self.identity(edge):
             raise rejected('sheet_flange_edge_changed','The explicit edge needs a canonical persistent reference.')
         return NativeEdgeFlangeReceipt(target,deepcopy(self.part_creation_controls(model)),edge,
-            self.identity(edge),pid,tuple(self.features(model)),deepcopy(self._sheet_flange_source_parameters(model,target)))
+            self.identity(edge),pid,tuple(self.features(model)),deepcopy(self._sheet_flange_source_parameters(model,target)),
+            source_edge_points=tuple(tuple(p) for p in self.pattern_edge_points(edge)))
 
     def _sheet_flange_flat_bend(self,model,receipt):
         target=receipt.source_target;flat=next(m.feature for m in target.members if m.role=='flat')
@@ -330,7 +332,7 @@ class CadSheetEdgeFlangeMixin:
 
         Native sketch insertion may refresh topology interfaces. This is not a
         client-reference upgrade or a cross-request alias: the original PID,
-        both complete edge descriptors, current topology and the entire source
+        the captured pre-write descriptor, current topology and the entire source
         body/feature/parameter baseline must still agree in this capture.
         """
         if (receipt.sketch is None or receipt.native_sketch is None or receipt.flange is not None
@@ -358,7 +360,7 @@ class CadSheetEdgeFlangeMixin:
             raise rejected('sheet_flange_edge_changed','The retained source edge must still report the prepared native PID.')
         edge=self.resolve_persistent_id(model,receipt.edge_pid,'edge');pid=self.persistent_id(model,edge)
         if (not pid or not self.same_persistent_id(model,pid,retained_pid)
-                or not l_flange_edge_points(self.pattern_edge_points(receipt.edge),definition.source,frame)
+                or not l_flange_edge_points(receipt.source_edge_points,definition.source,frame)
                 or not l_flange_edge_points(self.pattern_edge_points(edge),definition.source,frame)):
             raise rejected('sheet_flange_edge_changed','Both complete finite source-edge descriptors and native PIDs must agree.')
         body=self.resolve_persistent_id(model,receipt.source_target.body_pid,'body');bodies=self.bodies(model,'all')
@@ -589,6 +591,7 @@ class CadSheetEdgeFlangeMixin:
         if receipt.driver is None:raise rejected('sheet_flange_driver_changed','The exact own height driver must be retained before factory.')
         receipt.driver_identity=self.identity(receipt.driver)
         receipt.profile_before,receipt.profile_before_members=self.sheet_flange_sketch_snapshot(model,receipt,definition,frame,'before_factory')
+        edge=self._sheet_flange_profile_edge_current(model,receipt,definition,frame)
         factory=binding.wrap(model.FeatureManager,self._module.IFeatureManager)
         data=binding.wrap(factory.CreateDefinition(37),self._module.IEdgeFlangeFeatureData)
         if data is None:raise rejected('sheet_flange_definition_unavailable','The native EdgeFlange factory definition is required.')

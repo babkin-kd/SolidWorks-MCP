@@ -1,5 +1,22 @@
 # Ход разработки
 
+## 11.10.2026 — точная причина disconnect source22 и source descriptor
+
+Traceback source22 показал disposed старую кривую при
+`pattern_edge_points(receipt.edge)`/`curve.IsLine()`, до factory. Source digest
+`5378ef46a3bc346cdfe92e3bbb427abb2c4e2fea96982d5ce8c9f00cef13adf0`.
+Own sketch/driver возвращены; profile_before не доказан, flange отсутствует,
+pending flags false. Job unknown сохранён; calls terminal/own fixture closed,
+baseline пуст/free. Никакого success или generic Undo.
+
+Перед записью сохраняются проверенные source finite endpoints. Post-insertion
+binding читает свежую current geometry, native PID/owner/topology и весь исходный
+L/baseline/parameters/controls; старую disposed curve не читает. AddEdges получает
+fresh proved source edge, opaque client reference не меняется. **379 связанных
+pure passed**, новые missing/wrong descriptor и disposed-old-curve cases.
+Native исправление ещё не принято; далее полный profile, partial restoration,
+доменный writer/MCP до wheel. Installed dev63 44/15 и v1 сохранены.
+
 ## 11.10.2026 — source21 не принята, добавлена точная диагностика disconnect
 
 Source21 (digest `5378ef46a3bc346cdfe92e3bbb427abb2c4e2fea96982d5ce8c9f00cef13adf0`)

@@ -21,6 +21,7 @@ def source_views(edge_bridge):
     base=NS(GetID=lambda:49)
     receipt.sketch=profile;receipt.sketch_identity=id(profile);receipt.sketch_pid=b'profile';receipt.native_sketch=native
     receipt.baseline_features=(base,);receipt.source_target.members=[];refs[b'profile']=profile
+    receipt.source_edge_points=((.002,.02,0.),(.002,.02,.03))
     a.features=lambda m:[base,profile];a.part_creation_controls=lambda m:receipt.controls
     a._sheet_flange_source_parameters=lambda m,t:receipt.original_parameters.copy()
     a.dimension_geometry_snapshot=lambda m:{'bodies':[read(folded_body())]}
@@ -41,7 +42,7 @@ def test_refreshed_pointer_requires_original_pid_full_source_and_current_topolog
 
 @pytest.mark.parametrize('defect',['unknown','flange_exists','missing_sketch','controls','parameters','shape','extra_node',
     'retained_pid','wrong_side','foreign_owner','missing_current_edge','duplicate_current_edge','second_body',
-    'retarget_on_close','underdefined','foreign_sketch','open_sketch'])
+    'retarget_on_close','underdefined','foreign_sketch','open_sketch','missing_source_descriptor','wrong_source_descriptor'])
 def test_same_endpoints_or_pid_do_not_authorize_an_unproved_refresh(source_views,flange,defect):
     a,model,receipt,current,body,refs=source_views
     if defect=='unknown':receipt.pending_creation=True
@@ -68,5 +69,17 @@ def test_same_endpoints_or_pid_do_not_authorize_an_unproved_refresh(source_views
         a.resolve_persistent_id=resolve
     elif defect=='underdefined':receipt.native_sketch.GetConstrainedStatus=lambda:2
     elif defect=='foreign_sketch':receipt.native_sketch=object()
-    else:model.SketchManager.ActiveSketch=object()
+    elif defect=='open_sketch':model.SketchManager.ActiveSketch=object()
+    elif defect=='missing_source_descriptor':receipt.source_edge_points=()
+    else:receipt.source_edge_points=((0.,.02,0.),(0.,.02,.03))
     with pytest.raises(ExecutionFailure):a._sheet_flange_profile_edge_current(model,receipt,flange,IDENTITY)
+
+
+def test_disposed_old_curve_is_not_queried_after_own_native_insertion(source_views,flange):
+    a,model,receipt,current,_,_=source_views
+    original=a.pattern_edge_points
+    def points(edge):
+        if edge is receipt.edge:raise RuntimeError('native old curve disconnected')
+        return original(edge)
+    a.pattern_edge_points=points
+    assert a._sheet_flange_profile_edge_current(model,receipt,flange,IDENTITY) is current
