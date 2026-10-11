@@ -1,6 +1,6 @@
 # Конечная матрица стадии 1 и перенос расширенных требований
 
-Срез 11.10.2026. Новая граница выпуска — **семь обязательных блоков** L2, L3,
+Актуализация 12.10.2026. Новая граница выпуска — **семь обязательных блоков** L2, L3,
 S1-B1…S1-B5 и законченный пользовательский сценарий. Старые S1-01…S1-22
 сохранены как трассировка; прежний агрегат «20 из 22» больше не определяет
 готовность. Перенос широкой поддержки — явная незавершённая задача стадии 2/3,
@@ -44,12 +44,18 @@ activation/type/config scope остаётся D2-DOCUMENTS. Точные кри�
 увеличивают этот перечень при подготовке итогового выпуска. Обнаруженный дефект
 поддержанного случая исправляется до закрытия соответствующего блока.
 
+## Отдельная необходимая задача S1-B5-ACT
+
+| Пользовательский результат | Поддержанные случаи | Конечная приёмка | Статус |
+| --- | --- | --- | --- |
+| После открытия выбрать точную деталь для следующего изменения через MCP | Одна уже открытая самостоятельная writable part поддержанного прямоугольного профиля, одна конфигурация; поддержанные соседи | Явные document/config/revision/request; один native вызов и exact active-after; неизменные data/dirty/selection/view/files соседей; stale/replay/no-effect и unknown/hold без повтора; installed/public native доказательство | Открыта; не реализована. Не меняет active-after политики L2. Arbitrary activation/type/config — D2-DOCUMENTS |
+
 ## Законченный пользовательский результат
 
 При открытой dirty соседней детали: русская новая деталь → явно выбранная
 native-плоскость → прямоугольный «Эскиз основания» 40 × 20 мм → «Основание»
 10 мм → изменение толщины до 12 мм/9600 мм³ → первое сохранение нового
-`.SLDPRT` → точный close/open → свежие ссылки, толщина 14 мм → Save3,
+`.SLDPRT` → точный close/open → свежие ссылки, явная активация через MCP, толщина 14 мм → Save3,
 независимый native/disk readback 11200 мм³ → close. Соседний документ, его
 несохранённые данные, geometry/config/references/selection/view и bytes файла
 сохраняются; active и application settings/CWD возвращаются к baseline.
@@ -87,28 +93,33 @@ part того же наблюдаемого профиля. Гарантия с�
 Расширенная возможность поддерживается только после отдельного блока с этими
 же гарантиями. Unsupported отказ — доказательство защиты, а не реализации.
 
-## Семь обязательных блоков: результат, конечная проверка, блокер
+## Фактические блокеры шести оставшихся блоков
 
-| ID | Поддержанный результат | Конечная приёмка | Факт и оставшийся блокер |
-| --- | --- | --- | --- |
-| L2 | Exact resolved native open part/assembly/drawing; new/borrowed closure/config, read_only; dirty baseline, clean rollback, CWD | Фиксированные 13 internal / 11 public cases текущего [контракта](NATIVE_DOCUMENT_OPEN.md): exact source/refs/ACK0/0/final oracle, stale/replay, normal failure/real missing receipt, Python failure после native, clean rollback и restored application context | Закрыт dev87 internal13/public11: accepted, own cleanup/baseline подтверждены. Исторические failures сохранены; новые load/reference modes — D2-LOADREF |
-| L3 | Own unsaved part, одна конфигурация/solid, без refs: первый новый native путь без overwrite и доказанная live identity/path | Native success с независимым disk/reopen proof; existing-target и destination-race отказ без перезаписи; stale/foreign/replay; normal/pending failure с journal/hold и exact cleanup. Протокол публикации/замены identity сначала доказывается, не предполагается | [Source CAD/NTFS-прототип1](NATIVE_FIRST_SAVE_PROGRESS.md): passed,44,28 с; Copy/readback, no-replace publication, writable final,41 mappings, source retirement, cleanup/baseline и освобождение leases подтверждены. Runtime/MCP-фасад реализованы в исходниках, related366 pure/26,07 с. Полный native доменный протокол/guards/журнал, installed/public приёмка остаются. L3 открыт |
-| S1-B1 | Русская новая part из пустого настроенного шаблона 1cfg; явная существующая плоскость; прямоугольный 2D-эскиз; одно blind extrusion | Positive chain 40×20×10/BREP/8000 мм³; foreign plane/context, stale и replay; known failure после настоящего создания с owned restore. Полное наблюдение своего простого графа | dev41/dev49 — история. Завершить явные контракты самостоятельных базовых операций и принять текущий wheel; add_plane/arbitrary profiles отдельные D2-GEOMETRY |
-| S1-B2 | Driving length собственного основания; rename; suppress/unsuppress; impact preview/delete собственного leaf в полностью наблюдаемом простом графе | Readback 10→12 и BREP/9600 мм³; русское имя/stable ref; suppression flags+geometry; preview без записи, execute exact IDs; foreign/stale/dependent/incomplete inventory отказы; известное scoped restoration | Исторические размеры/rename частично приняты; suppression/delete ещё не имеют законченной общей приёмки. Generic dependent delete и signed/angle/tolerance — D2-DELETION/D2-DIMENSIONS |
-| S1-B3 | Body/face/edge/sketch/feature/dimension IDs простой детали и уже поддержанные resolved instance paths; mass/bounds/distance в объявленных frames | Exact membership/units/PID roundtrip; renamed ref сохраняется, deleted/recreated/foreign/config mismatch отклоняется; аналитические mass/bounds/distance, selection preserved; stale read/revision. Проверить поддержанные current catalog scopes, не создавать новые frames/режимы | Scoped dev3/dev71–dev79 — история. Нужен конечный coverage текущего wheel; arbitrary frames/load states/1000+ — D2-FRAMES/D2-LOADREF/D2-LARGE |
-| S1-B4 | Штатная bounded диагностика и безопасное восстановление job/hold | Installed late result/replay/conflict/queued cancel/restart unfinished→unknown/no retry; hold reconnect и exact reconciliation; known restore реального scalar/create; реальные исходные/новые rebuild дефекты поддержанной fixture различаются; timing actual chain, enabled/disabled/error isolation | Dev69/scoped journal — история. Не закрыты finite restart/recovery и фактические rebuild/postcondition gates. Панель мониторинга/full COM census не требуются |
-| S1-B5 | Вся пользовательская цепочка create→edit→first save→close/open→edit/Save3→close при dirty соседе | Один финальный installed wheel/MCP stdio; native disk/readback, active/CWD/full dirty-baseline; exact-owned cleanup; finite cases→block IDs манифест, source pure/metadata и пакетный обязательный CI | L2 принят отдельно; L3/B1–B4 и итоговая same-wheel приёмка ещё не закрыты. Не суммировать старые wheel, не требовать всех unsupported CAD modes |
+Одна рабочая таблица результатов/входов/критериев находится выше; подробные
+условия P/I/N — в приёмке блоков. Статус отделён от обещанной возможности.
 
-Точные случаи и stop conditions задаёт [STAGE_1_BLOCK_ACCEPTANCE](STAGE_1_BLOCK_ACCEPTANCE.md).
-При выявленном дефекте исправить обязательный supported case. При новой
-возможности создать/использовать задачу ниже: это не дополнительный gate текущего L2.
+| Блок | Что ещё требуется | Что снимает блокер |
+| --- | --- | --- |
+| L3 | Public MCP L3-P1; явная активация S1-B5-ACT для open→edit | Публичный first-save/close/open/activate/edit/Save3, новые ID, независимый readback и полный baseline. I1…I4 dev88 и общий detached preflight уже подтверждены |
+| B1 | Законченные самостоятельные явные контракты и итоговая приёмка | Все 5 условий B1 на настроенном пустом шаблоне, прямоугольнике и blind-основании; новые виды плоскостей не нужны |
+| B2 | Подавление/возврат, preview/delete собственного leaf и общий gate | Все 6 условий B2; отдельная собственная fixture для разрушительных проверок, без произвольного графа зависимостей |
+| B3 | Конечный набор совместимости уже реализованных чтений текущего wheel | Все 5 условий B3 на заявленных профилях; старые отчёты не подменяют текущие, новые frames/load modes не добавляются |
+| B4 | Итоговые installed/native recovery и диагностика | Все 6 условий B4; поздний реальный результат и controlled faults явно различены; полный COM census не нужен |
+| B5 | Автоматическая цепочка одного итогового wheel и release gates | Все 11 шагов и 4 gates; приняты остальные блоки, собственная очистка и baseline, актуальный CI пакета |
+
+**L2 закрыт:** internal13/public11 dev87, exact wheel и baseline. Область и
+manifest открытия не меняются. Новые режимы ведутся как D2-LOADREF.
+**L3 открыт:** I1/I2/I3 и четыре управляемых I4 dev88 завершены; все семь отчётов
+проверены общим preflight с точным wheel и текущими hash верификаторов.
+Это проверка согласованности свидетельств, не новый CAD-прогон и не public gate.
+[Артефакт и ограничения](CHECKPOINT_DEV88.md).
 
 ## Порядок и конечные условия снятия блокеров
 
 | Очередь | Блок | Что снимает оставшийся блокер |
 | --- | --- | --- |
 | Завершён | L2 | Уже имеются accepted internal13/public11, exact wheel и baseline; дополнительные load/reference modes сюда не добавляются |
-| 1 | L3 | Полный source/clone proof поддержанного профиля, no-overwrite публикация и live ID mapping интегрированы; конечные P/I/N gates приняты. Copy/NTFS/source-пробы по отдельности недостаточны |
+| 1 | L3 | Закончить L3-P1 с явной bounded S1-B5-ACT; внутренние I1…I4 dev88 подтверждены, но не заменяют public MCP цепочку |
 | 2 | S1-B1 | Отдельные явные контракты plane/sketch/blind extrusion доведены до пользовательской цепочки и конечных P/I/N gates без добавления auxiliary planes или произвольных профилей |
 | 3 | S1-B2 | Driving length/rename/suppress/unsuppress/own-leaf preview-delete проходят шесть условий своего контракта; точные survivor/retired sets и восстановление подтверждены |
 | 4 | S1-B3 | Конечный manifest существующих supported reads связан с текущими IDs/frames и независимыми аналитическими результатами; новый topology/load/scale scope не требуется |
@@ -175,7 +186,7 @@ P/I/N и точные числа условий заданы в [приёмке 
 
 | ID | Целевая стадия / результат | Конечная приёмка |
 | --- | --- | --- |
-| D2-DOCUMENTS | 2: новые пустые assembly/drawing; first save типов с refs; самостоятельный explicit activation | По одному native/public lifecycle каждого типа, identity/path mapping, first-save no-overwrite, active-after и unchanged referenced/dirty baseline |
+| D2-DOCUMENTS | 2: новые пустые assembly/drawing; first save типов с refs; широкая explicit activation вне S1-B5-ACT | По одному native/public lifecycle каждого типа, identity/path mapping, first-save no-overwrite, active-after и unchanged referenced/dirty baseline |
 | D2-CLOSE | 2: dirty-owned, retained-reference close и явная выгрузка данных | Native/public каждый объявленный режим; закрытый UI не выдаётся за выгруженные данные, no quit/no чужие collateral, disk/UI/refs postconditions |
 | D2-LOADREF | 2.6: lightweight/suppressed/SpeedPak/virtual/assembly-cut и part external refs | Конечный inventory режимов, exact native handles/config/graph и отказ неподдержанного; targeted resolve без незаявленных эффектов |
 | D2-CONFIG | 2.5: multi-config/multi-body mutation, families/equations/свойства/материалы | Exact целевые config/body; другая config/body неизменна; native computed/readback/rebuild и stale/restore |
@@ -215,6 +226,15 @@ P/I/N и точные числа условий заданы в [приёмке 
 N0/current installed покрывается S1-B5; supported N1/N2 — B1/B3; N3/N5 — B2/B4;
 N4 — B4; конечный native-file N6 — L2/L3/B5. Широкие случаи каждой группы ведут
 к видимым задачам D2/D3 выше. Ни один перенос не закрывает historical unknown.
+
+## Правило завершённого блока
+
+До реализации фиксируются поддержанные входы, конечный manifest и результаты.
+Исправление дефекта этого scope обязательно; новый вход или режим создаёт
+отдельную D2/D3-задачу. Общий снимок и гарантии не сокращаются ради скорости.
+Подавление/удаление B2 проверяются на отдельной собственной fixture. B3
+подтверждает существующие чтения конечным набором совместимости, без новой
+поддержки геометрии или режимов загрузки. Реализация API и её приёмка — разные статусы.
 
 ## Порядок исполнения и закрытия
 

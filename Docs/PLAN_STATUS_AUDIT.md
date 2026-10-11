@@ -1,4 +1,4 @@
-# Аудит статусов плана — 11.10.2026
+# Аудит статусов плана — актуализация 12.10.2026
 
 L2 bounded native open принят на exact installed dev87: metadata71/21,
 internal13/13 (210,07 с), public MCP11/11 (189,68 с), оба accepted=true.
@@ -67,7 +67,10 @@ exact own reconciliation и baseline; historical unknown не success. L3-I4 fal
 прошёл за756,52 с: unknown/hold/replay, clone41, stage retention и exact
 reconciliation/empty baseline. Throw прошёл за757,30 с: unknown/hold/replay,
 clone41, source/neighbor/stage preservation и reconciliation/empty baseline.
-Incomplete выполняется, public/S1-B5-ACT открыты.
+Incomplete прошёл за726,39 с: normal native Copy, bridge-инъекция,
+unknown/hold/replay, independent clone41, exact reconciliation и baseline.
+12.10.2026 общий detached preflight всех семи внутренних отчётов dev88 прошёл:
+точный wheel/source и текущие helper hashes подтверждены. Public/S1-B5-ACT открыты.
 Дополнительно выявлен S1-B5-ACT: open восстанавливает active сосед, dimension edit
 требует active target; ручная активация не засчитывается как MCP automation.
 L2 scope не расширяется. Первый JSON-сбой L3-I2
@@ -78,6 +81,16 @@ L3 и конечные native/public gates открыты.
 Remote CI последнего пакета failure; локальное исправление входит в pure,
 нового push нет. Исторические свидетельства ниже не являются приёмкой dev87
 или итоговой стадии1; прежние «20 из22» не используются как текущий gate.
+
+## Решение о границе выпуска — 12.10.2026
+
+L2 завершён без изменения контракта или manifest. Минимальный рабочий сценарий
+и обязательные гарантии отдельно сформулированы в PLAN.md. Для каждого из
+шести остатков матрица задаёт результат, поддержанные случаи, конечные условия
+и конкретный блокер. S1-B5-ACT виден отдельной незавершённой задачей. История
+плана вынесена в PLAN_HISTORY.md; все22 S1-ID, legacy migration и20 D2/D3 задач
+сохранены. Перенос не означает passed. Новый wheel/CAD/CI ради документации
+не запускался; GitHub push не выполнялся, изменения накоплены локально.
 
 ## История до пересмотра границы выпуска
 

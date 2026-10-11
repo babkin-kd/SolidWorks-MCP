@@ -133,6 +133,9 @@ BREP/объёмом и actual dimension readback. (2) Выбрана точна�
 
 ## S1-B2 — размер, имя, подавление и удаление
 
+Подавление/возврат и удаление выполняются на отдельной собственной fixture;
+не нужно разрушать пластину итоговой цепочки. Новые типы элементов не добавляются.
+
 **Результат:** изменить driving length собственного базового элемента,
 переименовать его по-русски, подавить/восстановить или удалить точно выбранный
 own leaf с предварительным impact preview.
@@ -221,7 +224,8 @@ wheel через публичный MCP, сохраняя открытый dirty
 6. Выполнить первое native-сохранение; принять документ/ID mapping результата.
 7. Закрыть точный чистый документ.
 8. Открыть файл/конфигурацию; проверить дерево, размеры и форму заново.
-9. Изменить размер явно адресованного элемента.
+9. Явно активировать открытый целевой документ через MCP (S1-B5-ACT),
+   изменить размер заново адресованного элемента; L2 active-after не менять.
 10. Сохранить текущий native-файл через Save3 и независимо перечитать результат.
 11. Закрыть свой документ и доказать исходный baseline.
 
@@ -250,7 +254,7 @@ G4: локальный пакет изменений, согласованные
 | D2-LOADREF /2 | Lightweight/suppressed/SpeedPak/LDR/detached/assembly-cut и неоднозначные refs: explicit allow/reject на один fixture каждого заявленного режима; никакого silent partial результата |
 | D2-FRAMES /2 | Native named frames: точное разрешение имени→ID/frame, transformed analytic witnesses, rename/stale/foreign-frame отказы |
 | D2-CLOSE /2 | Dirty-owned/retained-reference close и выгрузка: explicit discard/retirement policy, incoming refs, доказанные postconditions; закрытие окна не объявляется unload |
-| D2-DOCUMENTS /2 | Пустые assembly/drawing, их first save/refs и самостоятельная activation: каждый заявленный тип проходит create/save/open/close, exact active-after и сохранность чужих документов |
+| D2-DOCUMENTS /2 | Пустые assembly/drawing, их first save/refs и широкая activation вне S1-B5-ACT: каждый заявленный тип проходит create/save/open/close, exact active-after и сохранность чужих документов |
 | D2-CONFIG /2 | Multi-config/multi-body mutations и семейства: изменение только explicit cfg/body, остальные snapshots неизменны; properties/table/BOM readback для заявленного семейства |
 | D2-DIMENSIONS /2 | Signed/angle/tolerance/linked controls: actual sign/unit/tolerance/driving semantics каждого разрешённого типа, запрещённые controls до записи, restore доказан |
 | D2-DELETION /2 | Произвольный граф/equations/annotations/external deps: полный preview каждого класса связи, exact execute/restore и отказ incomplete inventory |

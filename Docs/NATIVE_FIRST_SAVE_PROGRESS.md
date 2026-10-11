@@ -11,7 +11,10 @@ independent clone/readback и exact own reconciliation, historical unknown со�
 L3-I4 false_after_copy прошёл (756,52 с): unknown/hold/replay, independent clone41
 и exact own reconciliation/baseline. Throw_after_copy прошёл (757,30 с): unknown/hold/replay, clone41, source/neighbor/stage
 preservation, cleanup/baseline и reconciliation; historical unknown сохранён.
-Incomplete_after_copy запущен; public/S1-B5-ACT остаются.
+Incomplete_after_copy прошёл (726,39 с): original normal Copy, controlled
+incomplete receipt, unknown/hold/replay, independent clone41, reconciliation
+и baseline. 12.10.2026 общий detached preflight семи внутренних отчётов
+одного dev88 с текущими helper hashes прошёл; public/S1-B5-ACT остаются.
 Для полного open→edit MCP-сценария выявлен S1-B5-ACT: explicit active part
 ещё не реализован, ручная test-owner activation не закрывает этот остаток.
 [Точный артефакт и проверенные факты dev88](CHECKPOINT_DEV88.md).
@@ -139,24 +142,17 @@ Baseline допускает видимые self-contained parts того же н
 
 ## Оставшиеся gates L3
 
-1. Нормальный filesystem protocol и conflict подтверждены реальной NTFS-пробой6.
-   Доказать оставшиеся failure/recovery gates совместно с CAD-протоколом:
-   строгие directory leases во время любого CAD SaveAs/readback; только
-   публикационная фаза допускает directory-write sharing при удерживаемом
-   exact file/target handles. Полный path/reparse/identity proof до/после,
-   возврат строгого режима до следующего CAD-шага; lost ACK/reacquire failure
-   остаются unknown. Нет path-based overwrite или удаления final.
-2. Source/clone oracle и41 mappings подтверждены Copy-прототипом3; совместимость
-   filesystem leases, final writable document и source retirement — составным
-   source CAD/NTFS-прототипом1. Положительный полный доменный протокол с UI guards
-   и durable журналом теперь подтверждён source domain probe2. Остались конечные
-   отказы/восстановление и установленный кандидат. Прототипы не заменяют эту приёмку.
-3. Домен интегрирован в runtime и MCP-фасад исходников. Подготовить exact installed
-   native domain positive, конечные internal failure cases и
-   публичную пользовательскую цепочку без дублирования CAD.
-4. Полный pure → итоговый wheel → exact installed metadata/stdio → обязательная
-   native/MCP-приёмка L3. Stale/replay, destination race, unknown/hold,
-   source retirement и own cleanup входят в конечный gate.
+1. I1/I2/I3 и четыре I4 dev88 подтверждены; общий detached preflight принят.
+   Сохранять точный wheel, отчёты и trusted hashes. Эти доказательства не
+   объявляют public MCP цепочку пройденной; инъекция моста не является COM-отказом.
+2. Завершить ограниченный S1-B5-ACT для открытой writable part: явная активация
+   через MCP с ревизией, журналом, постусловиями и собственной native-приёмкой.
+   Ручная активация не заменяет этот шаг. Принятый L2 не менять.
+3. Подготовить и принять публичный L3-P1: first-save/close/open/activate/edit/Save3,
+   независимый native/disk readback, dirty сосед и полный baseline. Новый wheel
+   требует связанных доказательств, старые результаты сохраняются как история.
+4. Закрыть L3 только по конечному manifest всех шести условий; итоговая B5
+   всей стадии и обязательный CI пакета остаются отдельными gates.
 
 Все CAD-файлы, синтетические контрольные файлы и подробные отчёты находятся
 в ignored `work/`. Коммиты накапливаются локально; эта контрольная точка

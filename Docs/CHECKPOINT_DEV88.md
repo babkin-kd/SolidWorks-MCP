@@ -90,9 +90,20 @@ neighbor/stage preservation, own cleanup/empty baseline, exact reconciliation.
 Historical status остаётся unknown. SHA256:
 `5d13daa4a1d620e4e48dc9ff71cd58a1354063d4b7dd7a0aa3a1030872ac9964`.
 Wheel/current helper hashes проверены отдельно. Это bridge throw после normal
-native return, не actual COM throw. Incomplete_after_copy запущен в
-`work/native-first-save-dev88-fault-incomplete-1/`; public и S1-B5-ACT остаются;
-L3 открыт.
+native return, не actual COM throw.
+**Installed incomplete_after_copy прошёл**, 726,39 с,
+`work/native-first-save-dev88-fault-incomplete-1/report.json`: три finite cases
+passed, original normal Copy True/0/0, controlled incomplete receipt,
+unknown/hold/replay, independent clone41, stage retention, exact reconciliation,
+own cleanup/empty baseline. Исторический status остаётся unknown. SHA256:
+`784e12c68e9fadf12af4cae0114e6703e6968b4d7bf2b48f432fcddd5535bf56`.
+
+12.10.2026 общий detached preflight **всех семи** внутренних отчётов dev88
+прошёл: wheel/source identity, terminal finite labels, trusted hashes текущих
+helpers (inventory извлечён из исходников драйверов, не из отчётов), протокольные
+predicates и cleanup/baseline подтверждены. Свидетельство приватно:
+`work/native-first-save-dev88-internal-preflight-1.json`. Это проверка отчётов,
+не новая CAD-приёмка. Public L3-P1 и S1-B5-ACT остаются; **L3 открыт**.
 
 При подготовке публичной цепочки подтверждён S1-B5-ACT: open сохраняет исходный
 active dirty сосед, а dimension edit требует активного target. Публичный explicit
@@ -104,9 +115,8 @@ active-part шаг для минимального сценария ещё не 
 
 1. L3-I1 завершён на exact installed dev88; сохранять его witness/hash binding,
    не объявляя whole L3 или same-wheel выпуск принятым.
-2. L3-I2/I3 завершены. Выполнить конечные L3-I4:
-   классификация отказов/hold/replay и восстановление. Инъекцию моста отличать
-   от actual native false/warning/throw.
+2. L3-I2/I3 и четыре L3-I4 завершены, общий preflight принят.
+   Сохранять различие controlled bridge faults и actual native COM failures.
 3. Выполнить L3-P1 публичную same-wheel MCP-цепочку с close/open/следующим Save3.
 4. Только после этих условий закрыть L3 и перейти к S1-B1…S1-B5; три стадии
    сохраняются. Новый push/CI пока не выполнялись; изменения накапливаются локально.

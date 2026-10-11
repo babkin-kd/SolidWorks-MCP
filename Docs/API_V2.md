@@ -27,8 +27,10 @@ no-replace collision/rollback/replay, foreign preserved и cleanup/baseline. L3-
 прошёл (757,28 с): unknown/hold/replay и independent own reconciliation;
 L3-I4 false прошёл (756,52 с): unknown/hold/replay, independent clone41 и
 reconciliation/baseline. Throw прошёл (757,30 с): unknown/hold/replay, clone41 и
-reconciliation/baseline; incomplete выполняется. Конечные
-отказы и публичная MCP-цепочка не приняты. Исторический dev87 сохраняет свой
+reconciliation/baseline. Incomplete прошёл (726,39 с): controlled bridge receipt,
+unknown/hold/replay, clone41, reconciliation/baseline. Общий detached preflight
+семи внутренних отчётов dev88 принят 12.10.2026; публичная MCP-цепочка
+и необходимый bounded S1-B5-ACT не приняты. Исторический dev87 сохраняет свой
 accepted scope71/21. [Артефакт и контрольная точка dev88](CHECKPOINT_DEV88.md).
 [Прогресс и обязательные оставшиеся gates](NATIVE_FIRST_SAVE_PROGRESS.md).
 

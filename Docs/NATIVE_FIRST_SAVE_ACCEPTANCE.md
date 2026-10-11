@@ -87,7 +87,10 @@ exact own reconciliation и baseline; historical unknown сохранён. False
 прошёл за756,52 с на dev88 с unknown/hold/replay, independent clone41, stage
 retention и exact reconciliation/baseline. Throw прошёл за757,30 с с unknown/hold/
 replay, independent clone41, own cleanup/empty baseline и exact reconciliation;
-historical unknown сохранён. Incomplete запущен; public/S1-B5-ACT остаются.
+historical unknown сохранён. Incomplete прошёл за726,39 с: independent clone41,
+unknown/hold/replay, reconciliation и empty baseline подтверждены. Все семь
+внутренних отчётов dev88 прошли общий detached preflight 12.10.2026;
+public/S1-B5-ACT остаются.
 Для полной публичной open→edit цепочки выявлен bounded S1-B5-ACT
 (см. STAGE_1_BLOCK_ACCEPTANCE.md); ручную activation нельзя считать MCP automation.
 
