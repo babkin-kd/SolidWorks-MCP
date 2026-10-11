@@ -70,7 +70,8 @@ class NativeDocumentSaveCatalog:
                         raise rejected('native_session_file_budget_exceeded', 'Complete open-native-file checkpoint exceeds 2 GiB.')
                 facts = files[key]
             rows.append({**observed, 'view': self.adapter.document_view_snapshot(entry.model),
-                         'read_only_state': mode['read_only_state'], 'file': facts})
+                         'read_only_state': mode['read_only_state'], 'file': facts,
+                         'drawing_state': mode.get('drawing_state')})
         active = self.adapter.active_document()
         token = self.adapter.identity(active) if active is not None else None
         current = next((entry for entry in entries if entry.identity == token), None)
@@ -110,6 +111,12 @@ class NativeDocumentSaveCatalog:
     @staticmethod
     def _same_saved_document(before, after):
         ignored = {'needs_save', 'update_stamp', 'observation_revision', 'observation_sequence', 'file'}
+        if before['document_type'] == 'drawing' and before.get('drawing_state'):
+            expected_title = before['drawing_state']['saved_display_title']
+            if before['title'] != after['title']:
+                if after['title'] != expected_title:
+                    return False
+                ignored.add('title')
         return {k: v for k, v in before.items() if k not in ignored} == {k: v for k, v in after.items() if k not in ignored}
 
     def save(self, operation_id, document_id, configuration, expected_revision):

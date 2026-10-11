@@ -41,8 +41,14 @@ def physical_state(sw,module):
         elif model.GetType()==2:
             components=[binding.wrap(x,module.IComponent2) for x in binding.wrap(model,module.IAssemblyDoc).GetComponents(False) or ()]
             facts=tuple((c.Name2,native_identity(c),c.ReferencedConfiguration,tuple(binding.wrap(c.GetTotalTransform(False),module.IMathTransform).ArrayData)) for c in components)
-        else:facts=tuple(binding.wrap(model,module.IDrawingDoc).GetSheetNames() or ())
-        rows.append((native_identity(model),model.GetBlockingState(),selection,geometry_view,facts,model.GetTitle(),model.GetPathName()))
+        else:
+            drawing=binding.wrap(model,module.IDrawingDoc)
+            facts=(tuple(drawing.GetSheetNames() or ()),binding.wrap(drawing.GetCurrentSheet(),module.ISheet).GetName())
+        # Saving may refresh a drawing's stale window title after a sheet rename.
+        # The domain checks the exact predicted new title; this independent
+        # oracle checks sheet names/current sheet, file path and canonical model.
+        title=model.GetTitle() if model.GetType()!=3 else None
+        rows.append((native_identity(model),model.GetBlockingState(),selection,geometry_view,facts,title,model.GetPathName()))
     active=binding.wrap(sw.ActiveDoc,module.IModelDoc2)
     return tuple(rows),None if active is None else native_identity(active),sw.CommandInProgress,sw.Visible
 
@@ -122,7 +128,14 @@ async def cases(read,context,safe,sw,module,targets,report,persist,public=False)
         report['cases'].append(dict(label=label,passed=True,result=result));persist();return result,call_args
     request=uuid.uuid4().hex
     original,replay_args=await save('real_part_file_save',first,request=request)
+    # Leave the referenced child dirty: saving the assembly must preserve its
+    # unsaved change and original disk bytes, not silently SaveReferenced.
+    await safe()
+    first_hash=hashlib.sha256(Path(first.GetPathName()).read_bytes()).hexdigest()
+    assert first.AddCustomInfo3('','Несохранённое свойство',30,'Не сохранять вместе со сборкой')
+    assert first.GetSaveFlag() is True
     await save('real_referenced_assembly_file_save',assembly)
+    assert first.GetSaveFlag() is True and hashlib.sha256(Path(first.GetPathName()).read_bytes()).hexdigest()==first_hash
     await save('real_drawing_sheet_file_save',drawing)
     before=physical_state(sw,module);repeat=await read('document_save_native',dict(replay_args,request_id=request));await safe()
     assert repeat['operation_id']==original['operation_id'] and repeat['data']==original['data'] and physical_state(sw,module)==before

@@ -1,6 +1,6 @@
 # Сохранение текущего native-файла
 
-Исходный кандидат dev81: `document_prepare_save_native` /
+Исходный кандидат dev82: `document_prepare_save_native` /
 `document_save_native`, scope `native_document_current_file_save_v1`.
 Каталог67 tools/19 guarded operations. Pure/реализация не являются
 native-приёмкой; installed/native результаты пока ожидаются.

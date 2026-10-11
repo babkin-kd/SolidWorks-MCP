@@ -21,7 +21,8 @@ class SaveAdapter(Adapter):
     def application_visible(self):return True
     def native_save_context(self, current):
         return dict(blocking_state=0,read_only_state=self.read_only if current is self.models[0] else 0,
-                    editing_sketch=self.mode=='sketch',editing_component=self.mode=='component',view_only=self.mode=='view')
+                    editing_sketch=self.mode=='sketch',editing_component=self.mode=='component',view_only=self.mode=='view',
+                    drawing_state=deepcopy(getattr(current,'drawing_state',None)))
     def document_view_snapshot(self,current):return deepcopy(current.view)
     @contextmanager
     def native_save_guard(self, models):
@@ -37,6 +38,9 @@ class SaveAdapter(Adapter):
         if self.fault=='no_effect':return dict(success=False,errors=1,warnings=0)
         Path(current.state['path']).write_bytes(b'new native bytes '+str(self.calls).encode())
         current.state['needs_save']=False;current.state['update_stamp']+=1
+        if self.fault in ('drawing_title','foreign_title','drawing_sheet'):
+            current.state['title']=current.drawing_state['saved_display_title'] if self.fault!='foreign_title' else 'Чужой чертёж'
+            if self.fault=='drawing_sheet':current.drawing_state['current_sheet']='Другой лист'
         if self.fault=='foreign_file':Path(self.models[1].state['path']).write_bytes(b'foreign changed')
         if self.fault=='foreign_model':self.models[1].state['needs_save']=True
         if self.fault=='view':current.view['scale']=2.
@@ -88,6 +92,18 @@ def test_all_native_document_types_without_geometry_restriction(setup,kind,exten
         active_configuration=configuration,configurations=[configuration] if configuration else [])
     args['configuration']=configuration;fresh=c.prepare_save(**args)
     assert run(revision=fresh['revision'])['status']=='succeeded'
+
+
+@pytest.mark.parametrize('fault,status',[('drawing_title','succeeded'),('foreign_title','unknown'),('drawing_sheet','unknown')])
+def test_drawing_save_allows_only_predicted_native_title_not_sheet_or_foreign_changes(setup,fault,status):
+    a,d,s,c,args,p,run=setup;item=a.models[0];path=Path(item.state['path']).with_suffix('.SLDDRW')
+    Path(item.state['path']).rename(path)
+    item.state.update(path=str(path),document_type='drawing',active_configuration='',configurations=[],title='Деталь 1 - Старый лист')
+    item.drawing_state=dict(sheet_names=['Новый лист'],current_sheet='Новый лист',saved_display_title='Деталь 1 - Новый лист')
+    args['configuration']='';fresh=c.prepare_save(**args);a.fault=fault
+    result=run(revision=fresh['revision'])
+    assert result['status']==status and a.calls==1
+    assert result['mutation']['phase']==('committed' if status=='succeeded' else 'unresolved')
 
 
 @pytest.mark.parametrize('change',['file','model','view','activation','guard_file'])

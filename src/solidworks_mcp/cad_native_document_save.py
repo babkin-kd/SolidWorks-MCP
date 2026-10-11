@@ -1,4 +1,5 @@
 """Registered native Save3 signature; no activation or SaveReferenced."""
+from pathlib import Path
 from .timings_v2 import timed_call
 from .documents import rejected
 from . import binding
@@ -26,6 +27,7 @@ class CadNativeDocumentSaveMixin:
                 editing_component = not root
         active_sketch = model.GetActiveSketch2()
         editing_sketch = active_sketch is not None
+        drawing_state = None
         if document_type == 3:
             drawing = binding.wrap(model, self._module.IDrawingDoc)
             edit_sheet = drawing.GetEditSheet()
@@ -37,8 +39,15 @@ class CadNativeDocumentSaveMixin:
             sheet_sketch = sheet_view.GetSketch() if sheet_view is not None else None
             editing_sketch = (not edit_sheet or sheet_sketch is None or active_sketch is None
                               or self.identity(active_sketch) != self.identity(sheet_sketch))
+            sheet = binding.wrap(drawing.GetCurrentSheet(), self._module.ISheet)
+            names = list(drawing.GetSheetNames() or ())
+            current = sheet.GetName() if sheet is not None else None
+            if not names or any(type(name) is not str or not name for name in names) or current not in names:
+                raise rejected('native_save_context_unavailable', 'Complete drawing sheet names/current sheet required.')
+            drawing_state = dict(sheet_names=names, current_sheet=current,
+                                 saved_display_title=Path(model.GetPathName()).stem + ' - ' + current)
         return dict(blocking_state=blocking, read_only_state=int(read_only), view_only=view_only,
-                    editing_component=editing_component, editing_sketch=editing_sketch)
+                    editing_component=editing_component, editing_sketch=editing_sketch, drawing_state=drawing_state)
 
     def save_native_current_file(self, model):
         result = timed_call('com', model.Save3, 1, 0, 0)

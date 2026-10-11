@@ -1,6 +1,6 @@
 # Миграция legacy-инструментов в API v2
 
-Исходный кандидат dev81: current native file Save3 для явного документа,
+Исходный кандидат dev82: current native file Save3 для явного документа,
 каталог67/19. [Контракт](NATIVE_DOCUMENT_SAVE.md); installed/native ожидаются.
 Принятый dev79 ниже относится к своему точному wheel.
 
@@ -253,11 +253,11 @@ API-сигнатуры сверены с зарегистрированным SW
 | `screenshot` | — | Отложено в v2 | 2.1/2.4. Визуальный вывод состояния; отдельная публичная операция ещё не реализована. Не входит в выбранный базовый инвентарь31 стадии1. |
 | `make_drawing` | — | Отложено в v2 | 2.4. Native-виды, размеры и оформление по ЕСКД/ГОСТ и шаблонам. |
 | `close_part` | — | Не реализовано в v2; остаток стадии 1 | 1.4. Явный документ/конфигурация; проверка результата. Создание/редактирование — с ревизией и откатом. |
-| `save_part` | `document_prepare_save_native`, `document_save_native` | Частично; исходный dev81, native ожидается | 1.4. Save3 по existing native path с явным doc/config/revision/request_id, полным session/file checkpoint; first save/SaveAs/open/close и общий native gate остаются. |
+| `save_part` | `document_prepare_save_native`, `document_save_native` | Частично; исходный dev82, native ожидается | 1.4. Save3 по existing native path с явным doc/config/revision/request_id, полным session/file checkpoint; first save/SaveAs/open/close и общий native gate остаются. |
 | `open_part` | — | Не реализовано в v2; остаток стадии 1 | 1.4. Явный документ/конфигурация; проверка результата. Создание/редактирование — с ревизией и откатом. |
 | `new_assembly` | — | Не реализовано в v2; остаток стадии 1 | 1.4: необходимые базовые операции; 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `open_assembly` | — | Не реализовано в v2; остаток стадии 1 | 1.4: необходимые базовые операции; 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
-| `save_assembly` | `document_prepare_save_native`, `document_save_native` | Частично; исходный dev81, native ожидается | 1.4. Save3 по existing native path с явным doc/config/revision/request_id, полным session/file checkpoint; first save/SaveAs/open/close и общий native gate остаются. |
+| `save_assembly` | `document_prepare_save_native`, `document_save_native` | Частично; исходный dev82, native ожидается | 1.4. Save3 по existing native path с явным doc/config/revision/request_id, полным session/file checkpoint; first save/SaveAs/open/close и общий native gate остаются. |
 | `insert_component` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `list_components` | `component_list`, `component_get`, `component_body_list`, `component_body_get` | Частично принято dev73: passive resolved native instances/normal solid-surface bodies; metadata56/18/internal15/public6. Явные instance/configuration/transform, общий native gate открыт | 1.4: базовая адресация; suppressed/lightweight/assembly-cut/topology ещё открыты. 2.6: создание/сопряжения, большие сборки и библиотеки. |
 | `set_component_transform` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
