@@ -24,6 +24,7 @@ from verify_export_operations import application_preferences
 from verify_mass_properties import source_state
 from verifier_dimension_diagnostics import assert_non_stl_preferences
 from verify_wheel_artifact import validate_wheel
+from verify_installed_metadata import TOOLS as V2_TOOLS
 from verifier_lifecycle import ToolSpec, open_supervised_session
 from verify_dimension_mcp import SessionCleanupGate, require_native_cleanup, call, succeeded
 from verify_part_mcp import TOOL_SPECS as PART_SPECS
@@ -69,7 +70,8 @@ async def exercise(state, sw, module, owned, report, persist, gate, pattern_only
                 assert info['build_matches_source'] is True and info['package_version'] == report['wheel']['package_version']
                 assert info['build']['git_sha'] == report['wheel']['git_sha'] and info['source_digest'] == report['wheel']['source_digest']
                 tools = (await raw.list_tools()).tools
-                assert len(tools) == 44 and all(tool.outputSchema for tool in tools)
+                names=[tool.name for tool in tools]
+                assert len(names)==len(set(names)) and set(names)==V2_TOOLS and all(tool.outputSchema for tool in tools)
                 assert set(TOOL_SPECS) <= {tool.name for tool in tools}
                 report['tool_count'] = len(tools)
                 yield raw

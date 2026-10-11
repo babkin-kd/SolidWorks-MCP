@@ -1,21 +1,19 @@
 # API v2: текущий кандидат первой стадии
 
-В исходниках подключён новый кандидат **dev67**, каталог46 инструментов /16
-мутаций: `sheet_prepare_edge_flange` и `sheet_create_edge_flange`. Ограниченный
-scope `single_l_sheet_edge_flange_v1` — одна штатная отбортовка явного внутреннего
-ребра согнутого L-профиля. Полный доменный/native контракт и восстановление:
-[SHEET_EDGE_FLANGE.md](SHEET_EDGE_FLANGE.md). Dev64 прошёл3856 pure/323 CAD deselected и metadata46/16, но не принят:
-input-restoration остановлена на capture mismatch, unknown сохранён.
-Dev65 подтвердил восстановление собственного входного профиля, но completed
-restoration остановлена на другой COM-обёртке FlatPattern из body.GetFeatures.
-Dev66 добавляет полную проверку native-привязки этого представления;
-обычный L-reader сохраняет строгий контракт. Dev66 прошёл input restoration,
-но completed restoration отклонена доменным сравнением: требуется явно проверить
-два native-размера OneBend (радиус/угол). Dev67 добавляет этот ограниченный контракт.
-Native-приёмка dev67 ещё нужна;
-принятым остаётся dev63, результаты предыдущего wheel на новый не переносятся.
+Принят ограниченный инженерный блок **dev67**: `sheet_prepare_edge_flange` /
+`sheet_create_edge_flange`, каталог46 инструментов /16 мутаций. Scope
+`single_l_sheet_edge_flange_v1`: одна отбортовка90° внутрь на явном продольном
+ребре собственного согнутого L-профиля, одна конфигурация/тело, явные вылет,
+радиус и K2. На одном установленном wheel: **3897 pure/323 CAD deselected**,
+metadata46/16 accepted, **internal native8/public MCP7 accepted=true**.
+Подтверждены полная U-форма, профиль/размеры, русские имена, исходные параметры,
+оба пути scoped restoration, invalid/stale и request_id. Свои модели закрыты,
+baseline пуст/free, новых unknown нет. Общая приёмка всех ранее перенесённых
+scope на dev67 не выполнена; стадии плана остаются открытыми.
+Контракт: [SHEET_EDGE_FLANGE](SHEET_EDGE_FLANGE.md),
+[свидетельства](SHEET_EDGE_FLANGE_ACCEPTANCE.md).
 
-Текущий принятый инженерный блок — **dev63**, `sheet_prepare_parameters` и
+Ранее принятый инженерный блок — **dev63**, `sheet_prepare_parameters` и
 `sheet_set_parameters`, scope `single_l_sheet_parameters_v1`: редактирование t/r/K
 одного существующего native L-профиля. На одном точном установленном wheel:
 **3545 pure passed /323 CAD deselected (42,53с)**, metadata44 инструментов /15
