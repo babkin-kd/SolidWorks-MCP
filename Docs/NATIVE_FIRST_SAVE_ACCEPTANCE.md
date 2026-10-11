@@ -66,7 +66,7 @@ stage open/close и publication, known rolled-back исход, сохранён�
 bytes/identity, пустую own stage, replay без повторного эффекта, full models и
 baseline. `scripts/verifier_first_save_race.py` проверяет detached журнал;
 он не является независимым CAD/file oracle. Связанные 18 pure-тестов прошли
-на искусственном CAD/FS; физическая native-приёмка L3-I3 ещё не выполнялась.
+на искусственном CAD/FS; физическая native-приёмка L3-I3 запущена и пока не завершена.
 
 Конечный отчёт связывает все шесть условий с метками, фактическими результатами
 и частными артефактами. Он фиксирует wheel SHA/build identity, установленный

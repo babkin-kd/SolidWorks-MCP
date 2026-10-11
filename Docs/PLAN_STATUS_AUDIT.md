@@ -59,7 +59,8 @@ metadata/runtime/MCP44 passed/4,56 с. Новый installed verifier ожида�
 mutations. Dev88 теперь собран/установлен, итоговый source pure5978/323 CAD
 deselected (99,46 с), installed metadata/stdio73/22 accepted. Installed L3-I1
 прошёл за1008,63 с: committed, 24 ledger rows verified, independent full
-readback/mapping41, cleanup/baseline. L3-I2 выполняется; его первый JSON-сбой
+readback/mapping41, cleanup/baseline. L3-I2 прошёл за686,00 с: existing/stale,
+Copy0 и own cleanup/baseline; L3-I3 выполняется. Первый JSON-сбой L3-I2
 после создания пустой part сохранён, own cleanup/empty baseline подтверждены
 отдельно; 15 pure-регрессий (0,60 с) проверили scalar projection и creation DTO.
 L3 и конечные native/public gates открыты.

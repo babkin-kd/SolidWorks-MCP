@@ -39,7 +39,11 @@ mapping41, own cleanup/baseline, owned=[], native_calls_live=false. SHA256:
 текущих trusted verifier hashes. **accepted=false относится ко всему L3**:
 положительный случай не закрывает остальные условия.
 
-Installed L3-I2 запущен в `work/native-first-save-dev88-rejections-2/`.
+**Installed L3-I2 прошёл**, 686,00 с, в `work/native-first-save-dev88-rejections-2/`:
+три конечные строки passed — existing destination prewrite, реальный rename→stale,
+own cleanup/baseline. Оба отказа до Copy (ровно ноль вызовов), foreign marker
+сохранён; trusted verifier hashes и wheel SHA проверены отдельно. SHA256 отчёта:
+`247ff1e29613a1f5da851fdb53a6ff936eb4e35bc5489682a8c2dcf6065430fc`.
 Первый запуск остановился сразу после нормального создания одной пустой part:
 COM IUnknown ошибочно попал в JSON-отчёт, до first-save/stale jobs. Терминальный
 процесс завершился; independent inspection и отдельная owner cleanup подтвердили
@@ -51,11 +55,19 @@ normal creation DTO пишется отдельно; 15 связанных pure-
 Fault harness/domain-набор: 95 passed (12,50 с), CAD искусственный.
 Незавершённый COM не отменять и не повторять по тайм-ауту наблюдения.
 
+**Installed L3-I3 запущен**, private report
+`work/native-first-save-dev88-race-1/report.json`, один CAD-владелец. Пока case
+не завершён, physical race/known restoration не засчитаны. Продуктовые Copy,
+readback и NT no-replace настоящие; управляемый producer создаёт foreign marker
+перед publication. Отдельный receipt predicate и harness проверены 18 связанными
+pure-тестами (2,84 с), на искусственном CAD/FS. Source/wheel не менялись;
+повторная сборка или широкий pure-набор для новых внешних верификаторов не требуются.
+
 ## Остаток
 
 1. L3-I1 завершён на exact installed dev88; сохранять его witness/hash binding,
    не объявляя whole L3 или same-wheel выпуск принятым.
-2. Выполнить конечные L3-I2/I3/I4: existing/stale, no-overwrite race,
+2. L3-I2 завершён. Дождаться запущенного L3-I3 и выполнить конечные L3-I4: no-overwrite race,
    классификация отказов/hold/replay и восстановление. Инъекцию моста отличать
    от actual native false/warning/throw.
 3. Выполнить L3-P1 публичную same-wheel MCP-цепочку с close/open/следующим Save3.
