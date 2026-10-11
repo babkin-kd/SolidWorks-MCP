@@ -346,3 +346,9 @@ Milestones: [три стадии проекта](https://github.com/babkin-kd/So
 
 
 Исторические результаты кандидатов сохранены в [PLAN_HISTORY.md](Docs/PLAN_HISTORY.md).
+
+
+**Исходный кандидат dev89:** bounded S1-B5-ACT реализован в домене/runtime/MCP;
+75 tools/23 mutations, full pure6075/323 CAD deselected (104,01 с).
+Installed/native/public приёмка ещё открыта; L2 не расширен, стадия1 не закрыта.
+[Контрольная точка dev89](Docs/CHECKPOINT_DEV89.md).
