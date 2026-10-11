@@ -53,6 +53,21 @@ PYTHONPATH. До CAD проверяются точный wheel, installed origin
 прогон не закрывает L3-I2…L3-I4 и L3-P1. Source-проба использует тот же core,
 явно сохраняет source scope и также не объявляет installed-приёмку.
 
+L3-I2 реализован в `scripts/verify_native_first_save_rejections.py`: prewrite
+conflict и реальное переименование собственного основания после prepare с
+последующим stale refusal; native Copy ожидается ровно ноль раз. Первый сбой
+JSON-проекции и отдельная own cleanup сохранены в контрольной точке dev88.
+
+L3-I3 подготовлен в `scripts/verify_native_first_save_race.py` с теми же
+wheel/version/Git/state/opt-in параметрами. Продукт выполняет настоящие
+Copy/readback/no-replace; контролируемый производитель создаёт чужой файл
+эксклюзивно непосредственно перед publication. Отчёт требует ровно один Copy,
+stage open/close и publication, known rolled-back исход, сохранённые foreign
+bytes/identity, пустую own stage, replay без повторного эффекта, full models и
+baseline. `scripts/verifier_first_save_race.py` проверяет detached журнал;
+он не является независимым CAD/file oracle. Связанные 18 pure-тестов прошли
+на искусственном CAD/FS; физическая native-приёмка L3-I3 ещё не выполнялась.
+
 Конечный отчёт связывает все шесть условий с метками, фактическими результатами
 и частными артефактами. Он фиксирует wheel SHA/build identity, установленный
 package origin без source PYTHONPATH, версии SolidWorks, hashes верификаторов,
