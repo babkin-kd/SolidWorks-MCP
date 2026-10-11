@@ -7,11 +7,17 @@
 Отбортовка dev67 завершена:3897 pure/323 CAD deselected, metadata46/16,
 internal8/public7 accepted=true на одном wheel; [точный результат](SHEET_EDGE_FLANGE_ACCEPTANCE.md).
 Все задания terminal, own fixtures закрыты, пуст/free baseline, новых unknown нет.
-Dev68:3997 pure/323 CAD deselected, installed metadata48/17; начатая U native/public
-приёмка ещё не завершена. Metadata не подтверждает физический результат.
+Dev68:3997 pure/323 CAD deselected, installed metadata48/17; U internal native9 accepted=true, own cleanup
+подтверждён; публичная MCP-приёмка ещё выполняется. Metadata не подтверждает физический результат.
 
 По новому решению пользователя работа возвращается к остаткам стадии1:
 [конечная матрица22 требований, проверок и блокеров](STAGE_1_REQUIREMENTS_MATRIX.md).
+Пользователь11.10.2026 зафиксировал базовый инвентарь31 legacy-пункт
+(документы/адресация/эскизы/плоскости/базовое выдавливание/размеры/удаление/
+подавление/измерения/диагностика). Обязательные gates не сокращены.
+Диагностика стадии 1 реализована в исходниках:31 новых timing pure passed,
+контракт и границы — [DIAGNOSTICS_TIMINGS.md](DIAGNOSTICS_TIMINGS.md).
+Installed/native этого блока ещё не приняты; галочки 1.5 не закрыты.
 Новые расширения2.1/2.2 не начинать до закрытия стадии1. Исходный срез ниже
 сохранён как история; сведения о ещё running dev67 не являются текущим итогом.
 

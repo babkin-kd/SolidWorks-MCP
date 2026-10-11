@@ -8,7 +8,7 @@
 Отбортовка dev67 **принята**: internal8/public7 accepted=true на одном wheel;
 см. [точную приёмку](SHEET_EDGE_FLANGE_ACCEPTANCE.md). Аудит, где dev67 ещё
 выполнялся, является историческим срезом. Dev68 содержит начатую ранее
-U-развёртку:3997 pure/323 CAD deselected, metadata48/17; native/public результат
+U-развёртку:3997 pure/323 CAD deselected, metadata48/17; internal native9 accepted=true, own cleanup подтверждён; public результат
 ещё не завершён. Его выполнение не означает переход к стадии 2.
 
 ## Правила закрытия
@@ -52,10 +52,10 @@ U-развёртку:3997 pure/323 CAD deselected, metadata48/17; native/public 
 | S1-14 /1.4-3 | Единая русская политика имён создаваемых узлов/компонентов/размеров; readback ошибки видимы, PID не зависит от имени | Pure defaults/catalog; native/public N1/N2/N3 rename/create и exact readback. Library filenames/SKU/standards не локализуются | Нужна общая выпускаемая область. Библиотечные сборки2.6 не добавляются как предварительное условие этого правила |
 | S1-15 /1.4-5 | Базовые native документы: явные open/save/close, безопасное владение, без потери несохранённых пользовательских изменений | Native N6 собственные временные native-файлы, save/readback/open/close точной цели; public lifecycle; untouched исходный документ | Публичные v2 open/save/close отсутствуют. Это базовые операции, не отложенный нейтральный файловый обмен |
 | S1-16 /1.4-5 | Публичные измерения массы, габаритов и расстояний с явными объектами/units/frame, актуальными overrides и сохранением selection | Pure существующего mass backend + новый фасад; native/public N1/N2/N6 аналитические тела/выбор тел/overrides/selection restore | Internal mass dev34 принят в ограниченном scope, публичный mass backend не подключён; bounding box/distance и общий scope не приняты |
-| S1-17 /1.4-5,1.2-6 | Остальные базовые операции и rebuild имеют явную таблицу переноса и реальные реализации; ни одного неподтверждённого обещания каталога | Завершить S1-02: перечислить каждый базовый legacy-пункт с контрактом/проверкой/блокером; native N6 и профильные N1–N5 | Нельзя объявить миграцию закрытой по последним CAD-фичам; неперенесённые базовые операции остаются открыты; неоднозначную границу «базовые/расширения» старой таблицы требуется явно зафиксировать, общий кандидат не принят |
-| S1-18 /1.5-1,1.5-2 | Монотонные end-to-end/queue/prepare/COM/rebuild/postcondition/restore/logging интервалы; timeout отдельно от завершения, polling отдельно от CAD | Pure nested interval и lifecycle; установленный MCP diagnostics на фактической операции N3/N6; допустимые неразделимые интервалы явно обозначены | Есть только job timestamps/внешние замеры, общего сборщика и обезличенных performance-record нет |
-| S1-19 /1.5-3 | Настройка, ограничение объёма/retention, изоляция ошибки диагностики, приватность; без дополнительных COM/второго STA | Pure retention/ошибки/allowlist без payload/paths/names; installed enabled/disabled/report; native N6 сопоставимый замер накладных расходов | Performance-журнал не реализован. Обязательный job journal нельзя сделать best-effort вместе с диагностикой |
-| S1-20 /1.5-4 | Один diagnostics_get_timings: период/инструмент, count/median/p95/медленные этапы, отдельные исходы/сборки/сценарии | Pure статистика/фильтры/малые выборки; installed outputSchema и public MCP; реальные записи из штатного native-прогона | Инструмента нет. Добавить в каталог только после реализации; не собирать CAD-прогоны ради объёма статистики |
+| S1-17 /1.4-5,1.2-6 | Остальные базовые операции и rebuild имеют явную таблицу переноса и реальные реализации; ни одного неподтверждённого обещания каталога | Завершить S1-02: перечислить каждый базовый legacy-пункт с контрактом/проверкой/блокером; native N6 и профильные N1–N5 | Нельзя объявить миграцию закрытой по последним CAD-фичам; неперенесённые базовые операции остаются открыты; граница зафиксирована пользователем11.10.2026; обязательный базовый инвентарь ниже не завершён, общий кандидат не принят |
+| S1-18 /1.5-1,1.5-2 | Монотонные end-to-end/queue/prepare/COM/rebuild/postcondition/restore/logging интервалы; timeout отдельно от завершения, polling отдельно от CAD | Pure nested interval и lifecycle; установленный MCP diagnostics на фактической операции N3/N6; допустимые неразделимые интервалы явно обозначены | В исходниках подключены traces к JobRunner/MutationCoordinator и MCP-фасаду;31 новых timing pure passed, связанные existing проверки прошли. Измеряется выбранная часть COM; grouping сценариев и installed/native ещё не приняты |
+| S1-19 /1.5-3 | Настройка, ограничение объёма/retention, изоляция ошибки диагностики, приватность; без дополнительных COM/второго STA | Pure retention/ошибки/allowlist без payload/paths/names; installed enabled/disabled/report; native N6 сопоставимый замер накладных расходов | Реализованы отдельный bounded SQLite store, CLI-настройка и изоляция ошибок;31 новых timing pure passed. Installed/native и реальный замер enabled/disabled ещё нужны. Обязательный job journal остаётся отдельным |
+| S1-20 /1.5-4 | Один diagnostics_get_timings: период/инструмент, count/median/p95/медленные этапы, отдельные исходы/сборки/сценарии | Pure статистика/фильтры/малые выборки; installed outputSchema и public MCP; реальные записи из штатного native-прогона | diagnostics_get_timings реализован в исходниках;pure schema/filter/count/median/p95 проверены. Installed каталог и фактические CAD-записи пока не приняты; см. DIAGNOSTICS_TIMINGS.md |
 | S1-21 /1.4-4,gate7 | Время и явные COM-dispatches по чтению/ревизии; устранить конкретные повторы внутри одного чтения без ослабления двух границ | Native N1/N6 before/after на одной fixture; counters и неизменная полная ревизия, closing identities/geometry, условия/выборка. Учесть историческую dev55 оптимизацию | Исторические узкие замеры не являются performance-приёмкой всей выпускаемой области; полный заявленный scope не измерен |
 | S1-22 /gate5,gate6 | Совокупный installed/stdio/catalog/native gate на SolidWorks2023; точный отчёт пропусков/отказов/unknown и исходное состояние восстановлены | N0 metadata exact tools/schema/build; N1–N6 native/public по покрытию; финальный манифест cases→строки этой матрицы | Нет итогового кандидата и принятых обязательных N1–N6;48/17 metadata dev68 не заменяют CAD-приёмку |
 
@@ -74,6 +74,31 @@ U-развёртку:3997 pure/323 CAD deselected, metadata48/17; native/public 
 | N4 | Собственный stdio-процесс/журнал; late completion/replay/conflict/cancel/restart/unknown, persistent document/application holds и reconciliation | S1-10,11,22 |
 | N5 | Полный граф удаления с dependencies/equations/configurations/annotations/outgoing/incoming refs; preview/execute/stale/postcondition/restoration | S1-12,22 |
 | N6 | Собственные native files для open/save/close/rebuild; подписанные размеры/допуски, публичные mass/bounds/distance; диагностика enabled/disabled | S1-13,15,16,17,18,19,20,21,22 |
+
+## Зафиксированная область базовой миграции
+
+Пользователь выбрал11.10.2026: **документы, адресация, эскизы/плоскости,
+базовое выдавливание, размеры, удаление/подавление, измерения и диагностика**.
+Новые инженерные операции — стадия2. Все gates безопасности/native сохраняются.
+Это решение устраняет старую неоднозначность «1.4/2.1»; оно не сокращает
+конфигурации/тела/component paths, ревизии, postconditions или восстановление.
+
+Фиксированный базовый legacy-инвентарь S1-17; имена ниже не являются v2-алиасами:
+
+| Группа | Legacy-пункты, для которых нужна явная реализованная замена/контракт | Остаток |
+| --- | --- | --- |
+| Документы | get_status, new_part, list_documents, activate_document, open_part, save_part, close_part, new_assembly, open_assembly, save_assembly | Чтения/новая деталь есть частично; прочие жизненные операции, явный контекст и проверка текущего кандидата открыты. Создание сборки здесь — только пустой native документ; компоненты/mates/библиотеки —2.6 |
+| Адресация и геометрические чтения | list_components, list_bodies, list_faces, list_edges, read_sketch, list_features | Part-чтения реализованы; component paths/configurations/transforms, общий solid/surface/multi-body scope и текущая native-приёмка открыты |
+| Базовые эскизы/плоскости/выдавливание | add_sketch, add_plane, add_box, add_extruded_profile, add_extruded_profile_on_plane, extrude_sketch | Собственный прямоугольный эскиз/основание приняты в ограниченных исторических цепочках; самостоятельные операции и явная область базовых плоских профилей ещё не завершены. 3D/spline/sweep/loft сюда не включаются |
+| Размеры/элементы/перестроение | list_dimensions, set_dimension, delete_feature, suppress_feature, rebuild | Размеры частично; знак/допуски/readback, полный delete preview/execute, suppression и общий rebuild/restore-gate открыты |
+| Измерения | get_mass_properties, get_bounding_box, get_assembly_bounding_box, measure_distance | Публичный mass bridge и остальные измерения/component frame ещё не приняты |
+| Новые v2 основы | feature_rename, durable jobs/holds/reconciliation, diagnostics_get_timings | Имена/jobs частично приняты; restart/holds/общий gate и диагностический фасад/native-проверка открыты |
+
+Совокупная миграция этих31 legacy-пунктов и новых v2 основ закрывается только
+реализациями и обязательными N0–N6. Остальные61 legacy-пункт распределены
+по инженерным расширениям2 и отложенной3 в MIGRATION_V2; текущие ограниченные
+замены инженерных операций сохраняются с точными историческими приёмками.
+Ни одна ещё не реализованная функция не добавляется в tools/list.
 
 ## Порядок исполнения
 

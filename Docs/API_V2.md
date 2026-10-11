@@ -1,10 +1,18 @@
 # API v2: текущий кандидат первой стадии
 
+Следующий блок стадии 1 подготовлен в исходниках: `diagnostics_get_timings`,
+локальная настройка bounded retention и замеры JobRunner/MutationCoordinator.
+Фасад даёт 49 source-инструментов /17 мутаций; 31 новых timing pure passed.
+Installed/native диагностики пока не выполнены; [контракт](DIAGNOSTICS_TIMINGS.md).
+Установленная рабочая dev-сборка пока dev68 с каталогом48/17.
+
+
 В исходниках подготовлен кандидат **dev68**: `sheet_prepare_flange_flat_state` /
 `sheet_set_flange_flat_state`, scope `single_u_sheet_flat_state_v1`, каталог48
 инструментов /17 мутаций. Домен/native bridge/MCP-фасад реализованы одним блоком;
 3997 pure passed /323 CAD deselected (50,43 с). Установленный wheel
-подтвердил metadata48/17; физическая и публичная MCP-приёмка ещё идут.
+подтвердил metadata48/17; внутренняя physical-приёмка9 accepted=true, своя очистка подтверждена;
+публичная MCP-приёмка ещё идёт.
 Контракт: [SHEET_FLANGE_FLAT_STATE](SHEET_FLANGE_FLAT_STATE.md).
 Принятая приёмка dev67 ниже сохраняется только для своего точного wheel.
 
