@@ -1,11 +1,12 @@
 # API v2: текущий кандидат первой стадии
 
-Кандидат dev69 стадии 1 подготовлен в исходниках: `diagnostics_get_timings`,
-локальная настройка bounded retention и замеры JobRunner/MutationCoordinator.
-Фасад даёт 49 source-инструментов /17 мутаций; 34 новых timing pure passed; полный набор4031 passed /323 CAD deselected,50,99 с.
-Installed/native диагностики пока не выполнены; [контракт](DIAGNOSTICS_TIMINGS.md).
-Установленная рабочая dev-сборка пока dev68 с каталогом48/17.
-
+Блок диагностики dev69 стадии 1 принят в ограниченном scope:
+`diagnostics_get_timings`, bounded private store/CLI, JobRunner/MutationCoordinator
+и выбранные COM/rebuild intervals. Полный pure4031/323 CAD deselected;34 новых
+timing tests. На одном installed wheel: metadata49/17, stdio modes, native20
+reads и internal4 basic accepted=true; собственные модели закрыты, baseline
+восстановлен. Полный COM/геометрические workload-сценарии и общий N0–N6 остаются
+открытыми. [Контракт](DIAGNOSTICS_TIMINGS.md), [приёмка](DIAGNOSTICS_TIMINGS_ACCEPTANCE.md).
 
 В исходниках подготовлен кандидат **dev68**: `sheet_prepare_flange_flat_state` /
 `sheet_set_flange_flat_state`, scope `single_u_sheet_flat_state_v1`, каталог48

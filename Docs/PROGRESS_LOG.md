@@ -17,7 +17,11 @@ JobRunner/MutationCoordinator/MCP traces, diagnostics_get_timings, selected
 COM/rebuild intervals и guide.34 новых timing pure passed; полный набор
 4031 passed/323 CAD deselected,50,99с. Первые4 full-failures были устаревшими
 ожиданиями counts/template version, исправлены; failed прогон не засчитан.
-Installed/native dev69 пока не выполнялись. Все стадии открыты, новые расширения
+Dev69 metadata49/17/stdin enabled/disabled/native20 reads/internal4 basic
+accepted=true на одном wheel31740ca; source/baseline сохранены, own fixtures
+закрыты. [Приёмка и overhead](DIAGNOSTICS_TIMINGS_ACCEPTANCE.md). Два отказа
+управляющего стенда сохранены accepted=false; пакет не пересобирался после
+его правок,18 связанных harness pure passed. Все стадии открыты, новые расширения
 стадии 2 не начинались. Git локальный, дополнительных агентов/push/CI нет.
 
 

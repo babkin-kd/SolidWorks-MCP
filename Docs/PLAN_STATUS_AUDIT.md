@@ -17,7 +17,9 @@ own cleanup и baseline подтверждены; [свидетельство](S
 подавление/измерения/диагностика). Обязательные gates не сокращены.
 Диагностика стадии 1 реализована в исходниках:34 новых timing pure passed,
 контракт и границы — [DIAGNOSTICS_TIMINGS.md](DIAGNOSTICS_TIMINGS.md).
-Installed/native этого блока ещё не приняты; галочки 1.5 не закрыты.
+Dev69 metadata49/17/stdin/native20 reads/internal4 basic accepted=true;
+[приёмка](DIAGNOSTICS_TIMINGS_ACCEPTANCE.md). Config/storage пункт1.5 принят;
+общие фазы/geometry grouping/performance и стадия1 остаются открытыми.
 Новые расширения2.1/2.2 не начинать до закрытия стадии1. Исходный срез ниже
 сохранён как история; сведения о ещё running dev67 не являются текущим итогом.
 

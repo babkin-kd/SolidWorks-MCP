@@ -2,10 +2,12 @@
 
 ## Актуальное состояние — 11.10.2026
 
-Установленный кандидат **dev68**:48 инструментов /17 мутаций, metadata accepted.
-3997 pure passed /323 CAD deselected; текущая U native-приёмка ещё выполняется.
-Последняя принятая отбортовка — **dev67**, internal8/public7 на одном wheel.
-Исторические сведения ниже не являются итоговой приёмкой dev68 или стадии1.
+Установленный кандидат **dev69**:49 инструментов /17 мутаций, metadata accepted.
+4031 pure passed /323 CAD deselected; diagnostic stdio/native20 reads/internal4
+basic accepted на одном wheel. [Приёмка](DIAGNOSTICS_TIMINGS_ACCEPTANCE.md).
+U-развёртка dev68 принята: internal9/public10 на своём wheel; отбортовка dev67 —
+internal8/public7. Исторические результаты не являются итоговой приёмкой dev69
+для всех прежних scope или всей стадии1.
 Точный каталог: `scripts/verify_installed_metadata.py:TOOLS`, регистрацию
 проверяет настоящий installed tools/list. Старая рабочая v1 сохранена.
 

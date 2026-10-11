@@ -47,8 +47,18 @@ async def exercise(entry,state,wheel,enabled,native):
                 info=envelope(await raw.call_tool('system_get_info',{}))
                 verify_metadata((await raw.list_tools()).tools,info['data'],wheel)
                 yield raw
-    async with open_supervised_session(session,
-            tool_specs={'document_list':ToolSpec('document.list',False)},journal_path=state/'jobs.sqlite') as client:
+    @asynccontextmanager
+    async def scoped_session():
+        if native:
+            async with open_supervised_session(session,
+                    tool_specs={'document_list':ToolSpec('document.list',False)},journal_path=state/'jobs.sqlite') as client:
+                yield client
+        else:
+            # No durable/CAD call is permitted in this branch; an empty tracker
+            # intentionally cannot authorize native supervisor cleanup.
+            async with session() as client:
+                yield client
+    async with scoped_session() as client:
         raw=raw_session['client']
         # Metadata workload and counts stay separate from native read workloads.
         for _ in range(20):
@@ -94,7 +104,8 @@ async def exercise(entry,state,wheel,enabled,native):
         # drain() verifies the exact coherent job history before SDK shutdown.
     return dict(enabled=enabled,metadata_transport=distribution(durations),
         native_read_transport=distribution(native_durations) if native_durations else None,
-        aggregates=result,supervisor_cleanup_verified=client.cleanup_gate.can_cleanup())
+        aggregates=result,supervisor_cleanup_verified=client.cleanup_gate.can_cleanup() if native else None,
+        metadata_only_sdk_closed=not native)
 
 
 def main():
@@ -122,7 +133,7 @@ def main():
             from verify_document_reads import native_snapshot
             pythoncom.CoInitialize();initialized=True;sw=binding.connect(show=False)
             require(not sw.GetDocuments() and not sw.CommandInProgress,'Empty/free native baseline required.')
-            baseline=native_snapshot();report['solidworks_revision']=sw.RevisionNumber
+            baseline=native_snapshot();report['solidworks_revision']=sw.RevisionNumber()
         for enabled in (False,True):
             mode=state/('enabled' if enabled else 'disabled');mode.mkdir()
             report['modes'].append(asyncio.run(exercise(entry,mode,wheel,enabled,args.run_solidworks)))

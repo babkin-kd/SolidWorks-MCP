@@ -1,7 +1,7 @@
 # Диагностика времени — кандидат dev69 стадии 1
 
-`diagnostics_get_timings` реализован в исходниках. До проверки точного
-установленного wheel это не installed/native-приёмка. Стадия 1 остаётся открытой;
+`diagnostics_get_timings` реализован в исходниках. Installed/stdin/native блок принят на точном wheel dev69:
+[свидетельство и ограничения](DIAGNOSTICS_TIMINGS_ACCEPTANCE.md). Стадия 1 остаётся открытой;
 текущая матрица требований — [STAGE_1_REQUIREMENTS_MATRIX.md](STAGE_1_REQUIREMENTS_MATRIX.md).
 
 ## Контракт
@@ -86,12 +86,9 @@ FeatureExtrusion3 базового прямоугольника, SetSystemValue3
   интервалов. Не создаёт и не закрывает моделей. Supervisor ждёт завершения
   фактического задания, тайм-аут не отменяет COM.
 
-Installed/native-результаты и размер измеренной выборки должны быть добавлены
-после выполнения стенда. Проверка пустой сессии не закрывает итоговые N0–N6,
-геометрические workload benchmarks или всю строку S1-18/S1-19/S1-20.
-
-Исходники dev69:34 новых timing pure passed; полный набор4031 passed /323 CAD
-deselected,50,99 с. Native basic smoke дополнительно планируется флагом
-`verify_part_hole.py --timings-only`: собственные две детали, прямоугольное
-выдавливание40×20×10 и толщина12 (объём9600 мм³), phase/COM/rebuild записи,
-сохранение исходной детали и штатная очистка. Результат до выполнения не принят.
+Installed metadata49/17, stdio enabled/disabled, native20 read-only calls и
+internal basic4 accepted=true на одном wheel dev69. Выдавливание40×20×10 и
+толщина12 дали независимый объём9600 мм³; source/selection/baseline сохранены,
+свои документы закрыты. Полный pure перед wheel4031/323 deselected;34 timing
+теста и18 связанных harness-проверок (2 новых). Это не общая приёмка N0–N6,
+восстановления/unknown на dev69 или полный geometry/performance census.
