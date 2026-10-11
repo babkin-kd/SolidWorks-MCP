@@ -1,5 +1,23 @@
 # Ход разработки
 
+## 11.10.2026 — anonymous-plane geometric policy
+
+Source23 прошла новую source-edge фазу и остановилась на anonymous plane/transform
+closing check до factory. Trace/receipt сохранены, unknown не объявлен успехом;
+calls terminal и own fixture closed, baseline пуст/free. Digest
+`cedd0bf719336bbe6e91cab0c63c81a13a9d7b5cb4f5e1265e4804c514a8c3a6`.
+Closing больше не сравнивает transient plane interfaces: exact owning sketch,
+strong own entities/driver, explicit source projection и полный transform
+доказывают этот dedicated geometry scope. Kind/non-null/full-transform closing
+сохранён; public plane target отсутствует, общий named-plane reader не ослаблен.
+**380 связанных pure passed**, native последней правки ещё не принят.
+
+Следующий цельный блок: scoped partial restoration, полный доменный writer и
+MCP-фасад, затем точный wheel и native/internal/public acceptance. Accepted dev63
+остаётся44/15, v1 сохранена. Все native-пробники текущего блока terminal, свои
+контроли закрыты. Изменения локальные, без push/CI и без дополнительных агентов;
+импорт/экспорт остаются отложенными, все стадии открыты.
+
 ## 11.10.2026 — точная причина disconnect source22 и source descriptor
 
 Traceback source22 показал disposed старую кривую при

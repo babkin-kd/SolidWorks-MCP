@@ -2,6 +2,19 @@
 
 ## Текущий следующий шаг
 
+Source23 прошла новое source-edge binding, но остановилась на closing comparison
+anonymous-plane COM view/transform до factory. Private unknown сохранён; sketch
+и driver возвращены, profile_before не доказан, flange отсутствует, pending flags
+false. Calls terminal/own fixture closed, baseline пуст/free. Source digest
+`cedd0bf719336bbe6e91cab0c63c81a13a9d7b5cb4f5e1265e4804c514a8c3a6`.
+
+Anonymous plane не имеет пригодного native PID и не является edit target.
+Её геометрия доказывается exact owning sketch, всей сетью canonical point/segment
+references, explicit source projection и полным жёстким transform. Closing
+проверяет kind/non-null и весь transform, без сравнения transient plane interfaces.
+Named-plane reader не ослаблен. **380 связанных pure passed**; native этой финальной
+правки, partial restoration, домен/MCP и итоговый installed wheel ещё нужны.
+
 Source22 уточнила конкретный disconnect: `pattern_edge_points(receipt.edge)` →
 `curve.IsLine()` старого pre-insertion дескриптора, до factory. Receipt: sketch и
 driver возвращены, profile_before ещё не доказан, flange отсутствует; pending

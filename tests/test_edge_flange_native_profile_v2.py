@@ -76,10 +76,18 @@ def test_profile_status_and_coordinates_do_not_override_driver_or_reference_fail
     elif defect=='plane_changed':
         calls=[]
         def reference(option):
-            calls.append(True);return (plane if len(calls)==1 else object(),4)
+            calls.append(True);return (plane,4 if len(calls)==1 else 2)
         sketch.GetReferenceEntity=reference
     elif defect=='transform_changed':
         def change(*args):sketch.ModelToSketchTransform.ArrayData[11]=-.021;return [.013]
         driver.GetSystemValue3=change
     else:refs[b'edge']=object()
     with pytest.raises(ExecutionFailure):a.sheet_flange_sketch_snapshot(model,receipt,definition,IDENTITY,'before_factory')
+
+
+def test_anonymous_plane_views_are_not_identity_anchors_or_client_targets(native_profile):
+    a,model,receipt,definition,sketch,_,_,_=native_profile
+    sketch.GetReferenceEntity=lambda option:(object(),4)
+    snapshot,_=a.sheet_flange_sketch_snapshot(model,receipt,definition,IDENTITY,'before_factory')
+    assert snapshot['reference_policy']=='owned_anonymous_plane_geometry_v1'
+    assert 'reference_plane' not in snapshot

@@ -9,6 +9,14 @@
 ### Актуальные приоритеты — решение пользователя от 10.10.2026
 
 **В работе — штатная отбортовка явного ребра листовой детали (2.2).**
+Source23 прошла source-edge binding, но отклонила transient anonymous-plane view
+при closing до factory. Unknown сохранён, calls terminal/own fixture closed.
+Dedicated policy опирается на exact owning sketch, strong entities/driver,
+explicit source projection и весь rigid transform; public plane target нет.
+Closing kind/non-null/transform сохранён, named-plane reader не ослаблен.
+**380 связанных pure passed**; native последней правки, partial restoration,
+домен/MCP и итоговый wheel остаются следующим цельным блоком. Dev63 остаётся44/15.
+
 Source22 точно установила disposed старую curve при повторном чтении исходного
 edge после own insertion, до factory. Исходный finite descriptor фиксируется до
 записи; после неё current edge проверяется по PID/geometry/body/topology и всему

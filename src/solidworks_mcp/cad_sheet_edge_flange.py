@@ -119,7 +119,6 @@ class CadSheetEdgeFlangeMixin:
         reference,kind=sketch.GetReferenceEntity(0)
         if type(kind) is not int or kind!=4 or reference is None:
             raise rejected('sheet_flange_profile_reference','The native automatic planar reference is required.')
-        reference_identity=self.identity(reference)
         def resolve(pid,name):
             raw,status=self._extension(model).GetObjectByPersistReference3(self._persistent_variant(pid))
             if type(status) is not int or status!=0 or raw is None:
@@ -170,9 +169,12 @@ class CadSheetEdgeFlangeMixin:
             raise rejected('sheet_flange_profile_unconfirmed','The entire rectangle, projection, transform and driving network must match.')
         closing_reference,closing_kind=sketch.GetReferenceEntity(0)
         if (closing_reference is None or type(closing_kind) is not int or closing_kind!=kind
-                or self.identity(closing_reference)!=reference_identity
                 or _coordinates(binding.wrap(sketch.ModelToSketchTransform,self._module.IMathTransform).ArrayData,16)!=snapshot['model_to_sketch']):
-            raise rejected('sheet_flange_profile_changed','The anonymous native plane or transform changed within the read boundary.')
+            raise rejected('sheet_flange_profile_changed','The anonymous plane kind or complete own-sketch transform changed within the read boundary.')
+        # GetReferenceEntity constructs an anonymous plane view with an invalid
+        # native PID. It is not a client target or an identity anchor. The exact
+        # owning sketch, full frame, source-edge projection and closed native
+        # entity/driver proof above establish this bounded input geometry.
         self._sheet_flange_feature_current(model,feature,receipt.sketch_identity,receipt.sketch_pid,'ProfileFeature')
         if phase=='before_factory':self._sheet_flange_profile_edge_current(model,receipt,definition,frame)
         self._sheet_state_target_current(model,receipt.source_target)
