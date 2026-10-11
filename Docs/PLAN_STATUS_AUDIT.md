@@ -1,13 +1,24 @@
 # Аудит статусов плана — 11.10.2026
 
-Dev76: point boundary distance/native location для resolved part instance принят:
+Dev77: расстояние resolved экземпляра детали до бесконечной оси принято:
+4335 pure/323 CAD deselected (54,63с), installed metadata62/18,
+internal native18/public MCP6 accepted=true на одном wheel; exact4-owned
+cleanup, baseline и non-STL preferences подтверждены. Exact directional
+supports + memory-only wire, hidden/rotated/nested instances, oblique axis,
+explicit rigid frame, far origin/reversed direction, cylinder surface gap/tangency.
+[Контракт](COMPONENT_AXIS_DISTANCE.md), [точная приёмка](COMPONENT_AXIS_DISTANCE_ACCEPTANCE.md).
+Aggregate subassembly, named native frames и общий N0–N6 остаются;
+S1-06/S1-16 и стадия1 открыты, расширения2 отложены. Старые приёмки ниже
+относятся к их wheel и не засчитываются в итоговый gate текущего кандидата.
+
+Исторический dev76: point boundary distance/native location для resolved part instance принят:
 4287 pure/323 CAD deselected (53,93с), installed metadata61/18,
 internal native19/public MCP6 accepted=true на одном wheel; exact4-owned
 cleanup, baseline и non-STL preferences подтверждены. Hidden rotated
 inside/outside/boundary, explicit frame/trimmed corner, nested/multibody,
 solid cylinder и hollow cavity/material, old replaced body/face rejection.
 [Контракт](COMPONENT_POINT_DISTANCE.md), [точная приёмка](COMPONENT_POINT_DISTANCE_ACCEPTANCE.md).
-Axis distance, aggregate subassembly targets, named native frames и общий
+На момент dev76 axis distance, aggregate subassembly targets, named native frames и общий
 N0–N6 остаются; стадия1 открыта, расширения2 отложены.
 
 Dev75: расстояние между двумя resolved экземплярами деталей принято:
@@ -16,7 +27,7 @@ internal native13/public MCP6 accepted=true на одном wheel; exact-owned c
 и baseline подтверждены. Hidden rotated/multibody15 мм, nested70 мм,
 curved overlap/tangent0, native move14 мм, cylinder gap24 мм вместо axis36 мм.
 [Контракт](COMPONENT_DISTANCE.md), [точная приёмка](COMPONENT_DISTANCE_ACCEPTANCE.md).
-S1-16/S1-06 частично: point/axis distance, агрегат подсборки, native named
+На момент dev75 S1-16/S1-06 частично: point/axis distance, агрегат подсборки, native named
 frames и общий N0–N6 остаются; стадии1/2 не объявлены завершёнными.
 
 Срез локального проекта: исходники кандидата `2.0.0.dev67`, Git `01a764b23a5549c07c94111fa4ace8facb9ab989`. Аудит выполнен чтением плана, кода, тестов и существующих отчётов; новые тесты, сборки, CAD-вызовы и GitHub CI не запускались. Основная разработка продолжается, поэтому дальнейшие результаты должны обновить этот срез. Приватные CAD/журналы/отчёты не копировались в публичную документацию.

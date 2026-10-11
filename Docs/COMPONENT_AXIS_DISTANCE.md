@@ -1,6 +1,7 @@
 # Расстояние от экземпляра детали до бесконечной оси
 
-Кандидат dev77; native-приёмка ожидается. Единственный новый инструмент:
+Dev77 принят:4335 pure/323 CAD deselected, metadata62/18, internal18/public6
+на одном exact wheel; own cleanup/baseline. [Точная приёмка](COMPONENT_AXIS_DISTANCE_ACCEPTANCE.md). Единственный новый инструмент:
 `measurement_get_component_axis_distance`, операция read
 `measurement.component_axis_distance`, scope `resolved_part_component_axis_distance_v1`.
 
