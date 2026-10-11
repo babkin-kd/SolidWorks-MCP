@@ -1,9 +1,11 @@
-"""Source-only positive L3 domain probe; never installed/native release acceptance.
+"""One-owner positive L3 probe; never whole-block native release acceptance.
 
-One process owns COM and all fixtures. A live/unknown job is not cancelled or
+Defaults to source; verify_native_first_save_positive.py requires an installed
+wheel. One process owns COM and all fixtures. A live/unknown job is not cancelled or
 repeated. Unknown effects retain this process and its private receipt resources.
 """
 import argparse
+import asyncio
 from copy import deepcopy
 import hashlib
 import json
@@ -27,32 +29,71 @@ from verify_component_reads import native_identity
 from verify_export_operations import activate_owned, application_preferences
 from verify_native_document_open import retire_owned, snapshot
 from verifier_dimension_diagnostics import assert_non_stl_preferences
+from verifier_native_first_save import verified_committed_first_save
+from verify_installed_metadata import installed_identity, check
+from verify_wheel_artifact import validate_wheel
 
 
-def main():
+def package_evidence(args, *, installed):
+    """Reject a wrong origin/wheel/catalog before the first native connection."""
+    if installed:
+        wheel = validate_wheel(args.wheel, expected_version=args.expected_version,
+                               expected_git_sha=args.expected_git_sha)
+        entry = installed_identity(wheel)
+        metadata_state = args.state_dir / 'metadata-state'
+        metadata_state.mkdir()
+        catalog = asyncio.run(check(entry, metadata_state, wheel))
+        return dict(wheel=wheel, installed_package_origin=str(Path(solidworks_mcp.__file__).resolve().parent),
+                    metadata_catalog=catalog, package_origin_verified=True)
+    assert Path(solidworks_mcp.__file__).resolve().parent == Path.cwd() / 'src' / 'solidworks_mcp'
+    return dict(source_package_origin=str(Path(solidworks_mcp.__file__).resolve().parent),
+                package_origin_verified=True)
+
+
+def main(*, installed=False):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-solidworks', action='store_true')
     parser.add_argument('--state-dir', required=True, type=Path)
+    if installed:
+        parser.add_argument('--wheel', required=True, type=Path)
+        parser.add_argument('--expected-version', required=True)
+        parser.add_argument('--expected-git-sha', required=True)
     args = parser.parse_args()
     assert args.run_solidworks
-    assert Path(solidworks_mcp.__file__).resolve().parent == Path.cwd() / 'src' / 'solidworks_mcp'
     state = args.state_dir.absolute()
     assert state.is_relative_to(Path.cwd() / 'work') and not state.exists()
     state.mkdir()
     capture_directory = state / 'oracle-captures'
     capture_directory.mkdir()
     start = time.perf_counter()
-    report = dict(scope='source_first_save_domain_positive_only', probe_passed=False,
+    report = dict(scope=('installed_first_save_domain_positive_only' if installed
+                         else 'source_first_save_domain_positive_only'), probe_passed=False,
+                  accepted=False, positive_case_passed=False,
                   native_first_save_accepted=False, exact_installed_acceptance=False,
                   owned_documents=[], native_calls_live=False, captures=[], phase='startup',
                   verifier_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-                  source_files={str(p.relative_to(Path.cwd())): hashlib.sha256(p.read_bytes()).hexdigest()
-                                for p in sorted((Path.cwd() / 'src' / 'solidworks_mcp').glob('*.py'))})
+                  verifier_hashes={name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
+                                   for name in ('probe_native_first_save_domain.py', 'verify_native_first_save_positive.py',
+                                                'verifier_native_first_save.py', 'verify_installed_metadata.py',
+                                                'verify_wheel_artifact.py', 'verify_bounds_measurements.py',
+                                                'verify_component_reads.py', 'verify_export_operations.py',
+                                                'verify_native_document_open.py', 'verifier_dimension_diagnostics.py')},
+                  package_files={p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                                 for p in sorted(Path(solidworks_mcp.__file__).resolve().parent.glob('*.py'))})
 
     def persist():
         report['elapsed_seconds'] = time.perf_counter() - start
         (state / 'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2,
                                                      allow_nan=False), encoding='utf-8')
+
+    try:
+        args.state_dir = state
+        report.update(package_evidence(args, installed=installed))
+        persist()
+    except BaseException as error:
+        report.update(phase='preflight_failed', error=str(error), traceback=traceback.format_exc())
+        persist()
+        raise
 
     def record(models):
         report['owned_documents'] = [dict(title=m.GetTitle(), path=m.GetPathName(), type=m.GetType()) for m in models]
@@ -90,6 +131,7 @@ def main():
         assert not sw.GetDocuments() and sw.ActiveDoc is None
         assert sw.CommandInProgress is False and sw.UserControl is True
         baseline = snapshot(sw, module)
+        report['original_baseline'] = baseline
         preferences = application_preferences(sw)
         report['original_preferences'] = preferences
         original_directory = sw.GetCurrentWorkingDirectory()
@@ -185,6 +227,8 @@ def main():
         final = documents.resolve(value['document_id'], 'Основная')[0].model
         owned[:] = [final, neighbor]  # Source retirement was proved by the domain; never query it again.
         record(owned)
+        assert verified_committed_first_save(saved)
+        report['protocol_verified'] = True
         replay = runner.submit('save', 'document.first_save_native', arguments,
                                lambda _: (_ for _ in ()).throw(AssertionError('Replay must never call CAD')),
                                context=arguments, mutates=True, pass_operation_id=True,
@@ -195,6 +239,7 @@ def main():
         sw.CommandInProgress = True
         assert sw.CommandInProgress is True
         final_snapshot = adapter.first_save_part_snapshot(final)
+        report['independent_final_snapshot'] = final_snapshot
         assert clone_mapping(source_before, final_snapshot) == value['reference_mapping']
         assert adapter.first_save_part_snapshot(neighbor) == neighbor_before
         assert neighbor.GetSaveFlag() is True and native_identity(neighbor) == neighbor_token
@@ -212,9 +257,11 @@ def main():
             assert raw is True and sw.GetCurrentWorkingDirectory() == original_directory
         sw.CommandInProgress = False
         assert sw.CommandInProgress is False
-        assert snapshot(sw, module) == baseline
+        restored_baseline = snapshot(sw, module)
+        assert restored_baseline == baseline
+        report['restored_baseline'] = restored_baseline
         assert_non_stl_preferences(lambda: application_preferences(sw), preferences, report, 'restored_preferences')
-        report.update(phase='terminal', probe_passed=True, baseline_restored=True,
+        report.update(phase='terminal', probe_passed=True, positive_case_passed=True, baseline_restored=True,
                       own_cleanup_verified=True, native_calls_live=False)
         persist()
     except BaseException as error:

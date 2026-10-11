@@ -88,6 +88,8 @@ Baseline допускает видимые self-contained parts того же н
 
 | Проверка | Фактический результат | Что подтверждает |
 | --- | --- | --- |
+| Dev88: preflight/protocol/metadata source-набор | 40 passed, 6,25 с | Новый installed L3-I1 wrapper проверяет wheel/origin/catalog до CAD; отклоняет неверные preflight gates. Core общий с source-пробой, partial positive report не объявляет весь L3 принятым |
+| Dev88: итоговый полный source pure-набор | 5978 passed, 323 CAD deselected, 99,46 с | Версии pyproject/package/lock/registry template согласованы. Первый dev88 full-набор имел один packaging failure из-за старого template dev87 (5977 passed); исправление проверено повторным полным набором. Native не запускался |
 | Full source domain probe2 | passed, 994,58 с; job committed, 24 protocol rows verified, independent full readback=true, mapping41, cleanup/baseline=true | Первый успешный полный source-протокол с actual CAD/NTFS, UI guards и durable журналом. Не новый wheel; stale/race/negative cases и public MCP-приёмка L3 ещё не завершены |
 | Текущий source metadata/runtime/MCP-набор | 44 passed, 4,56 с | Installed verifier ожидает реализованные 73 tools/22 mutations, включая два first-save tools и их scope; прежний каталог без L3 отвергается. Проверка искусственная/source, без CAD и нового wheel. Первая попытка остановилась на collection из-за импорта установленного dev87 вместо src, затем исправлен PYTHONPATH |
 | Текущий полный source pure-набор | 5973 passed, 323 CAD deselected, 99,38 с | Штатный фильтр `not solidworks`, без `--run-solidworks`; source PYTHONPATH указан явно. Не является installed metadata или native-приёмкой. Подробный журнал: ignored `work/pytest-first-save-full-2.log` |

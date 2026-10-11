@@ -43,6 +43,16 @@ receipt, момент инъекции и независимо наблюдае�
 
 ## Закрытие блока
 
+Положительный installed-прогон L3-I1 подготовлен в
+`scripts/verify_native_first_save_positive.py`. Параметры: `--run-solidworks`,
+новый `--state-dir` внутри ignored `work/`, `--wheel`, `--expected-version` и
+`--expected-git-sha`. Запускать проектным dev-интерпретатором без source
+PYTHONPATH. До CAD проверяются точный wheel, installed origin и metadata/stdio;
+после — полный протокол, независимый native readback и own cleanup/baseline.
+Отчёт сохраняет `positive_case_passed`, но **accepted=false**: один положительный
+прогон не закрывает L3-I2…L3-I4 и L3-P1. Source-проба использует тот же core,
+явно сохраняет source scope и также не объявляет installed-приёмку.
+
 Конечный отчёт связывает все шесть условий с метками, фактическими результатами
 и частными артефактами. Он фиксирует wheel SHA/build identity, установленный
 package origin без source PYTHONPATH, версии SolidWorks, hashes верификаторов,
