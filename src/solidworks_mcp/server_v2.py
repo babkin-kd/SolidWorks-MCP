@@ -21,6 +21,7 @@ from . import __version__
 from .build_info import source_digest
 from .contracts import ResponseEnvelope
 from .dimension_tools_v2 import register_dimension_tools
+from .measurement_tools_v2 import register_measurement_tools
 from .part_tools_v2 import register_part_tools
 from .part_cut_tools_v2 import register_part_cut_tools
 from .part_hole_tools_v2 import register_part_hole_tools
@@ -96,7 +97,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None, *, timings=None)
             'capabilities': {'job_journal': True, 'job_query': True, 'queued_job_cancellation': True,
                              'timing_diagnostics': True,
                              'cad_documents': True, 'cad_mutations': True,
-                             'part_geometry_reads': True, 'persistent_geometry_references': True,
+                             'part_geometry_reads': True, 'part_mass_measurements': True, 'persistent_geometry_references': True,
                              'part_feature_reads': True, 'part_feature_rename': True,
                              'part_dimension_reads': True, 'part_dimension_set_value': True,
                              'new_part_documents': True, 'part_base_extrusion': True,
@@ -116,8 +117,8 @@ def create_app(store: JobStore, runtime: Runtime | None = None, *, timings=None)
                              'pdm': False, 'simulation': False},
             'export_output_configured': runtime.export_output_configured,
             'timing_collection_enabled': bool(timings is not None and timings.config.enabled),
-            'implemented_mutations': ['feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters', 'sheet.create_edge_flange', 'sheet.set_flange_flat_state'],
-            'mutation_revision_scopes': ['part_feature_tree_v1', 'part_dimension_values_v1',
+            'implemented_mutations': ['measurement.mass', 'feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters', 'sheet.create_edge_flange', 'sheet.set_flange_flat_state'],
+            'mutation_revision_scopes': ['part_mass_selection_measurement_v1', 'part_feature_tree_v1', 'part_dimension_values_v1',
                                          'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1', 'single_base_circular_through_hole_v1', 'single_base_circular_through_hole_dimension_v1', 'single_base_linear_through_hole_pattern_v1', 'single_base_selected_edge_fillet_v1', 'empty_part_sheet_l_profile_v1', 'single_l_sheet_flat_state_v1', 'single_l_sheet_parameters_v1', 'single_l_sheet_edge_flange_v1', 'single_u_sheet_flat_state_v1'],
             'journal_schema_version': JOURNAL_SCHEMA_VERSION,
         })
@@ -270,6 +271,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None, *, timings=None)
             return failure(exc)
 
     register_dimension_tools(app, runtime, response, failure)
+    register_measurement_tools(app, runtime, response, failure)
     register_part_tools(app, runtime, response, failure)
     register_part_cut_tools(app, runtime, response, failure)
     register_part_hole_tools(app, runtime, response, failure)

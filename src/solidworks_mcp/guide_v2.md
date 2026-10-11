@@ -506,3 +506,22 @@ flattened — строгий boolean. Запись требует expected_revis
 складывать; COM coverage охватывает только явно измеренные вызовы. Сценарий
 пока `unclassified_v1`, завершённые job traces и время MCP-ожидания учитываются
 отдельно. Тайм-аут и отмена ожидания не отменяют исполняемую CAD-операцию.
+# Измерение массы детали
+
+`measurement_prepare_mass` читает явный document_id/активную configuration и
+expected_observation_revision. body_id=None означает все solid-тела, включая
+скрытые; поверхности исключены. Явный body_id измеряет только это solid-тело.
+Возвращаемая revision имеет scope part_mass_selection_measurement_v1: состав
+тел, геометрические моменты и исходное выделение. Это ревизия измерения.
+
+`measurement_get_mass` требует эту expected_revision и request_id. Геометрия
+не редактируется, но временное выделение/блокировка/CommandInProgress защищены
+durable application checkpoint. Исходные объекты и marks восстанавливаются
+ровно один раз. Результат: мм³/мм²/кг/кг·м⁻³ и центр масс в мм в model frame.
+Актуальные overrides массы/центра отвергаются. При unknown сохраняется hold
+через restart; не повторять расчёт. timeout не отменяет COM, ждать job_get.
+Повтор того же request_id возвращает одно и то же задание.
+
+Сборки, произвольные coordinate frames, габариты и расстояния этим scope
+не поддерживаются. Selected UI objects должны иметь native PID roundtrip;
+неадресуемое выделение отвергается до первой записи. Лимит:500 solid-тел.

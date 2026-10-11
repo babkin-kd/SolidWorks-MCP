@@ -100,6 +100,66 @@ def test_fresh_calculation_has_explicit_si_body_scope_and_identity_frame(candida
     assert mp.calls[1] == ('recalculate',)
 
 
+def test_public_guard_does_not_nest_native_selection_lists(candidate):
+    adapter,mp,body=candidate
+    adapter._sw.CommandInProgress=False
+    adapter.model.block=0
+    adapter.model.GetBlockingState=lambda:adapter.model.block
+    adapter.model.Lock=lambda:setattr(adapter.model,'block',2)
+    adapter.model.UnLock=lambda:setattr(adapter.model,'block',0)
+    manager=adapter.mass_read_guard(adapter.model)
+    with manager:
+        assert adapter._sw.CommandInProgress and adapter.model.block==2
+        assert not mp.selection.calls
+        adapter.mass_properties(adapter.model,(body,))
+    assert mp.selection.calls==['suspend','resume']
+    assert adapter.model.block==0 and not adapter._sw.CommandInProgress
+    assert manager.evidence['selection_preserved'] and manager.evidence['released']
+
+
+def test_public_guard_unknown_does_not_resume_a_second_time(candidate):
+    adapter,mp,body=candidate
+    adapter._sw.CommandInProgress=False
+    adapter.model.block=0
+    adapter.model.GetBlockingState=lambda:adapter.model.block
+    adapter.model.Lock=lambda:setattr(adapter.model,'block',2)
+    adapter.model.UnLock=lambda:setattr(adapter.model,'block',0)
+    mp.selection.fault='resume'
+    manager=adapter.mass_read_guard(adapter.model)
+    with pytest.raises(ExecutionFailure) as error:
+        with manager:adapter.mass_properties(adapter.model,(body,))
+    assert error.value.uncertain and mp.selection.calls==['suspend','resume']
+    assert not manager.evidence['selection_preserved']
+    assert not adapter._sw.CommandInProgress and adapter.model.block==0
+
+
+@pytest.mark.parametrize('fault',[None,'status','identity','missing'])
+def test_selection_checkpoint_requires_native_persistent_roundtrip(candidate,fault):
+    adapter,mp,_=candidate
+    original=mp.selection.current[0][0]
+    adapter.persistent_id=lambda model,obj:b'pid' if fault!='missing' else b''
+    adapter._persistent_variant=lambda pid:pid
+    adapter._extension=lambda model:SimpleNamespace(GetObjectByPersistReference3=lambda pid:(
+        original if fault!='identity' else SimpleNamespace(token=['foreign']), 0 if fault!='status' else 1))
+    if fault:
+        with pytest.raises(ExecutionFailure) as error:adapter.mass_selection_capture(adapter.model)
+        assert error.value.code=='mass_selection_not_referenceable'
+    else:
+        rows,tokens=adapter.mass_selection_capture(adapter.model)
+        assert rows==[{'persistent_id':b'pid'.hex(),'mark':7}] and tokens==((['original'],7),)
+    assert not mp.selection.calls
+
+
+@pytest.mark.parametrize('values',[
+    [0.]*12,[0.]*11,[0.,0.,0.,1.,2.,1.,0.,0.,0.,0.,0.,float('nan')],
+    [0.,0.,0.,True,2.,1.,0.,0.,0.,0.,0.,0.],None])
+def test_incomplete_geometric_moments_are_not_a_measurement_revision(candidate,values):
+    adapter,_,_=candidate
+    with pytest.raises(ExecutionFailure) as error:
+        adapter.mass_body_signature(SimpleNamespace(GetMassProperties=lambda density:values))
+    assert error.value.code=='mass_body_signature_unavailable'
+
+
 @pytest.mark.parametrize('fault', ['units', 'hidden', 'weld', 'foreign', 'empty', 'frame',
                                   'recalc', 'recalc_scope', 'recalc_units', 'recalc_override'])
 def test_unconfirmed_scope_never_returns_values(candidate, fault):

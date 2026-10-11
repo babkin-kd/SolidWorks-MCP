@@ -11,7 +11,7 @@ import sysconfig
 
 from verify_wheel_artifact import require, validate_wheel
 
-TOOLS = frozenset({'system_get_info', 'job_get', 'job_list', 'job_cancel', 'diagnostics_get_timings',
+TOOLS = frozenset({'measurement_prepare_mass', 'measurement_get_mass', 'system_get_info', 'job_get', 'job_list', 'job_cancel', 'diagnostics_get_timings',
     'document_list', 'document_get', 'body_list', 'face_list', 'edge_list', 'geometry_get',
     'feature_list', 'feature_get', 'feature_rename', 'dimension_list', 'dimension_get',
     'dimension_set_value', 'export_prepare', 'export_part', 'part_prepare_base_extrusion', 'part_create_base_extrusion',
@@ -51,11 +51,11 @@ def verify_metadata(tools, info, wheel):
     require(info['source_digest'] == info['build']['source_digest'] == wheel['source_digest'],
             'MCP source digest mismatch.')
     require(info['schema_version'] == '2.0-dev', 'Unexpected API schema version.')
-    require(info['mutation_revision_scopes'] == ['part_feature_tree_v1', 'part_dimension_values_v1',
+    require(info['mutation_revision_scopes'] == ['part_mass_selection_measurement_v1', 'part_feature_tree_v1', 'part_dimension_values_v1',
                                                  'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1', 'single_base_circular_through_hole_v1', 'single_base_circular_through_hole_dimension_v1', 'single_base_linear_through_hole_pattern_v1', 'single_base_selected_edge_fillet_v1', 'empty_part_sheet_l_profile_v1', 'single_l_sheet_flat_state_v1', 'single_l_sheet_parameters_v1', 'single_l_sheet_edge_flange_v1', 'single_u_sheet_flat_state_v1'],
             'Unexpected mutation revision scopes.')
     require(info['development_candidate'] is True, 'Expected a development candidate.')
-    require(info['implemented_mutations'] == ['feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters', 'sheet.create_edge_flange', 'sheet.set_flange_flat_state'],
+    require(info['implemented_mutations'] == ['measurement.mass', 'feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters', 'sheet.create_edge_flange', 'sheet.set_flange_flat_state'],
             'Unexpected implemented mutation catalog.')
     require(info['capabilities']['pdm'] is False and info['capabilities']['simulation'] is False,
             'Unimplemented modules must not be advertised.')

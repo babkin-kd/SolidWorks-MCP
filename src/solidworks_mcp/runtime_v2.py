@@ -6,6 +6,7 @@ import uuid
 
 from .documents import DocumentCatalog, rejected
 from .geometry import GeometryCatalog
+from .mass_measurement import MassMeasurementCatalog
 from .features import FeatureCatalog
 from .dimensions import DimensionCatalog
 from .part_creation import PartCreationCatalog
@@ -26,8 +27,8 @@ from .exports_v2 import ExportCatalog
 from .jobs import JobError, JobRunner, _json
 
 
-MUTATING_OPERATIONS = ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters', 'sheet.create_edge_flange', 'sheet.set_flange_flat_state')
-READ_OPERATIONS = ('document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies', 'feature.deletion_structure', 'feature.deletion_context', 'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion', 'document.list_templates', 'document.prepare_create_part', 'sketch.get', 'sketch.prepare_dimension_change', 'part.prepare_corner_cut', 'part.prepare_base_revolve', 'part.prepare_through_hole', 'part.prepare_hole_dimension_change', 'part.prepare_linear_hole_pattern', 'part.prepare_edge_fillet', 'sheet.prepare_l_profile', 'sheet.prepare_flat_state', 'sheet.prepare_parameters', 'sheet.prepare_edge_flange', 'sheet.prepare_flange_flat_state')
+MUTATING_OPERATIONS = ('measurement.mass', 'feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters', 'sheet.create_edge_flange', 'sheet.set_flange_flat_state')
+READ_OPERATIONS = ('measurement.prepare_mass', 'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies', 'feature.deletion_structure', 'feature.deletion_context', 'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion', 'document.list_templates', 'document.prepare_create_part', 'sketch.get', 'sketch.prepare_dimension_change', 'part.prepare_corner_cut', 'part.prepare_base_revolve', 'part.prepare_through_hole', 'part.prepare_hole_dimension_change', 'part.prepare_linear_hole_pattern', 'part.prepare_edge_fillet', 'sheet.prepare_l_profile', 'sheet.prepare_flat_state', 'sheet.prepare_parameters', 'sheet.prepare_edge_flange', 'sheet.prepare_flange_flat_state')
 
 def _worker_factory():
     try:
@@ -56,6 +57,7 @@ class Runtime:
         self._runner = None
         self._catalog = None
         self._geometry = None
+        self._measurements = None
         self._features = None
         self._dimensions = None
         self._parts = None
@@ -88,7 +90,7 @@ class Runtime:
             try:
                 self._catalog = self._catalog_factory()  # Always called on the STA.
             except Exception as exc:
-                if operation in ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet','sheet.create_l_profile','sheet.set_flat_state','sheet.set_parameters','sheet.create_edge_flange','sheet.set_flange_flat_state'):
+                if operation in ('measurement.mass', 'feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet','sheet.create_l_profile','sheet.set_flat_state','sheet.set_parameters','sheet.create_edge_flange','sheet.set_flange_flat_state'):
                     raise rejected(getattr(exc, 'code', 'cad_connection_failed'), str(exc)) from exc
                 raise
             self._connection_epoch = 'connection_' + uuid.uuid4().hex
@@ -105,6 +107,12 @@ class Runtime:
                 if operation == 'document.prepare_create_part':
                     return self._document_creation.prepare_create_part(**arguments)
                 return self._document_creation.create_part(operation_id, **arguments)
+            if operation in ('measurement.prepare_mass','measurement.mass'):
+                if self._measurements is None:
+                    self._measurements = MassMeasurementCatalog(self._catalog,self.store,self._connection_epoch)
+                if operation == 'measurement.prepare_mass':
+                    return self._measurements.prepare(**arguments)
+                return self._measurements.measure(operation_id,**arguments)
             if operation in ('geometry.list', 'geometry.get') and self._geometry is None:
                 self._geometry = GeometryCatalog(self._catalog)
             if operation == 'geometry.list':
@@ -269,6 +277,7 @@ class Runtime:
     def _release_catalog(self):
         catalog, self._catalog = self._catalog, None
         self._geometry = None
+        self._measurements = None
         self._holes = None
         self._hole_edits = None
         self._patterns = None

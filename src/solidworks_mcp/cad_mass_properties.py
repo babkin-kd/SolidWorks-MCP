@@ -8,6 +8,8 @@ acceptance is required before wiring this candidate into the public runtime.
 
 import pythoncom
 import win32com.client
+from contextlib import contextmanager
+import math
 
 from . import binding
 from .documents import rejected
@@ -15,6 +17,49 @@ from .jobs import ExecutionFailure
 
 
 class CadMassPropertiesMixin:
+    def mass_selection_capture(self, model):
+        """Read-only durable PID roster plus strong apartment-local identities."""
+        selection = binding.wrap(model.SelectionManager, self._module.ISelectionMgr)
+        original = self._mass_selection_snapshot(selection)
+        rows = []
+        for index, (identity, mark) in enumerate(original, 1):
+            obj = selection.GetSelectedObject6(index, -1)
+            pid = self.persistent_id(model, obj)
+            if not pid:
+                raise rejected('mass_selection_not_referenceable', 'Selected UI objects need durable native references.')
+            raw, status = self._extension(model).GetObjectByPersistReference3(self._persistent_variant(pid))
+            if status != 0 or raw is None or self.identity(raw) != identity:
+                raise rejected('mass_selection_not_referenceable', 'Selected object reference did not round-trip.')
+            rows.append({'persistent_id': pid.hex(), 'mark': mark})
+        if self._mass_selection_snapshot(selection) != original:
+            raise rejected('mass_selection_changed', 'Selection changed during preparation.')
+        return rows, original
+
+    def mass_body_signature(self, body):
+        values = tuple(body.GetMassProperties(1.) or ())
+        if (len(values) != 12 or any(type(x) not in (int, float) or not math.isfinite(x) for x in values)
+                or values[3] <= 0 or values[4] <= 0):
+            raise rejected('mass_body_signature_unavailable', 'Complete solid geometric moments are required.')
+        return list(values)
+
+    def mass_read_guard(self, model):
+        # The calculator itself owns exactly one Suspend/Resume pair. Never
+        # nest the ordinary model guard's private selection list around it.
+        from .application_guard import ApplicationModelMutationGuard
+        @contextmanager
+        def selection_scope(current, state):
+            original = self._mass_selection_snapshot(binding.wrap(current.SelectionManager, self._module.ISelectionMgr))
+            state.selection_uncertain = True
+            try:
+                yield
+            finally:
+                if (getattr(self, '_mass_selection_reconciliation_required', False)
+                        or self._mass_selection_snapshot(binding.wrap(current.SelectionManager, self._module.ISelectionMgr)) != original):
+                    raise ExecutionFailure('mass_selection_restore_unconfirmed',
+                        'Mass selection scope remains uncertain; no blind resume or retry.', uncertain=True)
+                state.selection_uncertain = False
+        return ApplicationModelMutationGuard(self._sw, [model], selection_scope)
+
     def mass_properties(self, model, bodies):
         if not bodies:
             raise rejected('no_solid_bodies', 'An explicit nonempty solid-body scope is required.')

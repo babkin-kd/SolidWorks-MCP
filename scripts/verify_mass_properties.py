@@ -95,6 +95,8 @@ def check_analytical(result, count, x):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-solidworks', action='store_true')
+    parser.add_argument('--guarded-public-domain', action='store_true',
+                        help='Accept the durable public measurement domain rather than the historical passive backend.')
     parser.add_argument('--wheel', type=Path, required=True)
     parser.add_argument('--expected-version', required=True)
     parser.add_argument('--expected-git-sha', required=True)
@@ -120,6 +122,8 @@ def main():
               'public_v2_mass_accepted': False, 'material_assignment_verified': False,
               'remaining_native_cases': ['document_mass_overrides', 'document_center_of_mass_override', 'suppressed_or_deleted_body',
                                          'configuration_with_different_geometry']}
+    if args.guarded_public_domain:
+        report['scope']='internal_guarded_part_mass_native_v1'
     path = state / 'report.json'
     def persist(): path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf8')
     sw = None
@@ -151,6 +155,19 @@ def main():
             adapter = SolidWorksDocuments()
             documents = DocumentCatalog(adapter)
             geometry = GeometryCatalog(documents)
+            if args.guarded_public_domain:
+                from concurrent.futures import Future
+                from solidworks_mcp.jobs import JobStore,JobRunner
+                from solidworks_mcp.mass_measurement import MassMeasurementCatalog
+                class InlineSta:
+                    def submit(self,function):
+                        future=Future()
+                        try:future.set_result(function())
+                        except BaseException as exc:future.set_exception(exc)
+                        return future
+                store=JobStore(state/'jobs.sqlite')
+                mass=MassMeasurementCatalog(documents,store,uuid.uuid4().hex)
+                runner=JobRunner(store,InlineSta())
             module = binding.module()
             first, other = owned
             def context(model):
@@ -164,12 +181,39 @@ def main():
             surface = geometry.list(**ctx, body_type='surface')['items']
             assert len(surface) == 1
             def case(label, *, parameters=None, body_id=None, error=None, count=2, x=30.):
+                nonlocal owns_guard
                 baseline = source_state(sw, module)
                 before_preferences = application_preferences(sw)
                 arguments = dict(context(first) if parameters is None else parameters)
                 if body_id is not None: arguments['body_id'] = body_id
                 try:
-                    result = geometry.measure_mass(**arguments)
+                    if args.guarded_public_domain:
+                        prepared=mass.prepare(**arguments)
+                        arguments['expected_revision']=prepared['revision']
+                        report['pending_case_guard_release']=label;persist()
+                        assert owns_guard and sw.CommandInProgress
+                        sw.CommandInProgress=False
+                        assert sw.CommandInProgress is False
+                        owns_guard=False
+                        job=runner.submit(uuid.uuid4().hex,'measurement.mass',arguments,
+                            lambda operation_id:mass.measure(operation_id,**arguments),context=arguments,
+                            mutates=True,pass_operation_id=True,verify=lambda value:value['verified'] is True)
+                        report['last_guarded_job']={'operation_id':job['operation_id'],'status':job['status'],
+                            'error':job['error'],'mutation_phase':job['mutation']['phase'] if job['mutation'] else None}
+                        persist()
+                        assert job['status'] in ('succeeded','failed'), 'Uncertain native job: retain fixtures; never retry.'
+                        assert not store.mutation_blockers('fresh_epoch','fresh_document')
+                        assert sw.CommandInProgress is False and first.GetBlockingState()==0
+                        sw.CommandInProgress=True
+                        assert sw.CommandInProgress is True
+                        owns_guard=True
+                        report['pending_case_guard_release']=None;persist()
+                        if job['status']=='failed':
+                            assert job['mutation']['phase'] in ('rolled_back','not_started')
+                            raise ExecutionFailure(job['error']['code'],job['error']['message'],uncertain=False)
+                        result=job['result']
+                        assert result['execution_guard']['selection_preserved'] and result['execution_guard']['released']
+                    else:result = geometry.measure_mass(**arguments)
                 except ExecutionFailure as exc:
                     expected = (error,) if isinstance(error, str) else tuple(error or ())
                     assert exc.code in expected and exc.uncertain is False, (label, exc.code)
@@ -293,6 +337,10 @@ def main():
             case('deleted_body_reference', body_id=solids[1]['object_id'], error=unavailable)
             case('geometry_after_delete', count=1, x=10.)
             assert len(report['cases']) == 22
+            if args.guarded_public_domain:
+                report['guarded_jobs_terminal']=all(job['status'] in ('succeeded','failed') for job in store.list(limit=100)['items'])
+                assert report['guarded_jobs_terminal'] and not store.mutation_blockers('final_epoch','final_document')
+                store.close()
             report['remaining_native_cases'] = []
             assert_non_stl_preferences(lambda: application_preferences(sw), preferences, report, 'fixture_non_stl_preferences')
             assert bool(sw.GetUserPreferenceToggle(SW_TOGGLE_3D_INTERCONNECT)) == interconnect
