@@ -109,6 +109,8 @@ close/open/следующего Save3. (3) Destination conflict и race не п�
 Подробный протокол no-replace/staging/replacement остаётся отдельным
 [проектом lifecycle](NATIVE_DOCUMENT_LIFECYCLE_DESIGN.md): до native-доказательства
 его нельзя объявлять реализованным атомарным SaveAs.
+Конечное распределение этих шести условий между внутренними проверками и
+публичной цепочкой: [набор приёмки L3](NATIVE_FIRST_SAVE_ACCEPTANCE.md).
 
 ## S1-B1 — явная плоскость, эскиз и базовое выдавливание
 
