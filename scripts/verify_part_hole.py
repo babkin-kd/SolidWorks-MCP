@@ -72,6 +72,13 @@ class Adapter(SolidWorksDocuments):
             raise RuntimeError("Known verifier failure after exact native template update and rebuild.")
         return result
 
+    inject_u_state=False
+    def sheet_preserve_flange_flat_names(self,*args):
+        super().sheet_preserve_flange_flat_names(*args)
+        if self.inject_u_state:
+            self.inject_u_state=False
+            raise RuntimeError('Known verifier failure after complete native U-state/name preservation.')
+
     inject_sheet_state=False
     def sheet_preserve_flat_names(self,*args):
         super().sheet_preserve_flat_names(*args)
@@ -120,6 +127,7 @@ def main():
     parser.add_argument('--hole-edit-only', action='store_true', help='Complete editing block; older guard/cut fault cases are not run or counted.')
     parser.add_argument('--pattern-only',action='store_true',help='Complete native linear hole pattern block; hole-edit cases are not counted.')
     parser.add_argument('--fillet-only',action='store_true',help='Complete native selected-edge fillet block; hole/pattern cases are not counted.')
+    parser.add_argument('--sheet-flange-flat-only',action='store_true')
     parser.add_argument('--sheet-flange-only',action='store_true',help='Explicit edge flange on an existing folded L-sheet.')
     parser.add_argument('--sheet-parameters-only',action='store_true',help='Existing L-sheet parameter editing block.')
     parser.add_argument('--sheet-flat-only',action='store_true',help='Existing native L-sheet flat/fold state block.')
@@ -129,7 +137,7 @@ def main():
     parser.add_argument('--expected-git-sha', required=True)
     parser.add_argument('--state-dir', type=Path, required=True)
     args = parser.parse_args()
-    if sum((args.pattern_only,args.hole_edit_only,args.fillet_only,args.sheet_only,args.sheet_flat_only,args.sheet_parameters_only,args.sheet_flange_only))>1:parser.error('Choose one engineering block.')
+    if sum((args.pattern_only,args.hole_edit_only,args.fillet_only,args.sheet_only,args.sheet_flat_only,args.sheet_parameters_only,args.sheet_flange_only,args.sheet_flange_flat_only))>1:parser.error('Choose one engineering block.')
     if not args.run_solidworks: parser.error('Explicit native opt-in required.')
     assert not os.environ.get('PYTHONPATH'), 'Installed package only, without source PYTHONPATH.'
     package = Path(solidworks_mcp.__file__).resolve().parent
@@ -227,6 +235,17 @@ def main():
         # Production mutation guard must acquire/release its own flag after
         # the durable checkpoint. No harness-wide flag hides this lifecycle.
         report['harness_command_flag_borrowed'] = False
+        if args.sheet_flange_flat_only:
+            from verifier_sheet_flange_flat import exercise_sheet_flange_flat
+            report['scope']='internal_u_sheet_flat_state_native_v1'
+            report['u_state_helper_sha256']=hashlib.sha256(Path(__file__).with_name('verifier_sheet_flange_flat.py').read_bytes()).hexdigest()
+            report['u_state_edge_helper_sha256']=hashlib.sha256(Path(__file__).with_name('verifier_sheet_edge_flange_edges.py').read_bytes()).hexdigest()
+            exercise_sheet_flange_flat(adapter,documents,dimensions,store,runner,gate,second_model,
+                dict(document_id=second_id,configuration='Основная'),record,report)
+            snap,facts=source_state(sw,module)
+            assert [(row,fact) for row,fact in zip(snap[3],facts) if row[0]==first_identity]==original
+            report['core_suite_passed']=True
+            return
         if args.sheet_flange_only:
             from verifier_sheet_edge_flange import exercise_sheet_edge_flange
             report['scope']='internal_l_sheet_edge_flange_native_v1'

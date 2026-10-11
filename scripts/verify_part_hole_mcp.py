@@ -34,9 +34,10 @@ from verifier_sheet_profile_mcp import TOOL_SPECS as SHEET_SPECS
 from verifier_sheet_flat_state_mcp import TOOL_SPECS as SHEET_STATE_SPECS
 from verifier_sheet_parameters_mcp import TOOL_SPECS as SHEET_PARAMETER_SPECS
 from verifier_sheet_edge_flange_mcp import TOOL_SPECS as SHEET_FLANGE_SPECS
+from verifier_sheet_flange_flat_mcp import TOOL_SPECS as SHEET_U_STATE_SPECS
 
 
-TOOL_SPECS = {**PART_SPECS, **PATTERN_SPECS, **FILLET_SPECS,**SHEET_SPECS,**SHEET_STATE_SPECS,**SHEET_PARAMETER_SPECS,**SHEET_FLANGE_SPECS,
+TOOL_SPECS = {**PART_SPECS, **PATTERN_SPECS, **FILLET_SPECS,**SHEET_SPECS,**SHEET_STATE_SPECS,**SHEET_PARAMETER_SPECS,**SHEET_FLANGE_SPECS,**SHEET_U_STATE_SPECS,
     'dimension_list': ToolSpec('dimension.list',False,argument_defaults={'limit':100,'cursor':''}),
     'part_prepare_hole_dimension_change': ToolSpec('part.prepare_hole_dimension_change',False,float_arguments=frozenset({'value_mm'})),
     'part_set_hole_dimension': ToolSpec('part.set_hole_dimension',True,float_arguments=frozenset({'value_mm'}),prewrite_failure_codes=frozenset({'stale_revision'})),
@@ -58,7 +59,7 @@ TOOL_SPECS = {**PART_SPECS, **PATTERN_SPECS, **FILLET_SPECS,**SHEET_SPECS,**SHEE
         constant_args={'configuration': ''}, prewrite_failure_codes=frozenset({'stale_revision'}))}
 
 
-async def exercise(state, sw, module, owned, report, persist, gate, pattern_only=False,fillet_only=False,sheet_only=False,sheet_flat_only=False,sheet_parameters_only=False,sheet_flange_only=False):
+async def exercise(state, sw, module, owned, report, persist, gate, pattern_only=False,fillet_only=False,sheet_only=False,sheet_flat_only=False,sheet_parameters_only=False,sheet_flange_only=False,sheet_flange_flat_only=False):
     params = StdioServerParameters(command=str(Path(sys.executable).with_name('solidworks-mcp-v2.exe')),
                                    args=['--state-dir', str(state / 'mcp')])
     @asynccontextmanager
@@ -150,6 +151,13 @@ async def exercise(state, sw, module, owned, report, persist, gate, pattern_only
             assert before == after, 'Existing metadata/selection/geometry/view changed.'
         check_first()
         context = dict(document_id=second_id, configuration='Основная')
+        if sheet_flange_flat_only:
+            from verifier_sheet_flange_flat_mcp import exercise_sheet_flange_flat
+            await exercise_sheet_flange_flat(client,context,second,module,record,report)
+            check_first()
+            await require_native_cleanup(client,gate)
+            report['core_suite_passed']=True
+            return
         if sheet_flange_only:
             from verifier_sheet_edge_flange_mcp import exercise_sheet_edge_flange
             await exercise_sheet_edge_flange(client,context,second,module,record,report)
@@ -261,6 +269,7 @@ def main():
     parser.add_argument('--run-solidworks', action='store_true')
     parser.add_argument('--pattern-only',action='store_true')
     parser.add_argument('--fillet-only',action='store_true')
+    parser.add_argument('--sheet-flange-flat-only',action='store_true')
     parser.add_argument('--sheet-flange-only',action='store_true')
     parser.add_argument('--sheet-parameters-only',action='store_true',help='Existing L-sheet parameter editing block.')
     parser.add_argument('--sheet-flat-only',action='store_true',help='Existing native L-sheet flat/fold state block.')
@@ -271,7 +280,7 @@ def main():
     parser.add_argument('--state-dir', type=Path, required=True)
     parser.add_argument('--internal-report', type=Path, required=True)
     args = parser.parse_args()
-    if sum((args.pattern_only,args.fillet_only,args.sheet_only,args.sheet_flat_only,args.sheet_parameters_only,args.sheet_flange_only))>1:parser.error('Choose one engineering block.')
+    if sum((args.pattern_only,args.fillet_only,args.sheet_only,args.sheet_flat_only,args.sheet_parameters_only,args.sheet_flange_only,args.sheet_flange_flat_only))>1:parser.error('Choose one engineering block.')
     if not args.run_solidworks: parser.error('Explicit native opt-in required.')
     assert not os.environ.get('PYTHONPATH')
     package = Path(solidworks_mcp.__file__).resolve().parent
@@ -284,7 +293,15 @@ def main():
     assert all(internal['wheel'][key] == wheel[key] for key in ('git_sha','source_digest','package_version','wheel_sha256'))
     assert internal['fixtures_closed'] is True and internal['command_flag_baseline_restored'] is True
     assert internal['verifier_sha256'] == hashlib.sha256(Path(__file__).with_name('verify_part_hole.py').read_bytes()).hexdigest()
-    if args.sheet_flange_only:
+    if args.sheet_flange_flat_only:
+        assert internal['scope']=='internal_u_sheet_flat_state_native_v1' and internal['u_state_suite_passed'] is True
+        assert internal['u_state_helper_sha256']==hashlib.sha256(Path(__file__).with_name('verifier_sheet_flange_flat.py').read_bytes()).hexdigest()
+        assert internal['u_state_edge_helper_sha256']==hashlib.sha256(Path(__file__).with_name('verifier_sheet_edge_flange_edges.py').read_bytes()).hexdigest()
+        assert {'new_part_from_empty_session','new_part_preserves_existing_document','native_u_state_l_source_created',
+            'native_u_state_flange_source_created','u_state_stale_prewrite_rejected','u_unfold_known_failure_scoped_restoration',
+            'native_u_sheet_flat_state','u_refold_known_failure_scoped_restoration','native_u_sheet_folded_state_restored'}<={row['label'] for row in internal['cases'] if row['passed'] is True}
+    elif args.sheet_flange_only:
+
         assert internal['scope']=='internal_l_sheet_edge_flange_native_v1' and internal['sheet_flange_suite_passed'] is True
         assert internal['sheet_flange_helper_sha256']==hashlib.sha256(Path(__file__).with_name('verifier_sheet_edge_flange.py').read_bytes()).hexdigest()
         assert {'new_part_from_empty_session','new_part_preserves_existing_document','native_flange_source_created',
@@ -349,10 +366,11 @@ def main():
         baseline = native_snapshot()
         report['preferences'] = application_preferences(sw)
         if args.sheet_only:report['scope']='public_folded_sheet_l_profile_native_v1'
-        if args.sheet_flange_only:report['scope']='public_l_sheet_edge_flange_native_v1'
+        if args.sheet_flange_flat_only:report['scope']='public_u_sheet_flat_state_native_v1'
+        elif args.sheet_flange_only:report['scope']='public_l_sheet_edge_flange_native_v1'
         if args.sheet_parameters_only:report['scope']='public_l_sheet_parameters_native_v1'
         if args.sheet_flat_only:report['scope']='public_l_sheet_flat_state_native_v1'
-        asyncio.run(exercise(state, sw, module, owned, report, persist, gate,args.pattern_only,args.fillet_only,args.sheet_only,args.sheet_flat_only,args.sheet_parameters_only,args.sheet_flange_only))
+        asyncio.run(exercise(state, sw, module, owned, report, persist, gate,args.pattern_only,args.fillet_only,args.sheet_only,args.sheet_flat_only,args.sheet_parameters_only,args.sheet_flange_only,args.sheet_flange_flat_only))
     except BaseException as exc:
         report['failure'] = {'type': type(exc).__name__, 'message': str(exc)}
         raise

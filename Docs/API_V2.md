@@ -1,5 +1,13 @@
 # API v2: текущий кандидат первой стадии
 
+В исходниках подготовлен кандидат **dev68**: `sheet_prepare_flange_flat_state` /
+`sheet_set_flange_flat_state`, scope `single_u_sheet_flat_state_v1`, каталог48
+инструментов /17 мутаций. Домен/native bridge/MCP-фасад готовятся одним блоком;
+125 связанных искусственных/контрактных тестов passed. Приёмка установленного
+wheel, физической развёртки U и публичной цепочки ещё нужна.
+Контракт: [SHEET_FLANGE_FLAT_STATE](SHEET_FLANGE_FLAT_STATE.md).
+Принятая приёмка dev67 ниже сохраняется только для своего точного wheel.
+
 Принят ограниченный инженерный блок **dev67**: `sheet_prepare_edge_flange` /
 `sheet_create_edge_flange`, каталог46 инструментов /16 мутаций. Scope
 `single_l_sheet_edge_flange_v1`: одна отбортовка90° внутрь на явном продольном
