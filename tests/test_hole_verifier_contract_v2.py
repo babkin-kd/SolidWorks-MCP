@@ -121,6 +121,10 @@ def test_public_hole_harness_tracks_all_literal_calls_before_sdk_dispatch():
         and any(isinstance(target,ast.Name) and target.id=='TOOL_SPECS' for target in node.targets))
     exec(compile(ast.Module(body=[parameter_assignment],type_ignores=[]),'sheet_parameter_specs','exec'),namespace)
     namespace['SHEET_PARAMETER_SPECS']=namespace['TOOL_SPECS']
+    flange=ast.parse((ROOT/'scripts/verifier_sheet_edge_flange_mcp.py').read_text(encoding='utf8'))
+    flange_assignments=[n for n in flange.body if isinstance(n,ast.Assign)]
+    exec(compile(ast.Module(body=flange_assignments,type_ignores=[]),'sheet_flange_specs','exec'),namespace)
+    namespace['SHEET_FLANGE_SPECS']=namespace['TOOL_SPECS']
     exec(compile(ast.Module(body=[assignment],type_ignores=[]),str(script),'exec'),namespace)
     specs=namespace['TOOL_SPECS']
     called={node.args[1].value for node in ast.walk(tree) if isinstance(node,ast.Call)
@@ -143,6 +147,12 @@ def test_public_hole_harness_tracks_all_literal_calls_before_sdk_dispatch():
     parameter_called={node.args[1].value for node in ast.walk(parameters) if isinstance(node,ast.Call)
         and isinstance(node.func,ast.Name) and node.func.id=='call' and len(node.args)>=2 and isinstance(node.args[1],ast.Constant)}
     assert parameter_called<=specs.keys()
+    flange_called={node.args[1].value for node in ast.walk(flange) if isinstance(node,ast.Call)
+        and isinstance(node.func,ast.Name) and node.func.id=='call' and len(node.args)>=2 and isinstance(node.args[1],ast.Constant)}
+    assert flange_called<=specs.keys()
+    assert specs['sheet_create_edge_flange'].operation=='sheet.create_edge_flange'
+    assert specs['sheet_create_edge_flange'].mutates is True
+    assert specs['sheet_prepare_edge_flange'].mutates is False
     assert specs['sheet_prepare_parameters'].mutates is False
     assert specs['sheet_set_parameters'].mutates is True
     assert specs['sheet_set_parameters'].prewrite_failure_codes==frozenset({'stale_revision'})

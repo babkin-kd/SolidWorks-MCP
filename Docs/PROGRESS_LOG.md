@@ -1,5 +1,15 @@
 # Ход разработки
 
+## 11.10.2026 — цельный домен и MCP-фасад отбортовки перед dev64
+
+Подключены подготовка/создание, явный fixed-leg scope, полный semantic/native
+transition и scoped restoration input/completed. Pure option contract вынесен
+из COM-модуля, state base-id передаётся явно, без mutable per-call context.
+Связанные проверки домена/схем/journal и native bridge проходят; итоговый полный
+pure и installed/native приёмка следующими. Готовится каталог46/16, принятым
+остаётся dev63. Импорт/экспорт отложены, все стадии открыты. Один агент, без push/CI.
+
+
 ## 11.10.2026 — anonymous-plane geometric policy
 
 Source23 прошла новую source-edge фазу и остановилась на anonymous plane/transform

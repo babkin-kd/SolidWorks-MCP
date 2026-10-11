@@ -235,6 +235,52 @@ def test_completed_restoration_never_deletes_unconfirmed_or_already_restored_sta
 
 
 @pytest.fixture
+def input_restore(bridge,flange,monkeypatch):
+    from contextlib import nullcontext
+    from solidworks_mcp import cad_sheet_edge_flange as native
+    from test_sheet_profile_definition_v2 import folded_body,read
+    a,_,_=bridge;events=[];model=NS();profile=NS(Select2=lambda *args:True)
+    cut=NS(Name='Список вырезов');body=NS(Name='Тело')
+    target=NS(base=object(),members=[NS(role='cut_list',feature=cut)])
+    receipt=NativeEdgeFlangeReceipt(target,{},object(),1,b'edge',(),{},sketch=profile,
+        sketch_identity=id(profile),profile_before={'complete':'own input'},profile_before_members=(('point',[1]),))
+    a._module.ISelectionMgr=object
+    monkeypatch.setattr(native,'preserved_selection',lambda *args,**kw:nullcontext())
+    model.ClearSelection2=lambda *args:events.append('clear')
+    model.ForceRebuild3=lambda *args:events.append('rebuild') or True
+    model.SelectionManager=NS(GetSelectedObject6=lambda *args:profile,GetSelectedObjectCount2=lambda *args:1)
+    a.sheet_flange_sketch_snapshot=lambda *args:(dict(receipt.profile_before),(('point',[1]),))
+    a._sheet_flange_profile_edge_current=lambda *args:events.append('proof')
+    a._extension=lambda m:NS(DeleteSelection2=lambda flags:events.append(('delete',flags)) or True)
+    a.sheet_state_target=lambda *args:(target,body)
+    a._sheet_flange_coalesce_features=lambda *args:[];a.features=lambda m:[]
+    a.dimension_geometry_snapshot=lambda m:{'bodies':[read(folded_body())]}
+    a._sheet_flange_source_parameters=lambda *args:{}
+    a.part_creation_controls=lambda m:{}
+    return a,model,receipt,events
+
+
+def test_input_restoration_selects_only_retained_sketch_and_uses_no_dependant_delete(input_restore,flange):
+    a,model,receipt,events=input_restore
+    a.restore_sheet_edge_flange(model,receipt,flange,IDENTITY,'Тело','Список вырезов')
+    assert events==['proof','clear',('delete',0),'rebuild'] and receipt.restored is True
+
+
+@pytest.mark.parametrize('fault',['pending_creation','pending_deletion','selection_uncertain','restored','missing_profile','changed_profile','foreign_selection','extra_selection','foreign_final_shape'])
+def test_partial_unknown_or_foreign_input_never_gains_restoration_authority(input_restore,flange,fault):
+    a,model,receipt,events=input_restore
+    if fault in ('pending_creation','pending_deletion','selection_uncertain','restored'):setattr(receipt,fault,True)
+    elif fault=='missing_profile':receipt.profile_before=None
+    elif fault=='changed_profile':a.sheet_flange_sketch_snapshot=lambda *args:({},())
+    elif fault=='foreign_selection':model.SelectionManager.GetSelectedObject6=lambda *args:object()
+    elif fault=='extra_selection':model.SelectionManager.GetSelectedObjectCount2=lambda *args:2
+    else:a.dimension_geometry_snapshot=lambda m:{'bodies':[]}
+    with pytest.raises(ExecutionFailure):a.restore_sheet_edge_flange(model,receipt,flange,IDENTITY,'Тело','Список вырезов')
+    assert receipt.restored is (fault=='restored')
+    if fault!='foreign_final_shape':assert not any(isinstance(e,tuple) and e[0]=='delete' for e in events)
+
+
+@pytest.fixture
 def children_bridge(bridge):
     a,_,flange=bridge;model=object()
     sketch=NS(GetConstrainedStatus=lambda:3)

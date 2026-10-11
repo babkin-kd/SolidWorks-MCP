@@ -58,10 +58,11 @@ def test_invalid_requests_are_rejected_before_native_capture(prepared,name,value
     assert calls==[]
 
 
-@pytest.mark.parametrize('defect',['flat','no_straight_flange','no_body_reference','foreign_body','wrong_side','partial_edge','name_conflict'])
+@pytest.mark.parametrize('defect',['flat','vertical_fixed_leg','no_straight_flange','no_body_reference','foreign_body','wrong_side','partial_edge','name_conflict'])
 def test_geometric_or_ownership_failure_never_returns_a_prepared_revision(prepared,defect):
     catalog,args,state,_,calls,reference,adapter=prepared
     if defect=='flat':state['evidence']['flattened']=True
+    elif defect=='vertical_fixed_leg':state['evidence']['fixed_leg']='y'
     elif defect=='no_straight_flange':args['flange_length_mm']=4.
     elif defect=='no_body_reference':reference.body_id=None
     elif defect=='foreign_body':adapter.owner_body=lambda e,k:object()

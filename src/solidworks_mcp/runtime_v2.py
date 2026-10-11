@@ -18,6 +18,7 @@ from .part_revolve import PartRevolveCatalog
 from .sheet_profile import SheetProfileCatalog
 from .sheet_flat_state import SheetFlatStateCatalog
 from .sheet_parameters import SheetParameterCatalog
+from .sheet_edge_flange import SheetEdgeFlangeCatalog
 from .document_creation import DocumentCreationCatalog
 from .sketches import SketchCatalog
 from .exports_v2 import ExportCatalog
@@ -62,6 +63,7 @@ class Runtime:
         self._sheet_profiles = None
         self._sheet_states = None
         self._sheet_parameters = None
+        self._sheet_edge_flanges = None
         self._document_creation = None
         self._sketches = None
         self._exports = None
@@ -80,7 +82,7 @@ class Runtime:
             try:
                 self._catalog = self._catalog_factory()  # Always called on the STA.
             except Exception as exc:
-                if operation in ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet','sheet.create_l_profile','sheet.set_flat_state','sheet.set_parameters'):
+                if operation in ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet','sheet.create_l_profile','sheet.set_flat_state','sheet.set_parameters','sheet.create_edge_flange'):
                     raise rejected(getattr(exc, 'code', 'cad_connection_failed'), str(exc)) from exc
                 raise
             self._connection_epoch = 'connection_' + uuid.uuid4().hex
@@ -135,6 +137,10 @@ class Runtime:
                 return self._sketches.prepare_dimension_change(**arguments)
             if operation == 'sketch.set_dimension':
                 return self._sketches.set_dimension(operation_id, **arguments)
+            if operation in ('sheet.prepare_edge_flange','sheet.create_edge_flange'):
+                if self._sheet_edge_flanges is None:self._sheet_edge_flanges=SheetEdgeFlangeCatalog(self._dimensions)
+                if operation=='sheet.prepare_edge_flange':return self._sheet_edge_flanges.prepare_edge_flange(**arguments)
+                return self._sheet_edge_flanges.create_edge_flange(operation_id,**arguments)
             if operation in ('sheet.prepare_parameters','sheet.set_parameters'):
                 if self._sheet_parameters is None:self._sheet_parameters=SheetParameterCatalog(self._dimensions)
                 if operation=='sheet.prepare_parameters':return self._sheet_parameters.prepare_parameters(**arguments)
@@ -226,11 +232,11 @@ class Runtime:
         # Validate before recording/dispatch. A bad timeout must not start CAD.
         if isinstance(timeout_s, bool) or not isinstance(timeout_s, (int, float)) or not 0 <= timeout_s <= 120:
             raise JobError('invalid_timeout', 'timeout_s must be finite and between 0 and 120.')
-        allowed = ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet','sheet.create_l_profile','sheet.set_flat_state','sheet.set_parameters') if mutates else (
+        allowed = ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet','sheet.create_l_profile','sheet.set_flat_state','sheet.set_parameters','sheet.create_edge_flange') if mutates else (
             'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies',
             'feature.deletion_structure', 'feature.deletion_context',
             'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion',
-            'document.list_templates', 'document.prepare_create_part', 'sketch.get', 'sketch.prepare_dimension_change', 'part.prepare_corner_cut', 'part.prepare_base_revolve', 'part.prepare_through_hole', 'part.prepare_hole_dimension_change', 'part.prepare_linear_hole_pattern', 'part.prepare_edge_fillet','sheet.prepare_l_profile','sheet.prepare_flat_state','sheet.prepare_parameters')
+            'document.list_templates', 'document.prepare_create_part', 'sketch.get', 'sketch.prepare_dimension_change', 'part.prepare_corner_cut', 'part.prepare_base_revolve', 'part.prepare_through_hole', 'part.prepare_hole_dimension_change', 'part.prepare_linear_hole_pattern', 'part.prepare_edge_fillet','sheet.prepare_l_profile','sheet.prepare_flat_state','sheet.prepare_parameters','sheet.prepare_edge_flange')
         if operation not in allowed:
             raise JobError('unsupported_operation', 'No domain implementation for this operation.')
         if operation.startswith('export.') and self._approved_output_root is None:
@@ -269,6 +275,7 @@ class Runtime:
         self._sheet_profiles = None
         self._sheet_states = None
         self._sheet_parameters = None
+        self._sheet_edge_flanges = None
         self._document_creation = None
         self._sketches = None
         self._exports = None

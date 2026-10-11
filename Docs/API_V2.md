@@ -1,5 +1,12 @@
 # API v2: текущий кандидат первой стадии
 
+В исходниках подключён новый кандидат **dev64**, каталог46 инструментов /16
+мутаций: `sheet_prepare_edge_flange` и `sheet_create_edge_flange`. Ограниченный
+scope `single_l_sheet_edge_flange_v1` — одна штатная отбортовка явного внутреннего
+ребра согнутого L-профиля. Полный доменный/native контракт и восстановление:
+[SHEET_EDGE_FLANGE.md](SHEET_EDGE_FLANGE.md). Native-приёмка dev64 ещё не выполнена;
+принятым остаётся dev63, результаты предыдущего wheel на новый не переносятся.
+
 Текущий принятый инженерный блок — **dev63**, `sheet_prepare_parameters` и
 `sheet_set_parameters`, scope `single_l_sheet_parameters_v1`: редактирование t/r/K
 одного существующего native L-профиля. На одном точном установленном wheel:

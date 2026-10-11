@@ -18,6 +18,7 @@ from .documents import rejected
 from .jobs import ExecutionFailure
 from .cad_sheet_profile import NativeSheetMember
 from .cad_selection_scope import preserved_selection
+from .sheet_edge_flange_parameters import flange_options,native_flange_parameters_match
 from .sheet_edge_flange_definition import l_flange_edge_points,sheet_u_body_matches
 from .sheet_profile_definition import sheet_l_body_matches,sheet_l_native_parameters_match
 from .edge_flange_sketch import EdgeFlangeSketchReader,edge_flange_sketch_matches,edge_flange_profile_preserved
@@ -49,31 +50,6 @@ def _flange_profile_corners(p0,p1,length_m,height_m):
     # A native converted line can enumerate its endpoints in either order.
     # Direction never changes the positive height above the converted edge.
     return p0,p1,(p1[0],p1[1]+height_m,0.),(p0[0],p0[1]+height_m,0.)
-
-
-def flange_options(definition):
-    return dict(UseDefaultBendRadius=False,BendRadius=definition.bend_radius_mm/1000.,
-        GapDistance=.001,BendAngle=math.pi/2.,LockAngle=True,OffsetType=1,
-        OffsetDistance=definition.flange_length_mm/1000.,OffsetDimType=1,
-        PositionType=1,UsePositionOffset=False,ReverseOffset=False,
-        UseDefaultBendAllowance=False,UseDefaultBendRelief=True)
-
-
-def native_flange_parameters_match(parameters,definition):
-    """Strict complete readback, never inferred from CreateFeature/rebuild."""
-    try:
-        expected=flange_options(definition)
-        if set(parameters)!= {*expected,'allowance_type','k_factor','edge_count'}:return False
-        for name,value in expected.items():
-            actual=parameters[name]
-            if type(value) in (bool,int):
-                if type(actual) is not type(value) or actual!=value:return False
-            elif type(actual) not in (float,int) or not math.isfinite(actual) or not math.isclose(actual,value,rel_tol=0.,abs_tol=1e-12):return False
-        return (type(parameters['allowance_type']) is int and parameters['allowance_type']==2
-            and type(parameters['edge_count']) is int and parameters['edge_count']==1
-            and type(parameters['k_factor']) in (float,int) and math.isfinite(parameters['k_factor'])
-            and math.isclose(parameters['k_factor'],definition.k_factor,rel_tol=0.,abs_tol=1e-12))
-    except (KeyError,TypeError,ValueError):return False
 
 
 @dataclass
@@ -459,6 +435,7 @@ class CadSheetEdgeFlangeMixin:
             raise rejected('sheet_flange_effect_unconfirmed','Complete U shape and independent parameter readback must precede naming.')
         bundle=self.sheet_flange_bundle(model,receipt)
         self._sheet_flange_profile_current(model,receipt,definition,frame)
+
         desired=[(receipt.flange,definition.feature_name),(receipt.sketch,definition.sketch_name),
             (next(f for f in bundle['children'] if f.GetTypeName2()=='OneBend'),'Сгиб отбортовки'),
             (bundle['flat_bend'],'Развёртка сгиба отбортовки'),(bundle['cut_list'],cut_list_name)]
@@ -475,6 +452,77 @@ class CadSheetEdgeFlangeMixin:
         if bundle['body'].Name!=body_name:raise rejected('sheet_name_mismatch','The original native body name was not retained.')
         self.sheet_flange_bundle(model,receipt)
         self._sheet_flange_profile_current(model,receipt,definition,frame)
+
+    def sheet_edge_flange_evidence(self,model,receipt,definition,frame):
+        """Complete independent original-source and created-profile readback."""
+        if receipt.flange is None:
+            self._sheet_flange_profile_edge_current(model,receipt,definition,frame)
+            profile,members=self.sheet_flange_sketch_snapshot(model,receipt,definition,frame,'before_factory')
+            body=self.resolve_persistent_id(model,receipt.source_target.body_pid,'body')
+            owned=[('profile',receipt.sketch)];parameters=None;phase='input'
+        else:
+            bundle=self.sheet_flange_bundle(model,receipt)
+            profile,members=self._sheet_flange_profile_current(model,receipt,definition,frame)
+            body=bundle['body'];phase='completed';parameters=self.sheet_flange_parameters(receipt.flange)
+            owned=[('flange',receipt.flange),('profile',receipt.sketch),
+                ('bend',next(f for f in bundle['children'] if f.GetTypeName2()=='OneBend')),('flat_bend',bundle['flat_bend'])]
+        target=receipt.source_target
+        get=lambda role:next(m.feature for m in target.members if m.role==role)
+        original,original_members=self.sketch_snapshot(model,get('sketch'))
+        plane_pid=bytes.fromhex(original['reference_plane']['pid_hex'])
+        plane=self.resolve_persistent_id(model,plane_pid,'feature')
+        fixed=self.sheet_flat_fixed_face(model,get('flat'),body)
+        measures=self.rectangle_body_measurements(model)
+        source=self._sheet_flange_source_parameters(model,target)
+        options=self.sheet_parameter_options_retained(model,target)
+        evidence=dict(base_native_id=int(target.base.GetID()),sketch_native_id=int(get('sketch').GetID()),sketch=original,
+            members=[dict(role=m.role,pid_hex=m.persistent_id.hex(),reference_strategy=m.reference_strategy,
+                **self.feature_summary(m.feature)) for m in target.members],
+            body_pid_hex=target.body_pid.hex(),body_name=str(body.Name),base_parameters=source['base'],sheet_parameters=source['sheet'],
+            fixed_face=fixed['face'],options=fixed['options'],controls=self.part_creation_controls(model),flattened=False,
+            volume_mm3=measures['volume_mm3'],area_mm2=measures['surface_area_mm2'],parameter_options=options,
+            plane_pid_hex=plane_pid.hex(),plane_transform=list(self.reference_plane_transform(plane)))
+        created=dict(complete=True,phase=phase,profile=profile,parameters=parameters,
+            owned=[dict(role=role,pid_hex=self.persistent_id(model,f).hex(),**self.feature_summary(f)) for role,f in owned])
+        self._sheet_state_target_current(model,target)
+        return dict(source=evidence,created=created),tuple(('original:'+key,token) for key,token in original_members)+members
+
+    def restore_sheet_edge_flange(self,model,receipt,definition,frame,body_name,cut_list_name):
+        """Only a proved completed U or completed unconsumed input may be deleted."""
+        if receipt.flange is not None:
+            return self.restore_completed_sheet_flange(model,receipt,definition,frame,body_name,cut_list_name)
+        if (receipt.pending_creation or receipt.pending_deletion or receipt.selection_uncertain or receipt.restored
+                or receipt.sketch is None or receipt.profile_before is None):
+            raise rejected('sheet_flange_restore_unsafe','Unconfirmed or incomplete input is not deletion authority.')
+        current,members=self.sheet_flange_sketch_snapshot(model,receipt,definition,frame,'before_factory')
+        from .sketches import persistent_sketch_members
+        if current!=receipt.profile_before or persistent_sketch_members(members)!=persistent_sketch_members(receipt.profile_before_members):
+            raise rejected('sheet_flange_restore_unsafe','The complete exact own input changed before scoped restoration.')
+        self._sheet_flange_profile_edge_current(model,receipt,definition,frame)
+        with preserved_selection(self,model,state=receipt,label='sheet_flange_input_restore'):
+            model.ClearSelection2(True)
+            if receipt.sketch.Select2(False,0) is not True:raise rejected('sheet_flange_restore_unsafe','Only the exact own input may be selected.')
+            selections=binding.wrap(model.SelectionManager,self._module.ISelectionMgr)
+            selected=binding.wrap(selections.GetSelectedObject6(1,0),self._module.IFeature)
+            if (selections.GetSelectedObjectCount2(-1)!=1 or selections.GetSelectedObjectCount2(0)!=1
+                    or selected is None or self.identity(selected)!=receipt.sketch_identity):
+                raise rejected('sheet_flange_restore_unsafe','The exact standalone own input must be the sole selected feature.')
+            receipt.pending_deletion=True
+            if self._extension(model).DeleteSelection2(0) is not True:
+                raise ExecutionFailure('sheet_flange_deletion_unconfirmed','Own input deletion was not confirmed.',uncertain=True)
+            receipt.pending_deletion=False
+            if model.ForceRebuild3(False) is not True:raise rejected('sheet_flange_restore_unsafe','Original L rebuild was not confirmed.')
+        target,body=self.sheet_state_target(model,receipt.source_target.base,receipt.source_target)
+        features=self._sheet_flange_coalesce_features(model,self.features(model),receipt.baseline_features,target)
+        if (not _same_identities([self.identity(f) for f in features],[self.identity(f) for f in receipt.baseline_features])
+                or not sheet_l_body_matches(self.dimension_geometry_snapshot(model),definition.source.expected_geometry(frame))
+                or self._sheet_flange_source_parameters(model,target)!=receipt.original_parameters
+                or self.part_creation_controls(model)!=receipt.controls):
+            raise rejected('sheet_flange_restore_unsafe','The entire original L baseline must return after own input deletion.')
+        cut=next(m.feature for m in target.members if m.role=='cut_list')
+        body.Name=body_name;cut.Name=cut_list_name
+        if body.Name!=body_name or cut.Name!=cut_list_name:raise rejected('sheet_flange_restore_unsafe','Original body/cut-list names were not restored.')
+        receipt.restored=True
 
     def restore_completed_sheet_flange(self,model,receipt,definition,frame,body_name,cut_list_name):
         """Delete one fully proved own flange; partial/unknown writes stay held.

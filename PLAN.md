@@ -9,73 +9,18 @@
 ### Актуальные приоритеты — решение пользователя от 10.10.2026
 
 **В работе — штатная отбортовка явного ребра листовой детали (2.2).**
-Source23 прошла source-edge binding, но отклонила transient anonymous-plane view
-при closing до factory. Unknown сохранён, calls terminal/own fixture closed.
-Dedicated policy опирается на exact owning sketch, strong entities/driver,
-explicit source projection и весь rigid transform; public plane target нет.
-Closing kind/non-null/transform сохранён, named-plane reader не ослаблен.
-**380 связанных pure passed**; native последней правки, partial restoration,
-домен/MCP и итоговый wheel остаются следующим цельным блоком. Dev63 остаётся44/15.
+Доменная мутация и два MCP-инструмента подготовлены одним блоком до сборки.
+Проверяются весь U-BREP, полный собственный профиль/driver, исходные элементы,
+параметры первого сгиба, второй радиус/K и русские имена. Scoped restoration
+ограничена завершённым собственным входным эскизом или доказанной отбортовкой.
+Чужой/неполный результат остаётся unknown; generic Undo не используется.
 
-Source22 точно установила disposed старую curve при повторном чтении исходного
-edge после own insertion, до factory. Исходный finite descriptor фиксируется до
-записи; после неё current edge проверяется по PID/geometry/body/topology и всему
-исходному L/baseline. AddEdges получает fresh proved edge, client reference не
-обновляется. **379 связанных pure passed**; native исправления ещё не завершён.
-Все source22 calls terminal, свой контроль закрыт, unknown сохранён.
-
-Source21 не принята: COM disconnect без подтверждённого результата. Unknown
-сохранён, все calls terminal, own fixture закрыт. Приватная диагностика сохраняет
-точный traceback/receipt phase для определения устаревшего объекта. Pure376 и
-предыдущие source-проверки не заменяют native-приёмку нового reader или MCP/wheel.
-
-Source20 отклонила refresh COM interface исходного ребра после own sketch insertion
-до factory; unknown сохранён, calls terminal, свой контроль закрыт. Добавлен
-ограниченный capture source-edge для exact closed fully-defined own input phase:
-full original L/body/baseline/parameters/controls, native PID equality, обе полные
-edge geometry и unique current topology. Нет upgrade клиентской ссылки или alias
-cache; до первого CAD-write строгий check сохранён. **376 связанных pure passed**;
-native этой доработки ещё не завершён, MCP/wheel не готовы.
-
-Добавлен полный dedicated профильный reader и native readback, подключённый к
-create/naming/completed restore: exact own entities, projection definitions
-до/после factory, вся сеть/transform и native height driver. **358 связанных pure
-passed** с общими reader-регрессиями; native нового кода ещё не завершён. Source18/19
-уточнили фактическую миграцию projection и full name при стабильном native driver;
-automatic plane PID Invalid=1 не используется как публичный target. Далее —
-partial restoration, доменный writer и MCP-фасад до итогового wheel.
-
-Подготовлен read-only домен `SheetEdgeFlangeCatalog`: явные opaque base/edge,
-два полных исходных capture, параметры, русские имена, source/body membership
-и полный revision payload. **224 связанных pure-теста passed**, включая26
-для подготовки; MCP-фасад и мутация домена ещё не подключены.
-Source14 подтвердила полный native dependency graph: новый UiBend имеет
-owner FlatPattern и единственный parent — собственный OneBend, хотя direct
-subfeature traversal его не перечисляет. Source16 доказала соответствие alternate
-COM views по native PID equality/roundtrip и полным descriptor/owner checks;
-папка сгибов с неоднозначным PID связывается только через точный absorption.
-Source17 проверила новый production bridge: full U, оба K/параметры, русские
-имена, исходные элементы и возврат полного L подтверждены, четыре jobs succeeded.
-Все вызовы terminal, свои документы закрыты. Installed dev63 остаётся44/15;
-full new-sketch evidence, partial restoration, доменный writer и MCP ещё нужны.
-
-Добавлен внутренний native bridge: typed factory, точные receipt-ссылки,
-readback обоих K/параметров и собственная completed-U restoration без Undo.
-**170 связанных pure-тест passed.** Source-probe11 подтвердила U-форму,
-параметры и fully-defined sketch, но отклонила flat absorption; весь bridge,
-восстановление и новый MCP ещё не приняты. Все source-вызовы terminal,
-свои документы закрыты; private unknown-журналы сохранены. Далее — точный
-native readback FlatPattern, partial restoration, домен и MCP-фасад до wheel.
-
-Подготовлены полная геометрия двухсгибного U-профиля, проверка стороны выбранного
-ребра и ревизия;91 связанных pure-тест passed. **Source-probe8** подтвердила
-штатную внутреннюю отбортовку: полная U-BREP24/44/22, наружная длина15 мм,
-r2,5/K0,38, fully-defined эскиз до/после factory и русские имена новых дочерних
-элементов. Новых MCP-инструментов/принятого wheel пока нет: далее receipt,
-доменная мутация/восстановление и MCP-фасад. Probe2 unknown и прочие несовпадения
-сохранены отдельно; не засчитаны как успех требуемой операции. Все source-вызовы
-terminal, свои контрольные модели закрыты. Контракт разработки:
-[SHEET_EDGE_FLANGE.md](Docs/SHEET_EDGE_FLANGE.md).
+Готовится **dev64**, каталог46/16. Native-приёмка нового кандидата ещё не выполнена;
+принятым остаётся dev63. Source-пробы17–23 и их unknown сохранены в приватном work,
+подробная история — в PROGRESS_LOG; они не заменяют приёмку установленного wheel.
+Следующий шаг — полный pure, сборка, internal native и публичная MCP-цепочка на
+одном точном wheel. Импорт/экспорт отложены, все стадии остаются открытыми.
+Контракт: [SHEET_EDGE_FLANGE.md](Docs/SHEET_EDGE_FLANGE.md).
 
 **Принят ограниченный блок — параметры существующего листового L-профиля, dev63 (2.2).**
 Реализованы домен, native bridge и MCP-фасад для толщины, радиуса и обязательного
