@@ -32,7 +32,16 @@ Dev73: адресация resolved экземпляров сборок и normal
 S1-04/S1-05/S1-06 частично: topology/прочие состояния/deleted refs/измерения
 сборок и общий финальный gate остаются. Стадия1 открыта, расширения2 отложены.
 
-Далее — native документы, расстояния/измерения сборок, базовые операции/адресация
+Dev75: расстояние между двумя resolved экземплярами деталей принято:
+4236 pure/323 CAD deselected (53,88с), installed metadata60/18,
+internal native13/public MCP6 accepted=true на одном wheel; exact-owned cleanup
+и baseline подтверждены. Hidden rotated/multibody15 мм, nested70 мм,
+curved overlap/tangent0, native move14 мм, cylinder gap24 мм вместо axis36 мм.
+[Контракт](Docs/COMPONENT_DISTANCE.md), [точная приёмка](Docs/COMPONENT_DISTANCE_ACCEPTANCE.md).
+S1-16/S1-06 частично: point/axis distance, агрегат подсборки, native named
+frames и общий N0–N6 остаются; стадии1/2 не объявлены завершёнными.
+
+Далее — native документы, расстояния до точек/осей и прочие измерения сборок, базовые операции/адресация
 и общие installed/native gates. Работать одним агентом, собирать
 пакет локально, выполнять обязательную native-приёмку; skipped не засчитывать.
 Статусы стадий открыты. Импорт/экспорт отложены и не блокируют стадию1.

@@ -1,3 +1,12 @@
+Dev75: расстояние между двумя resolved экземплярами деталей принято:
+4236 pure/323 CAD deselected (53,88с), installed metadata60/18,
+internal native13/public MCP6 accepted=true на одном wheel; exact-owned cleanup
+и baseline подтверждены. Hidden rotated/multibody15 мм, nested70 мм,
+curved overlap/tangent0, native move14 мм, cylinder gap24 мм вместо axis36 мм.
+[Контракт](COMPONENT_DISTANCE.md), [точная приёмка](COMPONENT_DISTANCE_ACCEPTANCE.md).
+S1-16/S1-06 частично: point/axis distance, агрегат подсборки, native named
+frames и общий N0–N6 остаются; стадии1/2 не объявлены завершёнными.
+
 # SolidWorks MCP — Progress log
 
 ## Environment (verified 2026-06-25)

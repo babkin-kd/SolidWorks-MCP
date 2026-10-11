@@ -1,16 +1,29 @@
-Текущий кандидат dev72: measurement_get_bounds,52 инструмента/18 guarded
+# API v2: текущий кандидат первой стадии
+
+Dev75: расстояние между двумя resolved экземплярами деталей принято:
+4236 pure/323 CAD deselected (53,88с), installed metadata60/18,
+internal native13/public MCP6 accepted=true на одном wheel; exact-owned cleanup
+и baseline подтверждены. Hidden rotated/multibody15 мм, nested70 мм,
+curved overlap/tangent0, native move14 мм, cylinder gap24 мм вместо axis36 мм.
+[Контракт](COMPONENT_DISTANCE.md), [точная приёмка](COMPONENT_DISTANCE_ACCEPTANCE.md).
+S1-16/S1-06 частично: point/axis distance, агрегат подсборки, native named
+frames и общий N0–N6 остаются; стадии1/2 не объявлены завершёнными.
+
+| Инструмент | Реализованная операция |
+| --- | --- |
+| `measurement_get_component_distance` | Два explicit resolved part-instance ID; native minimum и две ближайшие точки в root assembly мм. Hidden normal solids включены, surface исключены; без UI selection/activation. Snapshot/moments/configuration/transform closing gates, request replay; не classifier пересечений. |
+
+Исторический кандидат dev72: measurement_get_bounds,52 инструмента/18 guarded
 операций;4122 pure/323 CAD deselected, installed metadata/internal14/public6
 accepted=true на одном wheel. Own cleanup/baseline подтверждены.
 [Контракт](BOUNDS_MEASUREMENTS.md), [приёмка](BOUNDS_MEASUREMENTS_ACCEPTANCE.md).
 S1-16/S1-06 и общий gate остаются открытыми. Dev71/dev69 ниже — история их wheel.
 
-Кандидат dev71: публичное измерение массы детали с durable UI guard.
+Исторический кандидат dev71: публичное измерение массы детали с durable UI guard.
 51 инструмент/18 guarded операций;4072 pure/323 CAD deselected, metadata
 и internal22/public6 accepted=true на одном wheel, cleanup/baseline подтверждены.
 [Контракт](MASS_MEASUREMENT_V2.md), [приёмка](MASS_MEASUREMENT_ACCEPTANCE.md).
 Историческая dev69 ниже сохраняется.
-
-# API v2: текущий кандидат первой стадии
 
 Установленный dev74 принят для `component_face_list`, `component_edge_list`,
 `component_topology_get`: metadata59/18,4210 pure/323 CAD deselected,

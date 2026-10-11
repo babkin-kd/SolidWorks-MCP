@@ -1,8 +1,17 @@
 # Миграция legacy-инструментов в API v2
 
+Dev75: расстояние между двумя resolved экземплярами деталей принято:
+4236 pure/323 CAD deselected (53,88с), installed metadata60/18,
+internal native13/public MCP6 accepted=true на одном wheel; exact-owned cleanup
+и baseline подтверждены. Hidden rotated/multibody15 мм, nested70 мм,
+curved overlap/tangent0, native move14 мм, cylinder gap24 мм вместо axis36 мм.
+[Контракт](COMPONENT_DISTANCE.md), [точная приёмка](COMPONENT_DISTANCE_ACCEPTANCE.md).
+S1-16/S1-06 частично: point/axis distance, агрегат подсборки, native named
+frames и общий N0–N6 остаются; стадии1/2 не объявлены завершёнными.
+
 ## Актуальное состояние — 11.10.2026
 
-Установленный кандидат **dev74**:59 инструментов/18 guarded операций,
+Исторический установленный кандидат **dev74**:59 инструментов/18 guarded операций,
 4210 pure/323 CAD deselected, metadata/internal21/public8 accepted=true,
 own cleanup/baseline. [Topology конкретного экземпляра](COMPONENT_TOPOLOGY_ACCEPTANCE.md).
 Новые face/edge чтения normal instance bodies приняты в своём scope;
@@ -205,7 +214,7 @@ API-сигнатуры сверены с зарегистрированным SW
 | `set_component_transform` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `add_mate` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `check_interference` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
-| `measure_distance` | — | Не реализовано в v2; остаток стадии 1 | 1.4. Явный документ/конфигурация; проверка результата. Создание/редактирование — с ревизией и откатом. |
+| `measure_distance` | `measurement_get_component_distance` | Частично; dev75 internal13/public6 native accepted | 1.4. Два явных resolved part-instance ID, active assembly cfg/observation, native minimum/две root точки мм; normal solids включая hidden. Point/axis и агрегат подсборки остаются; не collision classifier. |
 | `check_motion` | — | Отложено в v2 | 3.1. Несколько входов, дискретная траектория, зазоры и достоверность покрытия. |
 | `swept_region` | — | Отложено в v2 | 3.1. Несколько входов, дискретная траектория, зазоры и достоверность покрытия. |
 | `get_assembly_bounding_box` | — | Не реализовано в v2; остаток стадии 1 | 1.4: необходимые базовые операции; 2.6: компоненты/сопряжения, большие сборки и библиотеки. |

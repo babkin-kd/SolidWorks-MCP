@@ -1,6 +1,6 @@
 # Расстояние между экземплярами деталей
 
-Кандидат dev75 реализует `measurement_get_component_distance` →
+Принятый dev75 реализует `measurement_get_component_distance` →
 `measurement.component_distance`. Это passive read, каталог60 инструментов/
 18 guarded операций. Native-приёмка должна относиться к точному wheel; pure
 проверки сами по себе не подтверждают работу CAD.
@@ -52,3 +52,5 @@ Public chain проверяет контракт/журнал через уст�
 
 Расстояния до точек/осей, агрегат подсборки, named frames и общая приёмка
 S1-16 ещё остаются; этот блок не завершает стадию1.
+
+[Результаты exact-wheel приёмки](COMPONENT_DISTANCE_ACCEPTANCE.md).
