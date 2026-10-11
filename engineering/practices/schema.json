@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:solidworks-mcp:engineering-practices:1.0",
+  "title": "SolidWorks engineering practice registry shard",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "sources", "practices"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
+    "practices": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/practice"}}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1},
+    "texts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/text"}},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "url", "publisher", "product", "edition", "published_on", "accessed_on", "locator", "access_status", "claims", "limits"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^SRC-[A-Z]{2}-[0-9]{2}$"},
+        "title": {"$ref": "#/$defs/text"},
+        "url": {"type": "string", "format": "uri", "pattern": "^https://"},
+        "publisher": {"$ref": "#/$defs/text"},
+        "product": {"$ref": "#/$defs/text"},
+        "edition": {"$ref": "#/$defs/text"},
+        "published_on": {"type": ["string", "null"], "format": "date"},
+        "accessed_on": {"type": "string", "format": "date"},
+        "locator": {"$ref": "#/$defs/text"},
+        "access_status": {"enum": ["read", "partial", "unread", "unavailable"]},
+        "claims": {"type": "array", "items": {"$ref": "#/$defs/text"}},
+        "limits": {"$ref": "#/$defs/texts"}
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "locator", "statement"],
+      "properties": {
+        "source_id": {"$ref": "#/$defs/text"},
+        "locator": {"$ref": "#/$defs/text"},
+        "statement": {"$ref": "#/$defs/text"}
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "procedure", "expected", "outcome"],
+      "properties": {
+        "id": {"$ref": "#/$defs/text"},
+        "kind": {"enum": ["domain", "installed", "native", "mcp", "skill"]},
+        "procedure": {"$ref": "#/$defs/text"},
+        "expected": {"$ref": "#/$defs/text"},
+        "outcome": {"enum": ["passed", "failed", "skipped", "not_run", "unknown"]}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "outcome", "artifact", "date", "scope", "limitations"],
+      "properties": {
+        "kind": {"enum": ["domain", "installed", "native", "mcp", "skill"]},
+        "outcome": {"enum": ["passed", "failed", "skipped", "not_run", "unknown"]},
+        "artifact": {"$ref": "#/$defs/text"},
+        "date": {"type": "string", "format": "date"},
+        "scope": {"$ref": "#/$defs/text"},
+        "limitations": {"type": "array", "items": {"$ref": "#/$defs/text"}},
+        "package_version": {"$ref": "#/$defs/text"},
+        "wheel_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "git_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "solidworks_version": {"$ref": "#/$defs/text"},
+        "skill_version": {"$ref": "#/$defs/text"},
+        "skill_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "registry_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "evaluation_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "check_id": {"$ref": "#/$defs/text"}
+      },
+      "allOf": [{
+        "if": {"properties": {"kind": {"enum": ["installed", "native", "mcp"]}}},
+        "then": {"required": ["package_version", "wheel_sha256", "source_digest", "git_sha"]}
+      }, {
+        "if": {"properties": {"kind": {"const": "native"}}},
+        "then": {"required": ["solidworks_version"]}
+      }, {
+        "if": {"properties": {"kind": {"const": "skill"}}},
+        "then": {"required": ["skill_version", "skill_sha256", "registry_sha256"]}
+      }]
+    },
+    "practice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "title", "owner", "lifecycle", "rule_strength", "source_claims", "interpretation", "applicability", "exceptions", "parameters", "invariants", "method", "requires_capabilities", "checks", "verification", "target_stage", "limitations"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^SW-(PART|ASSY)-[0-9]{3}$"},
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "title": {"$ref": "#/$defs/text"},
+        "owner": {"$ref": "#/$defs/text"},
+        "lifecycle": {"enum": ["draft", "reviewing", "approved", "superseded", "deprecated"]},
+        "rule_strength": {"enum": ["recommendation", "scenario_condition", "server_requirement"]},
+        "source_claims": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/claim"}},
+        "interpretation": {"$ref": "#/$defs/text"},
+        "applicability": {"$ref": "#/$defs/texts"},
+        "exceptions": {"$ref": "#/$defs/texts"},
+        "parameters": {"$ref": "#/$defs/texts"},
+        "invariants": {"$ref": "#/$defs/texts"},
+        "method": {"$ref": "#/$defs/texts"},
+        "requires_capabilities": {"$ref": "#/$defs/texts"},
+        "checks": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/check"}},
+        "verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source", "methodology", "implementation", "evidence"],
+          "properties": {
+            "source": {"enum": ["confirmed", "pending"]},
+            "methodology": {"enum": ["candidate", "accepted", "superseded"]},
+            "implementation": {"enum": ["not_implemented", "partial", "source_implemented", "wheel_checked", "native_accepted"]},
+            "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}}
+          }
+        },
+        "target_stage": {"enum": ["2.1", "2.2", "2.4", "2.6", "3"]},
+        "limitations": {"$ref": "#/$defs/texts"}
+      }
+    }
+  }
+}
