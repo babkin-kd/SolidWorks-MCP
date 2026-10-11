@@ -755,3 +755,27 @@ Dev33: выделение защищено Suspend/ResumeSelectionList; перв
 Dev55 первый internal native остановился после двух записанных случаев: создание пластины завершилось succeeded/committed с полным освобождением guard, но helper очистки не распознал новый scope. Прогон accepted=false и сохранён. После терминального процесса durable/job и фактическая геометрия сверены; только два собственных документа закрыты, baseline пуст/free. Исправлены оба verifier gates: точный новый scope/одна модель/все typed release-поля; busy допускается только как failed/not_started с native_mutation_started=false и untouched evidence, без разрешения сбрасывать чужой флаг. Связанные126 passed; после дополнения missing-error случая полный набор **2905 passed, 323 CAD deselected**,29,14 с. Код установленного wheel dev55 не менялся, новой сборки не требуется; свежая same-wheel native-приёмка впереди.
 
 Второй dev55 internal native: семь записанных случаев прошли, в том числе thickness12→10 и русское rename. Busy корректно завершился failed/application_busy/not_started без заимствования, но record() ошибочно потребовал False как для собственного acquired guard. Прогон accepted=false; штатно fixtures_closed=true и command_flag_baseline_restored=true. Исправлена отдельная untouched-busy ветка record(); AST-pure тест выполняет саму функцию на реальных формах evidence и отрицательных вариантах. Связанные128 passed; итоговый полный набор **2906 passed, 323 CAD deselected**,28,78 с. CAD-код/wheel не менялся; свежий полный native-прогон необходим, предыдущие не объявлены принятыми.
+
+
+## Отбортовка: dev65 и кандидат dev66 — 11.10.2026
+
+Dev65: 3872 pure passed /323 CAD deselected; installed metadata46/16 accepted.
+Внутренняя native-проверка прошла шесть сценариев, включая scoped restoration
+собственного завершённого входного профиля. Полная native U-форма создана;
+completed restoration остановлена на canonical membership FlatPattern из
+body.GetFeatures. Задание unknown/unresolved, публичная MCP-приёмка не запускалась.
+
+После завершения всех вызовов отдельный read-only terminal-аудит подтвердил
+полный U-BREP, исходный эскиз, fixed-face и native PID/descriptor/roundtrip
+другого COM-представления FlatPattern. Закрыты только два собственных контрольных
+документа, empty/free baseline восстановлен, unknown-журнал не изменён.
+Аудит исходного исправления не считается приёмкой установленного wheel.
+
+Dev66 добавляет scoped reader: полная membership base/sheet/flat/own flange,
+сильная native PID-привязка и closing reads до/после fixed-face. Обычный
+L-reader сохраняет строгую canonical membership. 173 связанных искусственных
+сценария passed; полный набор/installed-wheel/native ещё выполняются.
+Принятым остаётся dev63. Импорт/экспорт отложены; все стадии PLAN открыты.
+
+Dev66 перед сборкой: **3880 pure passed /323 CAD deselected (48,52с)**.
+Installed metadata/native/public MCP приёмка ещё выполняется.

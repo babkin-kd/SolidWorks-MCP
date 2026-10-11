@@ -1,13 +1,15 @@
 # API v2: текущий кандидат первой стадии
 
-В исходниках подключён новый кандидат **dev65**, каталог46 инструментов /16
+В исходниках подключён новый кандидат **dev66**, каталог46 инструментов /16
 мутаций: `sheet_prepare_edge_flange` и `sheet_create_edge_flange`. Ограниченный
 scope `single_l_sheet_edge_flange_v1` — одна штатная отбортовка явного внутреннего
 ребра согнутого L-профиля. Полный доменный/native контракт и восстановление:
 [SHEET_EDGE_FLANGE.md](SHEET_EDGE_FLANGE.md). Dev64 прошёл3856 pure/323 CAD deselected и metadata46/16, но не принят:
 input-restoration остановлена на capture mismatch, unknown сохранён.
-Dev65 исправляет namespaced transient relation members и удержание pending
-receipt. Native-приёмка dev65 ещё не выполнена;
+Dev65 подтвердил восстановление собственного входного профиля, но completed
+restoration остановлена на другой COM-обёртке FlatPattern из body.GetFeatures.
+Dev66 добавляет полную проверку native-привязки этого представления;
+обычный L-reader сохраняет строгий контракт. Native-приёмка dev66 ещё нужна;
 принятым остаётся dev63, результаты предыдущего wheel на новый не переносятся.
 
 Текущий принятый инженерный блок — **dev63**, `sheet_prepare_parameters` и
@@ -404,4 +406,10 @@ Dev64 terminal-аудит подтвердил совпадение исходн
 различаются только5 original:relation: wrappers. Full L сохранён; свои документы
 закрыты, empty/free baseline восстановлен, unknown-журнал не изменён.
 **Dev65:3872 pure passed /323 CAD deselected (47,30с)** перед сборкой.
-Installed-wheel/native приёмка dev65 ещё не выполнена.
+Dev65 metadata46/16 accepted; internal native6 passed, затем unknown при completed
+restoration. Terminal-аудит подтвердил исходный эскиз/fixed-face и полную U-форму;
+свои документы закрыты, empty/free baseline восстановлен, журнал не изменён.
+Публичная MCP-приёмка dev65 не запускалась; wheel не принят.
+
+Dev66 перед сборкой: **3880 pure passed /323 CAD deselected (48,52с)**.
+Installed metadata/native/public MCP приёмка ещё выполняется.

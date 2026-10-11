@@ -150,6 +150,14 @@ class CadSheetFlatReadMixin:
         members=[binding.wrap(raw,self._module.IFeature) for raw in body.GetFeatures() or ()]
         if sum(self.identity(item)==self.identity(flat) for item in members)!=1:
             raise rejected('sheet_flat_membership_changed','The explicit flat feature must belong uniquely to the current sheet body.')
+        return self._sheet_flat_fixed_face_read(model,flat,body)
+
+    def _sheet_flat_fixed_face_read(self,model,flat,body):
+        """Face readback only after independently established flat membership."""
+        body_type=body.GetType()
+        if (flat.GetTypeName2()!='FlatPattern' or type(body_type) is not int or body_type!=0
+                or body.IsSheetMetal() is not True or not self.body_is_current(model,body)):
+            raise rejected('sheet_flat_target_unsupported','One current native sheet body and exact FlatPattern are required.')
         data=binding.wrap(flat.GetDefinition(),self._module.IFlatPatternFeatureData)
         if data is None:raise rejected('sheet_flat_definition_unavailable','The native flat definition is required.')
         face=binding.wrap(data.FixedFace2,self._module.IFace2)

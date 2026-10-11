@@ -4,7 +4,7 @@
 
 Подготовлены доменный writer, runtime и MCP-фасад:
 `sheet_prepare_edge_flange` / `sheet_create_edge_flange`, scope
-`single_l_sheet_edge_flange_v1`. Dev64 не принят; готовится dev65, принятой сборкой
+`single_l_sheet_edge_flange_v1`. Dev64/dev65 не приняты; готовится dev66, принятой сборкой
 остаётся dev63. Первый scope: согнутый собственный L-профиль, горизонтальная
 фиксированная полка, одно тело/конфигурация, полное внутреннее продольное ребро;
 одна отбортовка90° внутрь. Длина до наружного виртуального пересечения, r2 и
@@ -20,7 +20,7 @@ transient original relation wrappers после namespace. Unknown сохран�
 Исправление фильтрует только relation addresses до добавления prefix;
 полные relation semantics и сильные entity references остаются обязательными.
 Pending creation/deletion/selection receipt всегда удерживает неизвестный исход.
-Native-приёмка dev65 ещё нужна.
+Native-приёмка dev66 ещё нужна.
 Развёртка U/углы/разгрузки и произвольные листовые детали остаются расширениями.
 
 ## История исследования перед кандидатом
@@ -268,4 +268,19 @@ Dev64 terminal-аудит подтвердил совпадение исходн
 различаются только5 original:relation: wrappers. Full L сохранён; свои документы
 закрыты, empty/free baseline восстановлен, unknown-журнал не изменён.
 **Dev65:3872 pure passed /323 CAD deselected (47,30с)** перед сборкой.
-Installed-wheel/native приёмка dev65 ещё не выполнена.
+Dev65 metadata46/16 accepted; internal native6 passed, включая восстановление
+завершённого собственного входного профиля. Полный native flange создан,
+но completed restoration остановлена на строгой canonical membership FlatPattern:
+body.GetFeatures вернул другое представление того же native элемента.
+Job остаётся unknown; публичная MCP-приёмка не запускалась, wheel не принят.
+Terminal-аудит подтвердил полную U-форму, исходный эскиз/fixed-face и PID-привязку
+представления. Свои документы закрыты, empty/free baseline восстановлен;
+unknown-журнал сохранён без изменений.
+
+Dev66 проверяет полный состав расширенного тела (base/sheet/flat/own flange),
+PID roundtrip, дескрипторы/владение и закрывающие чтения до и после fixed-face.
+Обычный L-reader сохраняет строгую canonical membership. Связанные искусственные
+сценарии: 173 passed; это не installed-wheel/native приёмка.
+
+Dev66 перед сборкой: **3880 pure passed /323 CAD deselected (48,52с)**.
+Installed metadata/native/public MCP приёмка ещё выполняется.

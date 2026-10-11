@@ -453,6 +453,31 @@ class CadSheetEdgeFlangeMixin:
         self.sheet_flange_bundle(model,receipt)
         self._sheet_flange_profile_current(model,receipt,definition,frame)
 
+    def _sheet_flange_fixed_face(self,model,receipt,body):
+        """Bind body FlatPattern views by complete native PID/descriptor proof.
+
+        The ordinary L reader keeps its strict canonical membership policy.
+        This scope independently closes the entire extended body membership.
+        """
+        target=receipt.source_target
+        self._sheet_state_target_current(model,target)
+        flat_member=next(m for m in target.members if m.role=='flat')
+        original=[next(m.feature for m in target.members if m.role==role) for role in ('base','sheet','flat')]
+        expected=original+([receipt.flange] if receipt.flange is not None else [])
+        def prove():
+            self._sheet_member_reference(model,flat_member)
+            if self.identity(self.resolve_persistent_id(model,target.body_pid,'body'))!=self.identity(body):
+                raise rejected('sheet_flange_fixed_face_body','The fixed face must bind the exact retained current body.')
+            views=[binding.wrap(raw,self._module.IFeature) for raw in body.GetFeatures() or ()]
+            bound=self._sheet_flange_coalesce_features(model,views,expected,target)
+            if not _same_identities([self.identity(f) for f in bound],[self.identity(f) for f in expected]):
+                raise rejected('sheet_flange_fixed_face_membership','The complete extended body must bind only the original base/sheet/flat and exact own flange.')
+        prove()
+        result=self._sheet_flat_fixed_face_read(model,flat_member.feature,body)
+        prove()
+        self._sheet_state_target_current(model,target)
+        return result
+
     def sheet_edge_flange_evidence(self,model,receipt,definition,frame):
         """Complete independent original-source and created-profile readback."""
         if receipt.flange is None:
@@ -471,7 +496,7 @@ class CadSheetEdgeFlangeMixin:
         original,original_members=self.sketch_snapshot(model,get('sketch'))
         plane_pid=bytes.fromhex(original['reference_plane']['pid_hex'])
         plane=self.resolve_persistent_id(model,plane_pid,'feature')
-        fixed=self.sheet_flat_fixed_face(model,get('flat'),body)
+        fixed=self._sheet_flange_fixed_face(model,receipt,body)
         measures=self.rectangle_body_measurements(model)
         source=self._sheet_flange_source_parameters(model,target)
         options=self.sheet_parameter_options_retained(model,target)

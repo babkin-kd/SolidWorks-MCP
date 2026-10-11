@@ -34,6 +34,49 @@ def test_suppressed_equivalent_view_binds_retained_canonical_entity(views):
     assert a._sheet_flange_coalesce_features(model,[view],[old],target)==[old]
 
 
+@pytest.fixture
+def fixed_body(views):
+    a,model,flat,view,resolved,target,feature=views
+    base=feature(49,'SMBaseFlange',False);sheet=feature(37,'SheetMetal',False);flange=feature(67,'EdgeFlange',False)
+    member=NS(role='flat',feature=flat)
+    target.members=[NS(role='base',feature=base),NS(role='sheet',feature=sheet),member];target.body_pid=b'body'
+    current=[base,sheet,view,flange];body=NS(GetFeatures=lambda:current)
+    a.resolve_persistent_id=lambda m,p,k:body
+    events=[]
+    def read(m,f,b):
+        assert m is model and f is flat and b is body
+        events.append('read');return dict(face={'complete':'native fixed face'},options={})
+    a._sheet_flat_fixed_face_read=read
+    a._sheet_member_reference=lambda m,ref:events.append('member')
+    return a,model,NS(source_target=target,flange=flange),body,current,events,resolved,feature
+
+
+def test_expanded_fixed_face_binds_alias_and_closes_full_body_membership(fixed_body):
+    a,model,receipt,body,_,events,_,_=fixed_body
+    assert a._sheet_flange_fixed_face(model,receipt,body)['face']=={'complete':'native fixed face'}
+    assert events==['member','read','member']
+
+
+@pytest.mark.parametrize('fault',['missing_flat','duplicate_flat','extra_feature','replaced_body','pid_retarget','late_retarget','late_feature'])
+def test_fixed_face_never_accepts_id_only_alias_or_late_foreign_membership(fixed_body,fault):
+    a,model,receipt,body,current,events,resolved,feature=fixed_body
+    if fault=='missing_flat':current.pop(2)
+    elif fault=='duplicate_flat':current.append(current[2])
+    elif fault=='extra_feature':current.append(feature(999,'Fillet',False))
+    elif fault=='replaced_body':a.resolve_persistent_id=lambda *args:object()
+    elif fault=='pid_retarget':resolved[b'48']=(feature(48),2)
+    else:
+        read=a._sheet_flat_fixed_face_read
+        def changing(*args):
+            value=read(*args)
+            if fault=='late_retarget':resolved[b'48']=(feature(48),2)
+            else:current.append(feature(999,'Fillet',False))
+            return value
+        a._sheet_flat_fixed_face_read=changing
+    with pytest.raises(ExecutionFailure):a._sheet_flange_fixed_face(model,receipt,body)
+    if not fault.startswith('late_'):assert 'read' not in events
+
+
 @pytest.mark.parametrize('defect',['retarget','unsupported_status','bool_status','null',
     'different_pid','different_name','different_suppression','different_error','different_owner'])
 def test_matching_id_or_descriptor_never_replaces_native_proof(views,defect):

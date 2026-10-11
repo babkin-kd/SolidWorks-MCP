@@ -278,7 +278,7 @@ def test_original_relation_views_do_not_pollute_namespaced_strong_members(input_
     a.sketch_snapshot=lambda *args:({'reference_plane':{'pid_hex':'ff'},'relations':[{'type':4,'entities':['line:1']}]},
         (('point:1',[7]),('relation:1',object())))
     body=NS(Name='Тело');a.resolve_persistent_id=lambda m,p,k:body if k=='body' else object()
-    a.sheet_flat_fixed_face=lambda *args:dict(face={},options={})
+    a._sheet_flange_fixed_face=lambda *args:dict(face={},options={})
     a.rectangle_body_measurements=lambda m:dict(volume_mm3=1.,surface_area_mm2=2.)
     a._sheet_flange_source_parameters=lambda *args:dict(base={},sheet={})
     a.sheet_parameter_options_retained=lambda *args:{}
