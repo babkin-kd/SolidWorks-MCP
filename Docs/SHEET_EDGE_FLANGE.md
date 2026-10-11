@@ -2,6 +2,12 @@
 
 ## Текущий следующий шаг
 
+Source21 с ограниченной source-edge привязкой также не принята: COM disconnect
+`RPC_E_DISCONNECTED` до подтверждённого результата. Job unknown сохранён,
+all_calls_terminal/fixtures_closed true. Следующий диагностический прогон
+сохраняет traceback и receipt phase в приватном work, чтобы установить конкретный
+устаревший native объект; production binding вслепую не ослабляется.
+
 Source20 с новым reader отклонена до factory: после создания own input sketch
 resolver исходного edge PID вернул другой COM interface, строгий pre-write edge
 check не прошёл. Job unknown сохранён; all_calls_terminal/fixtures_closed true,

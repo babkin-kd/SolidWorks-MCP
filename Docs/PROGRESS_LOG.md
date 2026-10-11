@@ -1,5 +1,15 @@
 # Ход разработки
 
+## 11.10.2026 — source21 не принята, добавлена точная диагностика disconnect
+
+Source21 (digest `5378ef46a3bc346cdfe92e3bbb427abb2c4e2fea96982d5ce8c9f00cef13adf0`)
+остановилась с COM `RPC_E_DISCONNECTED`, без подтверждённой factory/restore.
+Experimental job unknown сохранён. Все вызовы terminal; own fixture closed,
+baseline пуст/free восстановлен. Это не native acceptance полного reader.
+В приватный source-пробник добавлены traceback и receipt phase перед передачей
+ошибки координатору; пока production checks не ослабляются. Pure376 остаётся
+отдельным результатом, installed dev63 44/15 и v1 сохранены.
+
 ## 11.10.2026 — source-edge views после native insertion
 
 Source20 reader stopped before factory: retained edge PID resolver возвращает

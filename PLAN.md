@@ -9,6 +9,11 @@
 ### Актуальные приоритеты — решение пользователя от 10.10.2026
 
 **В работе — штатная отбортовка явного ребра листовой детали (2.2).**
+Source21 не принята: COM disconnect без подтверждённого результата. Unknown
+сохранён, все calls terminal, own fixture закрыт. Приватная диагностика сохраняет
+точный traceback/receipt phase для определения устаревшего объекта. Pure376 и
+предыдущие source-проверки не заменяют native-приёмку нового reader или MCP/wheel.
+
 Source20 отклонила refresh COM interface исходного ребра после own sketch insertion
 до factory; unknown сохранён, calls terminal, свой контроль закрыт. Добавлен
 ограниченный capture source-edge для exact closed fully-defined own input phase:
