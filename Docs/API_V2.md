@@ -1,6 +1,6 @@
 # API v2: текущий кандидат первой стадии
 
-Исходный кандидат dev80: current native file Save3 для явного документа,
+Исходный кандидат dev81: current native file Save3 для явного документа,
 каталог67/19. [Контракт](NATIVE_DOCUMENT_SAVE.md); installed/native ожидаются.
 Принятый dev79 ниже относится к своему точному wheel.
 

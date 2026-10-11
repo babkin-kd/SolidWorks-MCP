@@ -28,3 +28,43 @@ def test_non_native_readonly_flag_refused():
     m=Model();m.IsOpenedReadOnly=lambda:1
     with pytest.raises(Exception) as error:CadNativeDocumentSaveMixin().native_save_context(m)
     assert error.value.code=='native_save_context_unavailable'
+
+
+def mode_adapter(monkeypatch):
+    from solidworks_mcp import cad_native_document_save as native
+    monkeypatch.setattr(native.binding, 'wrap', lambda value, interface:value)
+    adapter=CadNativeDocumentSaveMixin()
+    adapter._module=SimpleNamespace(IAssemblyDoc=object,IComponent2=object,IDrawingDoc=object,IView=object)
+    adapter.identity=lambda value:value.identity
+    return adapter
+
+
+@pytest.mark.parametrize('root,editing',[(True,False),(False,True)])
+def test_assembly_root_is_normal_but_nested_edit_is_blocked(monkeypatch,root,editing):
+    adapter=mode_adapter(monkeypatch);m=Model();m.GetType=lambda:2
+    m.GetEditTargetComponent=lambda:SimpleNamespace(IsRoot=lambda:root)
+    assert adapter.native_save_context(m)['editing_component'] is editing
+
+
+def test_untyped_assembly_root_state_rejected(monkeypatch):
+    adapter=mode_adapter(monkeypatch);m=Model();m.GetType=lambda:2
+    m.GetEditTargetComponent=lambda:SimpleNamespace(IsRoot=lambda:1)
+    with pytest.raises(Exception) as error:adapter.native_save_context(m)
+    assert error.value.code=='native_save_context_unavailable'
+
+
+@pytest.mark.parametrize('edit_sheet,active_identity,sheet_identity,editing',[
+    (True,'sheet','sheet',False), (False,'sheet','sheet',True),
+    (True,'view','sheet',True), (True,None,'sheet',True), (True,'sheet',None,True)])
+def test_drawing_normal_sheet_sketch_uses_exact_identity(monkeypatch,edit_sheet,active_identity,sheet_identity,editing):
+    adapter=mode_adapter(monkeypatch);m=Model();m.GetType=lambda:3
+    m.GetEditSheet=lambda:edit_sheet
+    m.GetActiveSketch2=lambda:None if active_identity is None else SimpleNamespace(identity=active_identity)
+    m.GetFirstView=lambda:SimpleNamespace(GetSketch=lambda:None if sheet_identity is None else SimpleNamespace(identity=sheet_identity))
+    assert adapter.native_save_context(m)['editing_sketch'] is editing
+
+
+def test_untyped_drawing_edit_state_rejected(monkeypatch):
+    adapter=mode_adapter(monkeypatch);m=Model();m.GetType=lambda:3;m.GetEditSheet=lambda:1
+    with pytest.raises(Exception) as error:adapter.native_save_context(m)
+    assert error.value.code=='native_save_context_unavailable'
