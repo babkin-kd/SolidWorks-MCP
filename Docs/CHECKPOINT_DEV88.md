@@ -55,19 +55,30 @@ normal creation DTO пишется отдельно; 15 связанных pure-
 Fault harness/domain-набор: 95 passed (12,50 с), CAD искусственный.
 Незавершённый COM не отменять и не повторять по тайм-ауту наблюдения.
 
-**Installed L3-I3 запущен**, private report
-`work/native-first-save-dev88-race-1/report.json`, один CAD-владелец. Пока case
-не завершён, physical race/known restoration не засчитаны. Продуктовые Copy,
-readback и NT no-replace настоящие; управляемый producer создаёт foreign marker
-перед publication. Отдельный receipt predicate и harness проверены 18 связанными
+**Installed L3-I3 прошёл**, 874,27 с, private report
+`work/native-first-save-dev88-race-1/report.json`: два finite cases passed,
+known rolled-back collision, Copy/open-stage/close-stage/publication ровно по одному,
+replay без повторного эффекта, foreign bytes/identity сохранены, staging empty,
+исходные модели и own cleanup/baseline подтверждены. SHA256 отчёта:
+`e895b934220fef21cac9a03a790c16ad50a60f1aa8788cc564f81b9f90570525`.
+Detached receipt predicate, exact wheel SHA и current trusted helper hashes
+проверены отдельно. Copy/readback/NT no-replace настоящие; инъекция относится
+только к producer чужого файла. Predicate/harness проверены 18 связанными
 pure-тестами (2,84 с), на искусственном CAD/FS. Source/wheel не менялись;
 повторная сборка или широкий pure-набор для новых внешних верификаторов не требуются.
+
+**Installed L3-I4 warning_after_copy запущен**, private report
+`work/native-first-save-dev88-fault-warning-1/report.json`. Настоящий normal Copy
+receipt записывается до контролируемого warning моста. Это не объявляется actual
+native COM warning. Пока case не завершён, unknown/hold/replay и test-owner
+reconciliation не засчитываются. False/throw/incomplete modes и публичный L3-P1
+остаются отдельными незавершёнными задачами; весь L3 открыт.
 
 ## Остаток
 
 1. L3-I1 завершён на exact installed dev88; сохранять его witness/hash binding,
    не объявляя whole L3 или same-wheel выпуск принятым.
-2. L3-I2 завершён. Дождаться запущенного L3-I3 и выполнить конечные L3-I4: no-overwrite race,
+2. L3-I2/I3 завершены. Выполнить конечные L3-I4:
    классификация отказов/hold/replay и восстановление. Инъекцию моста отличать
    от actual native false/warning/throw.
 3. Выполнить L3-P1 публичную same-wheel MCP-цепочку с close/open/следующим Save3.

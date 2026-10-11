@@ -22,7 +22,9 @@ discovery/schema/guide. Теперь dev88 собран и установлен 
 metadata/stdio accepted73 tools/22 mutations без source PYTHONPATH; итоговый
 source pure5978/323 CAD deselected. Installed L3-I1 прошёл (1008,63 с),
 independent full readback/mapping41 и cleanup/baseline подтверждены. L3-I2 прошёл
-(686,00 с): existing/stale, Copy0, cleanup/baseline; L3-I3 выполняется. Конечные
+(686,00 с): existing/stale, Copy0, cleanup/baseline. L3-I3 прошёл (874,27 с): actual
+no-replace collision/rollback/replay, foreign preserved и cleanup/baseline. L3-I4 warning
+выполняется. Конечные
 отказы и публичная MCP-цепочка не приняты. Исторический dev87 сохраняет свой
 accepted scope71/21. [Артефакт и контрольная точка dev88](CHECKPOINT_DEV88.md).
 [Прогресс и обязательные оставшиеся gates](NATIVE_FIRST_SAVE_PROGRESS.md).

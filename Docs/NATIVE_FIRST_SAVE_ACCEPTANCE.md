@@ -66,7 +66,8 @@ stage open/close и publication, known rolled-back исход, сохранён�
 bytes/identity, пустую own stage, replay без повторного эффекта, full models и
 baseline. `scripts/verifier_first_save_race.py` проверяет detached журнал;
 он не является независимым CAD/file oracle. Связанные 18 pure-тестов прошли
-на искусственном CAD/FS; физическая native-приёмка L3-I3 запущена и пока не завершена.
+на искусственном CAD/FS; физическая native-приёмка L3-I3 прошла на installed dev88
+за874,27 с, с known rollback, foreign preserved, replay и cleanup/baseline.
 
 L3-I4 подготовлен в `scripts/verify_native_first_save_fault.py`. Кроме обычных
 installed/opt-in параметров требуется явный `--fault`: `false_after_copy`,
@@ -80,7 +81,8 @@ read-only reader для независимого full clone/41-role readback. Е
 known own CWD restore, retained stage bytes и empty baseline предшествуют internal
 `accept_current_state` reconciliation. Исторический job остаётся unknown;
 снимается только его exact hold. Любое неподтверждённое состояние сохраняет процесс
-и ресурсы. Скрипт проверен на синтаксис/CLI; native L3-I4 ещё не запускался.
+и ресурсы. Скрипт проверен на синтаксис/CLI; installed native L3-I4 warning_after_copy
+запущен и пока не завершён. Остальные fault modes и публичная цепочка остаются видимыми задачами.
 
 Конечный отчёт связывает все шесть условий с метками, фактическими результатами
 и частными артефактами. Он фиксирует wheel SHA/build identity, установленный

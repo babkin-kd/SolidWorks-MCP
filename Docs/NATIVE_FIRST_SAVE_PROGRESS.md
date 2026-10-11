@@ -5,7 +5,8 @@ metadata/stdio accepted73 tools/22 mutations, source pure5978/323 CAD deselected
 Installed L3-I1 прошёл (1008,63 с): committed, 24 ledger rows verified,
 independent full readback/mapping41, own cleanup/baseline. Whole L3 не принят;
 installed L3-I2 прошёл (686,00 с): existing/stale до записи, Copy0, cleanup/baseline.
-L3-I3 запущен; конечные race/fault/public gates остаются.
+L3-I3 прошёл (874,27 с): actual no-replace collision, known rollback, foreign bytes/identity,
+replay и cleanup/baseline. Installed L3-I4 warning_after_copy запущен; fault/public gates остаются.
 [Точный артефакт и проверенные факты dev88](CHECKPOINT_DEV88.md).
 Приёмка открытия dev87 относится к своему точному артефакту;
 новые исходники не наследуют её автоматически.
