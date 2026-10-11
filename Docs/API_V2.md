@@ -1,6 +1,6 @@
 # API v2: текущий кандидат первой стадии
 
-В исходниках подключён новый кандидат **dev66**, каталог46 инструментов /16
+В исходниках подключён новый кандидат **dev67**, каталог46 инструментов /16
 мутаций: `sheet_prepare_edge_flange` и `sheet_create_edge_flange`. Ограниченный
 scope `single_l_sheet_edge_flange_v1` — одна штатная отбортовка явного внутреннего
 ребра согнутого L-профиля. Полный доменный/native контракт и восстановление:
@@ -9,7 +9,10 @@ input-restoration остановлена на capture mismatch, unknown сохр
 Dev65 подтвердил восстановление собственного входного профиля, но completed
 restoration остановлена на другой COM-обёртке FlatPattern из body.GetFeatures.
 Dev66 добавляет полную проверку native-привязки этого представления;
-обычный L-reader сохраняет строгий контракт. Native-приёмка dev66 ещё нужна;
+обычный L-reader сохраняет строгий контракт. Dev66 прошёл input restoration,
+но completed restoration отклонена доменным сравнением: требуется явно проверить
+два native-размера OneBend (радиус/угол). Dev67 добавляет этот ограниченный контракт.
+Native-приёмка dev67 ещё нужна;
 принятым остаётся dev63, результаты предыдущего wheel на новый не переносятся.
 
 Текущий принятый инженерный блок — **dev63**, `sheet_prepare_parameters` и
@@ -413,3 +416,22 @@ restoration. Terminal-аудит подтвердил исходный эски�
 
 Dev66 перед сборкой: **3880 pure passed /323 CAD deselected (48,52с)**.
 Installed metadata/native/public MCP приёмка ещё выполняется.
+
+
+Dev66: 3880 pure/323 CAD deselected, metadata46/16 accepted; internal native6
+passed, включая input restoration. Привязка fixed-face расширенного тела прошла;
+completed restoration отклонена строгим доменным переходом, job unknown.
+Read-only terminal-аудит подтвердил полный U-BREP, исходные эскиз/параметры
+и три новых размера: профиль13 мм, радиус OneBend2,5 мм и угол90°.
+Домен учитывал только размер профиля. Свои документы закрыты, empty/free baseline
+восстановлен; unknown-журнал не изменён. Публичная MCP-приёмка не запускалась.
+
+Dev67 требует ровно два дополнительных размера точного собственного OneBend:
+полный owner descriptor, type/unit, радиус/90°, driving/control flags, одна явная
+конфигурация, native display semantics и отсутствие tolerance/links. Только после
+этих проверок они исключаются из сравнения исходных размеров; произвольные
+добавленные или изменённые размеры запрещены. Связанные тесты:119 passed,
+включая missing/duplicate/foreign/control/value/owner regressions.
+Приёмка установленного wheel ещё нужна; принятым остаётся dev63.
+
+Dev67 перед сборкой: **3897 pure passed /323 CAD deselected (47,59с)**.

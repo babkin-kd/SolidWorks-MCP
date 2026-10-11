@@ -44,6 +44,14 @@ def effect(part_setup,profile,phase='completed'):
         parameters=dict(flange_options(definition),allowance_type=2,k_factor=.38,edge_count=1)
         semantic['geometry']['bodies']=[read(u_body())]
         e.update(volume_mm3=definition.volume_mm3,area_mm2=definition.surface_area_mm2)
+        bend=next(r for r in semantic['tree']['features'] if r['native_id']==73)
+        import math
+        for kind,name,value,display_type in ((0,'D1',.0025,5),(1,'D4',math.pi/2.,3)):
+            semantic['dimensions'].append(dict(name=name,full_name=name+'@Сгиб отбортовки@Деталь',
+                parameter_type=kind,unit='mm' if kind==0 else 'deg',values_si={'Основная':value},
+                owner=dict(bend,frozen=False,rolled_back=False),driven_state=2,read_only=False,
+                reference=False,design_table=False,linked=False,tolerance=dict(type=0,values_si=[]),
+                display_dimensions=[dict(type=display_type,linked=False,linked_text='')]))
     return before,dict(phase=phase,semantic=semantic,evidence=dict(source=e,
         created=dict(complete=True,phase=phase,profile=sketch,owned=own,parameters=parameters))),definition
 
@@ -82,6 +90,30 @@ def test_same_mass_or_names_never_prove_foreign_or_incomplete_effect(part_setup,
     elif fault=='volume':e['source']['volume_mm3']+=1.
     elif fault=='area':e['source']['area_mm2']+=1.
     else:c['complete']=False
+    assert not SheetEdgeFlangeCatalog._transition(before,after,d,'Основная',allow_names=True)
+
+
+@pytest.mark.parametrize('fault',['missing','duplicate','extra','radius','angle','units','kind','owner',
+    'owner_name','readonly','linked','tolerance','display','configuration','driven','frozen','rolled_back'])
+def test_owned_bend_dimensions_require_exact_radius_angle_and_complete_control(part_setup,profile,fault):
+    before,after,d=effect(part_setup,profile);rows=after['semantic']['dimensions'];radius,angle=rows[-2:]
+    if fault=='missing':rows.pop()
+    elif fault=='duplicate':rows[-1]=deepcopy(radius)
+    elif fault=='extra':rows.append(deepcopy(angle))
+    elif fault=='radius':radius['values_si']['Основная']=.003
+    elif fault=='angle':angle['values_si']['Основная']+=.1
+    elif fault=='units':angle['unit']='mm'
+    elif fault=='kind':angle['parameter_type']=True
+    elif fault=='owner':radius['owner']['native_id']=999
+    elif fault=='owner_name':radius['owner']['name']='Чужой сгиб'
+    elif fault=='readonly':radius['read_only']=True
+    elif fault=='linked':angle['linked']=True
+    elif fault=='tolerance':radius['tolerance']['values_si']=[.0001,.0002]
+    elif fault=='display':radius['display_dimensions'][0]['type']=2
+    elif fault=='configuration':angle['values_si']['Чужая']=1.5
+    elif fault=='driven':angle['driven_state']=1
+    elif fault=='frozen':radius['owner']['frozen']=True
+    else:angle['owner']['rolled_back']=True
     assert not SheetEdgeFlangeCatalog._transition(before,after,d,'Основная',allow_names=True)
 
 

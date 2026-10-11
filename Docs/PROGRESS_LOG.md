@@ -779,3 +779,22 @@ L-reader сохраняет строгую canonical membership. 173 связа�
 
 Dev66 перед сборкой: **3880 pure passed /323 CAD deselected (48,52с)**.
 Installed metadata/native/public MCP приёмка ещё выполняется.
+
+
+Dev66: 3880 pure/323 CAD deselected, metadata46/16 accepted; internal native6
+passed, включая input restoration. Привязка fixed-face расширенного тела прошла;
+completed restoration отклонена строгим доменным переходом, job unknown.
+Read-only terminal-аудит подтвердил полный U-BREP, исходные эскиз/параметры
+и три новых размера: профиль13 мм, радиус OneBend2,5 мм и угол90°.
+Домен учитывал только размер профиля. Свои документы закрыты, empty/free baseline
+восстановлен; unknown-журнал не изменён. Публичная MCP-приёмка не запускалась.
+
+Dev67 требует ровно два дополнительных размера точного собственного OneBend:
+полный owner descriptor, type/unit, радиус/90°, driving/control flags, одна явная
+конфигурация, native display semantics и отсутствие tolerance/links. Только после
+этих проверок они исключаются из сравнения исходных размеров; произвольные
+добавленные или изменённые размеры запрещены. Связанные тесты:119 passed,
+включая missing/duplicate/foreign/control/value/owner regressions.
+Приёмка установленного wheel ещё нужна; принятым остаётся dev63.
+
+Dev67 перед сборкой: **3897 pure passed /323 CAD deselected (47,59с)**.

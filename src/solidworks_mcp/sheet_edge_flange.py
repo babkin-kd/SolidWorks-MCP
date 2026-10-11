@@ -150,7 +150,25 @@ class SheetEdgeFlangeCatalog(SheetParameterCatalog):
             if (driver['full_name']!=relation['dimension_full_name'] or driver['unit']!='mm' or driver['driven_state']!=2
                     or any(driver[k] for k in ('read_only','reference','design_table','linked'))
                     or not math.isclose(driver['values_si'][configuration],definition.profile_height_mm/1000.,rel_tol=0.,abs_tol=1e-12)):return False
-            semantic['dimensions']=[r for r in semantic['dimensions'] if r not in drivers]
+            own_dimensions=list(drivers)
+            if phase=='completed':
+                bend=by_role['bend']
+                bend_dimensions=[r for r in semantic['dimensions'] if r['owner'] and r['owner']['native_id']==bend['native_id']]
+                if len(bend_dimensions)!=2 or sorted(r['parameter_type'] for r in bend_dimensions)!=[0,1]:return False
+                for row in bend_dimensions:
+                    kind=row['parameter_type'];owner=row['owner']
+                    if type(kind) is not int or any(owner[k]!=bend[k] for k in ('native_id','name','feature_type',
+                            'owner_native_id','suppressed','error_code','is_warning')):return False
+                    if owner['frozen'] or owner['rolled_back'] or row['driven_state']!=2:return False
+                    if any(row[k] for k in ('read_only','reference','design_table','linked')):return False
+                    expected_value=definition.bend_radius_mm/1000. if kind==0 else math.pi/2.
+                    if (row['unit']!=('mm' if kind==0 else 'deg')
+                            or set(row['values_si'])!={configuration}
+                            or not math.isclose(row['values_si'][configuration],expected_value,rel_tol=0.,abs_tol=1e-12)
+                            or row['display_dimensions']!=[dict(type=5 if kind==0 else 3,linked=False,linked_text='')]
+                            or row['tolerance']!=dict(type=0,values_si=[])):return False
+                own_dimensions.extend(bend_dimensions)
+            semantic['dimensions']=[r for r in semantic['dimensions'] if r not in own_dimensions]
             if allow_names:
                 cut=next(r['native_id'] for r in original['members'] if r['role']=='cut_list')
                 for row in semantic['tree']['features']:
