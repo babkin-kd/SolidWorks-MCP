@@ -30,6 +30,11 @@ solid и без внешних ссылок. L2 сохраняет **уже ра
 part/assembly/drawing resolved с new/borrowed references, read_only,
 replay/stale, clean rollback и CWD. Новые load/reference modes сюда не добавляются.
 
+Для first save и финальной цепочки сосед ограничен самостоятельной контрольной
+part того же наблюдаемого профиля. Гарантия сохранности полна в этом scope;
+произвольные соседние модели не обещаны. Неподдержанный сосед или неполный
+снимок блокирует запись. L2 сохраняет собственный уже принятый resolved scope.
+
 ## Обязательные гарантии: область поддержки ограничена, наблюдение полно
 
 - Явные IDs/config/revision/request_id, единицы и coordinate frame по контракту.
@@ -58,7 +63,7 @@ replay/stale, clean rollback и CWD. Новые load/reference modes сюда н
 | ID | Поддержанный результат | Конечная приёмка | Факт и оставшийся блокер |
 | --- | --- | --- | --- |
 | L2 | Exact resolved native open part/assembly/drawing; new/borrowed closure/config, read_only; dirty baseline, clean rollback, CWD | Фиксированные 13 internal / 11 public cases текущего [контракта](NATIVE_DOCUMENT_OPEN.md): exact source/refs/ACK0/0/final oracle, stale/replay, normal failure/real missing receipt, Python failure после native, clean rollback и restored application context | Закрыт dev87 internal13/public11: accepted, own cleanup/baseline подтверждены. Исторические failures сохранены; новые load/reference modes — D2-LOADREF |
-| L3 | Own unsaved part, одна конфигурация/solid, без refs: первый новый native путь без overwrite и доказанная live identity/path | Native success с независимым disk/reopen proof; existing-target и destination-race отказ без перезаписи; stale/foreign/replay; normal/pending failure с journal/hold и exact cleanup. Протокол публикации/замены identity сначала доказывается, не предполагается | [Source-прототип в работе](NATIVE_FIRST_SAVE_PROGRESS.md): related255 pure и NTFS6/6 на синтетических файлах. Полный CAD oracle, интеграция/installed/native ещё не приняты. Нет публичной регистрации. Save3 dev82 не является first save |
+| L3 | Own unsaved part, одна конфигурация/solid, без refs: первый новый native путь без overwrite и доказанная live identity/path | Native success с независимым disk/reopen proof; existing-target и destination-race отказ без перезаписи; stale/foreign/replay; normal/pending failure с journal/hold и exact cleanup. Протокол публикации/замены identity сначала доказывается, не предполагается | [Source-прототип в работе](NATIVE_FIRST_SAVE_PROGRESS.md): related419 pure, реальный passive source capture двух деталей и NTFS6/6 на синтетических файлах. Clone/identity mapping, интеграция/installed/native ещё не приняты. Нет публичной регистрации. Save3 dev82 не является first save |
 | S1-B1 | Русская новая part из пустого настроенного шаблона 1cfg; явная существующая плоскость; прямоугольный 2D-эскиз; одно blind extrusion | Positive chain 40×20×10/BREP/8000 мм³; foreign plane/context, stale и replay; known failure после настоящего создания с owned restore. Полное наблюдение своего простого графа | dev41/dev49 — история. Завершить явные контракты самостоятельных базовых операций и принять текущий wheel; add_plane/arbitrary profiles отдельные D2-GEOMETRY |
 | S1-B2 | Driving length собственного основания; rename; suppress/unsuppress; impact preview/delete собственного leaf в полностью наблюдаемом простом графе | Readback 10→12 и BREP/9600 мм³; русское имя/stable ref; suppression flags+geometry; preview без записи, execute exact IDs; foreign/stale/dependent/incomplete inventory отказы; известное scoped restoration | Исторические размеры/rename частично приняты; suppression/delete ещё не имеют законченной общей приёмки. Generic dependent delete и signed/angle/tolerance — D2-DELETION/D2-DIMENSIONS |
 | S1-B3 | Body/face/edge/sketch/feature/dimension IDs простой детали и уже поддержанные resolved instance paths; mass/bounds/distance в объявленных frames | Exact membership/units/PID roundtrip; renamed ref сохраняется, deleted/recreated/foreign/config mismatch отклоняется; аналитические mass/bounds/distance, selection preserved; stale read/revision. Проверить поддержанные current catalog scopes, не создавать новые frames/режимы | Scoped dev3/dev71–dev79 — история. Нужен конечный coverage текущего wheel; arbitrary frames/load states/1000+ — D2-FRAMES/D2-LOADREF/D2-LARGE |
@@ -68,6 +73,24 @@ replay/stale, clean rollback и CWD. Новые load/reference modes сюда н
 Точные случаи и stop conditions задаёт [STAGE_1_BLOCK_ACCEPTANCE](STAGE_1_BLOCK_ACCEPTANCE.md).
 При выявленном дефекте исправить обязательный supported case. При новой
 возможности создать/использовать задачу ниже: это не дополнительный gate текущего L2.
+
+## Порядок и конечные условия снятия блокеров
+
+| Очередь | Блок | Что снимает оставшийся блокер |
+| --- | --- | --- |
+| Завершён | L2 | Уже имеются accepted internal13/public11, exact wheel и baseline; дополнительные load/reference modes сюда не добавляются |
+| 1 | L3 | Полный source/clone proof поддержанного профиля, no-overwrite публикация и live ID mapping интегрированы; конечные P/I/N gates приняты. Copy/NTFS/source-пробы по отдельности недостаточны |
+| 2 | S1-B1 | Отдельные явные контракты plane/sketch/blind extrusion доведены до пользовательской цепочки и конечных P/I/N gates без добавления auxiliary planes или произвольных профилей |
+| 3 | S1-B2 | Driving length/rename/suppress/unsuppress/own-leaf preview-delete проходят шесть условий своего контракта; точные survivor/retired sets и восстановление подтверждены |
+| 4 | S1-B3 | Конечный manifest существующих supported reads связан с текущими IDs/frames и независимыми аналитическими результатами; новый topology/load/scale scope не требуется |
+| 5 | S1-B4 | Доказаны шесть условий job/rebuild/recovery/diagnostics на установленном кандидате; реальный late result отделён от искусственных отказов, restart не обходится новым request_id |
+| 6 | S1-B5 | Все предыдущие блоки имеют свои свидетельства; вся цепочка, cleanup и четыре release gates приняты на одном финальном wheel, обязательный CI пакета успешен |
+
+P/I/N и точные числа условий заданы в [приёмке блоков](STAGE_1_BLOCK_ACCEPTANCE.md).
+Этот порядок не разрешает переносить safety в S1-B4: каждая запись с первого
+блока обязана иметь explicit target/revision, журнал и доказанные постусловия.
+Расширение тестовой выборки оправдано изменением общего контура или найденной
+регрессией; новая возможность получает отдельную видимую задачу ниже.
 
 ## Трассировка всех прежних 22 требований
 

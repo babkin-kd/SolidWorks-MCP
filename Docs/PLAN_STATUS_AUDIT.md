@@ -17,14 +17,24 @@ create/sketch/extrude/edit/first save/close/open/edit/Save3/close при dirty �
 [План](../PLAN.md), [матрица](STAGE_1_REQUIREMENTS_MATRIX.md),
 [конечная приёмка](STAGE_1_BLOCK_ACCEPTANCE.md).
 
+Уточнён порядок шести остатков: L3 → S1-B1 → S1-B2 → S1-B3 → S1-B4 → S1-B5.
+L2 не расширяется; same-wheel финал остаётся обязательным. Для L3/сквозной
+цепочки baseline ограничен полностью наблюдаемой самостоятельной контрольной
+part того же профиля; иной неподдержанный сосед даёт отказ до записи.
+Обязательные гарантии применяются с первого блока, а не с момента приёмки B4.
+Устранён устаревший статус «отбортовка в работе» в разделе2.2: dev67/dev68
+остаются историческими scoped приёмками. Требование производственного DXF
+видимо, но выполнение зависит от возврата отложенного D-DEFER-IMPORT.
+
 Обязательны explicit target/revision/request_id, полный supported checkpoint,
 STA/durable ledger/holds, no retry unknown, реальные postconditions и native
 точного wheel. Сужение продуктового scope не ослабляет эти гарантии.
 L3 находится в исходной реализации: домен/one-shot bridge и passive oracle
-ещё не интегрированы в публичный каталог. Related255 pure (включая components45
-и filesystem50), отдельная Copy feasibility и реальная NTFS-проба6/6 на
-синтетических файлах не закрывают этот блок. Полный CAD oracle, фасад и
-same-wheel native-приёмка остаются незавершёнными.
+ещё не интегрированы в публичный каталог. Последующий related419 pure,
+совпадающие полные passive source captures двух реальных контрольных деталей,
+отдельная Copy feasibility и реальная NTFS-проба6/6 на синтетических файлах
+не закрывают этот блок. Clone/identity mapping, фасад и same-wheel native
+приёмка остаются незавершёнными; source-пробы не являются installed gate.
 [Фактическое продвижение и оставшиеся gates](NATIVE_FIRST_SAVE_PROGRESS.md).
 Remote CI последнего пакета failure; локальное исправление входит в pure,
 нового push нет. Исторические свидетельства ниже не являются приёмкой dev87
