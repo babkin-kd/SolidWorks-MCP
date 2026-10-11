@@ -15,6 +15,27 @@ Whole failed internal1/2 и прежний unknown dev86 сохранены от
 [точная приёмка](NATIVE_DOCUMENT_OPEN_ACCEPTANCE.md).
 **L2 закрыт в прежнем scope. Остались шесть блоков L3/S1-B1…S1-B5; стадия1 открыта.**
 
+## Шесть оставшихся блоков для пользователя
+
+Это краткая граница работ; подробные отказы, восстановление и доказательства
+перечислены ниже и в [приёмке блоков](STAGE_1_BLOCK_ACCEPTANCE.md).
+Числа — конечные условия, а не дополнительные отдельные CAD-прогоны.
+
+| Блок | Пользовательский результат | Поддерживаемые случаи | Конечный критерий |
+| --- | --- | --- | --- |
+| L3 | Сохранить новую деталь и получить документ для дальнейшего редактирования | Собственная несохранённая самостоятельная деталь, одна конфигурация и одно прямоугольное основание; новый локальный `.SLDPRT`, без перезаписи | Все 6 native-условий L3, проверки домена и установленного пакета; файл независимо перечитан, итоговые ссылки пригодны для дальнейших операций, сосед сохранён |
+| S1-B1 | Создать русскую деталь из эскиза на явно выбранной плоскости | Настроенный пустой шаблон; существующая плоскость по ID, прямоугольный эскиз, одно базовое выдавливание на заданную глубину | Все 5 native-условий B1; 40×20×10 мм и 8000 мм³, размеры и дерево подтверждены; неправильная цель отвергнута, собственный известный сбой восстановлен |
+| S1-B2 | Изменить размер и имя, подавить/вернуть либо удалить выбранный собственный элемент | Линейный управляющий размер основания; собственный элемент; удаление только конечного элемента без зависимостей после предпросмотра | Все 6 native-условий B2; 12 мм и 9600 мм³ после изменения, правильные имена/ссылки, подавление обратимо, удалён только подтверждённый набор |
+| S1-B3 | Найти нужный объект и получить проверяемые измерения | Простая деталь и уже поддержанные малые полностью загруженные сборки; существующие типы ссылок, единицы и системы координат | Все 5 native-условий B3; принадлежность и экземпляры различены, старые/чужие ссылки отвергнуты, масса/габариты/расстояния совпадают с независимыми расчётами |
+| S1-B4 | Узнать исход задания и безопасно продолжить после ошибки или тайм-аута | Задания поддержанных операций; поздний результат, повтор запроса, перезапуск сервера, удержание записи и согласование состояния | Все 6 условий B4 на установленном пакете; нет повторного CAD-эффекта, неопределённость не выдана за успех, восстановление и разрешение дальнейшей записи доказаны |
+| S1-B5 | Выполнить весь рабочий цикл детали через MCP | Один итоговый установленный wheel; профиль L3/B1/B2 и контрольный несохранённый сосед того же наблюдаемого профиля | Все 11 шагов цепочки и 4 условия выпуска: создание → редактирование → первое сохранение → закрытие/открытие → редактирование/Save3 → закрытие; native-readback, исходная сессия и обязательный CI подтверждены |
+
+**Неизменная граница:** безопасность обязательна внутри каждого поддержанного
+случая с первой записи. Новые типы геометрии, режимы загрузки, произвольные
+зависимости и масштаб сборки добавляются отдельными задачами D2/D3, а не
+увеличивают этот перечень при подготовке итогового выпуска. Обнаруженный дефект
+поддержанного случая исправляется до закрытия соответствующего блока.
+
 ## Законченный пользовательский результат
 
 При открытой dirty соседней детали: русская новая деталь → явно выбранная
@@ -63,7 +84,7 @@ part того же наблюдаемого профиля. Гарантия с�
 | ID | Поддержанный результат | Конечная приёмка | Факт и оставшийся блокер |
 | --- | --- | --- | --- |
 | L2 | Exact resolved native open part/assembly/drawing; new/borrowed closure/config, read_only; dirty baseline, clean rollback, CWD | Фиксированные 13 internal / 11 public cases текущего [контракта](NATIVE_DOCUMENT_OPEN.md): exact source/refs/ACK0/0/final oracle, stale/replay, normal failure/real missing receipt, Python failure после native, clean rollback и restored application context | Закрыт dev87 internal13/public11: accepted, own cleanup/baseline подтверждены. Исторические failures сохранены; новые load/reference modes — D2-LOADREF |
-| L3 | Own unsaved part, одна конфигурация/solid, без refs: первый новый native путь без overwrite и доказанная live identity/path | Native success с независимым disk/reopen proof; existing-target и destination-race отказ без перезаписи; stale/foreign/replay; normal/pending failure с journal/hold и exact cleanup. Протокол публикации/замены identity сначала доказывается, не предполагается | [Source Copy-прототип3](NATIVE_FIRST_SAVE_PROGRESS.md): полный source/clone proof и41 mappings, dirty сосед/cleanup,35,15 с; новый related289 pure. NTFS6/6 — отдельные синтетические файлы. Составной протокол/installed/public native не приняты; final binding и retirement остаются. L3 открыт, публичной регистрации нет |
+| L3 | Own unsaved part, одна конфигурация/solid, без refs: первый новый native путь без overwrite и доказанная live identity/path | Native success с независимым disk/reopen proof; existing-target и destination-race отказ без перезаписи; stale/foreign/replay; normal/pending failure с journal/hold и exact cleanup. Протокол публикации/замены identity сначала доказывается, не предполагается | [Source CAD/NTFS-прототип1](NATIVE_FIRST_SAVE_PROGRESS.md): passed,44,28 с; Copy/readback, no-replace publication, writable final,41 mappings, source retirement, cleanup/baseline и освобождение leases подтверждены. Runtime/MCP-фасад реализованы в исходниках, related366 pure/26,07 с. Полный native доменный протокол/guards/журнал, installed/public приёмка остаются. L3 открыт |
 | S1-B1 | Русская новая part из пустого настроенного шаблона 1cfg; явная существующая плоскость; прямоугольный 2D-эскиз; одно blind extrusion | Positive chain 40×20×10/BREP/8000 мм³; foreign plane/context, stale и replay; known failure после настоящего создания с owned restore. Полное наблюдение своего простого графа | dev41/dev49 — история. Завершить явные контракты самостоятельных базовых операций и принять текущий wheel; add_plane/arbitrary profiles отдельные D2-GEOMETRY |
 | S1-B2 | Driving length собственного основания; rename; suppress/unsuppress; impact preview/delete собственного leaf в полностью наблюдаемом простом графе | Readback 10→12 и BREP/9600 мм³; русское имя/stable ref; suppression flags+geometry; preview без записи, execute exact IDs; foreign/stale/dependent/incomplete inventory отказы; известное scoped restoration | Исторические размеры/rename частично приняты; suppression/delete ещё не имеют законченной общей приёмки. Generic dependent delete и signed/angle/tolerance — D2-DELETION/D2-DIMENSIONS |
 | S1-B3 | Body/face/edge/sketch/feature/dimension IDs простой детали и уже поддержанные resolved instance paths; mass/bounds/distance в объявленных frames | Exact membership/units/PID roundtrip; renamed ref сохраняется, deleted/recreated/foreign/config mismatch отклоняется; аналитические mass/bounds/distance, selection preserved; stale read/revision. Проверить поддержанные current catalog scopes, не создавать новые frames/режимы | Scoped dev3/dev71–dev79 — история. Нужен конечный coverage текущего wheel; arbitrary frames/load states/1000+ — D2-FRAMES/D2-LOADREF/D2-LARGE |

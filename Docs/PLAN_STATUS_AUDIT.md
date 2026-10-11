@@ -30,14 +30,19 @@ part того же профиля; иной неподдержанный сос�
 STA/durable ledger/holds, no retry unknown, реальные postconditions и native
 точного wheel. Сужение продуктового scope не ослабляет эти гарантии.
 L3 находится в исходной реализации: домен/one-shot bridge и passive oracle
-ещё не интегрированы в публичный каталог. Native source Copy-прототип3 принят:
+интегрированы в runtime и публичный исходный каталог двумя инструментами.
+Связанные domain/runtime/MCP/stdio pure366 passed/26,07 с; нового wheel ещё нет.
+Native source Copy-прототип3 принят:
 35,15 с, source/clone full proof,41 mappings, dirty сосед и own cleanup/baseline.
 Связанный новый source-набор289 passed/11,98 с; прежние419 относятся к своей
 контрольной точке. Прототип2 failed из-за изменения активного AutoSelect на
 legacy-основании; его исход не переписан. Новый v2 base создаётся без scope
 предсуществующих тел, недоступный getter и document qualifications наблюдаются
-явно. Составной filesystem/CAD протокол, writable final binding/source retirement,
-UI guards, фасад и same-wheel native остаются; source experiment не installed gate.
+явно. Составной source CAD/NTFS-прототип1 прошёл за44,28 с: строгие leases
+совместимы с Copy/readback, no-replace publication, writable final,41 mappings
+и source retirement; cleanup/baseline=true, pending=false, owned=[], leases
+освобождены. Native UI guards, durable журнал полного домена, installed фасад и
+same-wheel native остаются; source experiment не installed gate и не закрывает L3.
 [Фактическое продвижение и оставшиеся gates](NATIVE_FIRST_SAVE_PROGRESS.md).
 Remote CI последнего пакета failure; локальное исправление входит в pure,
 нового push нет. Исторические свидетельства ниже не являются приёмкой dev87

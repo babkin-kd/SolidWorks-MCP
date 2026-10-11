@@ -11,6 +11,7 @@ import math
 from pathlib import Path
 import time
 import traceback
+from contextlib import ExitStack
 
 import pythoncom
 from solidworks_mcp import binding
@@ -38,17 +39,19 @@ def main():
     parser.add_argument('--state-dir', required=True, type=Path)
     parser.add_argument('--source-oracle-prototype', action='store_true',
         help='Explicit source-only full passive oracle experiment; not installed-wheel acceptance.')
+    parser.add_argument('--filesystem-prototype', action='store_true',
+        help='Source-only NTFS leases/publication/final writable readback experiment.')
     args = parser.parse_args()
     assert args.run_solidworks
+    assert not args.filesystem_prototype or args.source_oracle_prototype
     wheel = validate_wheel(args.wheel.resolve(), expected_version=args.expected_version,
                            expected_git_sha=args.expected_git_sha)
     if args.source_oracle_prototype:
         import solidworks_mcp
-        from solidworks_mcp.cad_native_first_save_snapshot import CadNativeFirstSaveSnapshotMixin
         from solidworks_mcp.native_first_save import clone_mapping
         assert Path(solidworks_mcp.__file__).resolve().parent == Path.cwd() / 'src' / 'solidworks_mcp'
-        class Candidate(CadNativeFirstSaveSnapshotMixin, SolidWorksDocuments):
-            pass
+        # The integrated source adapter now owns the oracle mixin itself.
+        Candidate = SolidWorksDocuments
     else:
         installed_identity(wheel)
         Candidate = SolidWorksDocuments
@@ -57,7 +60,8 @@ def main():
     state.mkdir()
     report = dict(probe_passed=False, native_first_save_accepted=False,
                   scope='modern_unsaved_part_copy_feasibility_only', wheel=wheel,
-                  pending_native=False, owned_documents=[])
+                  pending_native=False, owned_documents=[],
+                  verifier_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     if args.source_oracle_prototype:
         report.update(scope='source_passive_first_save_oracle_feasibility_only',
             exact_installed_acceptance=False, source_files={
@@ -76,6 +80,8 @@ def main():
     pythoncom.CoInitialize()
     sw = None
     cip_owned = False
+    filesystem_stack=ExitStack()
+    filesystem_lease=filesystem_stage=None
     try:
         sw = binding.connect(show=False)
         module = binding.module()
@@ -146,6 +152,17 @@ def main():
         brep = exports._body_fingerprint(source_body)
         assert math.isclose(facts['body_mass_facts'][3] * 1e9, 9600, abs_tol=1e-7)
         stage = state / 'Копия первого сохранения.SLDPRT'
+        if args.filesystem_prototype:
+            from solidworks_mcp import native_first_save_files as files
+            destination=state/'Сохранённая контрольная деталь.SLDPRT'
+            token=files.prepare_destination(str(destination))
+            report.update(scope='source_copy_ntfs_publication_feasibility_only',destination_token=token)
+            persist()
+            filesystem_lease=filesystem_stack.enter_context(files.lease_destination(token))
+            def stage_checkpoint(checkpoint):
+                report['filesystem_stage']=checkpoint;persist()
+            filesystem_stage=files.create_owned_stage(filesystem_lease,on_owned_change=stage_checkpoint)
+            stage=filesystem_stage.filename
         report.update(source_before=facts, boundary_before=brep,
                       original_directory=original_directory, stage=str(stage))
         if args.source_oracle_prototype:
@@ -189,6 +206,10 @@ def main():
         assert file_bytes and len(file_bytes) <= 512 * 1024 * 1024
         stage_hash = hashlib.sha256(file_bytes).hexdigest()
         report.update(source_copy_preserved=True, stage_sha256=stage_hash)
+        if args.filesystem_prototype:
+            report['staged_file']=files.inspect_staged(filesystem_stage)
+            filesystem_lease.check();assert filesystem_lease.mode=='strict'
+            persist()
         report['pending_native'] = True
         persist()
         raw_model, errors, warnings = sw.OpenDoc6(str(stage), 1,
@@ -231,7 +252,7 @@ def main():
         retire_owned(sw, module, reader, [reader], owned, record)
         actual_directory = sw.GetCurrentWorkingDirectory()
         if actual_directory != original_directory:
-            assert Path(actual_directory).resolve() == state
+            assert Path(actual_directory).resolve() == stage.parent
             report['pending_native'] = True
             persist()
             ack = sw.SetCurrentWorkingDirectory(original_directory)
@@ -241,9 +262,58 @@ def main():
         assert snapshot(sw, module) == before
         assert_owned_source_facts_unchanged(facts, owned_source_snapshot(source, module))
         report['reader_roundtrip_verified'] = True
+        if args.filesystem_prototype:
+            filesystem_lease.check();assert filesystem_lease.mode=='strict'
+            report['pending_filesystem_publication']=True;persist()
+            publication=files.publish(filesystem_stage,filesystem_lease)
+            report['pending_filesystem_publication']=False
+            report['publication']=publication;stage_checkpoint(filesystem_stage.checkpoint())
+            assert publication['status']=='published' and filesystem_stage.published is True
+            assert filesystem_stage.uncertain is False and filesystem_stage.pending_publication is False
+            filesystem_lease.check();assert filesystem_lease.mode=='strict'
+            report['pending_filesystem_cleanup']=True;persist()
+            cleanup=files.cleanup_owned_stage(filesystem_stage,filesystem_lease,verified_terminal=True)
+            report['pending_filesystem_cleanup']=False;report['staging_cleanup']=cleanup;persist()
+            assert cleanup['destination_removed'] is False
+            assert files.observe_owned_stage(filesystem_stage,filesystem_lease)['empty'] is True
+            final_file=files.observe_destination(token)
+            assert final_file['sha256']==stage_hash
+            report['pending_native']=True;persist()
+            raw_final,errors,warnings=sw.OpenDoc6(str(destination),1,1,'Основная',0,0)
+            report.update(pending_native=False,final_open_returned=True,final_errors=errors,final_warnings=warnings)
+            if raw_final is not None:
+                final=binding.wrap(raw_final,module.IModelDoc2)
+                assert all(native_identity(final)!=native_identity(m) for m in owned)
+                owned.append(final);record(owned)
+            assert raw_final is not None and errors==warnings==0
+            assert Path(final.GetPathName()).resolve()==destination
+            assert final.IsOpenedReadOnly() is False and final.GetSaveFlag() is False
+            final_oracle=adapter.first_save_part_snapshot(final)
+            final_mapping=clone_mapping(source_oracle,final_oracle)
+            assert len(final_mapping)==len(mapping)==41
+            assert adapter.first_save_part_snapshot(source)==source_oracle
+            assert adapter.first_save_part_snapshot(neighbor)==neighbor_oracle
+            assert files.observe_destination(token)==final_file
+            report.update(final_oracle=final_oracle,final_reference_mapping=final_mapping,
+                          final_writable_binding_verified=True)
+            persist()
+            # Test-owner retirement, not the public replacement domain: retain
+            # only returned live handles, never query the retired source.
+            retire_owned(sw,module,source,[source],owned,record)
+            report['source_retirement_verified']=True;persist()
+            retire_owned(sw,module,final,[final],owned,record)
+            directory=sw.GetCurrentWorkingDirectory()
+            if directory!=original_directory:
+                assert Path(directory).resolve()==state
+                report['pending_native']=True;persist()
+                ack=sw.SetCurrentWorkingDirectory(original_directory)
+                report.update(pending_native=False,final_directory_restore_ack=ack);persist()
+                assert ack is True and sw.GetCurrentWorkingDirectory()==original_directory
+            assert files.observe_destination(token)==final_file
         # Only exact owned terminal fixtures, never user models or CloseAll.
         retire_owned(sw, module, neighbor, [neighbor], owned, record)
-        retire_owned(sw, module, source, [source], owned, record)
+        if not args.filesystem_prototype:
+            retire_owned(sw, module, source, [source], owned, record)
         assert not owned and not sw.GetDocuments() and sw.ActiveDoc is None
         sw.CommandInProgress = False
         cip_owned = False
@@ -251,6 +321,8 @@ def main():
         assert snapshot(sw, module) == baseline
         assert_non_stl_preferences(lambda: application_preferences(sw), preferences, report, 'restored_preferences')
         report.update(probe_passed=True, own_cleanup_verified=True, baseline_restored=True)
+        if args.filesystem_prototype:
+            report.update(probe_passed=False,cad_protocol_steps_verified=True)
     except BaseException as error:
         report.update(error_type=type(error).__name__, error=str(error),traceback=traceback.format_exc())
         # Unknown/failed stages retain all documents. A terminal call permits
@@ -264,6 +336,24 @@ def main():
             except BaseException:
                 report['owned_command_flag_released'] = False
     finally:
+        if filesystem_lease is not None and (report['pending_native']
+                or report.get('pending_filesystem_publication') or report.get('pending_filesystem_cleanup')
+                or filesystem_stage.pending_native_resources is not None):
+            filesystem_lease.retain=True
+            report['retained_filesystem_process']=True;persist()
+            # Preserve the exact live resources. Observation timeouts must
+            # never destroy a pending/unknown native publication's handles.
+            print('Native/filesystem outcome unconfirmed; retaining this process and evidence.',flush=True)
+            while True:time.sleep(.5)
+        try:
+            filesystem_stack.close()
+            if args.filesystem_prototype:
+                report['filesystem_lease_released']=True
+                if report.get('cad_protocol_steps_verified') is True:
+                    report['probe_passed']=True
+        except BaseException as error:
+            report.update(probe_passed=False,filesystem_release_error=str(error))
+            raise
         report['elapsed_seconds'] = time.perf_counter() - start
         persist()
         pythoncom.CoUninitialize()

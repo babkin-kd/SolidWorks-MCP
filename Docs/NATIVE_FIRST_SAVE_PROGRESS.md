@@ -1,7 +1,7 @@
 # Первое сохранение L3 — промежуточная контрольная точка
 
-L3 **не принят**. Публичный инструмент не зарегистрирован, новый wheel не собран
-и не установлен. Приёмка открытия dev87 относится к своему точному артефакту;
+L3 **не принят**. Два публичных инструмента зарегистрированы в исходном кандидате;
+новый wheel не собран и не установлен. Приёмка открытия dev87 относится к своему точному артефакту;
 новые исходники не наследуют её автоматически.
 
 Пользовательский результат и конечные gates остаются в
@@ -38,10 +38,11 @@ L3 **не принят**. Публичный инструмент не заре�
 Полный passive source capture проверен на двух собственных реальных деталях:
 два последовательных снимка каждой совпали, metadata сохранилась. Учтены
 служебные данные проверенного шаблона, closing proof конфигурации/объектов
-и native event envelope. Это source-прототип; clone capture, перенос ссылок,
-составной файловый протокол и exact installed приёмка ещё не доказаны.
-Отдельный source Copy/clone experiment принят ниже. Интеграция и MCP-фасад
-начинаются после закрытия этих обязательных гарантий.
+и native event envelope. Последующие source-прототипы подтвердили clone capture,
+перенос ссылок и совместимость нормального CAD/NTFS-прохода, как указано ниже.
+Полный доменный протокол с журналом/UI guards, интеграция и MCP-фасад ещё
+не приняты native; runtime и MCP-фасад уже подключены и проверены pure.
+Exact installed/native приёмка остаётся обязательной.
 
 Начальный source — видимая активная unsaved part с одной конфигурацией, одним
 solid и одним окном; профиль — независимое прямоугольное blind основание.
@@ -62,6 +63,9 @@ Baseline допускает видимые self-contained parts того же н
 | Source oracle Copy probe 2 | failed; Copy вернул True/0/0, reader открылся с0/0, source/dirty сосед сохранены; clone equivalence не прошёл | На legacy-основании FeatureScope=True активный AutoSelect изменился True→False. Это не допустимая квалификация имени и не исключённый control; результат не принят. Три terminal own модели закрыты по полным прежним raw snapshots, CWD и non-STL baseline восстановлены отдельно; failed сохранён |
 | Связанный source-набор после dimension roles/base controls | 289 passed, 11,98 с | Поддержанный namespace mapping, native owner/role связь, отказ active scope/unknown fields/foreign owner/изменения параметров, домен first save и базового построения. Без CAD/wheel |
 | Source oracle Copy probe 3 | passed, 35,15 с; source/clone полный proof и41 mappings; own cleanup/baseline=true, pending=false, owned=[] | Свежие фикстуры созданы actual v2 builder; FeatureScope=False. Новый Copy True/0/0, независимый read-only native reader0/0; исходник/dirty сосед и staged bytes сохранены, reader roundtrip/CWD/cleanup проверены. Только source experiment; native_first_save_accepted=false, exact_installed_acceptance=false |
+| Source CAD/NTFS prototype 1 | passed, 44,28 с; cad_protocol_steps_verified=true, filesystem_lease_released=true; baseline=true, pending=false, owned=[] | Modern Copy и независимый reader работают при строгих directory leases; no-replace публикация, открытие final для записи, полный oracle/41 mappings, retirement source и terminal own cleanup подтверждены совместно. SHA256 отчёта `b620a51b2ed4b91a3e4c03a8d327e2e19bb0fde4fa63289766d620cb4b8b8646`. Source experiment: native_first_save_accepted=false, exact_installed_acceptance=false; полный доменный журнал/UI guards и MCP не приняты |
+| Связанный source-набор интеграции runtime/MCP | 366 passed, 26,07 с | Общий реальный domain/JobStore с искусственными CAD/FS; replacement IDs, replay без второго Copy, request conflict, application hold после unknown, существующий destination до записи, строгие timeout/route проверки до worker/journal. Actual stdio discovery/schema/встроенный guide также проверены. Native и новый wheel не запускались этим набором |
+| Полный локальный source-набор перед native domain prototype | 5953 passed, 322 skipped, 110,43 с | Запуск без `--run-solidworks`; отдельный opt-in guard исключил CAD-подключения несмотря на неточный фильтр `not requires_cad`. Skipped не засчитываются как native passed. Это source-набор, не installed-wheel gate; следующий штатный фильтр — `not solidworks` |
 | Дополнительные oracle components | 45 passed, 0,14 с; включены в итог255 | Полные topology roles, exact reference roundtrip, cached-only свойства, реестр аннотаций, параметры/состояния конфигурации и отказы при неполных данных; целый CAD capture не проверен |
 | Отдельный native Copy probe установленного dev87 | passed, 8,61 с | Нормальный modern Copy ACK True/0/0, source неизменён, independent native shape/tree/config readback и own cleanup/baseline; это не L3 и не приёмка новых исходников |
 | Windows file primitive probes 1–5 | Не приняты | Реальные ошибки directory sharing, path-reader/DELETE sharing и rename; failed/unknown evidence сохранены, старые receipt не повторяются |
@@ -91,12 +95,14 @@ Baseline допускает видимые self-contained parts того же н
    exact file/target handles. Полный path/reparse/identity proof до/после,
    возврат строгого режима до следующего CAD-шага; lost ACK/reacquire failure
    остаются unknown. Нет path-based overwrite или удаления final.
-2. Source/clone oracle и41 mappings подтверждены отдельным Copy-прототипом3.
-   Доказать их в составном протоколе с реальными filesystem leases, final writable
-   document, source retirement, UI guards и durable журналом. Ни standalone Copy,
-   ни предыдущий filesystem experiment не доказывают совместимость этих шагов.
-3. Интегрировать домен и реализованный MCP-фасад. Подготовить конечные internal
-   failure cases и публичную пользовательскую цепочку без дублирования CAD.
+2. Source/clone oracle и41 mappings подтверждены Copy-прототипом3; совместимость
+   filesystem leases, final writable document и source retirement — составным
+   source CAD/NTFS-прототипом1. Доказать полный доменный протокол с UI guards и
+   durable журналом, включая отказы/восстановление. Прототип совместимости не
+   заменяет эту приёмку и не является проверкой установленного wheel.
+3. Домен интегрирован в runtime и MCP-фасад исходников. Проверить полный
+   native domain positive и подготовить конечные internal failure cases и
+   публичную пользовательскую цепочку без дублирования CAD.
 4. Полный pure → итоговый wheel → exact installed metadata/stdio → обязательная
    native/MCP-приёмка L3. Stale/replay, destination race, unknown/hold,
    source retirement и own cleanup входят в конечный gate.

@@ -9,6 +9,19 @@ failed/unknown отчёты сохранены; они не переписаны
 [Точная приёмка](NATIVE_DOCUMENT_OPEN_ACCEPTANCE.md),
 [контракт](NATIVE_DOCUMENT_OPEN.md).
 
+**Новый исходный кандидат L3:** зарегистрированы
+`document_prepare_first_save_native` и `document_first_save_native`;
+операции `document.prepare_first_save_native` / `document.first_save_native`,
+revision scope `native_first_save_replace_part_v1`. Runtime лениво создаёт домен
+на своём STA, использует общий durable journal/connection epoch и сбрасывает
+кеш при завершении соединения. Discovery не подключается к SolidWorks.
+MCP возвращает новый document_id и явный retirement исходных object IDs;
+параметры документа/конфигурации/пути/ревизии передаются без скрытого выбора цели.
+Связанный source pure-набор366 passed (26,07 с), включая фактический stdio
+discovery/schema/guide. Это не новая установленная сборка: dev87 сохраняет
+71/21, а source-каталог добавляет два инструмента и одну мутацию.
+[Прогресс и обязательные оставшиеся gates](NATIVE_FIRST_SAVE_PROGRESS.md).
+
 Граница стадии 1 — семь конечных блоков и сценарий простой детали:
 [матрица](STAGE_1_REQUIREMENTS_MATRIX.md), [критерии](STAGE_1_BLOCK_ACCEPTANCE.md).
 L2 закрыт, L3/B1–B5 открыты; первое сохранение не подменяется Save3.
