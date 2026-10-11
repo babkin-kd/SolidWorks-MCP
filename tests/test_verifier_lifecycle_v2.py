@@ -620,10 +620,15 @@ def test_history_retains_precheckpoint_failure_proof_without_reinterpreting_erro
     anyio.run(scenario)
 
 
-def test_read_only_sqlite_snapshot_sees_wal_and_never_recovers_or_rewrites_jobs():
+@pytest.mark.parametrize('fresh_checkout', [False, True])
+def test_read_only_sqlite_snapshot_sees_wal_and_never_recovers_or_rewrites_jobs(tmp_path, fresh_checkout):
     # Existing private parent avoids creating a pytest temp directory with an
     # incompatible Windows ACL. These unique files belong only to this test.
-    base = HELPER.parent.parent / 'work'
+    base = tmp_path / 'checkout' / 'work' if fresh_checkout else HELPER.parent.parent / 'work'
+    if fresh_checkout:
+        assert not base.exists()
+    # work/ is ignored by Git and is absent on a fresh CI checkout.
+    base.mkdir(parents=True, exist_ok=True)
     path = base / ('lifecycle-readonly-test-' + uuid.uuid4().hex + '.sqlite')
     writer = sqlite3.connect(path)
     try:
