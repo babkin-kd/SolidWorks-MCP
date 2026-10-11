@@ -1,5 +1,38 @@
 # Ход разработки
 
+## 11.10.2026 — source-примитив штатной отбортовки в U-профиль подтверждён
+
+Подготовлены независимая полная двухсгибная BREP, проверка стороны явно
+выбранного свободного ребра и полный revision payload. Analytical reader
+расширен топологией24/44/22, scopev5; census выбирает reader, вся форма
+проверяется отдельно. **91 связанных pure-тест passed**,49 новых. Полный pure
+нового кандидата/wheel ещё не выполнялись; установленный dev63 сохраняет44/15.
+
+Native source-probe8 подтвердила U-примитив: внутреннее свободное ребро,
+типизированные SAFEARRAY(DISPATCH), профиль13 мм от внутреннего ребра приt2
+для наружной виртуальной длины15 мм, r2,5/K0,38. Полная U-BREP совпала,
+эскиз fully-defined до/после factory, AddEdges0/Feature error0. PID/absorption
+проверены перед русскими именами фактических ProfileFeature/OneBend;
+имя списка вырезов прочитано в итоговом дереве. Readback имени тела потребуется
+в production postconditions. Своя модель закрыта, baseline пуст/free,
+все вызовы terminal. Это source-evidence, не installed-wheel/MCP-приёмка.
+
+Предшествующие пробы сохранены:1 stale без записи;2 tuples/AddEdges1 привела
+к unknown из-за отсутствующего experimental restoration, своя модель после
+terminal-вызовов закрыта по разрешению пользователя;3/4 наружная геометрия;
+5/6 возвращённый EdgeFlange без требуемого body effect, включая Feature error0
+и изменённый API OffsetDistance;7 U с ошибочной наружной длиной17 мм.
+Каждая новая проба запускалась на свежем контроле после подтверждённой очистки;
+unknown не повторялся на том же объекте и не переобъявлен успехом. Полная форма
+и native readback выявили ошибки, которые не видны по типу Feature и массе.
+
+Контракт разработки: [SHEET_EDGE_FLANGE.md](SHEET_EDGE_FLANGE.md). Private evidence
+в work/native-sheet-edge-flange-source-probe-1…8, CAD/журналы вне Git.
+Далее — native receipt/readback, domain/checkpoint/guard/scoped restoration,
+MCP-фасад и итоговая приёмка точного wheel; U-развёртка требует расширения
+нынешнего L-only контракта. Один агент, рабочая v1 сохранена, push/CI не запускались.
+Импорт/экспорт отложены; полный пункт2.2 и все стадии открыты.
+
 ## 11.10.2026 — параметры листового L-профиля dev63 приняты на точном wheel
 
 Добавлены `sheet_prepare_parameters`/`sheet_set_parameters`: явные t/r/K,

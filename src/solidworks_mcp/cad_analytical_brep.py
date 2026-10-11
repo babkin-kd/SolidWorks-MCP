@@ -6,7 +6,7 @@ from .cad_hole_brep import hole_body_snapshot
 from .cad_arc_brep import finite_arc_body_snapshot
 
 
-ANALYTICAL_BREP_SCOPE = 'planar_cylinder_hole_edge_round_or_sheet_l_body_set_v4'
+ANALYTICAL_BREP_SCOPE = 'planar_cylinder_hole_edge_round_or_sheet_profile_body_set_v5'
 
 
 def analytical_body_snapshot(body, *, identity, wrap=None, limits=None):
@@ -22,6 +22,6 @@ def analytical_body_snapshot(body, *, identity, wrap=None, limits=None):
     holes = census[2] - 6
     if holes >= 1 and census == (8, 12 + 2 * holes, 6 + holes):
         capture = hole_body_snapshot
-    if census in ((10,15,7),(16,24,10),(16,28,14)):
+    if census in ((10,15,7),(16,24,10),(16,28,14),(24,44,22)):
         capture = finite_arc_body_snapshot
     return capture(body, identity=identity, wrap=wrap, limits=limits)
