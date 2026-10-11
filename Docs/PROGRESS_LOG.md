@@ -1,5 +1,38 @@
 # Ход разработки
 
+## 11.10.2026 — параметры листового L-профиля dev63 приняты на точном wheel
+
+Добавлены `sheet_prepare_parameters`/`sheet_set_parameters`: явные t/r/K,
+полная ревизия модели и native template/allowance/relief/gauge, checkpoint/guard,
+независимая проверка формы и scoped restoration. Сохранены исходный эскиз,
+flat/fold-состояние и русские имена. Контракт: [SHEET_PARAMETERS.md](SHEET_PARAMETERS.md).
+
+**3545 pure passed /323 CAD deselected (42,53с)**; installed metadata44/15;
+на одном точном wheel **internal native8/public MCP10, оба accepted=true**.
+Internal: invalid/stale до записи, известный сбой после native-обновления с
+полным восстановлением, t2→2,5/r2→3,5/K0,42→0,38 и возврат исходных значений.
+Public: изменение, повтор request_id без второго setter, реальная развёртка
+с новыми параметрами, обратный сгиб и возврат. Свои документы закрыты, baseline
+пуст/free; все задания terminal, новых unknown нет. Рабочая v1 сохранена.
+Запись проверена на согнутом профиле; прямая запись в развёрнутом состоянии
+остаётся отдельной native-приёмкой. Общая область 2.2 и все стадии открыты.
+
+Source freeze `a6cba402068902c3d26f2e0468b556ae424abbec`; source digest
+`8135d780ccd2d75fcca252f80790bda2a81732e672a64e7b7859267abccd8faf`; wheel SHA-256
+`92b8b17c5393f033662d1cb4c966d123baee2aec24e084fe3368551bfa609e6e`.
+Private evidence: metadata-dev63-1-report.json, native-sheet-parameters-dev63-1
+и native-sheet-parameters-mcp-dev63-1 в work/. Source-пробы сохранены отдельно:
+первая read-проба отклонила gauge code2; исправленный reader использует точный
+template с code0. Коды не переобъявлены успехом. Source mutation-проба прошла
+полную цепочку, но не использована вместо installed-wheel приёмки.
+
+Перед native исправлены ошибки нового ответвления internal harness: неверные
+model/context и отсутствующий check_first; AST-регрессия исполняет ветку и
+проверяет сохранение исходной модели. Приёмочные harness и пакет заморожены
+одним коммитом; оба installed native-прогона1 приняты. Один агент, изменения и
+коммиты накоплены локально, GitHub push/CI не запускались. Далее — расширение
+листовых операций по PLAN.md; импорт/экспорт отложены.
+
 ## 11.10.2026 — native flat/fold dev62 принят на точном wheel
 
 **dev62 принят** на одном точном установленном wheel: **3435 pure passed /323 CAD

@@ -1,11 +1,17 @@
 # API v2: текущий кандидат первой стадии
 
-Кандидат **dev63** добавляет `sheet_prepare_parameters` и `sheet_set_parameters`:
-редактирование t/r/K одного существующего native L-профиля. Каталог кандидата —
-44 инструмента /15 мутаций. Source native-цепочка проверена, установленный wheel
-пока не принят. Контракт: [SHEET_PARAMETERS.md](SHEET_PARAMETERS.md).
+Текущий принятый инженерный блок — **dev63**, `sheet_prepare_parameters` и
+`sheet_set_parameters`, scope `single_l_sheet_parameters_v1`: редактирование t/r/K
+одного существующего native L-профиля. На одном точном установленном wheel:
+**3545 pure passed /323 CAD deselected (42,53с)**, metadata44 инструментов /15
+мутаций, **internal native8/public MCP10 passed, оба accepted=true**.
+Подтверждены изменение согнутого профиля, развёртка с новыми параметрами, сгиб,
+возврат исходных значений, request_id, stale и known restoration. Свои документы
+закрыты, baseline пуст/free, все задания terminal, новых unknown нет.
+Прямая запись параметров в развёрнутом состоянии ещё требует native-приёмки.
+Контракт: [SHEET_PARAMETERS.md](SHEET_PARAMETERS.md).
 
-Текущий принятый инженерный блок — **dev62**, `sheet_prepare_flat_state` и
+Ранее принятый инженерный блок — **dev62**, `sheet_prepare_flat_state` и
 `sheet_set_flat_state`, scope `single_l_sheet_flat_state_v1`.
 Контракт: [SHEET_FLAT_STATE.md](SHEET_FLAT_STATE.md).
 
@@ -27,6 +33,8 @@ guard released; все задания terminal, новых unknown нет. Ра�
 
 | Инструмент | Реализованная операция |
 | --- | --- |
+| `sheet_prepare_parameters` | Два полных read-only снимка существующего L-профиля и template/allowance/options; явные t/r/K, ожидаемая folded/flat форма и ревизия. |
+| `sheet_set_parameters` | Изменение t/r/K по ревизии/request_id; checkpoint/guard, полный native BREP, сохранение исходного эскиза, состояния и имён; scoped restoration известного сбоя. |
 | `sheet_prepare_flat_state` | Два полных read-only снимка существующего L-профиля, K/fixed-face/форма/ревизия. |
 | `sheet_set_flat_state` | Flat/fold по ревизии/request_id; checkpoint/guard, полный native BREP и исходные имена; scoped restoration известного сбоя. |
 | `sheet_prepare_l_profile` | Read-only полная подготовка пустой детали/плоскости, размеров и K; ожидаемая форма и ревизия. |
