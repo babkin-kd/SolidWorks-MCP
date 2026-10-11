@@ -17,6 +17,7 @@ from .cad_part_revolve import CadPartRevolveMixin
 from .cad_sheet_profile import CadSheetProfileMixin
 from .cad_sheet_flat import CadSheetFlatMixin,CadSheetFlatReadMixin
 from .cad_sheet_parameters import CadSheetParametersMixin
+from .cad_sheet_edge_flange import CadSheetEdgeFlangeMixin
 from .cad_document_creation import CadDocumentCreationMixin
 from .cad_sketches import CadSketchesMixin
 from .documents import rejected
@@ -25,7 +26,7 @@ from .application_guard import ApplicationModelMutationGuard
 from .cad_selection_scope import preserved_selection
 
 
-class SolidWorksDocuments(CadMassPropertiesMixin, CadGeometryMixin, CadFeaturesMixin, CadDimensionsMixin, CadDeletionContextMixin, CadPartCreationMixin, CadPartCutMixin, CadPartHoleMixin, CadPartPatternMixin, CadPartFilletMixin, CadPartRevolveMixin, CadSheetProfileMixin, CadSheetFlatMixin, CadSheetFlatReadMixin, CadSheetParametersMixin, CadDocumentCreationMixin, CadSketchesMixin):
+class SolidWorksDocuments(CadMassPropertiesMixin, CadGeometryMixin, CadFeaturesMixin, CadDimensionsMixin, CadDeletionContextMixin, CadPartCreationMixin, CadPartCutMixin, CadPartHoleMixin, CadPartPatternMixin, CadPartFilletMixin, CadPartRevolveMixin, CadSheetProfileMixin, CadSheetFlatMixin, CadSheetFlatReadMixin, CadSheetParametersMixin, CadSheetEdgeFlangeMixin, CadDocumentCreationMixin, CadSketchesMixin):
     def mutation_guard(self, model):
         return ApplicationModelMutationGuard(self._sw, [model],
             lambda current, state: preserved_selection(self, current, state=state, label='model_mutation'))

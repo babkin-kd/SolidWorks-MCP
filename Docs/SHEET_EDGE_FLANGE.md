@@ -87,6 +87,44 @@ template/allowance/relief/gauge, native-ссылку ребра, парамет�
 
 ## Что требуется для завершения блока
 
+### Native bridge в исходниках
+
+Добавлен внутренний `CadSheetEdgeFlangeMixin`, без регистрации новых MCP-tools.
+Он использует подтверждённую factory-сигнатуру и профиль высотой F−t,
+сохраняет отдельные native-ссылки edge/sketch/flange/OneBend/UiBend и проверяет
+всё expanded membership. Original base/sheet/template, relief/gauge и первый
+K читаются независимо и должны совпасть с receipt до записи новых имён.
+После полной U-формы проверяются русские имена, включая новый UiBend,
+и фактическое имя тела. Canonical COM identity сравнивается по равенству,
+без хеширования; оба порядка концов converted line поддерживаются.
+
+Подготовлен `restore_completed_sheet_flange`: удаление только собственной
+законченной отбортовки с absorbed nodes, без generic Undo и удаления
+зависимых элементов. Проверяется возврат всей L-формы, baseline membership,
+параметров и имён. Частичный sketch и неопределённый native factory этим
+методом не очищаются; для них ещё нужен отдельный доменный путь восстановления.
+Это реализация в исходниках, пока без подтверждённой native-приёмки этого пути.
+
+Связанные проверки bridge/geometry/options/ownership/restoration:
+**170 passed**, искусственные COM/геометрические сценарии.
+Source-probe9 остановилась до создания sketch из-за хеширования PyIUnknown;
+source-probe10 остановилась после конвертации ребра из-за ошибочного требования
+положительного порядка концов. Обе ошибки исправлены и покрыты регрессиями.
+Private experimental restoration в этих пробах не подтверждена, журналы
+сохранили unknown; все native-вызовы завершены, свои документы закрыты,
+baseline пуст/free. Эти отказы не считаются успешной CAD-приёмкой.
+Source-probe11 прошла проверки requested flange parameters, всей U-BREP
+и fully-defined absorbed sketch, затем отклонила ожидаемую flat absorption:
+`sheet_flange_flat_membership`. Имена ещё не менялись, удаление отбортовки
+не запускалось. Experimental restoration отсутствует, job остался unknown;
+вызовы terminal, своя модель закрыта, baseline пуст/free. Native bridge целиком
+и completed-U restoration не приняты. Требуется наблюдение фактической
+flat-структуры и persistent/identity readback; census/native ID не заменяют
+принадлежность. В диагностике теперь сохраняются фактические и retained ID/type,
+чтобы дальнейшая проверка дала конкретное расхождение.
+Полный source digest и private journal сохранены в отчёте work/.
+Dev63/wheel/catalog44/15 остаются прежними.
+
 - Примитив внутренней отбортовки и полная native U-форма подтверждены source-probe8.
   Перенести проверку точных параметров и fully-defined сети эскиза в domain/backend.
 - Реализовать receipt владения новым bundle, сохранение исходных узлов/параметров

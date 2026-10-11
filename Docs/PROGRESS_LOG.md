@@ -1,5 +1,37 @@
 # Ход разработки
 
+## 11.10.2026 — native bridge отбортовки подготовлен, принадлежность FlatPattern уточняется
+
+Добавлены внутренний `CadSheetEdgeFlangeMixin` и отдельный native receipt,
+typed factory по подтверждённой сигнатуре, высота профиля F−t, strict readback
+новых опций, сравнение original base/sheet/template/relief/gauge/K и полный
+expanded graph. Русские имена и body-name readback разрешаются только после
+полной формы и владения. Подготовлено точечное удаление завершённой собственной
+U-отбортовки с возвратом L-геометрии; partial/unknown creation не удаляется
+этим методом. В каталог MCP инструменты не добавлены, wheel не собирался.
+
+Связанный набор **170 passed**: geometry, native option readback, ownership,
+sheet parameter readers/writers и прежняя sheet restoration. Это искусственные
+COM/доменная геометрия, не native/wheel-приёмка нового инструмента.
+
+Source9 выявила запрет хеширования PyIUnknown до создания sketch; source10 —
+обратный native порядок концов converted line после SketchUseEdge. Исправлены
+сравнение identity без set/hash и приём обоих порядков; регрессии добавлены.
+Source11 прошла readback requested parameters, всю U-BREP и fully-defined
+absorbed sketch, затем остановилась на `sheet_flange_flat_membership`.
+Новые имена и completed-U deletion ещё не запускались. В private пробнике
+restoration не подтверждена: unknown не переобъявлены успехом. Вызовы terminal,
+свои модели закрыты, baseline пуст/free. Source11 digest
+`190126486c5bd8003e62634c72ef075e257af671f151343b58fa7ead3b6d2d1f`.
+После этой пробы добавлена диагностика actual/retained flat ID/type; новый
+код диагностики покрыт pure, дополнительной CAD-приёмки пока нет.
+
+Далее: фактическая native flat absorption и persistent identity, scoped partial
+restoration, полный домен/checkpoint/guard, MCP-фасад, итоговые pure и точный
+wheel с internal/public native. Установленный dev63 остаётся44/15; v1 сохранена.
+Один агент, импорт/экспорт отложены, push/CI не запускались; все стадии открыты.
+Подробности: [SHEET_EDGE_FLANGE.md](SHEET_EDGE_FLANGE.md).
+
 ## 11.10.2026 — source-примитив штатной отбортовки в U-профиль подтверждён
 
 Подготовлены независимая полная двухсгибная BREP, проверка стороны явно

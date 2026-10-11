@@ -26,6 +26,28 @@ class CadSheetParametersReadMixin:
 
     def sheet_parameter_options(self,model,target):
         target,_=self.sheet_state_target(model,target.base,target)
+        return self._sheet_parameter_options(model,target)
+
+    def sheet_parameter_options_retained(self,model,target):
+        """Read original options after an independently proved body extension.
+
+        This does not recognize a U body or authorize edits. The caller must
+        independently validate its complete shape and exact expanded bundle.
+        """
+        self._sheet_state_target_current(model,target)
+        for role in ('base','sheet','sheet_folder'):
+            members=[m for m in target.members if m.role==role]
+            if len(members)!=1:
+                raise rejected('sheet_parameter_membership_unconfirmed','Exactly one retained original option owner is required.')
+            self._sheet_member_reference(model,members[0])
+        base=next(m.feature for m in target.members if m.role=='base')
+        if self.identity(base)!=self.identity(target.base):
+            raise rejected('sheet_parameter_membership_unconfirmed','The retained base option owner changed.')
+        result=self._sheet_parameter_options(model,target)
+        self._sheet_state_target_current(model,target)
+        return result
+
+    def _sheet_parameter_options(self,model,target):
         feature=next(member.feature for member in target.members if member.role=='sheet')
         base=binding.wrap(target.base.GetDefinition(),self._module.IBaseFlangeFeatureData)
         sheet=binding.wrap(feature.GetDefinition(),self._module.ISheetMetalFeatureData)

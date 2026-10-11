@@ -49,6 +49,15 @@ class EdgeFlangeOnL:
         return cls(source,length,radius,float(k_factor),*names)
 
     @property
+    def profile_height_mm(self):
+        """Height from the converted inner edge to the new outer end.
+
+        Native OffsetDistance is driven by this profile, so seeding the outer
+        virtual-sharp length directly would add one sheet thickness to it.
+        """
+        return self.flange_length_mm-self.source.thickness_mm
+
+    @property
     def section_mm2(self):
         p=self.source;t=p.thickness_mm;r1=p.bend_radius_mm;r2=self.bend_radius_mm;s1=r1+t;s2=r2+t
         straight=p.leg_x_mm+p.leg_y_mm+self.flange_length_mm-2.*s1-2.*s2
