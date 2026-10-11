@@ -2,6 +2,24 @@
 
 ## Текущий следующий шаг
 
+В исходники добавлены dedicated `EdgeFlangeSketchReader` и полный native profile
+readback. Они проверяют четыре user points, четыре линии и единственный own
+internal projection, пять relations, жёсткий model-to-sketch transform, strong
+entity references и точный SI/native identity управляющего размера. До factory
+projection definition связывается с явным CAD-ребром; после — с own internal
+segment. Полное имя размера может измениться, его native identity — нет.
+**358 связанных pure passed**, включая reader/bridge и общие linear/circular
+регрессии. Новый код подключён к create/naming/completed restoration; его native
+приёмка ещё не завершена, доменный writer/MCP/wheel ещё не готовы.
+
+Source18/19 (digest `440551a90a45ed71b951928d33abd2ca7d3ba899dc64bafcdb0a4d8ea30cf077`)
+уточнили getter semantics до добавления reader: automatic plane PID Invalid=1,
+COM plane view меняется при factory; exact driver identity сохраняется, полное
+имя эскиза меняется. Projection definition до factory — CAD edge с native PID,
+после — own ghost segment. Все вызовы terminal, контрольные детали закрыты,
+полное original L восстановлено. Эти диагностические отчёты не принимают новый
+reader и не превращают invalid plane PID в публичную ссылку.
+
 Read-only domain preparation реализована в исходниках,26 новых pure-тестов;
 связанный geometry/bridge/prepare/source-parameters/ownership/restoration набор
 **224 passed**, включая21 тест проверки COM views и closing-проверки.

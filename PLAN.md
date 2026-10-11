@@ -9,6 +9,14 @@
 ### Актуальные приоритеты — решение пользователя от 10.10.2026
 
 **В работе — штатная отбортовка явного ребра листовой детали (2.2).**
+Добавлен полный dedicated профильный reader и native readback, подключённый к
+create/naming/completed restore: exact own entities, projection definitions
+до/после factory, вся сеть/transform и native height driver. **358 связанных pure
+passed** с общими reader-регрессиями; native нового кода ещё не завершён. Source18/19
+уточнили фактическую миграцию projection и full name при стабильном native driver;
+automatic plane PID Invalid=1 не используется как публичный target. Далее —
+partial restoration, доменный writer и MCP-фасад до итогового wheel.
+
 Подготовлен read-only домен `SheetEdgeFlangeCatalog`: явные opaque base/edge,
 два полных исходных capture, параметры, русские имена, source/body membership
 и полный revision payload. **224 связанных pure-теста passed**, включая26

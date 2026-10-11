@@ -20,6 +20,8 @@ from .cad_sheet_profile import NativeSheetMember
 from .cad_selection_scope import preserved_selection
 from .sheet_edge_flange_definition import l_flange_edge_points,sheet_u_body_matches
 from .sheet_profile_definition import sheet_l_body_matches,sheet_l_native_parameters_match
+from .edge_flange_sketch import EdgeFlangeSketchReader,edge_flange_sketch_matches,edge_flange_profile_preserved
+from .linear_sketch import SketchEntityBinder,_coordinates
 from .sketch_constraints import (SketchDefiner,SW_CONSTRAINT_COINCIDENT,
     SW_CONSTRAINT_VERTICAL,SW_CONSTRAINT_HORIZONTAL)
 
@@ -93,6 +95,10 @@ class NativeEdgeFlangeReceipt:
     pending_creation:bool=False
     owned_children:list=field(default_factory=list)
     driver_name:str=''
+    driver:object=None
+    driver_identity:object=None
+    profile_before:object=None
+    profile_before_members:tuple=()
     flat_bend_member:object=None
     pending_deletion:bool=False
     selection_uncertain:bool=False
@@ -100,6 +106,85 @@ class NativeEdgeFlangeReceipt:
 
 
 class CadSheetEdgeFlangeMixin:
+    def sheet_flange_sketch_snapshot(self,model,receipt,definition,frame,phase):
+        """Fresh own profile and driver proof; automatic plane is not a target."""
+        self._sheet_state_target_current(model,receipt.source_target)
+        feature=self._sheet_flange_feature_current(model,receipt.sketch,receipt.sketch_identity,receipt.sketch_pid,'ProfileFeature')
+        sketch=binding.wrap(feature.GetSpecificFeature2(),self._module.ISketch)
+        if sketch is None or self.identity(sketch)!=self.identity(receipt.native_sketch):
+            raise rejected('sheet_flange_profile_changed','The exact returned input sketch must remain current.')
+        if (phase=='before_factory')!=(receipt.flange is None):
+            raise rejected('sheet_flange_profile_phase','The reader phase must match the exact factory receipt.')
+        reference,kind=sketch.GetReferenceEntity(0)
+        if type(kind) is not int or kind!=4 or reference is None:
+            raise rejected('sheet_flange_profile_reference','The native automatic planar reference is required.')
+        reference_identity=self.identity(reference)
+        def resolve(pid,name):
+            raw,status=self._extension(model).GetObjectByPersistReference3(self._persistent_variant(pid))
+            if type(status) is not int or status!=0 or raw is None:
+                raise rejected('sheet_flange_profile_changed','A current own sketch entity reference must round-trip.')
+            return binding.wrap(raw,getattr(self._module,name))
+        binder=SketchEntityBinder(wrap=lambda raw,name:binding.wrap(raw,getattr(self._module,name)),
+            reference=lambda obj:self.persistent_id(model,obj),resolve=resolve,identity=self.identity,coalesce=True)
+        def source_definition(raw):
+            selected=self._sheet_flange_edge_current(model,receipt,definition,frame)
+            edge=binding.wrap(raw,self._module.IEdge)
+            if edge is None:return None
+            pid=self.persistent_id(model,edge)
+            if not pid or not self.same_persistent_id(model,pid,receipt.edge_pid):return None
+            resolved=self.resolve_persistent_id(model,pid,'edge')
+            owner=binding.wrap(edge.GetBody(),self._module.IBody2)
+            owner_pid=self.persistent_id(model,owner) if owner is not None else b''
+            points=self.pattern_edge_points(edge)
+            if (self.identity(resolved)!=self.identity(selected) or not owner_pid
+                    or not self.same_persistent_id(model,owner_pid,receipt.source_target.body_pid)
+                    or not l_flange_edge_points(points,definition.source,frame)
+                    or not l_flange_edge_points(self.pattern_edge_points(resolved),definition.source,frame)):
+                return None
+            body=self.resolve_persistent_id(model,owner_pid,'body')
+            if self.identity(body)!=self.identity(self.resolve_persistent_id(model,receipt.source_target.body_pid,'body')):return None
+            return self.identity(selected)
+        reader=EdgeFlangeSketchReader(sketch,wrap=binder,identity=self.identity,phase=phase,source_definition=source_definition)
+        snapshot,members=reader.read();binder.close()
+        transform=binding.wrap(sketch.ModelToSketchTransform,self._module.IMathTransform)
+        if transform is None:raise rejected('sheet_flange_profile_reference','The complete native model-to-sketch transform is required.')
+        snapshot.update(model_to_sketch=_coordinates(transform.ArrayData,16),feature_native_id=int(feature.GetID()),
+            feature_pid_hex=self.persistent_id(model,feature).hex(),prepared_edge_pid_hex=receipt.edge_pid.hex())
+        drivers=[(key,token) for key,token in members if key.startswith('dimension:')]
+        if (len(drivers)!=1 or receipt.driver is None or self.identity(receipt.driver)!=receipt.driver_identity
+                or drivers[0][1]!=receipt.driver_identity):
+            raise rejected('sheet_flange_driver_changed','The exact own native height driver must remain in the complete network.')
+        configuration=str(binding.wrap(model.GetActiveConfiguration(),self._module.IConfiguration).Name)
+        raw=receipt.driver.GetSystemValue3(3,self._named_configuration(configuration))
+        if (type(raw) not in (tuple,list) or len(raw)!=1 or type(raw[0]) not in (float,int) or not math.isfinite(raw[0])
+                or not math.isclose(raw[0],definition.profile_height_mm/1000.,rel_tol=0.,abs_tol=1e-12)
+                or int(receipt.driver.GetType())!=0 or int(receipt.driver.DrivenState)!=2
+                or bool(receipt.driver.ReadOnly) or bool(receipt.driver.IsReference()) or bool(receipt.driver.IsDesignTableDimension())):
+            raise rejected('sheet_flange_driver_changed','The own driving height must independently match the finite requested SI value.')
+        snapshot['driver_value_si']=float(raw[0]).hex()
+        if (reader.driver_display is None or bool(reader.driver_display.IsLinked)
+                or str(reader.driver_display.GetLinkedText() or '') or int(receipt.driver.GetToleranceType())!=0):
+            raise rejected('sheet_flange_driver_changed','Linked display overrides or driver tolerances are outside this own-input scope.')
+        if not edge_flange_sketch_matches(snapshot,definition,frame):
+            raise rejected('sheet_flange_profile_unconfirmed','The entire rectangle, projection, transform and driving network must match.')
+        closing_reference,closing_kind=sketch.GetReferenceEntity(0)
+        if (closing_reference is None or type(closing_kind) is not int or closing_kind!=kind
+                or self.identity(closing_reference)!=reference_identity
+                or _coordinates(binding.wrap(sketch.ModelToSketchTransform,self._module.IMathTransform).ArrayData,16)!=snapshot['model_to_sketch']):
+            raise rejected('sheet_flange_profile_changed','The anonymous native plane or transform changed within the read boundary.')
+        self._sheet_flange_feature_current(model,feature,receipt.sketch_identity,receipt.sketch_pid,'ProfileFeature')
+        if phase=='before_factory':self._sheet_flange_edge_current(model,receipt,definition,frame)
+        self._sheet_state_target_current(model,receipt.source_target)
+        return snapshot,members
+
+    def _sheet_flange_profile_current(self,model,receipt,definition,frame):
+        if receipt.profile_before is None:
+            raise rejected('sheet_flange_profile_unconfirmed','A fully proved own pre-factory profile is required.')
+        snapshot,members=self.sheet_flange_sketch_snapshot(model,receipt,definition,frame,'after_factory')
+        if not edge_flange_profile_preserved(receipt.profile_before,snapshot,receipt.profile_before_members,members):
+            raise rejected('sheet_flange_profile_changed','Factory may migrate projection definitions and names, not native input geometry or driver identities.')
+        return snapshot,members
+
     def _sheet_flange_feature_view_matches(self,model,view,retained,*,depth=0):
         """Bind alternate suppressed-feature views with native PID proof.
 
@@ -316,6 +401,7 @@ class CadSheetEdgeFlangeMixin:
                 or not sheet_u_body_matches(self.dimension_geometry_snapshot(model),definition.expected_geometry(frame))):
             raise rejected('sheet_flange_effect_unconfirmed','Complete U shape and independent parameter readback must precede naming.')
         bundle=self.sheet_flange_bundle(model,receipt)
+        self._sheet_flange_profile_current(model,receipt,definition,frame)
         desired=[(receipt.flange,definition.feature_name),(receipt.sketch,definition.sketch_name),
             (next(f for f in bundle['children'] if f.GetTypeName2()=='OneBend'),'Сгиб отбортовки'),
             (bundle['flat_bend'],'Развёртка сгиба отбортовки'),(bundle['cut_list'],cut_list_name)]
@@ -331,6 +417,7 @@ class CadSheetEdgeFlangeMixin:
         bundle['body'].Name=body_name
         if bundle['body'].Name!=body_name:raise rejected('sheet_name_mismatch','The original native body name was not retained.')
         self.sheet_flange_bundle(model,receipt)
+        self._sheet_flange_profile_current(model,receipt,definition,frame)
 
     def restore_completed_sheet_flange(self,model,receipt,definition,frame,body_name,cut_list_name):
         """Delete one fully proved own flange; partial/unknown writes stay held.
@@ -349,6 +436,7 @@ class CadSheetEdgeFlangeMixin:
                 or not sheet_u_body_matches(self.dimension_geometry_snapshot(model),definition.expected_geometry(frame))):
             raise rejected('sheet_flange_restore_unsafe','Only the complete intended U state authorizes this scoped deletion.')
         self.sheet_flange_bundle(model,receipt)
+        self._sheet_flange_profile_current(model,receipt,definition,frame)
         with preserved_selection(self,model,state=receipt,label='sheet_flange_restore'):
             model.ClearSelection2(True)
             if receipt.flange.Select2(False,0) is not True:
@@ -444,6 +532,10 @@ class CadSheetEdgeFlangeMixin:
         if definer.fully_defined() is not True:raise rejected('sheet_flange_underdefined','The own input profile must be fully constrained.')
         manager.InsertSketch(True)
         if manager.ActiveSketch is not None:raise rejected('sheet_flange_sketch_changed','The own sketch did not close.')
+        receipt.driver=binding.wrap(model.Parameter(receipt.driver_name),self._module.IDimension)
+        if receipt.driver is None:raise rejected('sheet_flange_driver_changed','The exact own height driver must be retained before factory.')
+        receipt.driver_identity=self.identity(receipt.driver)
+        receipt.profile_before,receipt.profile_before_members=self.sheet_flange_sketch_snapshot(model,receipt,definition,frame,'before_factory')
         factory=binding.wrap(model.FeatureManager,self._module.IFeatureManager)
         data=binding.wrap(factory.CreateDefinition(37),self._module.IEdgeFlangeFeatureData)
         if data is None:raise rejected('sheet_flange_definition_unavailable','The native EdgeFlange factory definition is required.')
@@ -466,5 +558,6 @@ class CadSheetEdgeFlangeMixin:
             raise rejected('sheet_flange_effect_unconfirmed','Independent requested parameters and complete U geometry must both match.')
         self._sheet_flange_children(model,receipt)
         self.sheet_flange_bundle(model,receipt)
+        self._sheet_flange_profile_current(model,receipt,definition,frame)
         if self.part_creation_controls(model)!=receipt.controls:
             raise rejected('sheet_flange_controls_changed','The original native sketch controls were not restored.')

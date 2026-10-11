@@ -227,6 +227,10 @@ class LinearSketchReader:
             'constraint_status': _integer(segment.Status, high=10), 'start': start, 'end': end}
         self.members[key] = self.identity(segment)
 
+    def _relation_entities(self,relation,kinds,entities,definitions):
+        return ([self._entity(_integer(kind,high=1000),raw) for kind,raw in zip(kinds,entities)],
+            [self._entity(kind,raw) for kind,raw in zip(kinds,definitions)])
+
     def read(self):
         if _boolean(self.sketch.Is3D()):
             raise rejected('sketch_3d_unsupported', 'The initial complete sketch scope is planar.')
@@ -268,8 +272,7 @@ class LinearSketchReader:
             count = _integer(relation.GetEntitiesCount(), high=32)
             if len(kinds) != count or len(entities) != count or len(definitions) != count:
                 raise rejected('sketch_capture_invalid', 'Relation entities/types/definitions are incomplete.')
-            keys = [self._entity(_integer(kind, high=1000), raw) for kind, raw in zip(kinds, entities)]
-            definitions = [self._entity(kind, raw) for kind, raw in zip(kinds, definitions)]
+            keys,definitions = self._relation_entities(relation,kinds,entities,definitions)
             row = {'type': _integer(relation.GetRelationType(), high=4096),
                    'suppressed': _boolean(relation.Suppressed), 'entities': keys, 'definitions': definitions,
                    'dimension_full_name': None, 'display_type': None}

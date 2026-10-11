@@ -1,5 +1,24 @@
 # Ход разработки
 
+## 11.10.2026 — полный профиль отбортовки подключён к bridge
+
+Dedicated reader ограничен own rectangular projection profile; общий named-plane
+reader не ослаблен. Небольшой extension hook сохраняет прежнее поведение общих
+linear/circular scopes. Проверяются полная сеть и native driver, фаза определения
+проекции, координаты/жёсткий transform, strong own entity binding и closing getters.
+Создание, naming и completed restore требуют pre/post profile preservation.
+**358 связанных pure passed**, native нового кода пока не завершён; нового MCP/wheel нет.
+
+Source18/19 на прежнем bridge подтвердили: automatic plane PID Invalid=1 и смену
+plane COM view при factory; сохранение exact dimension identity при изменении
+full name; миграцию projection definition CAD-edge → own internal segment.
+Ошибочный cast первой before-factory definition как ISketchSegment исключён из
+планируемой проверки. Обе диагностики: full U и completed-L restoration успешны,
+все jobs/calls terminal, свои fixtures closed, baseline пуст/free. Digest прежнего
+bridge `440551a90a45ed71b951928d33abd2ca7d3ba899dc64bafcdb0a4d8ea30cf077`.
+Подробный новый reader ещё требует native-проверки и не засчитан установленному
+dev63. Далее — partial restoration, полный доменный writer и MCP-фасад до wheel.
+
 ## 11.10.2026 — привязка native feature views и возврат L после отбортовки
 
 Source16 доказала совпадение alternate views flat-семейства по native persistent
