@@ -58,7 +58,11 @@ Native_calls_live=false, owned=[]; прежний unknown не переписа�
 metadata/runtime/MCP44 passed/4,56 с. Новый installed verifier ожидает73 tools/22
 mutations. Dev88 теперь собран/установлен, итоговый source pure5978/323 CAD
 deselected (99,46 с), installed metadata/stdio73/22 accepted. Installed L3-I1
-начат и выполняется; L3 и конечные native/public gates открыты.
+прошёл за1008,63 с: committed, 24 ledger rows verified, independent full
+readback/mapping41, cleanup/baseline. L3-I2 выполняется; его первый JSON-сбой
+после создания пустой part сохранён, own cleanup/empty baseline подтверждены
+отдельно; 15 pure-регрессий (0,60 с) проверили scalar projection и creation DTO.
+L3 и конечные native/public gates открыты.
 [Точный артефакт и проверенные факты](CHECKPOINT_DEV88.md).
 Remote CI последнего пакета failure; локальное исправление входит в pure,
 нового push нет. Исторические свидетельства ниже не являются приёмкой dev87

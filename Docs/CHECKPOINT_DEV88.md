@@ -30,17 +30,31 @@ committed, 24 native ledger rows, независимый full readback/mapping41
 dirty сосед и собственная очистка/baseline. Это не native-приёмка данного wheel;
 [факты и прежний unknown](NATIVE_FIRST_SAVE_PROGRESS.md) сохранены отдельно.
 
-**Installed L3-I1 начат**, один CAD-владелец, private state/report
-`work/native-first-save-dev88-positive-1/report.json`. Проверены wheel/origin и
-metadata; выполняется полное prepare-чтение. Пока результат не завершён,
-`accepted=false`, `positive_case_passed=false`. Незавершённый COM не отменять,
-пробу не запускать заново по тайм-ауту наблюдения. Unknown сохраняет журнал и
-собственные модели до доказанного согласования состояния.
+**Installed L3-I1 прошёл**, 1008,63 с, private report
+`work/native-first-save-dev88-positive-1/report.json`: positive_case_passed=true,
+job succeeded/committed, 24 ledger rows verified, full independent readback,
+mapping41, own cleanup/baseline, owned=[], native_calls_live=false. SHA256:
+`5deea52c0076a49919213c3f8fd3aeb5a09460887cd61bd53ae690847db817fa`.
+Отдельная detached-проверка подтвердила журнал, wheel SHA и совпадение всех
+текущих trusted verifier hashes. **accepted=false относится ко всему L3**:
+положительный случай не закрывает остальные условия.
+
+Installed L3-I2 запущен в `work/native-first-save-dev88-rejections-2/`.
+Первый запуск остановился сразу после нормального создания одной пустой part:
+COM IUnknown ошибочно попал в JSON-отчёт, до first-save/stale jobs. Терминальный
+процесс завершился; independent inspection и отдельная owner cleanup подтвердили
+единственную неизменную чистую пустую контрольную part, закрытие и исходный
+empty baseline/CWD/non-STL/CommandInProgress=false. Отчёты первого сбоя сохранены
+в `work/native-first-save-dev88-rejections-1/`, включая `owner-cleanup.json`;
+ошибка не засчитана как native passed. Проекция теперь содержит только scalars,
+normal creation DTO пишется отдельно; 15 связанных pure-регрессий passed (0,60 с).
+Fault harness/domain-набор: 95 passed (12,50 с), CAD искусственный.
+Незавершённый COM не отменять и не повторять по тайм-ауту наблюдения.
 
 ## Остаток
 
-1. Дождаться именно запущенного L3-I1, проверить terminal журнал, независимый
-   CAD/файловый результат и own cleanup/baseline; записать фактический исход.
+1. L3-I1 завершён на exact installed dev88; сохранять его witness/hash binding,
+   не объявляя whole L3 или same-wheel выпуск принятым.
 2. Выполнить конечные L3-I2/I3/I4: existing/stale, no-overwrite race,
    классификация отказов/hold/replay и восстановление. Инъекцию моста отличать
    от actual native false/warning/throw.

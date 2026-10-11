@@ -2,7 +2,9 @@
 
 L3 **не принят**. Два публичных инструмента входят в установленный dev88;
 metadata/stdio accepted73 tools/22 mutations, source pure5978/323 CAD deselected.
-Installed L3-I1 начат и выполняется; конечные negative/public gates остаются.
+Installed L3-I1 прошёл (1008,63 с): committed, 24 ledger rows verified,
+independent full readback/mapping41, own cleanup/baseline. Whole L3 не принят;
+installed L3-I2 выполняется, конечные race/fault/public gates остаются.
 [Точный артефакт и проверенные факты dev88](CHECKPOINT_DEV88.md).
 Приёмка открытия dev87 относится к своему точному артефакту;
 новые исходники не наследуют её автоматически.
