@@ -4,9 +4,13 @@
 Актуальное состояние: clean L1 принят dev85 по отдельному
 [контракту](NATIVE_DOCUMENT_CLOSE.md)/[приёмке](NATIVE_DOCUMENT_CLOSE_ACCEPTANCE.md).
 В L2 реализованы candidate domain/MCP/live-reference graph/clean rollback и
-supervisor; полный source-набор5200 passed/323 CAD deselected (69,91с).
-Source-каталог71/21, installed dev85 остаётся69/20. Wheel/native open ещё не
-приняты. [Точный статус L2](NATIVE_DOCUMENT_OPEN.md). L3 остаётся проектом.
+supervisor; dev86 installed metadata71/21 принята,
+полный source-набор5427 passed/323 CAD deselected (69,60с).
+Native open не принят: первое открытие осталось unknown из-за CWD.
+Exact-owned cleanup/исходный каталог подтверждены; historical journal сохранён.
+В исходном dev87 реализован one-shot restore CWD; full pure5560/323 deselected
+(77,43с). Fresh wheel/internal/public впереди.
+[Точный статус L2](NATIVE_DOCUMENT_OPEN.md). L3 остаётся проектом.
 Ниже проект полного lifecycle; он не устанавливает исход scoped приёмок.
 Основа: [PLAN](../PLAN.md),
 [S1-15 и N6](STAGE_1_REQUIREMENTS_MATRIX.md),

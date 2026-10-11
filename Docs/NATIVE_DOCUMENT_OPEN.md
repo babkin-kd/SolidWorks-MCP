@@ -3,8 +3,10 @@
 Состояние 11.10.2026: к bridge/guard/manifest добавлены durable domain,
 exact live-reference graph, require-clean rollback и MCP-фасад с lazy Runtime.
 Public `document_prepare_open_native` и `document_open_native` зарегистрированы
-в исходном кандидате (каталог71 tools/21 mutations), установленный dev85
-сохраняет исторический каталог69/20. Это промежуточная реализация
+в исходном кандидате (каталог71 tools/21 mutations); dev86 установлен и
+metadata71/21 принята. Dev85 сохраняет историческую clean-close приёмку69/20.
+Dev86 native open не принят; исправление CWD реализовано в исходном dev87.
+Это промежуточная реализация
 [L2](NATIVE_DOCUMENT_LIFECYCLE_DESIGN.md), а не завершение S1-15/N6.
 
 ## Реализовано в исходниках
@@ -70,14 +72,42 @@ swconst typelib31. CAD-документы при этой проверке не 
 facade76 cases (related86 passed/1,07с), bridge/ledger related99 passed/0,64с;
 интеграция domain/facade/server/metadata/ledger188 passed/7,90с. Эти связанные
 наборы перекрываются; их числа не суммируются. Все сценарии искусственные,
-без CAD-вызовов. Wheel для L2 ещё не собран/установлен, internal/public
-native-приёмка открытия не запускалась. Dev85 остаётся точной исторической
+без CAD-вызовов. Первый wheel L2 dev86 собран/установлен из чистого c512a6e;
+installed metadata71/21 принята. Internal native запускался, но не принят;
+public не запускался. Dev85 остаётся точной исторической
 приёмкой clean close; результаты не переносятся на изменённые исходники.
 
 После объединения независимых участков: supervisor evidence211 pure/0,22с,
 Runtime14 pure/1,25с, supervisor integration57 related pure/1,56с.
 Итоговый полный source-набор — **5200 passed,323 CAD deselected,69,91с**,
 ignored log `work/pytest-open-full-1.log`. Пропуски CAD не засчитываются.
+
+Dev86: итоговый pure5427 passed/323 CAD deselected/69,60с, отдельный
+preflight20 passed/0,76с. Первый native-прогон остановился в подготовке чертежа:
+в русской установке native model view — `*Изометрия`, а не `*Isometric`.
+Выбор точного имени из passive inventory и дополнительная запись ownership
+после SetTitle2 исправлены; related257 passed/0,98с, включая preflight30.
+Только собственные4 фикстуры закрыты; CAD-операции v2 ещё не вызывались.
+
+Второй internal-прогон: prepare завершён; OpenDoc6 normal returned-new с ACK0/0,
+но CWD перешёл из исходного каталога в source.parent. Полный baseline исходной
+dirty детали остался неизменным. Итог unknown/unresolved/0 accepted cases;
+это не успех открытия и не разрешение повторять request. После terminal native
+и независимого census закрыты только2 exact-owned private fixtures, исходный
+CWD восстановлен; historical unknown/hold в журнале сохранены. Public gate
+не запускался. Приватные CAD/journals/полные пути остаются в ignored work/.
+
+В исходном dev87 реализован explicit one-shot `restore_directory_native` с pending/returned
+ledger и окончательной строгой проверкой полного baseline. Только промежуточный
+CWD от normally-returned OpenDoc6 к bound source.parent может быть восстановлен;
+foreign CWD/settings/model/file changes, pending/throw/journal failures запрещают
+setter/автоматическую cleanup. Родной setter=False/nonbool ACK, пропавший
+baseline directory и сбой receipt factory также удерживают unknown без close.
+Связанные domain123/11,33с, bridge101/0,48с, passive gate238/0,24с,
+supervisor integration13/1,56с; наборы перекрываются и не суммируются.
+Итоговый полный pure — **5560 passed,323 CAD deselected,77,43с**,
+ignored log `work/pytest-open-dev87-full-1.log`. Fresh dev87 wheel/internal/public
+ещё впереди; source/pure не заменяют native-приёмку.
 
 ## Обязательное продолжение
 

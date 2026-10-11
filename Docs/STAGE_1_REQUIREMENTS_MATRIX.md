@@ -1,9 +1,12 @@
 # Конечная матрица незакрытых требований стадии 1
 
-S1-15/L2 в работе: domain/live-reference graph/clean rollback/MCP реализованы
-в исходном кандидате; supervisor интегрирован,
-полный source-набор5200 passed/323 CAD deselected (69,91с).
-Wheel/native open ещё не приняты;
+S1-15/L2 в работе: dev86 installed metadata71/21 принята;
+полный source-набор5427 passed/323 CAD deselected (69,60с).
+Native open не принят: setup-failure локализованного вида исправлен,
+затем первое открытие осталось unknown из-за изменения CWD.
+Exact-owned cleanup/исходный каталог подтверждены; historical unknown сохранён.
+В исходном dev87 реализован one-shot restore CWD; full pure5560/323 deselected
+(77,43с). Fresh wheel/internal/public ещё впереди.
 [статус L2](NATIVE_DOCUMENT_OPEN.md). Никакое требование этой реализацией не закрыто;
 20 из22 остаются открытыми полностью/частично.
 

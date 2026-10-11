@@ -1,9 +1,13 @@
 # План развития SolidWorks MCP
 
-Текущая работа S1-15/L2: open domain/live-reference graph/clean rollback/MCP
-реализованы в исходном кандидате; supervisor интегрирован,
-полный source-набор5200 passed/323 CAD deselected (69,91с).
-Wheel/native open ещё не приняты;
+Текущая работа S1-15/L2: dev86 собран и installed metadata71/21 принята;
+полный source-набор5427 passed/323 CAD deselected (69,60с).
+Native open не принят: после setup-failure из-за локализованного имени вида
+первое реальное открытие получило unknown из-за изменения CWD.
+Свои фикстуры закрыты, исходный каталог восстановлен; unknown-журнал сохранён.
+В исходном dev87 реализовано one-shot восстановление каталога с durable ledger;
+итоговый pure5560 passed/323 CAD deselected (77,43с).
+новый wheel/internal/public gates ещё впереди.
 [статус и следующие gates](Docs/NATIVE_DOCUMENT_OPEN.md). Стадия1 остаётся открытой.
 
 Dev85: clean native close принят:4673 pure перед wheel; final пакет4677/323 CAD deselected (60,07с). Installed metadata69/20,

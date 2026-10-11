@@ -316,3 +316,20 @@ def test_verifier_contains_only_scoped_owned_close_not_global_close_or_exit():
     retire = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'retire_owned')
     assert len(closes) == 1 and closes[0] in list(ast.walk(retire))
     assert len(closes[0].args) == 1 and isinstance(closes[0].args[0], ast.Name) and closes[0].args[0].id == 'title'
+
+
+@pytest.mark.parametrize('names, expected', [
+    (['*Спереди', '*Изометрия', '*Триметрия'], '*Изометрия'),
+    (('*Front', '*Isometric'), '*Isometric'),
+])
+def test_fixture_selects_one_passive_localized_standard_view(names, expected):
+    select = extract_function('isometric_view_name', {})
+    assert select(names) == expected
+
+
+@pytest.mark.parametrize('names', [None, '*Isometric', [], [False], [''],
+    ['*Front'], ['*Isometric', '*Изометрия'], ['*Isometric', '*Isometric']])
+def test_fixture_refuses_unconfirmed_or_ambiguous_model_view_without_native_retry(names):
+    select = extract_function('isometric_view_name', {})
+    with pytest.raises(AssertionError):
+        select(names)

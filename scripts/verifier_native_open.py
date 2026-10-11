@@ -6,13 +6,17 @@ outcome and independent full-baseline/file/handle postconditions.
 """
 
 import json
+import ntpath
+from pathlib import PurePosixPath, PureWindowsPath
+import posixpath
 
 
 OPEN_SCOPE = 'native_document_open_resolved_v1'
 OPEN_GUARD_SCOPE = 'application_document_open_guard_v1'
 MAX_BASELINE_MODELS = 4999
 STEP_NAMES = {'open_native', 'release_baseline_ui', 'activate_native',
-              'rollback_close_native', 'rollback_activate_native'}
+              'rollback_close_native', 'rollback_activate_native', 'restore_directory_native'}
+MAX_DIRECTORY_CHARS = 32767
 
 
 def _ids(values, maximum=MAX_BASELINE_MODELS):
@@ -133,6 +137,53 @@ def _activation_returned(evidence, outcome):
             and evidence['native_call_returned'] is False and evidence['native_error'] is None)
 
 
+def _directory_key(value, *, parent=False):
+    # Passive validation cannot prove filesystem existence or resolve aliases.
+    if (type(value) is not str or not value.strip() or len(value) > MAX_DIRECTORY_CHARS
+            or '\x00' in value):
+        return None
+    windows = PureWindowsPath(value)
+    if windows.is_absolute():
+        path = str(windows.parent) if parent else value
+        return 'windows', ntpath.normcase(ntpath.normpath(path))
+    posix = PurePosixPath(value)
+    if posix.is_absolute():
+        return 'posix', posixpath.normpath(str(posix.parent) if parent else value)
+    return None
+
+
+def _directory_pending(evidence, before):
+    if type(evidence) is not dict or set(evidence) != {'original_directory', 'expected_current_directory'}:
+        return False
+    application = before['semantic'].get('application')
+    baseline = application.get('current_directory') if type(application) is dict else None
+    original, expected = evidence['original_directory'], evidence['expected_current_directory']
+    source_path = before['source'].get('path')
+    if (not all(_directory_key(value) is not None for value in (baseline, original, expected, source_path))
+            or original != baseline):
+        return False
+    return (_directory_key(expected) != _directory_key(original)
+            and _directory_key(expected) == _directory_key(source_path, parent=True))
+
+
+def _directory_returned(evidence, outcome):
+    keys = {'native_call_attempted', 'native_call_returned', 'pending_directory',
+            'acknowledgement_valid', 'setter_succeeded'}
+    if (type(evidence) is not dict or set(evidence) != keys
+            or any(type(evidence[key]) is not bool for key in keys)
+            or evidence['pending_directory'] is not False):
+        return False
+    normal = evidence['native_call_attempted'] is True and evidence['native_call_returned'] is True
+    if not normal:
+        return outcome == 'rolled_back' and all(evidence[key] is False for key in keys)
+    if evidence['setter_succeeded'] and not evidence['acknowledgement_valid']:
+        return False
+    # A false/malformed normally returned ACK needs the separate final rollback
+    # oracle. It cannot justify a committed effect or prove restoration here.
+    return (outcome == 'rolled_back' or
+            (evidence['acknowledgement_valid'] is True and evidence['setter_succeeded'] is True))
+
+
 def _close_impact(impact, baseline_ids):
     keys = {'target_document_id', 'native_name', 'retiring_document_ids', 'hidden_document_ids',
             'survivor_document_ids', 'retiring_window_handles', 'active_after_document_id',
@@ -201,6 +252,13 @@ def _steps(verification, before):
                     or not _open_returned(b, outcome)):
                 return False
             opened = b
+        elif name == 'restore_directory_native':
+            if (offset != len(steps) - 2
+                    or opened['native_call_attempted'] is not True
+                    or opened['native_call_returned'] is not True
+                    or not _directory_pending(a, before)
+                    or not _directory_returned(b, outcome)):
+                return False
         else:
             # Following native steps require an exact normally returned owned
             # root receipt; no roster delta or null/malformed ACK grants it.

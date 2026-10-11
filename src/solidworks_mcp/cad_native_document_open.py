@@ -53,7 +53,64 @@ class NativeActivationReceipt:
     native_error: object = None
 
 
+@dataclass
+class NativeDirectoryRestoreReceipt:
+    original_directory: str
+    expected_current_directory: str
+    thread: int = field(default_factory=threading.get_ident)
+    native_call_attempted: bool = False
+    pending_directory: bool = False
+    native_call_returned: bool = False
+    raw_return: object = None
+    acknowledgement_valid: bool = False
+    setter_succeeded: bool = False
+
+
+def _directory(value):
+    if (type(value) is not str or not value.strip() or len(value) > 32767
+            or '\x00' in value or not Path(value).is_absolute()):
+        raise rejected('native_open_directory_invalid', 'An exact bounded absolute directory is required.')
+
+
 class CadNativeDocumentOpenMixin:
+    def new_native_directory_restore_receipt(self, original_directory, expected_current_directory):
+        _directory(original_directory)
+        _directory(expected_current_directory)
+        if (Path(original_directory).resolve() == Path(expected_current_directory).resolve()
+                or not Path(original_directory).is_dir()):
+            raise rejected('native_open_directory_invalid', 'Restore requires one distinct existing original directory.')
+        return NativeDirectoryRestoreReceipt(original_directory, expected_current_directory)
+
+    def restore_native_open_directory(self, receipt):
+        if type(receipt) is not NativeDirectoryRestoreReceipt:
+            raise rejected('native_open_directory_receipt_invalid', 'An exact directory restore receipt is required.')
+        if threading.get_ident() != receipt.thread:
+            raise ExecutionFailure('wrong_apartment', 'Directory restore belongs to its original STA.',
+                                   uncertain=receipt.native_call_attempted)
+        if receipt.native_call_attempted:
+            raise ExecutionFailure('native_open_directory_receipt_reused', 'Directory restore is one-shot.', uncertain=True)
+        _directory(receipt.original_directory)
+        _directory(receipt.expected_current_directory)
+        if (not Path(receipt.original_directory).is_dir()
+                or self._sw.GetCurrentWorkingDirectory() != receipt.expected_current_directory):
+            raise rejected('native_open_directory_changed', 'The exact prepared current directory must remain unchanged.')
+        receipt.native_call_attempted = True
+        receipt.pending_directory = True
+        # The domain must persist its pending step before this single native call.
+        raw = timed_call('com', self._sw.SetCurrentWorkingDirectory, receipt.original_directory)
+        receipt.raw_return = raw
+        receipt.native_call_returned = True
+        receipt.pending_directory = False
+        receipt.acknowledgement_valid = type(raw) is bool
+        receipt.setter_succeeded = raw is True
+        if not receipt.acknowledgement_valid or not receipt.setter_succeeded:
+            raise ExecutionFailure('native_open_directory_restore_unconfirmed',
+                'Normal setter acknowledgement is retained; no retry or automatic cleanup.', uncertain=True)
+        # A normal True ACK is not restoration proof; the domain reobserves the
+        # complete baseline/files/reference graph and exact raw CWD independently.
+        return dict(native_call_attempted=True, native_call_returned=True, pending_directory=False,
+                    acknowledgement_valid=True, setter_succeeded=True)
+
     def new_native_activation_receipt(self, model):
         return NativeActivationReceipt(model, self.identity(model))
 

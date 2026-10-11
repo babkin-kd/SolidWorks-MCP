@@ -85,6 +85,16 @@ def snapshot(sw, module):
     return native_snapshot(), physical_state(sw, module), window_state(sw, module)
 
 
+def isometric_view_name(names):
+    # Standard names are localized by the installed CAD application. Select
+    # once from its passive inventory; never retry a failed CreateDrawView call.
+    assert type(names) in (list, tuple) and 0 < len(names) <= 5000
+    assert all(type(name) is str and name.strip() for name in names)
+    matches = [name for name in names if name.casefold() in ('*isometric', '*изометрия')]
+    assert len(matches) == 1, 'One exact native isometric view name required.'
+    return matches[0]
+
+
 def independent_graph(root, module):
     nodes, edges, queue = [], [], [root]
     while queue:
@@ -201,8 +211,10 @@ def setup(session, owned, state, sw, module, record):
     owned.append(drawing)
     record(owned)
     assert drawing.SetTitle2('Чертёж открытия')
+    record(owned)
+    model_view = isometric_view_name(assembly.GetModelViewNames())
     view = binding.wrap(binding.wrap(drawing, module.IDrawingDoc).CreateDrawViewFromModelView3(
-        assembly.GetPathName(), '*Isometric', .1, .1, 0.), module.IView)
+        assembly.GetPathName(), model_view, .1, .1, 0.), module.IView)
     assert view is not None
     view.ReferencedConfiguration = 'Основная'
     assert view.ReferencedConfiguration == 'Основная'

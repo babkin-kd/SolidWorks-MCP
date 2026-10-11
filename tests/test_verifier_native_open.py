@@ -66,6 +66,116 @@ def cleanup(count=2):
             {'native_call_returned': True, 'acknowledgement_valid': True})
 
 
+def directory_returned(**updates):
+    return dict(native_call_attempted=True, native_call_returned=True, pending_directory=False,
+                acknowledgement_valid=True, setter_succeeded=True) | updates
+
+
+def directory_ledger(*, outcome='committed', preceding=(), returned=None, posix=False):
+    original = '/private/baseline' if posix else 'C:\\Рабочий каталог'
+    source = '/private/source/Контрольная.SLDPRT' if posix else 'D:\\Источник\\Контрольная.SLDPRT'
+    expected = '/private/source' if posix else 'd:/ИСТОЧНИК/.'
+    value, baseline = ledger(outcome=outcome, extra=[*preceding,
+        ('restore_directory_native', dict(original_directory=original, expected_current_directory=expected),
+         directory_returned() if returned is None else returned)])
+    baseline['source']['path'] = source
+    baseline['semantic']['application'] = {'current_directory': original}
+    value['native_steps'][0]['evidence']['source'] = deepcopy(baseline['source'])
+    return value, baseline
+
+
+@pytest.mark.parametrize('posix', [False, True])
+def test_directory_restore_binds_raw_baseline_and_normalized_source_parent(posix, monkeypatch):
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Passive ledger gate cannot inspect filesystem directories.')
+    monkeypatch.setattr(Path, 'is_dir', forbidden)
+    monkeypatch.setattr(Path, 'resolve', forbidden)
+    value, baseline = directory_ledger(posix=posix)
+    assert helper.verified_open_native_steps(value, baseline) is True
+
+
+def test_directory_posix_source_parent_binding_remains_case_sensitive():
+    value, baseline = directory_ledger(posix=True)
+    value['native_steps'][-2]['evidence']['expected_current_directory'] = '/private/SOURCE'
+    assert helper.verified_open_native_steps(value, baseline) is False
+
+
+def test_directory_windows_source_parent_binding_is_case_insensitive():
+    value, baseline = directory_ledger()
+    value['native_steps'][-2]['evidence']['expected_current_directory'] = 'd:\\ИСТОЧНИК'
+    assert baseline['source']['path'].startswith('D:\\Источник\\')
+    assert helper.verified_open_native_steps(value, baseline) is True
+
+
+def test_directory_restore_is_final_after_activation_or_all_six_native_pairs():
+    value, baseline = directory_ledger(preceding=[release(), activation()])
+    assert helper.verified_open_native_steps(value, baseline) is True
+    value, baseline = directory_ledger(outcome='rolled_back', preceding=[release(), activation(), cleanup(),
+                                                       activation('rollback_activate_native')])
+    assert len(value['native_steps']) == 12
+    assert len(helper.STEP_NAMES) == 6
+    assert helper.verified_open_native_steps(value, baseline) is True
+
+
+@pytest.mark.parametrize('returned', [
+    directory_returned(acknowledgement_valid=False, setter_succeeded=False),
+    directory_returned(setter_succeeded=False),
+    dict.fromkeys(directory_returned(), False)])
+def test_directory_false_malformed_or_precall_abort_only_after_proven_rollback(returned):
+    value, baseline = directory_ledger(outcome='rolled_back', returned=returned)
+    assert helper.verified_open_native_steps(value, baseline) is True
+    value['outcome'] = 'committed'
+    assert helper.verified_open_native_steps(value, baseline) is False
+
+
+def test_normally_returned_null_open_can_restore_directory_only_in_rollback():
+    value, baseline = directory_ledger(outcome='rolled_back')
+    value['native_steps'][1]['evidence'] = receipt(returned_model_retained=False,
+                                                returned_new_identity=False, errors=2)
+    assert helper.verified_open_native_steps(value, baseline) is True
+    value['native_steps'][1]['evidence']['native_call_returned'] = False
+    assert helper.verified_open_native_steps(value, baseline) is False
+
+
+@pytest.mark.parametrize('change', ['raw_baseline_alias', 'unchanged_normalized', 'foreign_directory',
+                                  'relative', 'nul', 'too_long', 'missing_application'])
+def test_directory_pending_rejects_wrong_bindings_and_invalid_paths(change):
+    value, baseline = directory_ledger()
+    pending = value['native_steps'][-2]['evidence']
+    if change == 'raw_baseline_alias': pending['original_directory'] = 'c:/Рабочий каталог'
+    if change == 'unchanged_normalized':
+        pending['expected_current_directory'] = 'c:/Рабочий каталог/.'
+        baseline['source']['path'] = 'C:\\Рабочий каталог\\Контрольная.SLDPRT'
+        value['native_steps'][0]['evidence']['source'] = deepcopy(baseline['source'])
+    if change == 'foreign_directory': pending['expected_current_directory'] = 'D:\\Чужой'
+    if change == 'relative': pending['expected_current_directory'] = 'Источник'
+    if change == 'nul': pending['expected_current_directory'] += '\x00'
+    if change == 'too_long': pending['expected_current_directory'] = 'D:\\' + 'x' * 32767
+    if change == 'missing_application': del baseline['semantic']['application']
+    assert helper.verified_open_native_steps(value, baseline) is False
+
+
+@pytest.mark.parametrize('updates', [dict(pending_directory=True), dict(native_call_returned=False),
+    dict(native_call_attempted=False), dict(acknowledgement_valid=False, setter_succeeded=True),
+    dict(setter_succeeded=1), dict(extra=False)])
+def test_directory_return_rejects_pending_throw_inconsistency_and_truthy_flags(updates):
+    value, baseline = directory_ledger(outcome='rolled_back', returned=directory_returned(**updates))
+    assert helper.verified_open_native_steps(value, baseline) is False
+
+
+@pytest.mark.parametrize('change', ['duplicate', 'before_open', 'before_activation', 'unpaired', 'pending_extra'])
+def test_directory_step_is_one_shot_paired_and_strictly_last(change):
+    value, baseline = directory_ledger(preceding=[release(), activation()])
+    steps = value['native_steps']
+    if change == 'duplicate': steps.extend(deepcopy(steps[-2:]))
+    if change == 'before_open': steps[:] = steps[-2:] + steps[:-2]
+    if change == 'before_activation': steps[:] = steps[:4] + steps[-2:] + steps[4:6]
+    if change == 'unpaired': steps.pop()
+    if change == 'pending_extra': steps[-2]['evidence']['ignore'] = True
+    for index, step in enumerate(steps): step['sequence'] = index + 1
+    assert helper.verified_open_native_steps(value, baseline) is False
+
+
 @pytest.mark.parametrize('count', [0, 1, 2, 4999])
 def test_exact_guard_count_accepts_zero_baseline_and_budget_boundary(count):
     assert helper.released_open_guard(guard(count), before(count)) is True

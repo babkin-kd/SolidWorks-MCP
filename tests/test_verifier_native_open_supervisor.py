@@ -70,3 +70,25 @@ def test_under_guard_prewrite_failure_requires_no_open_ledger(setup):
     row = with_guard(row)
     decision = owner_for(row)._decide([row])
     assert decision.child_can_close and decision.fixture_can_cleanup, decision
+
+
+@pytest.mark.parametrize('fault', [None, 'null', 'warning'])
+def test_open_directory_domain_stream_requires_full_completed_proof_before_cleanup(setup, fault):
+    x = setup
+    original = x.source.parent / 'Исходный каталог'
+    original.mkdir()
+    x.a.app['current_directory'] = str(original)
+    x.a.open_directory = True
+    x.a.open_fault = fault
+    p = x.c.prepare_open(str(x.source), 'part', 'Вариант')
+    row = with_guard(x.run(preparation=p))
+    assert row['status'] in ('succeeded', 'failed') and x.a.directory_calls == 1
+    assert x.a.app['current_directory'] == str(original)
+    assert [event['name'] for event in row['mutation']['verification']['native_steps'][-2:]] == [
+        'restore_directory_native', 'restore_directory_native']
+    decision = owner_for(row)._decide([row])
+    assert decision.child_can_close and decision.fixture_can_cleanup, decision
+    tampered = deepcopy(row)
+    tampered['mutation']['verification']['native_steps'][-2]['evidence']['original_directory'] += '/foreign'
+    held = owner_for(tampered)._decide([tampered])
+    assert held.child_can_close and not held.fixture_can_cleanup, held

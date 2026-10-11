@@ -6,7 +6,9 @@ accessors can enter a loaded-model receipt. Roster deltas never grant ownership.
 
 from dataclasses import dataclass
 import hashlib
-from pathlib import Path
+import ntpath
+import posixpath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import uuid
 
 from .documents import rejected
@@ -19,6 +21,20 @@ from .native_document_save import MAX_OPEN_DOCUMENTS, native_file_facts
 
 
 SCOPE = 'native_document_open_resolved_v1'
+
+
+def _directory_key(value, *, parent=False):
+    """Normalize only bounded absolute directory strings, never resolve aliases."""
+    if type(value) is not str or not value.strip() or len(value) > 32767 or '\0' in value:
+        return None
+    windows = PureWindowsPath(value)
+    if windows.is_absolute():
+        path = str(windows.parent) if parent else value
+        return 'windows', ntpath.normcase(ntpath.normpath(path))
+    path = PurePosixPath(value)
+    if path.is_absolute():
+        return 'posix', posixpath.normpath(str(path.parent) if parent else value)
+    return None
 
 
 @dataclass(frozen=True)
@@ -132,6 +148,24 @@ class NativeDocumentOpenCatalog:
                 and before['reference_graph'] == [row for row in after['reference_graph'] if row['parent_document_id'] in ids]
                 and before['application'] == after['application'])
 
+    @classmethod
+    def _same_intermediate_baseline(cls, before, after, source, receipt):
+        if cls._same_baseline(before, after):
+            return True
+        if (receipt is None or receipt.native_call_attempted is not True
+                or receipt.native_call_returned is not True or receipt.pending_open is not False
+                or receipt.acknowledgement_valid is not True):
+            return False
+        original = before['application'].get('current_directory')
+        observed = after['application'].get('current_directory')
+        if (_directory_key(original) is None or _directory_key(observed) is None
+                or _directory_key(observed) != _directory_key(source, parent=True)):
+            return False
+        # Only this receipt-bound intermediate change is tolerated. Final
+        # verification continues to compare the unmodified application context.
+        patched = dict(after, application=dict(after['application'], current_directory=original))
+        return cls._same_baseline(before, patched)
+
     @staticmethod
     def _manifest_disk(manifest):
         result = []
@@ -215,7 +249,7 @@ class NativeDocumentOpenCatalog:
     def open(self, operation_id, document_id, configuration, expected_revision, native_file_id, read_only=False):
         if document_id != self.application_id:
             raise rejected('application_reference_mismatch', 'Use the server-owned application_id as the explicit mutation target.')
-        context = dict(guarded_ids=(), receipt=None, activation=None, journal_failed=False,
+        context = dict(guarded_ids=(), receipt=None, activation=None, directory=None, directory_restore_started=False, journal_failed=False,
                        pending_release=False, ui_released=False, cleanup_started=False, pending_cleanup=False)
 
         def state():
@@ -265,6 +299,7 @@ class NativeDocumentOpenCatalog:
                 manifest_files=self._manifest_disk(prepared.before['manifest']), resolution=resolution,
                 receipt=receipt_evidence(receipt) if receipt else None,
                 pending_activation=bool(context['activation'] and context['activation'].pending_activation),
+                pending_directory=bool(context['directory'] and context['directory'].pending_directory),
                 pending_release=context['pending_release'], pending_cleanup=context['pending_cleanup'],
                 journal_failed=context['journal_failed'])
 
@@ -301,6 +336,44 @@ class NativeDocumentOpenCatalog:
                 and after['original_files']==before['semantic']['files']
                 and after['manifest_files']==[dict(document_type=row['document_type'],file=row['file']) for row in before['manifest']['files']])
 
+        def intermediate_effect(before, after):
+            return (self._same_intermediate_baseline(before['semantic'], after['semantic'],
+                        before['source']['path'], context['receipt'])
+                and after['original_files'] == before['semantic']['files']
+                and after['manifest_files'] == [dict(document_type=row['document_type'], file=row['file'])
+                    for row in before['manifest']['files']])
+
+        def restore_directory(prepared):
+            before = prepared.before
+            observed = inspect(prepared)
+            if not intermediate_effect(before, observed):
+                raise ExecutionFailure('native_open_directory_restore_unconfirmed',
+                    'Complete baseline/files/references changed before directory restoration.', uncertain=True)
+            original = before['semantic']['application']['current_directory']
+            current = observed['semantic']['application']['current_directory']
+            if current == original:
+                return
+            if context['directory'] is not None:
+                raise ExecutionFailure('native_open_directory_restore_unconfirmed',
+                    'Directory restoration cannot be retried.', uncertain=True)
+            context['directory_restore_started'] = True
+            receipt = self.adapter.new_native_directory_restore_receipt(original, current)
+            context['directory'] = receipt
+            record('restore_directory_native', 'pending', dict(original_directory=original,
+                expected_current_directory=current))
+            try:
+                self.adapter.restore_native_open_directory(receipt)
+            finally:
+                if receipt.native_call_returned or not receipt.native_call_attempted:
+                    record('restore_directory_native', 'returned', {
+                        name: getattr(receipt, name) for name in ('native_call_attempted', 'pending_directory',
+                            'native_call_returned', 'acknowledgement_valid', 'setter_succeeded')})
+            if (receipt.native_call_attempted is not True or receipt.pending_directory is not False
+                    or receipt.native_call_returned is not True or receipt.acknowledgement_valid is not True
+                    or receipt.setter_succeeded is not True or not effect(before, inspect(prepared))):
+                raise ExecutionFailure('native_open_directory_restore_unconfirmed',
+                    'One normally acknowledged setter and exact final baseline are required.', uncertain=True)
+
         def apply(prepared):
             before = prepared.before
             receipt = self.adapter.new_native_open_receipt(tuple(entry.model for entry in context['entries']),
@@ -316,16 +389,22 @@ class NativeDocumentOpenCatalog:
             if not receipt.acknowledgement_valid or receipt.model is None or receipt.errors != 0 or receipt.warnings != 0:
                 raise rejected('native_open_not_acknowledged', 'Zero native errors/warnings and one exact returned new model are required.')
             observed = inspect(prepared)
-            if observed['resolution'] is None or not effect(before,observed):
+            if observed['resolution'] is None or not intermediate_effect(before,observed):
                 raise rejected('native_open_effect_not_verified', 'Exact returned references and unchanged baseline/files were not confirmed.')
             active_after = before['semantic']['active_document_id'] or observed['resolution']['source_document_id']
             if observed['semantic']['active_document_id'] != active_after:
                 if context['entries']:
                     release_ui()
-                    if not effect(before,inspect(prepared)):
+                    if not intermediate_effect(before,inspect(prepared)):
                         raise rejected('native_open_effect_not_verified', 'Baseline/files changed while releasing owned UI locks.')
                 target = next(entry for entry in self.documents._entries if entry.document_id == active_after)
                 activate(target, 'activate_native')
+            final = inspect(prepared)
+            if (not intermediate_effect(before, final)
+                    or final['semantic']['active_document_id'] != active_after
+                    or final['resolution'] != observed['resolution']):
+                raise rejected('native_open_effect_not_verified', 'Exact source and baseline activation were not confirmed.')
+            restore_directory(prepared)
             return dict(native_file_id=native_file_id, **observed['resolution'], active_after_document_id=active_after,
                 read_only=read_only, native_errors=receipt.errors, native_warnings=receipt.warnings)
 
@@ -336,13 +415,13 @@ class NativeDocumentOpenCatalog:
                 and any(window['document_id']==source_id for window in after['semantic']['windows'])
                 and after['semantic']['active_document_id']==value['active_after_document_id']
                 and after['resolution']=={key:value[key] for key in ('source_document_id','new_document_ids','borrowed_document_ids','references')}
-                and not after['receipt']['pending_open'] and not after['pending_activation']
+                and not after['receipt']['pending_open'] and not after['pending_activation'] and not after['pending_directory']
                 and not after['pending_release'] and not after['pending_cleanup'] and not after['journal_failed'])
 
         def restore(before, prepared):
             receipt, activation = context['receipt'], context['activation']
             if (context['journal_failed'] or context['pending_release'] or (receipt and receipt.pending_open)
-                    or (activation and activation.pending_activation)):
+                    or (activation and activation.pending_activation) or context['directory_restore_started']):
                 raise ExecutionFailure('native_open_outcome_unknown', 'Pending native/journal steps prohibit retry or automatic cleanup.',uncertain=True)
             # Inspect without getters on returned handles: a wrong source
             # configuration can be a known clean failure, not a valid open.
@@ -351,8 +430,17 @@ class NativeDocumentOpenCatalog:
                             manifest_files=self._manifest_disk(before['manifest']))
             if semantic == before['semantic'] and effect(before, observed):
                 return
-            if receipt is None or not effect(before, observed):
+            if receipt is None or not intermediate_effect(before, observed):
                 raise ExecutionFailure('native_open_restore_unconfirmed', 'Baseline or files changed; cleanup cannot adopt this effect.', uncertain=True)
+            # A normally returned null has no root to retire. Restore only the
+            # proven directory change and require the independent full oracle.
+            patched = dict(semantic, application=before['semantic']['application'])
+            if (receipt.model is None and receipt.raw_model is None and receipt.returned_new_identity is False
+                    and receipt.native_call_attempted is True and receipt.native_call_returned is True
+                    and receipt.pending_open is False and receipt.acknowledgement_valid is True
+                    and patched == before['semantic']):
+                restore_directory(prepared)
+                return
             first = self._resolve_once(prepared, receipt, entries, semantic, cleanup=True)
             second = self._resolve_once(prepared, receipt, entries, semantic, cleanup=True)
             if first != second:
@@ -369,7 +457,7 @@ class NativeDocumentOpenCatalog:
                 survivor or '', hidden, context['guarded_ids'])
             baseline_ids = set(context['guarded_ids'])
             if (set(impact['retiring_document_ids']) != own or set(impact['survivor_document_ids']) != baseline_ids
-                    or not self._same_baseline(before['semantic'], semantic)):
+                    or not self._same_intermediate_baseline(before['semantic'], semantic, before['source']['path'], receipt)):
                 raise ExecutionFailure('native_open_restore_unconfirmed', 'Only an exact require-clean owned-new retirement is permitted.', uncertain=True)
             # The close preview has no reference-graph field; independently
             # reobserve the full session after it, before any cleanup write.
@@ -385,21 +473,26 @@ class NativeDocumentOpenCatalog:
             # Never read retired returned models or their reference handles.
             after = inspect(prepared)
             if (type(native) is not dict or native.get('native_call_returned') is not True
-                    or not effect(before, after) or after['semantic']['documents'] != before['semantic']['documents']
+                    or not intermediate_effect(before, after) or after['semantic']['documents'] != before['semantic']['documents']
                     or after['semantic']['windows'] != before['semantic']['windows']):
                 raise ExecutionFailure('native_open_restore_unconfirmed', 'Normally returned close is not exact retirement proof.', uncertain=True)
             if desired is not None and after['semantic']['active_document_id'] != desired:
                 release_ui()
                 released = inspect(prepared)
-                if (not effect(before, released) or released['semantic']['documents'] != before['semantic']['documents']
+                if (not intermediate_effect(before, released) or released['semantic']['documents'] != before['semantic']['documents']
                         or released['semantic']['windows'] != before['semantic']['windows']):
                     raise ExecutionFailure('native_open_restore_unconfirmed', 'Baseline changed during cleanup UI release.', uncertain=True)
                 target = next(item for item in self.documents._entries if item.document_id == desired)
                 activate(target, 'rollback_activate_native')
+            final = inspect(prepared)
+            patched = dict(final['semantic'], application=before['semantic']['application'])
+            if not intermediate_effect(before, final) or patched != before['semantic']:
+                raise ExecutionFailure('native_open_restore_unconfirmed', 'Exact baseline must precede directory restoration.', uncertain=True)
+            restore_directory(prepared)
 
         def restored(before, after):
             return (after['semantic']==before['semantic'] and effect(before,after)
-                and not after['pending_activation'] and not after['pending_release']
+                and not after['pending_activation'] and not after['pending_release'] and not after['pending_directory']
                 and not after['pending_cleanup'] and not after['journal_failed'])
 
         def guard(prepared):

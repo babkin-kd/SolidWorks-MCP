@@ -9,7 +9,7 @@ import pytest
 
 from solidworks_mcp.documents import DocumentCatalog
 from solidworks_mcp.jobs import ExecutionFailure, JobError, JobRunner, JobStore
-from solidworks_mcp.native_document_open import NativeDocumentOpenCatalog, SCOPE
+from solidworks_mcp.native_document_open import NativeDocumentOpenCatalog, SCOPE, _directory_key
 from test_native_document_close_v2 import CloseAdapter, Guard, Worker
 
 
@@ -37,6 +37,10 @@ class OpenAdapter(CloseAdapter):
         self.baseline_ui_released = False
         self.reference_calls = []
         self.resident_override = {}
+        self.open_directory = False
+        self.directory_fault = None
+        self.directory_calls = 0
+        self.directory_receipts = []
 
     @staticmethod
     def key(path):
@@ -111,6 +115,10 @@ class OpenAdapter(CloseAdapter):
         receipt.native_call_attempted = receipt.pending_open = True
         if self.open_fault == 'throw_before':
             raise RuntimeError('OpenDoc6 return lost before model delta')
+        if self.open_directory:
+            self.app['current_directory'] = str(Path(receipt.filename).parent)
+        if self.open_fault == 'foreign_directory':
+            self.app['current_directory'] = str(self.folder / 'Чужая папка')
         if self.open_fault in ('null', 'null_error'):
             receipt.native_call_returned, receipt.pending_open, receipt.acknowledgement_valid = True, False, True
             receipt.errors, receipt.warnings = (1 if self.open_fault == 'null_error' else 0), 0
@@ -158,6 +166,44 @@ class OpenAdapter(CloseAdapter):
         if self.open_fault == 'baseline_reference':
             parent = next(item for item in receipt.baseline_models if item.references)
             parent.references[0][1]['configuration'] = 'Основная'
+
+    def new_native_directory_restore_receipt(self, original_directory, expected_current_directory):
+        if self.directory_fault == 'constructor':
+            raise ExecutionFailure('native_open_directory_target_invalid', 'Original directory no longer exists.', uncertain=False)
+        receipt = SimpleNamespace(original_directory=original_directory,
+            expected_current_directory=expected_current_directory, native_call_attempted=False,
+            pending_directory=False, native_call_returned=False, acknowledgement_valid=False,
+            setter_succeeded=False, raw_return=None)
+        self.directory_receipts.append(receipt)
+        return receipt
+
+    def restore_native_open_directory(self, receipt):
+        assert self.busy and not receipt.native_call_attempted
+        ledger = self.checkpoint_lookup()['mutation']['verification']['native_steps']
+        assert ledger[-1] == dict(sequence=len(ledger), name='restore_directory_native', phase='pending',
+            evidence=dict(original_directory=receipt.original_directory,
+                          expected_current_directory=receipt.expected_current_directory))
+        if self.directory_fault == 'precall_changed':
+            self.app['current_directory'] = str(self.folder / 'Чужая папка')
+        if self.app['current_directory'] != receipt.expected_current_directory:
+            raise ExecutionFailure('native_open_directory_changed', 'CWD changed before setter.', uncertain=False)
+        assert Path(receipt.original_directory).is_absolute() and Path(receipt.original_directory).is_dir()
+        self.directory_calls += 1
+        receipt.native_call_attempted = receipt.pending_directory = True
+        if self.directory_fault == 'throw_before':
+            raise RuntimeError('Setter return lost before effect')
+        if self.directory_fault not in ('false', 'invalid_ack', 'no_effect'):
+            self.app['current_directory'] = receipt.original_directory
+        if self.directory_fault == 'throw_after':
+            raise RuntimeError('Setter return lost after effect')
+        receipt.native_call_returned, receipt.pending_directory = True, False
+        receipt.raw_return = None if self.directory_fault == 'invalid_ack' else self.directory_fault != 'false'
+        receipt.acknowledgement_valid = type(receipt.raw_return) is bool
+        receipt.setter_succeeded = receipt.raw_return is True
+        if self.directory_fault == 'foreign_application':
+            self.app['search_folders'] = 'foreign change after setter'
+        if not receipt.acknowledgement_valid or not receipt.setter_succeeded:
+            raise ExecutionFailure('native_open_directory_unacknowledged', 'Setter ACK is not true.', uncertain=True)
 
     def new_native_activation_receipt(self, current):
         self.alive(current)
@@ -567,3 +613,181 @@ def test_pending_application_hold_cannot_be_bypassed_with_new_connection_epoch(s
     assert result['status'] == 'failed' and result['error']['code'] == 'document_mutation_blocked'
     assert x.a.open_calls == 1 and not fresh.receipts
     assert x.s.get(original['operation_id'])['status'] == 'unknown'
+
+
+def directory_preparation(x, *, source=None, kind='part', configuration='Основная', read_only=False):
+    original = x.a.folder / 'Исходная рабочая папка'
+    original.mkdir(exist_ok=True)
+    x.a.app['current_directory'] = str(original)
+    x.a.open_directory = True
+    return x.c.prepare_open(str(source or x.source), kind, configuration, read_only)
+
+
+@pytest.mark.parametrize('empty', [False, True])
+def test_receipt_bound_directory_change_is_restored_once_last_and_replayed(setup, empty):
+    x = setup
+    if empty:
+        x.a.models, x.a.windows, x.a.active = [], [], None
+    p = directory_preparation(x)
+    result = x.run(preparation=p)
+    assert result['status'] == 'succeeded', result
+    assert result['result']['after']['semantic']['application'] == p['baseline']['application']
+    assert x.a.directory_calls == 1 and x.a.calls == 0
+    assert steps(result)[-2:] == [('restore_directory_native', 'pending'), ('restore_directory_native', 'returned')]
+    evidence = result['mutation']['verification']['native_steps'][-2]['evidence']
+    assert evidence == dict(original_directory=p['baseline']['application']['current_directory'],
+                            expected_current_directory=str(x.source.parent))
+    assert result['mutation']['verification']['native_steps'][-1]['evidence'] == dict(
+        native_call_attempted=True, pending_directory=False, native_call_returned=True,
+        acknowledgement_valid=True, setter_succeeded=True)
+    assert x.run(preparation=p) == result and x.a.directory_calls == 1 and x.a.open_calls == 1
+    assert x.neighbor.state['needs_save'] is True and not x.a.busy
+
+
+@pytest.mark.parametrize('fault', ['null', 'null_error'])
+def test_normal_null_directory_only_effect_is_restored_without_close(setup, fault):
+    x = setup
+    p = directory_preparation(x)
+    x.a.open_fault = fault
+    result = x.run(preparation=p)
+    assert result['status'] == 'failed' and result['mutation']['phase'] == 'rolled_back', result
+    assert result['error']['requires_reconciliation'] is False
+    assert x.a.directory_calls == 1 and x.a.calls == 0 and x.a.models == [x.neighbor]
+    assert x.a.app == p['baseline']['application'] and not x.c.receipts
+
+
+@pytest.mark.parametrize('fault', ['warning', 'error', 'source_config_fallback', 'read_only_fallback'])
+def test_clean_open_failure_closes_owned_root_then_restores_directory_once(setup, fault):
+    x = setup
+    p = directory_preparation(x, configuration='Вариант', read_only=True)
+    x.a.open_fault = fault
+    result = x.run(preparation=p)
+    assert result['status'] == 'failed' and result['mutation']['phase'] == 'rolled_back', result
+    assert x.a.calls == 1 and x.a.directory_calls == 1 and x.a.models == [x.neighbor]
+    assert x.a.app == p['baseline']['application'] and x.a.active is x.neighbor
+    assert steps(result)[-2:] == [('restore_directory_native', 'pending'), ('restore_directory_native', 'returned')]
+    assert steps(result).index(('rollback_close_native', 'returned')) < len(steps(result)) - 2
+    assert x.a.dead_getters == 0 and not x.c.receipts
+
+
+def test_directory_restore_follows_exact_original_active_rollback_activation(setup):
+    x = setup
+    active = x.a.add('Исходная активная модель CWD')
+    x.a.active = active
+    p = directory_preparation(x)
+    x.a.open_fault = 'warning'
+    result = x.run(preparation=p)
+    assert result['status'] == 'failed' and result['mutation']['phase'] == 'rolled_back', result
+    assert x.a.active is active and x.a.activations == [active]
+    assert x.a.calls == 1 and x.a.directory_calls == 1
+    assert steps(result)[-4:] == [('rollback_activate_native', 'pending'), ('rollback_activate_native', 'returned'),
+                                 ('restore_directory_native', 'pending'), ('restore_directory_native', 'returned')]
+    assert x.a.app == p['baseline']['application']
+
+
+@pytest.mark.parametrize('kind', ['assembly', 'drawing'])
+@pytest.mark.parametrize('borrowed', [False, True])
+@pytest.mark.parametrize('fault', [None, 'warning'])
+def test_directory_restore_requires_complete_new_and_borrowed_reference_closure(setup, kind, borrowed, fault):
+    x = setup
+    child = Path(x.neighbor.state['path']) if borrowed else x.a.file('Дочерняя модель CWD')
+    source = x.a.file('Документ CWD', kind=kind, dependencies=[child])
+    p = directory_preparation(x, source=source, kind=kind, configuration='' if kind == 'drawing' else 'Основная')
+    x.a.open_fault = fault
+    result = x.run(preparation=p)
+    assert result['status'] == ('failed' if fault else 'succeeded'), result
+    assert result['mutation']['phase'] == ('rolled_back' if fault else 'committed')
+    assert x.a.directory_calls == 1 and x.a.calls == int(fault is not None)
+    assert x.a.app == p['baseline']['application'] and x.neighbor.state['needs_save'] is True
+
+
+@pytest.mark.parametrize('fault', ['foreign_directory', 'application', 'foreign_model', 'neighbor_model',
+    'neighbor_view', 'neighbor_file', 'source_file', 'throw_before', 'throw_after', 'release_foreign', 'activation_throw'])
+def test_foreign_or_pending_effect_with_directory_change_has_no_setter_or_close(setup, fault):
+    x = setup
+    p = directory_preparation(x)
+    x.a.open_fault = fault
+    result = x.run(preparation=p)
+    assert result['status'] == 'unknown' and result['error']['requires_reconciliation'] is True, result
+    assert x.a.directory_calls == 0 and x.a.calls == 0
+    assert result['operation_id'] in x.c.receipts
+
+
+@pytest.mark.parametrize('fault', ['missing_reference_receipt', 'reference_config_fallback'])
+def test_incomplete_source_closure_with_directory_change_does_not_restore_or_close(setup, fault):
+    x = setup
+    child = x.a.file('Зависимость CWD')
+    source = x.a.file('Сборка CWD', kind='assembly', dependencies=[child])
+    p = directory_preparation(x, source=source, kind='assembly')
+    x.a.open_fault = fault
+    result = x.run(preparation=p)
+    assert result['status'] == 'unknown' and x.a.directory_calls == 0 and x.a.calls == 0, result
+
+
+@pytest.mark.parametrize('fault', ['throw_before', 'throw_after', 'false', 'invalid_ack', 'no_effect',
+                                  'foreign_application', 'precall_changed', 'constructor'])
+def test_failed_directory_restore_is_held_without_retry_or_cleanup(setup, fault):
+    x = setup
+    p = directory_preparation(x)
+    x.a.directory_fault = fault
+    result = x.run(preparation=p)
+    assert result['status'] == 'unknown' and result['mutation']['phase'] == 'unresolved', result
+    assert result['error']['requires_reconciliation'] is True and x.a.calls == 0
+    assert x.a.directory_calls == (0 if fault in ('precall_changed', 'constructor') else 1)
+    assert len(x.a.directory_receipts) == int(fault != 'constructor') and len(x.a.models) == 2
+    assert x.run(preparation=p) == result and len(x.a.directory_receipts) == int(fault != 'constructor')
+    blocked = x.run('new-after-directory-failure', preparation=p)
+    assert blocked['error']['code'] == 'document_mutation_blocked'
+    assert result['operation_id'] in x.c.receipts and x.a.calls == 0 and not x.a.busy
+    if fault == 'constructor':
+        assert not any(name == 'restore_directory_native' for name, _ in steps(result))
+    elif fault.startswith('throw_'):
+        assert steps(result)[-1] == ('restore_directory_native', 'pending')
+    else:
+        assert steps(result)[-1] == ('restore_directory_native', 'returned')
+
+
+@pytest.mark.parametrize('phase', ['pending', 'returned'])
+def test_directory_step_journal_failure_prohibits_native_retry_and_cleanup(setup, monkeypatch, phase):
+    x = setup
+    p = directory_preparation(x)
+    original = x.s.record_mutation_step
+    def fail(operation_id, **kwargs):
+        if kwargs['name'] == 'restore_directory_native' and kwargs['phase'] == phase:
+            raise OSError('Directory ledger persistence lost')
+        return original(operation_id, **kwargs)
+    monkeypatch.setattr(x.s, 'record_mutation_step', fail)
+    result = x.run(preparation=p)
+    assert result['status'] == 'unknown' and x.a.calls == 0, result
+    assert x.a.directory_calls == int(phase == 'returned')
+    assert x.run(preparation=p) == result and len(x.a.directory_receipts) == 1
+
+
+@pytest.mark.parametrize('value', [None, True, 1, '', ' ', 'relative/path', 'C:relative', '\\relative',
+                                  '/contains\0nul', '/' + 'x' * 32767],
+                         ids=['none', 'bool', 'integer', 'empty', 'whitespace', 'relative', 'drive_relative',
+                              'root_relative', 'nul', 'too_long'])
+def test_directory_normalization_rejects_unbounded_or_nonabsolute_strings(value):
+    assert _directory_key(value) is None
+
+
+@pytest.mark.parametrize('value,expected', [
+    ('C:\\Work\\.\\Sub\\..', ('windows', 'c:\\work')),
+    ('\\\\Server\\Share\\Models\\..', ('windows', '\\\\server\\share\\')),
+    ('/work/./models/..', ('posix', '/work')),
+])
+def test_directory_normalization_is_flavor_bound_without_filesystem_alias_resolution(value, expected):
+    assert _directory_key(value) == expected
+
+
+def test_final_baseline_predicate_never_accepts_owned_directory_delta(setup):
+    x = setup
+    p = directory_preparation(x)
+    after = deepcopy(p['baseline'])
+    after['application']['current_directory'] = str(x.source.parent)
+    receipt = SimpleNamespace(native_call_attempted=True, native_call_returned=True,
+                              pending_open=False, acknowledgement_valid=True)
+    assert not x.c._same_baseline(p['baseline'], after)
+    assert x.c._same_intermediate_baseline(p['baseline'], after, str(x.source), receipt)
+    receipt.acknowledgement_valid = False
+    assert not x.c._same_intermediate_baseline(p['baseline'], after, str(x.source), receipt)
