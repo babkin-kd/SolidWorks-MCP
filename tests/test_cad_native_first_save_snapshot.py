@@ -14,6 +14,7 @@ from test_planar_brep_v2 import make_body, snapshot
 @pytest.fixture(autouse=True)
 def typed_wrappers(monkeypatch):
     monkeypatch.setattr(binding, 'wrap', lambda raw, cls: raw)
+    monkeypatch.setattr(binding, 'queried', lambda raw, cls: raw)
 
 
 class Adapter:
@@ -133,7 +134,7 @@ def test_annotation_inventory_rejects_unobserved_or_replaced_data(fault):
     adapter,annotation,display,roster=annotation_fixture()
     if fault=='foreign_note':roster.append(object())
     elif fault=='duplicate_annotation':roster.append(annotation)
-    elif fault=='missing':roster.clear()
+    elif fault=='missing':adapter._extension(None).GetAnnotationCount=lambda:2
     elif fault=='bad_position':annotation.GetPosition=lambda:[0.,1.]
     elif fault=='bad_format':display.GetTextFormat=lambda:NS(GetAllValues=lambda:[object()])
     elif fault=='wrong_reference':adapter._extension(None).GetObjectByPersistReference3=lambda token:(object(),0)
@@ -187,11 +188,12 @@ def test_configuration_capture_rejects_partial_or_replaced_membership(fault):
 def test_unobserved_embedded_data_is_rejected_before_copy(fault):
     comments=NS(GetCommentCount=lambda:0,GetComments=lambda:[])
     selections=NS(GetSelectionSets=lambda:[])
-    extension=NS(GetAttachmentCount=lambda:0,GetAttachments=lambda:[])
+    extension=NS(GetAttachmentCount=lambda:0,GetAttachments=lambda:(None,None))
     if fault=='attachment':extension.GetAttachmentCount=lambda:1
     elif fault=='comment':comments.GetCommentCount=lambda:1
     else:selections.GetSelectionSets=lambda:[object()]
     features=[NS(GetSpecificFeature2=lambda:comments),NS(GetSpecificFeature2=lambda:selections)]
+    comments.GetFeature=lambda:features[0]
     rows=[dict(feature_type='CommentsFolder'),dict(feature_type='SelectionSetFolder')]
-    adapter=NS(_extension=lambda model:extension,_module=NS(ICommentFolder=object,ISelectionSetFolder=object))
+    adapter=NS(_extension=lambda model:extension,identity=id,_module=NS(ICommentFolder=object,ISelectionSetFolder=object,IFeature=object))
     with pytest.raises(ExecutionFailure):native._empty_auxiliary_data(adapter,object(),features,rows)

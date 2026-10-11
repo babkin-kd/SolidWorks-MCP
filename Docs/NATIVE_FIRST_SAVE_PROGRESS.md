@@ -24,9 +24,11 @@ L3 **не принят**. Публичный инструмент не заре�
   аналитической incidence, а не порядком перечисления. PID переносится в явную
   bijection только после exact native roundtrip.
 
-Oracle ещё требует проверки целого capture на реальном CAD, проверки полного
-набора данных шаблона и closing proof конфигурации/объектов. Компонентные pure
-проверки не доказывают полноту всего native capture. Интеграция и MCP-фасад
+Полный passive source capture проверен на двух собственных реальных деталях:
+два последовательных снимка каждой совпали, metadata сохранилась. Учтены
+служебные данные проверенного шаблона, closing proof конфигурации/объектов
+и native event envelope. Это source-прототип; clone capture, перенос ссылок,
+сохранение и exact installed приёмка ещё не доказаны. Интеграция и MCP-фасад
 начинаются после закрытия этих обязательных гарантий.
 
 Начальный source — видимая активная unsaved part с одной конфигурацией, одним
@@ -42,6 +44,9 @@ Baseline допускает видимые self-contained parts того же н
 | Проверка | Фактический результат | Что подтверждает |
 | --- | --- | --- |
 | Связанный source pure-набор, итог прототипа | 255 passed, 12,76 с | Мост, доменный протокол с искусственным CAD/FS, файловые receipt и NT-фаза публикации, пассивная классификация rectangle; native не запускался |
+| Последующий связанный source pure-набор | 419 passed, 13,03 с | Дополнительно actual QueryInterface helper на fake COM, составные dimension/annotation anchors, native-plane PID нормализация и целый capture на искусственной модели. Это не новый wheel и не CAD-приёмка |
+| Whole passive source probe 3 | Обе реальные собственные детали: два совпавших capture каждой; metadata_unchanged=true; 174,78 и 173,51 с | Полное чтение заявленного исходного профиля, шаблонных служебных данных и PID roundtrip. Только source-прототип, без SaveAs/clone/disk/readback или installed gate |
+| Source oracle probe 1 и промежуточные passive probes | Отказы сохранены | Первый отказ до SaveAs из-за неполного учёта шаблона; последующие выявили различия raw PID/IFeature/IAnnotation interfaces. Финальный source capture не переписывает их в passed |
 | Дополнительные oracle components | 45 passed, 0,14 с; включены в итог255 | Полные topology roles, exact reference roundtrip, cached-only свойства, реестр аннотаций, параметры/состояния конфигурации и отказы при неполных данных; целый CAD capture не проверен |
 | Отдельный native Copy probe установленного dev87 | passed, 8,61 с | Нормальный modern Copy ACK True/0/0, source неизменён, independent native shape/tree/config readback и own cleanup/baseline; это не L3 и не приёмка новых исходников |
 | Windows file primitive probes 1–5 | Не приняты | Реальные ошибки directory sharing, path-reader/DELETE sharing и rename; failed/unknown evidence сохранены, старые receipt не повторяются |
@@ -71,9 +76,11 @@ Baseline допускает видимые self-contained parts того же н
    exact file/target handles. Полный path/reparse/identity proof до/после,
    возврат строгого режима до следующего CAD-шага; lost ACK/reacquire failure
    остаются unknown. Нет path-based overwrite или удаления final.
-2. Закончить полный passive source/clone oracle и проверить его на реальном
-   поддержанном профиле, включая dirty сосед, persistent mapping, свойства,
-   конфигурацию и view. Масса/габариты/update stamp сами по себе недостаточны.
+2. После принятого source-only экспериментального capture закончить clone
+   oracle и проверить реальный перенос persistent references, qualified names,
+   конфигурации, свойств и view при смене document identity. Сохранность dirty
+   соседа во время SaveAs ещё требует доказательства; пассивное чтение,
+   масса/габариты/update stamp сами по себе недостаточны.
 3. Интегрировать домен и реализованный MCP-фасад. Подготовить конечные internal
    failure cases и публичную пользовательскую цепочку без дублирования CAD.
 4. Полный pure → итоговый wheel → exact installed metadata/stdio → обязательная

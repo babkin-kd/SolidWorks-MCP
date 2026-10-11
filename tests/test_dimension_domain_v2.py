@@ -267,6 +267,7 @@ def test_chamfer_compound_slot_one_is_explicit_and_not_interchangeable_with_slot
 def native_anchor_fakes(monkeypatch):
     from solidworks_mcp import cad_dimensions
     monkeypatch.setattr(cad_dimensions.binding, 'wrap', lambda obj, cls: obj)
+    monkeypatch.setattr(cad_dimensions.binding, 'queried', lambda obj, cls: obj)
     owner = SimpleNamespace(identity=object(), pid=b'owner-native',)
     dim = SimpleNamespace(identity=object(), pid=b'', GetFeatureOwner=lambda: owner)
     display = SimpleNamespace(identity=object(), pid=b'display-native', GetType=lambda: 2,

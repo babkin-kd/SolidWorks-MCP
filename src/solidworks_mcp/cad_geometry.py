@@ -54,6 +54,29 @@ class CadGeometryMixin:
         if status != 0 or raw is None:
             code = ('object_deleted' if status & 4 else 'object_suppressed' if status & 2 else 'object_reference_invalid')
             raise rejected(code, f'Native persistent reference is unavailable (state bitmask {status}).')
+        if kind == 'feature':
+            # A native plane PID can return its IRefPlane specific object,
+            # rather than IFeature (observed on SW2023's first standard plane).
+            # Resolve only by complete current membership + exact PID + native
+            # canonical identity of the feature or its explicit specific plane.
+            # Names and integer feature IDs are not identity fallbacks.
+            candidates = [feature for feature in self.features(model)
+                          if self.persistent_id(model, feature) == persistent_id]
+            if len(candidates) != 1:
+                raise rejected('persistent_reference_mismatch', 'Feature PID must bind one exact current native member.')
+            feature = candidates[0]
+            if self.identity(raw) == self.identity(feature):
+                return feature
+            if feature.GetTypeName2() == 'RefPlane':
+                specific = binding.wrap(feature.GetSpecificFeature2(), self._module.IRefPlane)
+                if specific is not None and self.persistent_id(model, specific) == persistent_id:
+                    same = self._sw.IsSame(raw, specific)
+                    # IRefPlane getters may return distinct COM wrappers for
+                    # one native plane. Native swObjectSame=1 is required;
+                    # swObjectNotSame=0 and unsupported=2 are not equality.
+                    if type(same) is int and same == 1:
+                        return feature
+            raise rejected('persistent_reference_mismatch', 'Feature PID resolved another native object; no name or index fallback.')
         cls = {'body': self._module.IBody2, 'face': self._module.IFace2, 'edge': self._module.IEdge,
                'feature': self._module.IFeature, 'component': self._module.IComponent2}[kind]
         return binding.wrap(raw, cls)

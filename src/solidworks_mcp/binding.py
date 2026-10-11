@@ -79,6 +79,20 @@ def wrap(obj, cls):
     return cls(oleobj)
 
 
+def queried(obj, cls):
+    """Query the actual dual interface, retaining its own dispatch pointer.
+
+    wrap() intentionally only constructs a generated wrapper. It cannot prove
+    that a PID-returned object's default dispatch supports the requested type.
+    The second IID requests Python's registered IDispatch wrapper for the
+    native dual interface, rather than an unregistered custom Python type.
+    """
+    if obj is None:
+        return None
+    oleobj = getattr(obj, '_oleobj_', obj)
+    return cls(oleobj.QueryInterface(cls.CLSID, pythoncom.IID_IDispatch))
+
+
 def connect(*, show: bool = True):
     """Attach to a running SolidWorks and return an early-bound ISldWorks.
 

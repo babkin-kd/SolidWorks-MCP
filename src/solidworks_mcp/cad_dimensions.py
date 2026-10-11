@@ -51,6 +51,24 @@ class CadDimensionsMixin:
         if status != 0 or raw is None:
             code = ('object_deleted' if status & 4 else 'object_suppressed' if status & 2 else 'object_reference_invalid')
             raise rejected(code, f'Native dimension persistent-reference state is {status}.')
+        if cls is self._module.IDisplayDimension:
+            try:
+                return binding.queried(raw, cls)
+            except pythoncom.com_error as error:
+                if error.hresult != -2147467262:  # E_NOINTERFACE only, not a failed/lost native call.
+                    raise
+            annotation=binding.queried(raw,self._module.IAnnotation)
+            annotation_type=annotation.GetType()
+            if type(annotation_type) is not int or annotation_type!=4:
+                raise rejected('object_reference_invalid','Display PID returned another annotation type.')
+            display=binding.queried(annotation.GetSpecificAnnotation(),cls)
+            if display is None:
+                raise rejected('object_reference_invalid','Annotation PID has no underlying display dimension.')
+            current_annotation=binding.queried(display.GetAnnotation(),self._module.IAnnotation)
+            if (current_annotation is None or self.identity(current_annotation)!=self.identity(annotation)
+                    or self.persistent_id(model,display)!=bytes.fromhex(persistent_hex)):
+                raise rejected('persistent_reference_mismatch','Annotation/display PID association is not exact.')
+            return display
         return binding.wrap(raw, cls)
 
     def _dimension_anchor_parts(self, model, anchor):

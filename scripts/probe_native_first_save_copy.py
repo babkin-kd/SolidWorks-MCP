@@ -10,6 +10,7 @@ import json
 import math
 from pathlib import Path
 import time
+import traceback
 
 import pythoncom
 from solidworks_mcp import binding
@@ -35,17 +36,34 @@ def main():
     parser.add_argument('--expected-version', required=True)
     parser.add_argument('--expected-git-sha', required=True)
     parser.add_argument('--state-dir', required=True, type=Path)
+    parser.add_argument('--source-oracle-prototype', action='store_true',
+        help='Explicit source-only full passive oracle experiment; not installed-wheel acceptance.')
     args = parser.parse_args()
     assert args.run_solidworks
     wheel = validate_wheel(args.wheel.resolve(), expected_version=args.expected_version,
                            expected_git_sha=args.expected_git_sha)
-    installed_identity(wheel)
+    if args.source_oracle_prototype:
+        import solidworks_mcp
+        from solidworks_mcp.cad_native_first_save_snapshot import CadNativeFirstSaveSnapshotMixin
+        from solidworks_mcp.native_first_save import clone_mapping
+        assert Path(solidworks_mcp.__file__).resolve().parent == Path.cwd() / 'src' / 'solidworks_mcp'
+        class Candidate(CadNativeFirstSaveSnapshotMixin, SolidWorksDocuments):
+            pass
+    else:
+        installed_identity(wheel)
+        Candidate = SolidWorksDocuments
     state = args.state_dir.absolute()
     assert state.is_relative_to(Path.cwd() / 'work') and not state.exists()
     state.mkdir()
     report = dict(probe_passed=False, native_first_save_accepted=False,
                   scope='modern_unsaved_part_copy_feasibility_only', wheel=wheel,
                   pending_native=False, owned_documents=[])
+    if args.source_oracle_prototype:
+        report.update(scope='source_passive_first_save_oracle_feasibility_only',
+            exact_installed_acceptance=False, source_files={
+                str(path.relative_to(Path.cwd())): hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in sorted((Path.cwd()/'src'/'solidworks_mcp').glob('*.py'))})
+        report['baseline_wheel_reference'] = report.pop('wheel')
     owned = []
     start = time.perf_counter()
     def persist():
@@ -104,7 +122,7 @@ def main():
         activate_owned(sw, source, source.GetTitle())
         assert source.GetPathName() == neighbor.GetPathName() == ''
         assert source.GetSaveFlag() is True and neighbor.GetSaveFlag() is True
-        adapter = SolidWorksDocuments()
+        adapter = Candidate()
         exports = CadExportsAdapter(adapter)
         source_identity = native_identity(source)
         before = snapshot(sw, module)
@@ -115,6 +133,17 @@ def main():
         stage = state / 'Копия первого сохранения.SLDPRT'
         report.update(source_before=facts, boundary_before=brep,
                       original_directory=original_directory, stage=str(stage))
+        if args.source_oracle_prototype:
+            report['oracle_phase'] = 'source_before_copy'
+            persist()
+            source_oracle = adapter.first_save_part_snapshot(source)
+            report['source_oracle'] = source_oracle
+            neighbor_oracle = adapter.first_save_part_snapshot(neighbor)
+            assert source_oracle == adapter.first_save_part_snapshot(source)
+            assert neighbor_oracle == adapter.first_save_part_snapshot(neighbor)
+            assert snapshot(sw,module) == before
+            report['complete_passive_source_capture_verified'] = True
+            persist()
         assert not stage.exists()
         extension = binding.wrap(source.Extension, module.IModelDocExtension)
         report['pending_native'] = True
@@ -125,6 +154,11 @@ def main():
         assert type(raw) is tuple and len(raw) == 3
         assert type(raw[0]) is bool and type(raw[1]) is int and type(raw[2]) is int
         assert raw == (True, 0, 0)
+        if args.source_oracle_prototype:
+            report['oracle_phase'] = 'source_after_copy'
+            persist()
+            assert adapter.first_save_part_snapshot(source) == source_oracle
+            assert adapter.first_save_part_snapshot(neighbor) == neighbor_oracle
         assert native_identity(source) == source_identity
         after_facts = owned_source_snapshot(source, module)
         report['source_after'] = after_facts
@@ -141,7 +175,8 @@ def main():
         report.update(source_copy_preserved=True, stage_sha256=stage_hash)
         report['pending_native'] = True
         persist()
-        raw_model, errors, warnings = sw.OpenDoc6(str(stage), 1, 1, 'Основная', 0, 0)
+        raw_model, errors, warnings = sw.OpenDoc6(str(stage), 1,
+            3 if args.source_oracle_prototype else 1, 'Основная', 0, 0)
         # Only the exact normal native return can acquire ownership.
         report.update(pending_native=False, native_reader_returned=True,
                       reader_errors=errors, reader_warnings=warnings)
@@ -161,6 +196,18 @@ def main():
             k: v for k, v in facts.items() if k not in ignored | {'body_mass_facts'}}
         assert math.isclose(reader_facts['body_mass_facts'][3] * 1e9, 9600, abs_tol=1e-7)
         assert reader.GetSaveFlag() is False
+        if args.source_oracle_prototype:
+            report['oracle_phase'] = 'independent_read_only_clone'
+            persist()
+            reader_oracle = adapter.first_save_part_snapshot(reader)
+            report['reader_oracle'] = reader_oracle
+            persist()
+            mapping = clone_mapping(source_oracle,reader_oracle)
+            assert reader_oracle == adapter.first_save_part_snapshot(reader)
+            assert adapter.first_save_part_snapshot(source) == source_oracle
+            assert adapter.first_save_part_snapshot(neighbor) == neighbor_oracle
+            report.update(reference_mapping=mapping,complete_clone_oracle_verified=True)
+            persist()
         assert hashlib.sha256(stage.read_bytes()).hexdigest() == stage_hash
         # Own reader teardown, restore surviving source without rebuild. The
         # accepted public L2/L1 are not claimed by direct probe calls.
@@ -189,7 +236,7 @@ def main():
         assert_non_stl_preferences(lambda: application_preferences(sw), preferences, report, 'restored_preferences')
         report.update(probe_passed=True, own_cleanup_verified=True, baseline_restored=True)
     except BaseException as error:
-        report.update(error_type=type(error).__name__, error=str(error))
+        report.update(error_type=type(error).__name__, error=str(error),traceback=traceback.format_exc())
         # Unknown/failed stages retain all documents. A terminal call permits
         # releasing only the command flag this probe acquired, never retrying.
         if sw is not None and cip_owned and report['pending_native'] is False:
