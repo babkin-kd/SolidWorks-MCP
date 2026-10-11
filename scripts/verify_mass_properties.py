@@ -198,8 +198,9 @@ def main():
                         job=runner.submit(uuid.uuid4().hex,'measurement.mass',arguments,
                             lambda operation_id:mass.measure(operation_id,**arguments),context=arguments,
                             mutates=True,pass_operation_id=True,verify=lambda value:value['verified'] is True)
+                        checkpoint=job.get('mutation')
                         report['last_guarded_job']={'operation_id':job['operation_id'],'status':job['status'],
-                            'error':job['error'],'mutation_phase':job['mutation']['phase'] if job['mutation'] else None}
+                            'error':job['error'],'mutation_phase':checkpoint['phase'] if checkpoint else None}
                         persist()
                         assert job['status'] in ('succeeded','failed'), 'Uncertain native job: retain fixtures; never retry.'
                         assert not store.mutation_blockers('fresh_epoch','fresh_document')
@@ -209,7 +210,7 @@ def main():
                         owns_guard=True
                         report['pending_case_guard_release']=None;persist()
                         if job['status']=='failed':
-                            assert job['mutation']['phase'] in ('rolled_back','not_started')
+                            assert not checkpoint or checkpoint['phase'] in ('rolled_back','not_started')
                             raise ExecutionFailure(job['error']['code'],job['error']['message'],uncertain=False)
                         result=job['result']
                         assert result['execution_guard']['selection_preserved'] and result['execution_guard']['released']

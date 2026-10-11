@@ -1,6 +1,6 @@
 # Публичное измерение массы — стадия 1
 
-Кандидат dev70 добавляет measurement_prepare_mass/measurement_get_mass и
+Кандидат dev71 добавляет measurement_prepare_mass/measurement_get_mass и
 part_mass_selection_measurement_v1. Каталог51 инструмент/18 guarded операций;
 measurement.mass относится к guarded UI effects, геометрия не редактируется.
 Приёмка нового wheel ещё не выполнена. Историческая internal dev34 не
@@ -15,7 +15,7 @@ Surface исключены; solid membership и roundtrip каждого тел�
 Assemblies/custom frames/bounds/distance остаются остатками S1-16/S1-06.
 
 Preparation не меняет UI. Ревизия связывает body membership/geometric moments
-GetMassProperties(1.) и исходный PID/mark roster выделения; сильные native
+GetMassProperties(1.) с числовым fingerprint12 значащих цифр и исходный PID/mark roster выделения; сильные native
 identities удерживаются на одном STA на время задания. Не является полной
 ревизией редактирования геометрии или сертификатом неизменности материалов.
 Неподтверждённые PID выбранных UI objects отвергаются до записи.
@@ -38,3 +38,10 @@ request_id/replay/conflict и timeout следуют общему job protocol. 
 (public stdio цепочка без повторения всей detailed матрицы).
 Все финальные native/installed результаты должны принадлежать одному точному
 wheel и иметь terminal/ownership/cleanup доказательства.
+
+Native dev70 остановлен pre-write/stale: повторный moment read отличался
+на один binary ULP (~1,6e-27 кг·м²), identities совпадали. Dev71 нормализует
+fingerprint12 значащих цифр; observation и strong membership сохраняются
+на обеих границах. Это измерительная точность fingerprint, не универсальное
+доказательство неизменности BREP. Около границы округления возможен безопасный
+ложный stale; неподтверждённое действие автоматически не повторяется.

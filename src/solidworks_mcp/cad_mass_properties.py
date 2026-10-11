@@ -40,7 +40,11 @@ class CadMassPropertiesMixin:
         if (len(values) != 12 or any(type(x) not in (int, float) or not math.isfinite(x) for x in values)
                 or values[3] <= 0 or values[4] <= 0):
             raise rejected('mass_body_signature_unavailable', 'Complete solid geometric moments are required.')
-        return list(values)
+        # SolidWorks may vary a geometric moment by one binary ULP on two
+        # consecutive reads (native observed ~1.6e-27 kg*m2). Bind a documented
+        # 12-significant-digit fingerprint; native identities and document
+        # observation are independently checked on both execution boundaries.
+        return [float(format(value, '.12g')) for value in values]
 
     def mass_read_guard(self, model):
         # The calculator itself owns exactly one Suspend/Resume pair. Never

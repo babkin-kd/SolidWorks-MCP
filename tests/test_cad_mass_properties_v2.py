@@ -160,6 +160,17 @@ def test_incomplete_geometric_moments_are_not_a_measurement_revision(candidate,v
     assert error.value.code=='mass_body_signature_unavailable'
 
 
+def test_native_one_ulp_moment_noise_is_canonical_but_meaningful_change_is_bound(candidate):
+    adapter,_,_=candidate
+    values=[0.,0.,0.,1e-6,.0007,1e-6,1.0416666666666663e-11,0.,0.,0.,0.,0.]
+    body=SimpleNamespace(GetMassProperties=lambda density:values)
+    first=adapter.mass_body_signature(body)
+    values[6]=1.0416666666666665e-11
+    assert adapter.mass_body_signature(body)==first
+    values[6]*=1.000000001
+    assert adapter.mass_body_signature(body)!=first
+
+
 @pytest.mark.parametrize('fault', ['units', 'hidden', 'weld', 'foreign', 'empty', 'frame',
                                   'recalc', 'recalc_scope', 'recalc_units', 'recalc_override'])
 def test_unconfirmed_scope_never_returns_values(candidate, fault):
