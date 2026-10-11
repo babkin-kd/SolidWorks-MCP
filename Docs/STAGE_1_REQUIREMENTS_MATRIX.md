@@ -48,7 +48,7 @@ activation/type/config scope остаётся D2-DOCUMENTS. Точные кри�
 
 | Пользовательский результат | Поддержанные случаи | Конечная приёмка | Статус |
 | --- | --- | --- | --- |
-| После открытия выбрать точную деталь для следующего изменения через MCP | Одна уже открытая самостоятельная writable part поддержанного прямоугольного профиля, одна конфигурация; поддержанные соседи | Явные document/config/revision/request; один native вызов и exact active-after; неизменные data/dirty/selection/view/files соседей; stale/replay/no-effect и unknown/hold без повтора; installed/public native доказательство | Исходная реализация dev89 подготовлена; installed/native/public gates открыты. Не меняет active-after политики L2. Arbitrary activation/type/config — D2-DOCUMENTS |
+| После открытия выбрать точную деталь для следующего изменения через MCP | Одна уже открытая самостоятельная writable part поддержанного прямоугольного профиля, одна конфигурация; поддержанные соседи | Явные document/config/revision/request; один native вызов и exact active-after; неизменные data/dirty/selection/view/files соседей; stale/replay/no-effect и unknown/hold без повтора; installed/public native доказательство | Dev89 установлен, metadata75/23 принят; native-проба выполняется, native/public gates открыты. Не меняет active-after политики L2. Arbitrary activation/type/config — D2-DOCUMENTS |
 
 ## Законченный пользовательский результат
 

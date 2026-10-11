@@ -598,7 +598,8 @@ Dev67 требует ровно два дополнительных размер
 Dev67 перед сборкой: **3897 pure passed /323 CAD deselected (47,59с)**.
 
 
-**Исходный кандидат dev89:** bounded S1-B5-ACT реализован в домене/runtime/MCP;
+**Установленный кандидат dev89:** bounded S1-B5-ACT реализован в домене/runtime/MCP;
 75 tools/23 mutations, full pure6075/323 CAD deselected (104,01 с).
-Installed/native/public приёмка ещё открыта; L2 не расширен, стадия1 не закрыта.
+Installed metadata/stdio75/23 принят без source PYTHONPATH. Положительная native
+проба выполняется; native/public gates открыты, L2 не расширен, стадия1 не закрыта.
 [Контрольная точка dev89](CHECKPOINT_DEV89.md).

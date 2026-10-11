@@ -29,8 +29,20 @@ post-release снимок происходят до финального verdict
 
 ## Остаток
 
-Новый каталог исходников:75 инструментов/23 операции записи. Сборка/установка,
-installed metadata и фактическая native/MCP-приёмка пока не подтверждены.
+Dev89 собран и установлен только в проектную `.venv`. Exact wheel:
+- Git: `ea93a0b7d9d0b63408539d7a3f91f889eca38034`, clean build.
+- Source digest: `6fbc3b236273cf83dd0c7832b6b1057682d689144d815073913d7608edcdc6f6`.
+- Wheel: `work/wheels-dev89/solidworks_mcp-2.0.0.dev89-py3-none-any.whl`.
+- Wheel SHA256: `e0f50523544199d064a51b13cc20bd8b131dea3ca986e1e17e6572fcdc286b8c`.
+- Installed metadata/stdio accepted:75 tools/23 mutations, output schemas и
+  origin/provenance без source PYTHONPATH; CAD tools не вызывались.
+  Свидетельство: `work/metadata-dev89-report-1.json`.
+
+Положительная installed native-проба запущена одним CAD-владельцем:
+`work/native-part-activation-dev89-positive-1/report.json`.
+На контрольной точке идёт full domain prepare; результат ещё не принят.
+Все package/helpers её артефакта сохраняются неизменными до терминального исхода.
+Native/MCP gates остаются открыты.
 `scripts/verify_native_part_activation_positive.py` готовит отдельную installed
 положительную пробу ACT-N1, replay-часть ACT-N2 и собственную очистку ACT-N5.
 Её отчёт сохраняет **accepted=false**: не закрывает весь S1-B5-ACT.

@@ -211,7 +211,7 @@ activation не является доказательством полность
 scope остаётся D2-DOCUMENTS. Приёмка: explicit document/config/revision/request,
 однократная native activation, exact active-after, unchanged data/dirty/selection/
 view/file соседей, known no-effect/restore либо unknown/hold без повтора,
-exact installed/native/public gate. Домен/runtime/MCP-фасад dev89 реализованы в исходниках; installed/native/public
+exact installed/native/public gate. Домен/runtime/MCP-фасад dev89 установлен, metadata75/23 принят; native/public
 приёмка **не завершена**. [Ограниченный контракт](NATIVE_PART_ACTIVATION.md).
 
 **Результат:** пользователь выполняет конечную цепочку на одном exact installed
