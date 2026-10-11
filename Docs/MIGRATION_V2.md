@@ -2,7 +2,13 @@
 
 ## Актуальное состояние — 11.10.2026
 
-Установленный кандидат **dev72**:52 инструмента/18 guarded операций;4122
+Установленный кандидат **dev73**:56 инструментов/18 guarded операций;
+4175 pure/323 CAD deselected, metadata/internal15/public6 accepted=true,
+own cleanup/baseline подтверждены. [Адресация экземпляров](COMPONENT_READS_ACCEPTANCE.md).
+Приёмка scoped resolved instances/normal solid-surface bodies не закрывает
+component topology/прочие состояния и общий gate стадии1.
+
+Исторический **dev72**:52 инструмента/18 guarded операций;4122
 pure/323 CAD deselected, metadata/internal14/public6 accepted, own cleanup и
 baseline. [Габариты детали](BOUNDS_MEASUREMENTS_ACCEPTANCE.md).
 Исторический dev71:51 инструмент/18 guarded операций, metadata
@@ -12,7 +18,7 @@ public6 accepted=true на одном wheel; [приёмка](MASS_MEASUREMENT_A
 4031 pure passed /323 CAD deselected; diagnostic stdio/native20 reads/internal4
 basic accepted на одном wheel. [Приёмка](DIAGNOSTICS_TIMINGS_ACCEPTANCE.md).
 U-развёртка dev68 принята: internal9/public10 на своём wheel; отбортовка dev67 —
-internal8/public7. Исторические результаты не являются итоговой приёмкой dev72
+internal8/public7. Исторические результаты не являются итоговой приёмкой dev73
 для всех прежних scope или всей стадии1.
 Точный каталог: `scripts/verify_installed_metadata.py:TOOLS`, регистрацию
 проверяет настоящий installed tools/list. Старая рабочая v1 сохранена.
@@ -189,7 +195,7 @@ API-сигнатуры сверены с зарегистрированным SW
 | `open_assembly` | — | Не реализовано в v2; остаток стадии 1 | 1.4: необходимые базовые операции; 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `save_assembly` | — | Не реализовано в v2; остаток стадии 1 | 1.4: необходимые базовые операции; 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `insert_component` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
-| `list_components` | `component_list`, `component_get`, `component_body_list`, `component_body_get` | Кандидат dev73: passive resolved native instances/normal solid-surface bodies, явные instance/configuration/transform; installed/native приёмка пока открыта | 1.4: базовая адресация; suppressed/lightweight/assembly-cut/topology ещё открыты. 2.6: создание/сопряжения, большие сборки и библиотеки. |
+| `list_components` | `component_list`, `component_get`, `component_body_list`, `component_body_get` | Частично принято dev73: passive resolved native instances/normal solid-surface bodies; metadata56/18/internal15/public6. Явные instance/configuration/transform, общий native gate открыт | 1.4: базовая адресация; suppressed/lightweight/assembly-cut/topology ещё открыты. 2.6: создание/сопряжения, большие сборки и библиотеки. |
 | `set_component_transform` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `add_mate` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `check_interference` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |

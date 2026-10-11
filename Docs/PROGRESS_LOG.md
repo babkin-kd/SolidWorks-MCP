@@ -875,3 +875,16 @@ wheel SHA256 aa8f4cb2c31a844e017fb927710518c35ce36d43a44ebb196e2450fc77aeae3f.
 Metadata48/17 accepted. Native ещё выполняется; уже подтверждены L→U,
 stale до записи и known unfold restoration. Итоговую native/public приёмку
 ещё не объявляем принятой. Установкаv1 сохранена. Один агент, push/CI нет.
+
+
+11.10.2026 — стадия1, dev73 scoped assembly instance/body catalog принят.
+Wheel source5a531efc0c96602323f70b2c84bb89d02ef2b5b2, digest
+fc116c6784f792a9d85ef68ad7a0f0f8dab28a938cb147ea56e425cd6e3fd665,
+wheel SHA c99171339ed8b01f55261d71b2b5c62145859379b4ccb3cdf9fa6dc29748fef8.
+4175 pure/323 CAD deselected (53,33с), metadata56/18,
+internal15/public6 accepted=true. Exact ownership cleanup4/native empty-free baseline,
+non-STL prefs и terminal read-only jobs подтверждены. Два неуспешных verifier-прогона
+сохранены, exact-owned controls закрыты по постоянному разрешению пользователя;
+исправления verifier вне wheel, без смены package digest/без повторной сборки.
+Матрица/план/API/миграция обновлены фактически, общий stage1 gate остаётся открытым.
+Один агент; v1 не менялась; push/CI не выполнялись. Контракт/приёмка COMPONENT_READS.

@@ -28,7 +28,14 @@ Dev72: габариты детали в явных rotated/shifted axes, metadat
 323 CAD deselected, internal14/public6 accepted=true на одном wheel; cleanup/
 baseline подтверждены. [Приёмка](BOUNDS_MEASUREMENTS_ACCEPTANCE.md). Distance,
 assembly/component/native named frames и общий gate остаются.
-Новые расширения2.1/2.2 не начинать до закрытия стадии1. Исходный срез ниже
+Новые расширения2.1/2.2 не начинать до закрытия стадии1.
+
+Dev73: адресация resolved экземпляров сборок и normal solid/surface тел принята:
+4175 pure/323 CAD deselected, metadata56/18, internal15/public6 accepted=true
+на одном wheel; exact-owned cleanup/baseline подтверждены. [Приёмка](COMPONENT_READS_ACCEPTANCE.md).
+S1-04/S1-05/S1-06 частично: topology/прочие состояния/deleted refs/измерения
+сборок и общий финальный gate остаются. Стадия1 открыта, расширения2 отложены.
+ Исходный срез ниже
 сохранён как история; сведения о ещё running dev67 не являются текущим итогом.
 
 ## Как читать статусы

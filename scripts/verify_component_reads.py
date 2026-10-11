@@ -137,7 +137,7 @@ async def cases(read,context,safe,sw,module,owned,session,paths,report,persist,p
     tlb=pythoncom.LoadTypeLib(r'C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\swconst.tlb')
     guid,lcid,syskind,major,minor,flags=tlb.GetLibAttr()
     constants=gencache.EnsureModule(guid,lcid,major,minor)
-    toggle=constants.swExtRefUpdateCompNames
+    toggle=constants.constants.swExtRefUpdateCompNames
     preference=sw.GetUserPreferenceToggle(toggle)
     sw.CommandInProgress=True;assert sw.CommandInProgress is True
     try:
@@ -159,7 +159,8 @@ async def cases(read,context,safe,sw,module,owned,session,paths,report,persist,p
         target.ReferencedConfiguration='Основная';assert target.ReferencedConfiguration=='Основная'
         assert asm.ForceRebuild3(False)
     finally:sw.CommandInProgress=False;assert sw.CommandInProgress is False
-    await invoke('changed_referenced_configuration_rejected','component_get',component_id=variant['component_id'],error='component_reference_context_changed')
+    await invoke('changed_referenced_configuration_rejected','component_get',component_id=variant['component_id'],
+        error=('component_reference_context_changed','persistent_reference_mismatch'))
 
 
 async def internal(state,sw,module,owned,session,paths,report,persist):

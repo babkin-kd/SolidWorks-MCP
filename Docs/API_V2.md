@@ -12,11 +12,12 @@ S1-16/S1-06 и общий gate остаются открытыми. Dev71/dev69 
 
 # API v2: текущий кандидат первой стадии
 
-Подготовлен исходный кандидат dev73: четыре passive component-чтения,
-56 инструментов/18 guarded операций в исходном каталоге. Installed/native
-приёмка этой сборки ещё не заявлена. [Контракт экземпляров](COMPONENT_READS.md).
-Точный итог будет обновлён после проверки установленного wheel; исторические
-результаты dev72 ниже остаются приёмкой габаритов на своём wheel.
+Установленный dev73 принят для четырёх passive component-чтений: metadata56/18,
+4175 pure passed/323 CAD deselected, internal native15/public MCP6 accepted=true
+на одном wheel, own cleanup и baseline подтверждены. [Контракт](COMPONENT_READS.md),
+[точная приёмка](COMPONENT_READS_ACCEPTANCE.md). Native область ограничена resolved
+instances/normal solid-surface bodies; component topology/прочие состояния,
+измерения сборок и общий gate стадии1 остаются. Dev72 ниже — история габаритов.
 
 Блок диагностики dev69 стадии 1 принят в ограниченном scope:
 `diagnostics_get_timings`, bounded private store/CLI, JobRunner/MutationCoordinator
