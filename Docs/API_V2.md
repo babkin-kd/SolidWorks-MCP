@@ -1,3 +1,9 @@
+Текущий кандидат dev72: measurement_get_bounds,52 инструмента/18 guarded
+операций;4122 pure/323 CAD deselected, installed metadata/internal14/public6
+accepted=true на одном wheel. Own cleanup/baseline подтверждены.
+[Контракт](BOUNDS_MEASUREMENTS.md), [приёмка](BOUNDS_MEASUREMENTS_ACCEPTANCE.md).
+S1-16/S1-06 и общий gate остаются открытыми. Dev71/dev69 ниже — история их wheel.
+
 Кандидат dev71: публичное измерение массы детали с durable UI guard.
 51 инструмент/18 guarded операций;4072 pure/323 CAD deselected, metadata
 и internal22/public6 accepted=true на одном wheel, cleanup/baseline подтверждены.

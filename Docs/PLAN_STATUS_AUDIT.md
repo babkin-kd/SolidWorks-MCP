@@ -24,6 +24,10 @@ Dev71: публичная масса детали — metadata51/18,4072 pure/32
 internal22/public6 accepted=true на одном wheel; exact-owned cleanup и baseline
 подтверждены. [Приёмка](MASS_MEASUREMENT_ACCEPTANCE.md). S1-16 частично: bounds,
 distance, assemblies/custom frames и общий gate остаются.
+Dev72: габариты детали в явных rotated/shifted axes, metadata52/18,4122 pure/
+323 CAD deselected, internal14/public6 accepted=true на одном wheel; cleanup/
+baseline подтверждены. [Приёмка](BOUNDS_MEASUREMENTS_ACCEPTANCE.md). Distance,
+assembly/component/native named frames и общий gate остаются.
 Новые расширения2.1/2.2 не начинать до закрытия стадии1. Исходный срез ниже
 сохранён как история; сведения о ещё running dev67 не являются текущим итогом.
 

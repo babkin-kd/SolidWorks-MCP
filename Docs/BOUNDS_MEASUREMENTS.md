@@ -2,7 +2,9 @@
 
 Кандидат dev72: measurement_get_bounds /measurement.bounds, read-only scope
 part_native_support_bounds_v1. Каталог52 инструмент/18 guarded операций.
-Installed/native приёмка ещё впереди. Это реализация части S1-16/06;
+Dev72 принят:4122 pure/323 CAD deselected,metadata52/18, internal14/public6
+accepted=true на одном wheel; exact-owned cleanup/baseline подтверждены.
+[Приёмка](BOUNDS_MEASUREMENTS_ACCEPTANCE.md). Это реализация части S1-16/06;
 assembly bounds/component paths, расстояния, native named-coordinate-system
 features и совокупный итоговый gate остаются открытыми.
 
