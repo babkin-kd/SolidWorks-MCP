@@ -10,6 +10,12 @@ from .documents import rejected
 class ComponentAxisDistanceCatalog(ComponentDistanceCatalog):
     AXIS_SCOPE = 'resolved_part_component_axis_distance_v1'
 
+    def _axis_leaf(self, entry, component, anchor, root_direction, supports):
+        ends, projection_range = bracket_axis(anchor, root_direction, supports)
+        distance, root_points = self._native_result(self.adapter.component_axis_distance(entry.model, component[1], ends, root_direction))
+        check_axis_witnesses([[x*.001 for x in point] for point in root_points], anchor, root_direction, projection_range)
+        return distance, root_points
+
     def _supports(self, bodies, transform, anchor, direction):
         local_direction = [dot(axis, direction) for axis in transform['axes_in_assembly']]
         result = []
@@ -36,10 +42,8 @@ class ComponentAxisDistanceCatalog(ComponentDistanceCatalog):
         transform = component[2]['transform']
         anchor = anchor_axis([x*.001 for x in root_origin], root_direction, [x*.001 for x in transform['origin_mm']])
         supports = self._supports(bodies, transform, anchor, root_direction)
-        ends, projection_range = bracket_axis(anchor, root_direction, supports)
-        distance, root_points = self._native_result(self.adapter.component_axis_distance(entry.model, component[1], ends, root_direction))
+        distance, root_points = self._axis_leaf(entry, component, anchor, root_direction, supports)
         points_m = [[x*.001 for x in point] for point in root_points]
-        check_axis_witnesses(points_m, anchor, root_direction, projection_range)
         after = self._distance_bodies(entry, component, component_id)
         if (self._body_signature(bodies) != self._body_signature(after[0]) or (moments, solid_count) != after[1:]
                 or any(not math.isclose(a, b, rel_tol=1e-10, abs_tol=1e-9)

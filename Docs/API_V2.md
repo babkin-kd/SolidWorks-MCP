@@ -1,5 +1,10 @@
 # API v2: текущий кандидат первой стадии
 
+Исходный кандидат dev79 добавляет complete aggregate point/axis reads,
+каталог65/18. Реализация/pure не являются native-приёмкой.
+[Контракт кандидата](COMPONENT_AGGREGATE_PROBES.md); installed/native ожидаются.
+Принятый dev78 ниже относится к своему точному wheel.
+
 Dev78: расстояние между полными solid-агрегатами part/subassembly принято:
 4365 pure/323 CAD deselected (54,78с), installed metadata63/18,
 internal native19/public MCP6 accepted=true на одном wheel. Exact4-owned

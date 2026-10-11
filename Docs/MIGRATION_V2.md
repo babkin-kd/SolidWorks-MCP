@@ -1,5 +1,10 @@
 # Миграция legacy-инструментов в API v2
 
+Исходный кандидат dev79 добавляет complete aggregate point/axis reads,
+каталог65/18. Реализация/pure не являются native-приёмкой.
+[Контракт кандидата](COMPONENT_AGGREGATE_PROBES.md); installed/native ожидаются.
+Принятый dev78 ниже относится к своему точному wheel.
+
 Dev78: расстояние между полными solid-агрегатами part/subassembly принято:
 4365 pure/323 CAD deselected (54,78с), installed metadata63/18,
 internal native19/public MCP6 accepted=true на одном wheel. Exact4-owned
@@ -246,7 +251,7 @@ API-сигнатуры сверены с зарегистрированным SW
 | `set_component_transform` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `add_mate` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `check_interference` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
-| `measure_distance` | `measurement_get_component_distance`, `measurement_get_component_point_distance`, `measurement_get_component_axis_distance`, `measurement_get_component_aggregate_distance` | Частично; dev75 distance13/6, dev76 point19/6 приняты; axis dev77 native18/public6 принят на его exact wheel | 1.4. Explicit resolved part instances/config/observation; minimum component distance, individual-boundary point distance/location, infinite-axis distance с exact directional support span и memory-only wire. Root/explicit rigid frame мм; Dev78 aggregate pair minimum принят internal19/public6 на его exact wheel. Point/axis aggregate и named frames остаются. |
+| `measure_distance` | `measurement_get_component_distance`, `measurement_get_component_point_distance`, `measurement_get_component_axis_distance`, `measurement_get_component_aggregate_distance`, `measurement_get_component_aggregate_point_distance`, `measurement_get_component_aggregate_axis_distance` | Частично; dev75 distance13/6, dev76 point19/6 приняты; axis dev77 native18/public6 принят на его exact wheel | 1.4. Explicit resolved part instances/config/observation; minimum component distance, individual-boundary point distance/location, infinite-axis distance с exact directional support span и memory-only wire. Root/explicit rigid frame мм; Dev78 aggregate pair minimum принят internal19/public6 на его exact wheel. Point/axis aggregate реализованы в исходном dev79, native ожидается; named frames остаются. |
 | `check_motion` | — | Отложено в v2 | 3.1. Несколько входов, дискретная траектория, зазоры и достоверность покрытия. |
 | `swept_region` | — | Отложено в v2 | 3.1. Несколько входов, дискретная траектория, зазоры и достоверность покрытия. |
 | `get_assembly_bounding_box` | — | Не реализовано в v2; остаток стадии 1 | 1.4: необходимые базовые операции; 2.6: компоненты/сопряжения, большие сборки и библиотеки. |

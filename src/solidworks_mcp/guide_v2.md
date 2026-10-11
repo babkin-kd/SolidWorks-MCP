@@ -579,7 +579,7 @@ component_b_id из component_list. Native ClosestDistance учитывает т
 Не меняет выделение и модели; ноль не классифицирует пересечение или вложение
 материальных объёмов. Snapshot проверяет моменты тел, membership, конфигурации
 и трансформации на обеих границах; это observation, не полная BREP revision.
-Расстояния до точек/осей и native named frames пока не реализованы.
+Расстояния до точек/осей реализованы отдельными инструментами ниже; native named frames пока не реализованы.
 
 
 ### Расстояние от экземпляра детали до точки
@@ -611,6 +611,32 @@ Normal hidden solids включены, surface исключены. Exact GetExtr
 Подсборки как агрегат, named native frames и unresolved/assembly-cut/mesh/SpeedPak
 состояния ещё не поддерживаются. Это read-scope, а не полная BREP mutation revision.
 
+
+### Точка и ось для агрегата подсборки
+
+`measurement_get_component_aggregate_point_distance` принимает один явный
+part/subassembly component_id с document/configuration/observation/request_id
+и point_mm в root assembly или explicit rigid frame. Выбираются все normal
+solid leaves/bodies/faces. Возвращает минимум до индивидуальных solid boundary,
+исходные nearest_component/body/face IDs, все body_locations и полные counts.
+Внутри solid расстояние остаётся положительным; inside означает наличие хотя
+бы одного solid, содержащего точку. Далее приоритет boundary, затем outside;
+boundary допуск0.00001мм даёт inside=null. Это не внешняя граница Boolean union.
+Бюджеты1000 leaves/5000 normal bodies/100000 solid faces; ambiguous rays и
+неполный census отвергают чтение. Hidden bodies включены, surfaces исключены.
+
+`measurement_get_component_aggregate_axis_distance` принимает такой же явный
+контекст, axis_origin_mm и конечный ненулевой axis_direction. Измеряется
+минимум до бесконечной прямой для каждого solid leaf без остановки после нуля.
+Exact supports каждого leaf ограничивают временное ребро в памяти. Оба
+witnesses возвращаются в root и заданной frame вместе с nearest_component.
+Бюджеты1000 leaves/5000 normal bodies. Ноль не классифицирует interference.
+
+Оба инструмента закрывают полные root hierarchy/config/transform и body/moments
+снимки; point дополнительно face census, axis — directional supports. Empty и
+surface-only leaves входят в closing census/counts, но не в minimum. Нет
+selection/activation/rebuild/новых узлов CAD, sampling или bbox fallback.
+Named native frames и неподдерживаемые native states остаются вне scope.
 
 ### Расстояния агрегатов подсборок
 
