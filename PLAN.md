@@ -1,9 +1,11 @@
 # План развития SolidWorks MCP
 
-Dev83: clean-close L1 реализован, [контракт](Docs/NATIVE_DOCUMENT_CLOSE.md).
-Приёмка установленного кандидата выполняется; S1-15 остаётся открытым.
-Первый полный pure обнаружил только несинхронную версию registry template:
-4654 passed/1 failed/323 CAD deselected; metadata исправлена перед кандидатом.
+Dev84: clean-close L1 реализован, [контракт](Docs/NATIVE_DOCUMENT_CLOSE.md).
+Полный pure4661 passed/323 CAD deselected (60,20с); установленная/native/MCP
+приёмка выполняется, S1-15 остаётся открытым. Dev83 не принят: fixture setup
+остановился до MCP-close; пять своих моделей закрыты. Read-only probe выявил
+пустой Extension dependency getter при реальном компоненте, поэтому dev84
+сверяет independent live/as-saved/component/view dependencies.
 
 Dev82: сохранение существующего native-файла детали/сборки/чертежа принято:
 4455 pure/323 CAD deselected перед wheel (55,56 с); после изменения общего

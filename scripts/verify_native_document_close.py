@@ -49,6 +49,10 @@ def setup(session,owned,state,sw,module,record):
     drawing=binding.wrap(raw,module.IModelDoc2);owned.append(drawing);record(owned)
     assert drawing.GetType()==3 and drawing.SetTitle2('Контрольный чертёж закрытия')
     assert drawing.SaveAs3(str(state/'Контрольный чертёж закрытия.SLDDRW'),0,1)==0;record(owned)
+    # Component insertion may mark its source part dirty. Finish the exact owned
+    # setup before intentionally making the neighbour dirty for the close test.
+    for model in owned:
+        if model.GetSaveFlag():assert model.Save3(1,0,0)==(True,0,0)
     assert all(model.GetSaveFlag() is False for model in owned)
     assert second.AddCustomInfo3('','Несохранённое контрольное свойство',30,'Сохранить только после проверки соседей')
     second.SetSaveFlag();assert second.GetSaveFlag() is True

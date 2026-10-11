@@ -1,7 +1,7 @@
 # Закрытие чистых native-документов: кандидат L1
 
 Реализованы `document_prepare_close_native` и `document_close_native`.
-Статус на подготовке dev83: pure/installed/native/MCP-приёмка выполняется;
+Статус на подготовке dev84: pure/installed/native/MCP-приёмка выполняется;
 реализация сама по себе не закрывает S1-15 или стадию1.
 
 ## Контракт
@@ -13,6 +13,16 @@ UserControl/Visible/current directory/search folders. Список GetDocuments
 сверяется с GetFirstDocument/GetNext; окна — Frame.ModelWindows/count,
 IModelWindow.ModelDoc и64-bit HWndx64. Относительные/неразрешённые ссылки,
 redirect/reparse ancestry, неполный census, чужие UI locks запрещены.
+
+Dev83 native остановился на fixture setup до MCP-close: вставка компонента
+пометила source part dirty. Все5 точных собственных моделей закрыты после
+terminal отказа; jobs отсутствуют, baseline empty/free. Read-only probe нашёл
+ещё один реальный риск: Extension.GetDependencies вернул None при одном
+компоненте. Dev84 дополнительно использует count-checked живой
+IModelDoc2.GetDependencies/GetNumDependencies, as-saved
+ISldWorks.GetDocumentDependencies2 и live component/drawing view paths.
+Search=false на всех источниках. Пустой modern getter больше не означает
+отсутствие ссылок. Native исходный dev83 не принят.
 
 `require_clean`: target и все скрытые неактивные документы, также закрываемые
 CloseDoc, должны иметь needs_save=false. Весь collateral список передаётся

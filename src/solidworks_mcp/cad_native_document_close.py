@@ -64,16 +64,63 @@ class CadNativeDocumentCloseMixin:
         extension = binding.wrap(model.Extension, self._module.IModelDocExtension)
         # Search=False leaves search settings untouched; complete transitive and
         # broken reference paths are returned rather than silently omitted.
-        raw = extension.GetDependencies(True, False, False, True, False)
-        if raw is None:
-            raw = ()
-        if (not isinstance(raw, (tuple, list)) or len(raw) % 2 or len(raw) > MAX_CLOSE_MODELS * 2
-                or any(type(item) is not str for item in raw)):
-            raise rejected('native_close_dependencies_unavailable', 'Complete native dependency name/path pairs required.')
-        paths = list(raw[1::2])
+        def pairs(raw):
+            if raw is None:raw=()
+            if (not isinstance(raw,(tuple,list)) or len(raw)%2 or len(raw)>MAX_CLOSE_MODELS*2
+                    or any(type(item) is not str for item in raw)):
+                raise rejected('native_close_dependencies_unavailable', 'Complete native dependency name/path pairs required.')
+            return list(raw[1::2])
+        paths = pairs(extension.GetDependencies(True, False, False, True, False))
+        # The registered extension getter returned None on a real referenced
+        # SW2023 assembly. Never accept that as an empty incoming-reference graph.
+        # Count-checked live model enumeration and as-saved file enumeration are
+        # independent sources; every returned path enters the full checkpoint.
+        count=model.GetNumDependencies(1,0)
+        live=model.GetDependencies(1,0)
+        live_paths=pairs(live)
+        after_count=model.GetNumDependencies(1,0)
+        if (type(count) is not int or count!=len(live or ())
+                or type(after_count) is not int or after_count!=count):
+            raise rejected('native_close_dependencies_unavailable', 'Native dependency strings/count changed or disagree.')
+        paths.extend(live_paths)
+        path=model.GetPathName()
+        if type(path) is not str:
+            raise rejected('native_close_dependencies_unavailable', 'Strict native file path required.')
+        if path:paths.extend(pairs(self._sw.GetDocumentDependencies2(path,True,False,False)))
+        document_type=model.GetType()
+        if document_type==2:
+            assembly=binding.wrap(model,self._module.IAssemblyDoc)
+            count=assembly.GetComponentCount(False)
+            components=assembly.GetComponents(False) or ()
+            if (type(count) is not int or not 0<=count<=MAX_CLOSE_MODELS
+                    or not isinstance(components,(tuple,list)) or len(components)!=count):
+                raise rejected('native_close_dependencies_unavailable','Complete bounded live assembly component census required.')
+            for raw in components:
+                component=binding.wrap(raw,self._module.IComponent2)
+                value=component.GetPathName()
+                if type(value) is not str or not value:
+                    raise rejected('native_close_dependencies_unavailable','Unsaved/virtual component reference is outside this close scope.')
+                paths.append(value)
+            if assembly.GetComponentCount(False)!=count:
+                raise rejected('native_close_dependencies_unavailable','Assembly dependency census changed during enumeration.')
+        elif document_type==3:
+            drawing=binding.wrap(model,self._module.IDrawingDoc)
+            groups=drawing.GetViews() or ()
+            if not isinstance(groups,(tuple,list)) or len(groups)>MAX_CLOSE_MODELS:
+                raise rejected('native_close_dependencies_unavailable','Complete bounded drawing views required.')
+            views=[]
+            for group in groups:
+                if not isinstance(group,(tuple,list)) or len(views)+len(group)>MAX_CLOSE_MODELS:
+                    raise rejected('native_close_dependencies_unavailable','Complete bounded drawing view groups required.')
+                views.extend(group)
+            for raw in views:
+                value=binding.wrap(raw,self._module.IView).GetReferencedModelName()
+                if type(value) is not str:
+                    raise rejected('native_close_dependencies_unavailable','Strict live drawing reference name required.')
+                if value:paths.append(value)
         if any(not path or not Path(path).is_absolute() for path in paths):
             raise rejected('native_close_dependencies_unavailable', 'Broken or unresolved dependency paths prohibit this close scope.')
-        return dict(visible=visible, dependencies=paths, mode=self.native_save_context(model))
+        return dict(visible=visible, dependencies=sorted(set(paths),key=str.casefold), mode=self.native_save_context(model))
 
     def native_close_application_context(self):
         result = dict(user_control=self._sw.UserControl, visible=self._sw.Visible,

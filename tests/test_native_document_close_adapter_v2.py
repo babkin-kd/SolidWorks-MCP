@@ -10,11 +10,15 @@ def bridge(monkeypatch):
     from solidworks_mcp import cad_native_document_close as native
     monkeypatch.setattr(native.binding, 'wrap', lambda value, interface: value)
     a=CadNativeDocumentCloseMixin()
-    a._module=SimpleNamespace(IModelDoc2=object,IFrame=object,IModelWindow=object,IModelDocExtension=object)
+    a._module=SimpleNamespace(IModelDoc2=object,IFrame=object,IModelWindow=object,IModelDocExtension=object,
+        IAssemblyDoc=object,IComponent2=object,IDrawingDoc=object,IView=object)
     a.identity=lambda model:model.token
     one=SimpleNamespace(token='one',GetTitle=lambda:'Деталь 1',Visible=True)
     two=SimpleNamespace(token='two',GetTitle=lambda:'Деталь 2',Visible=True)
     one.GetNext=lambda:two;two.GetNext=lambda:None
+    for model in (one,two):
+        model.GetNumDependencies=lambda *args:0;model.GetDependencies=lambda *args:None
+        model.GetPathName=lambda:'';model.GetType=lambda:1
     windows=[SimpleNamespace(ModelDoc=one,HWndx64=2**40,Title='Окно 1'),
              SimpleNamespace(ModelDoc=two,HWndx64=2**40+1,Title='Окно 2')]
     frame=SimpleNamespace(ModelWindows=windows,GetModelWindowCount=lambda:len(windows))
@@ -83,3 +87,38 @@ def test_unconfirmed_activation_refused(bridge,result):
     a,_,two,_=bridge;a._sw.ActivateDoc3=lambda *args:result
     with pytest.raises(Exception) as error:a.activate_native_close_survivor(two)
     assert error.value.code=='native_close_activation_unconfirmed'
+
+
+def test_silent_empty_extension_cannot_erase_live_or_saved_dependencies(bridge,tmp_path):
+    a,one,_,_=bridge;live=str(tmp_path/'Живая деталь.SLDPRT');saved=str(tmp_path/'Сохранённая деталь.SLDPRT')
+    one.Extension=SimpleNamespace(GetDependencies=lambda *args:None)
+    one.GetNumDependencies=lambda *args:2;one.GetDependencies=lambda *args:['Живая',live]
+    one.GetPathName=lambda:str(tmp_path/'Сборка.SLDASM')
+    a._sw.GetDocumentDependencies2=lambda *args:['Сохранённая',saved]
+    a.native_save_context=lambda model:{}
+    assert set(a.native_close_model_context(one)['dependencies'])=={live,saved}
+
+
+@pytest.mark.parametrize('count',[True,1,3])
+def test_dependency_counter_mismatch_never_accepts_empty_graph(bridge,count):
+    a,one,_,_=bridge;one.Extension=SimpleNamespace(GetDependencies=lambda *args:None)
+    one.GetNumDependencies=lambda *args:count
+    with pytest.raises(Exception) as error:a.native_close_model_context(one)
+    assert error.value.code=='native_close_dependencies_unavailable'
+
+
+def test_live_component_path_included_when_native_dependency_getters_are_empty(bridge,tmp_path):
+    a,one,_,_=bridge;path=str(tmp_path/'Компонент.SLDPRT')
+    one.Extension=SimpleNamespace(GetDependencies=lambda *args:None);one.GetType=lambda:2
+    one.GetComponentCount=lambda *args:1
+    one.GetComponents=lambda *args:[SimpleNamespace(GetPathName=lambda:path)]
+    a.native_save_context=lambda model:{}
+    assert a.native_close_model_context(one)['dependencies']==[path]
+
+
+def test_live_drawing_views_references_are_included(bridge,tmp_path):
+    a,one,_,_=bridge;path=str(tmp_path/'Вид.SLDASM')
+    one.Extension=SimpleNamespace(GetDependencies=lambda *args:None);one.GetType=lambda:3
+    one.GetViews=lambda:[[SimpleNamespace(GetReferencedModelName=lambda:''),SimpleNamespace(GetReferencedModelName=lambda:path)]]
+    a.native_save_context=lambda model:{}
+    assert a.native_close_model_context(one)['dependencies']==[path]
