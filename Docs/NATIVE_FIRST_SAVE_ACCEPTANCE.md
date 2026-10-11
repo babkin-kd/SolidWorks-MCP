@@ -95,3 +95,14 @@ L3 закрывается только после связанных/full pure-�
 и обязательной native/MCP-приёмки с доказанной очисткой. Failed/unknown и
 пропущенные случаи сохраняют свои статусы; итоговая S1-B5 same-wheel цепочка
 остаётся отдельным выпускным gate. До этого L3 и стадия 1 открыты.
+
+
+## Подготовка публичного L3-P1
+
+`scripts/verifier_first_save_public_contract.py` задаёт supervisor operation,
+default и float contracts для first-save/close/open/Save3 и dimension read/edit.
+Выбор глубины допустим только из полного текущего трёхразмерного inventory,
+по writable owner Boss/Extrusion, mm, наблюдённому значению и подтверждённому
+opaque object_id; имя/порядок не служат fallback. Связанные selector/runtime/facade
+source-тесты: 30 passed (3,31 с). Это подготовленный контракт; публичный native
+driver и прогон ещё не завершены, L3-P1 не принят.
