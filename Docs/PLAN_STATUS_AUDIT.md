@@ -1,13 +1,30 @@
 # Аудит статусов плана — 11.10.2026
 
-Текущая работа L2: dev86 installed metadata71/21 принята;
-полный source-набор5427 passed/323 CAD deselected (69,60с).
-Native open не принят: setup-failure локализованного вида исправлен,
-затем первое открытие осталось unknown из-за изменения CWD.
-Exact-owned cleanup/исходный каталог подтверждены; historical unknown сохранён.
-В исходном dev87 реализован one-shot restore CWD; full pure5560/323 deselected
-(77,43с). Fresh wheel/internal/public ещё впереди.
-[Точный статус](NATIVE_DOCUMENT_OPEN.md). S1-15/N6 остаются открытыми.
+L2 bounded native open принят на exact installed dev87: metadata71/21,
+internal13/13 (210,07 с), public MCP11/11 (189,68 с), оба accepted=true.
+Полный source pure5560 passed/323 CAD deselected (77,43 с); external cleanup
+regressions — related499 passed (1,15 с). Полный baseline/CWD, dirty сосед,
+resolved new/borrowed references и own cleanup подтверждены. Исторические
+failed/unknown отчёты сохранены; они не переписаны и не повторены.
+[Точная приёмка](NATIVE_DOCUMENT_OPEN_ACCEPTANCE.md),
+[контракт](NATIVE_DOCUMENT_OPEN.md).
+
+Пересмотр границы выпуска по решению пользователя: L2/L3/S1-B1…S1-B5;
+после L2 остаются шесть конечных блоков. Один public same-wheel сценарий
+create/sketch/extrude/edit/first save/close/open/edit/Save3/close при dirty соседе
+закрывает S1-B5 после профильных gates. Все22 прежних требования прослеживаются,
+20 расширений остаются отдельными незавершёнными задачами стадии2/3.
+[План](../PLAN.md), [матрица](STAGE_1_REQUIREMENTS_MATRIX.md),
+[конечная приёмка](STAGE_1_BLOCK_ACCEPTANCE.md).
+
+Обязательны explicit target/revision/request_id, полный supported checkpoint,
+STA/durable ledger/holds, no retry unknown, реальные postconditions и native
+точного wheel. Сужение продуктового scope не ослабляет эти гарантии.
+Remote CI последнего пакета failure; локальное исправление входит в pure,
+нового push нет. Исторические свидетельства ниже не являются приёмкой dev87
+или итоговой стадии1; прежние «20 из22» не используются как текущий gate.
+
+## История до пересмотра границы выпуска
 
 Dev85: clean native close принят:4673 pure перед wheel; final пакет4677/323 CAD deselected (60,07с). Installed metadata69/20,
 internal12/public MCP10 accepted=true на одном точном wheel. Полный retirement

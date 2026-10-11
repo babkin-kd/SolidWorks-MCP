@@ -1,16 +1,27 @@
 # Проект native open/close и первого сохранения
 
 Дата исходного проекта: 11.10.2026, параллельно приёмке Save3 dev82.
+Граница выпуска пересмотрена пользователем: обязательный L3 — только собственная
+unsaved part с одной конфигурацией, одним solid и без внешних ссылок. Его
+результат — первый новый native-файл без перезаписи и доказанная привязка
+live document/path/IDs для следующего close/open/Save3. Конечные проверки заданы
+в [приёмке блоков](STAGE_1_BLOCK_ACCEPTANCE.md), статус — в
+[матрице](STAGE_1_REQUIREMENTS_MATRIX.md). Широкие F1/O3/O4 и режимы ниже
+сохраняются как проект задач D2-CONFIG/D2-DOCUMENTS/D2-LOADREF, а не расширяют
+текущие L2/L3. Гарантии journal/revision/hold/no-retry/postconditions не перенесены.
+
 Актуальное состояние: clean L1 принят dev85 по отдельному
 [контракту](NATIVE_DOCUMENT_CLOSE.md)/[приёмке](NATIVE_DOCUMENT_CLOSE_ACCEPTANCE.md).
-В L2 реализованы candidate domain/MCP/live-reference graph/clean rollback и
-supervisor; dev86 installed metadata71/21 принята,
-полный source-набор5427 passed/323 CAD deselected (69,60с).
-Native open не принят: первое открытие осталось unknown из-за CWD.
-Exact-owned cleanup/исходный каталог подтверждены; historical journal сохранён.
-В исходном dev87 реализован one-shot restore CWD; full pure5560/323 deselected
-(77,43с). Fresh wheel/internal/public впереди.
-[Точный статус L2](NATIVE_DOCUMENT_OPEN.md). L3 остаётся проектом.
+L2 bounded native open принят на exact installed dev87: metadata71/21,
+internal13/13 (210,07 с), public MCP11/11 (189,68 с), оба accepted=true.
+Полный source pure5560 passed/323 CAD deselected (77,43 с); external cleanup
+regressions — related499 passed (1,15 с). Полный baseline/CWD, dirty сосед,
+resolved new/borrowed references и own cleanup подтверждены. Исторические
+failed/unknown отчёты сохранены; они не переписаны и не повторены.
+[Точная приёмка](NATIVE_DOCUMENT_OPEN_ACCEPTANCE.md),
+[контракт](NATIVE_DOCUMENT_OPEN.md).
+
+L3 остаётся проектом в ограниченной области простой part.
 Ниже проект полного lifecycle; он не устанавливает исход scoped приёмок.
 Основа: [PLAN](../PLAN.md),
 [S1-15 и N6](STAGE_1_REQUIREMENTS_MATRIX.md),
@@ -28,7 +39,7 @@ OpenDoc6/CloseDoc в верификаторе Save3 не является реа
 | --- | --- | --- |
 | L1: закрытие | Preview полного close-impact, close-aware guard, ровно одна согласованная цель, журнал/постусловия | Hidden и referenced модели, потеря последнего документа, известный отказ и unknown |
 | L2: открытие | Native file reference, application revision, explicit configuration, receipt новых моделей, восстановление UI | Dependency-resolution для сборки/чертежа, уже загруженные данные, загрязнённая соседняя модель |
-| L3: первое сохранение | Запись собственного нового native-файла без перезаписи существующего, независимый readback, явная привязка итоговой модели | Все заявленные типы документов, N4 restart/holds и законченная публичная N6-цепочка |
+| L3: первое сохранение | Own unsaved part: одна конфигурация/solid, без refs; новый native-файл без overwrite, независимый readback и явная привязка модели | Конечный L3/STAGE_1_BLOCK_ACCEPTANCE и S1-B5; другие типы/configurations/refs — D2-DOCUMENTS/D2-CONFIG |
 
 Каждый блок готовится вместе с доменом и MCP-фасадом, затем один итоговый
 pure-набор, точный installed wheel, metadata и native/internal/public проверки.
@@ -312,7 +323,12 @@ work/. User-like соседняя dirty модель также создаётс
 собственных fixtures. Пропуски идут в skipped/not_run; generic success не
 публикуется из-за отсутствия сборки/чертежа/hidden кейса.
 
-## Блокеры перед расширением scope
+## Исходные блокеры полного lifecycle: историческая трассировка
+
+Список ниже относится к исходному проекту dev82. Актуальные доказательства
+clean close и bounded open находятся в их отдельных контрактах/приёмке;
+открытые широкие остатки ведут к D2-CLOSE/D2-LOADREF/D2-DOCUMENTS/D2-CONFIG.
+Этот список не добавляет условий к конечным семи блокам стадии 1.
 
 1. Close-aware guard и полный window/hidden/reference census пока отсутствуют.
    IModelDoc2.Visible документирован как visibility active document; нельзя

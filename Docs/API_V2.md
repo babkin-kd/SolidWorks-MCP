@@ -1,13 +1,20 @@
 # API v2: текущий кандидат первой стадии
 
-L2 native open domain/MCP реализованы; dev86 installed metadata71/21 принята,
-полный source5427 passed/323 CAD deselected (69,60с).
-Native open не принят: первое открытие осталось unknown из-за CWD.
-Свои фикстуры закрыты, исходный каталог восстановлен; historical journal сохранён.
-В исходном dev87 реализован one-shot restore CWD; full pure5560/323 deselected
-(77,43с). Fresh wheel/internal/public впереди.
-[Область и следующие gates](NATIVE_DOCUMENT_OPEN.md).
-Количество инструментов не означает приёмку стадии.
+L2 bounded native open принят на exact installed dev87: metadata71/21,
+internal13/13 (210,07 с), public MCP11/11 (189,68 с), оба accepted=true.
+Полный source pure5560 passed/323 CAD deselected (77,43 с); external cleanup
+regressions — related499 passed (1,15 с). Полный baseline/CWD, dirty сосед,
+resolved new/borrowed references и own cleanup подтверждены. Исторические
+failed/unknown отчёты сохранены; они не переписаны и не повторены.
+[Точная приёмка](NATIVE_DOCUMENT_OPEN_ACCEPTANCE.md),
+[контракт](NATIVE_DOCUMENT_OPEN.md).
+
+Граница стадии 1 — семь конечных блоков и сценарий простой детали:
+[матрица](STAGE_1_REQUIREMENTS_MATRIX.md), [критерии](STAGE_1_BLOCK_ACCEPTANCE.md).
+L2 закрыт, L3/B1–B5 открыты; первое сохранение не подменяется Save3.
+Гарантии безопасности не отложены. Широкие возможности видны как D2/D3;
+количество tools не означает приёмку стадии. Ниже исторические кандидаты:
+их прежние широкие gates и «20 из22» относятся к прежней границе.
 
 Dev85: clean native close принят:4673 pure перед wheel; final пакет4677/323 CAD deselected (60,07с). Installed metadata69/20,
 internal12/public MCP10 accepted=true на одном точном wheel. Полный retirement

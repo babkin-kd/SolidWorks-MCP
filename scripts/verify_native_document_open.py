@@ -164,6 +164,11 @@ def retire_owned(sw, module, root, retiring, owned, record):
     # Capture all canonical tokens before CloseDoc; never query retired handles.
     tokens = [native_identity(item) for item in retiring]
     pairs = [(item, native_identity(item)) for item in owned]
+    previous_active = binding.wrap(sw.ActiveDoc, module.IModelDoc2)
+    previous_token = None if previous_active is None else native_identity(previous_active)
+    if previous_token is not None:
+        assert any(previous_token == token for _, token in pairs)
+    previous_title = None if previous_active is None else previous_active.GetTitle()
     title = root.GetTitle()
     current = [binding.wrap(raw, module.IModelDoc2) for raw in sw.GetDocuments() or ()]
     assert sum(model.GetTitle().casefold() == title.casefold() for model in current) == 1
@@ -173,6 +178,17 @@ def retire_owned(sw, module, root, retiring, owned, record):
     assert not any(token in live for token in tokens)
     owned[:] = [item for item, token in pairs if token not in tokens]
     record(owned)
+    # Native CloseDoc of an inactive drawing may activate its referenced
+    # assembly. This is test-owner cleanup restoration, not v2 close acceptance.
+    if previous_token is not None and previous_token not in tokens:
+        assert previous_token in live
+        active = binding.wrap(sw.ActiveDoc, module.IModelDoc2)
+        if active is None or native_identity(active) != previous_token:
+            survivors = [binding.wrap(raw, module.IModelDoc2) for raw in sw.GetDocuments() or ()]
+            assert sum(model.GetTitle().casefold() == previous_title.casefold() for model in survivors) == 1
+            activate_owned(sw, previous_active, previous_title)
+            active = binding.wrap(sw.ActiveDoc, module.IModelDoc2)
+            assert active is not None and native_identity(active) == previous_token
 
 
 def setup(session, owned, state, sw, module, record):
@@ -292,7 +308,7 @@ async def cases(read, safe, sw, module, paths, neighbor, owned, report, persist,
         persist()
         active = binding.wrap(root.GetActiveConfiguration(), module.IConfiguration)
         assert (active.Name if active else '') == cfg
-        assert bool(root.GetReadOnlyState()) is read_only
+        assert root.IsOpenedReadOnly() is read_only
         # Compare baseline metadata, actual geometry/views/selections/windows
         # before independent geometry probing of the new/reference configuration.
         after = snapshot(sw, module)

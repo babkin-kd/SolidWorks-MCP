@@ -333,3 +333,49 @@ def test_fixture_refuses_unconfirmed_or_ambiguous_model_view_without_native_retr
     select = extract_function('isometric_view_name', {})
     with pytest.raises(AssertionError):
         select(names)
+
+
+@pytest.mark.parametrize('closed_active, switch_active, activation_throw', [
+    (False, False, False), (False, True, False), (True, True, False), (False, True, True)])
+def test_owned_drawing_cleanup_restores_surviving_active_once_without_retired_getters(
+        closed_active, switch_active, activation_throw):
+    class Model:
+        def __init__(self, name):
+            self.name, self.retired = name, False
+        def GetTitle(self):
+            assert not self.retired, 'No getter on a retired model'
+            return self.name
+    neighbor, assembly, drawing = [Model(name) for name in ('Сосед', 'Сборка', 'Чертёж')]
+    owned = [neighbor, assembly, drawing]
+    sw = SimpleNamespace(ActiveDoc=drawing if closed_active else neighbor)
+    events = []
+    def identity(model):
+        assert not model.retired, 'No identity getter on a retired model'
+        return model.name
+    def close(title):
+        assert title == drawing.name
+        events.append('close')
+        drawing.retired = True
+        if closed_active or switch_active:
+            sw.ActiveDoc = assembly
+    def activate(application, model, title):
+        assert model is neighbor and title == neighbor.name and not model.retired
+        events.append('activate')
+        if activation_throw:
+            raise RuntimeError('one-shot fixture activation unconfirmed')
+        application.ActiveDoc = model
+    sw.GetDocuments = lambda: [model for model in owned if not model.retired]
+    sw.CloseDoc = close
+    namespace = dict(native_identity=identity, binding=SimpleNamespace(wrap=lambda raw, interface: raw),
+                     activate_owned=activate)
+    retire = extract_function('retire_owned', namespace)
+    record = lambda models: events.append(('record', [identity(model) for model in models]))
+    if activation_throw:
+        with pytest.raises(RuntimeError):
+            retire(sw, SimpleNamespace(IModelDoc2=object), drawing, [drawing], owned, record)
+    else:
+        retire(sw, SimpleNamespace(IModelDoc2=object), drawing, [drawing], owned, record)
+        assert sw.ActiveDoc is (assembly if closed_active else neighbor)
+    assert owned == [neighbor, assembly] and events.count('close') == 1
+    assert events.count('activate') == int(switch_active and not closed_active)
+    assert events[1] == ('record', ['Сосед', 'Сборка'])

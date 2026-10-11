@@ -75,3 +75,9 @@ metadata67/19; итоговый пакет4524 pure. По новому указ�
 accepted12/10, metadata69/20 и final pure4677/323 CAD deselected.
 CI-fix88e479a включён в успешный локальный набор; remote CI всё ещё failure.
 Новый lifecycle-блок и исправления накапливаются без отдельного push.
+
+[Локальная контрольная точка dev87](CHECKPOINT_DEV87.md): bounded open
+accepted13/11, metadata71/21, pure5560/323 CAD deselected. Вместе с clean close
+это два законченных lifecycle-блока после предыдущей пакетной отправки.
+Пересмотрены конечные семь блоков стадии1; L2 закрыт, L3/B1–B5 остаются.
+Изменения/CI-fix накапливаются локально; нового push/CI нет.

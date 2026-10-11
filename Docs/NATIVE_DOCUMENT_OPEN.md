@@ -1,13 +1,18 @@
-# Native open: кандидат L2, приёмка не завершена
+# Native open: ограниченный L2 принят dev87
 
-Состояние 11.10.2026: к bridge/guard/manifest добавлены durable domain,
-exact live-reference graph, require-clean rollback и MCP-фасад с lazy Runtime.
-Public `document_prepare_open_native` и `document_open_native` зарегистрированы
-в исходном кандидате (каталог71 tools/21 mutations); dev86 установлен и
-metadata71/21 принята. Dev85 сохраняет историческую clean-close приёмку69/20.
-Dev86 native open не принят; исправление CWD реализовано в исходном dev87.
-Это промежуточная реализация
-[L2](NATIVE_DOCUMENT_LIFECYCLE_DESIGN.md), а не завершение S1-15/N6.
+L2 bounded native open принят на exact installed dev87: metadata71/21,
+internal13/13 (210,07 с), public MCP11/11 (189,68 с), оба accepted=true.
+Полный source pure5560 passed/323 CAD deselected (77,43 с); external cleanup
+regressions — related499 passed (1,15 с). Полный baseline/CWD, dirty сосед,
+resolved new/borrowed references и own cleanup подтверждены. Исторические
+failed/unknown отчёты сохранены; они не переписаны и не повторены.
+[Точная приёмка](NATIVE_DOCUMENT_OPEN_ACCEPTANCE.md),
+[контрольная точка](CHECKPOINT_DEV87.md).
+
+Public `document_prepare_open_native`/`document_open_native` реализованы.
+Приёмка подтверждает текущий конечный manifest13 internal/11 public,
+а не новые режимы загрузки или ссылок. L3/общий S1-B5 остаются открытыми;
+[граница выпуска](STAGE_1_REQUIREMENTS_MATRIX.md).
 
 ## Реализовано в исходниках
 
@@ -66,7 +71,7 @@ swconst typelib31. CAD-документы при этой проверке не 
 Справочные источники: [OpenDoc6](https://help.solidworks.com/2021/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.ISldWorks~OpenDoc6.html),
 [native options](https://help.solidworks.com/2023/english/api/swconst/SolidWorks.Interop.swconst~SolidWorks.Interop.swconst.swOpenDocOptions_e.html?id=2.10.1.545).
 
-## Фактические проверки
+## Фактические проверки: история подготовки кандидатов
 
 Основа:95 новых pure-cases; related263 passed/4,37с. Новые domain69 passed/5,32с,
 facade76 cases (related86 passed/1,07с), bridge/ledger related99 passed/0,64с;
@@ -106,20 +111,23 @@ baseline directory и сбой receipt factory также удерживают u
 Связанные domain123/11,33с, bridge101/0,48с, passive gate238/0,24с,
 supervisor integration13/1,56с; наборы перекрываются и не суммируются.
 Итоговый полный pure — **5560 passed,323 CAD deselected,77,43с**,
-ignored log `work/pytest-open-dev87-full-1.log`. Fresh dev87 wheel/internal/public
-ещё впереди; source/pure не заменяют native-приёмку.
+ignored log `work/pytest-open-dev87-full-1.log`. На этом историческом checkpoint
+fresh dev87 wheel/internal/public ещё впереди; итоговая приёмка записана ниже.
+Source/pure сами по себе не заменяют native-приёмку.
 
-## Обязательное продолжение
+## Завершение текущего блока и следующий остаток
 
-1. Подготовить exact-owned native fixtures/verifier: деталь/сборка/чертёж,
-   new/borrowed dependencies/configurations/load modes, dirty baseline,
-   active-after, replay/stale, известные отказы и безопасная очистка.
-2. Один итоговый fresh wheel с обязательной installed metadata, internal native
-   и public MCP приёмкой по
-   [NATIVE_TESTING](NATIVE_TESTING.md). После этого L3 first save и общий N6.
-3. Отдельно закрыть неподдержанные load/reference/dirty-owned/retained-reference
-   области по конечной матрице; scoped L2 не закрывает всё S1-15.
+Exact installed dev87 принят internal13/public11 с одинаковыми final helper
+hashes. Сначала исправлены два external verifier дефекта: неверный read-only
+getter и смена active при own drawing cleanup. Пакет после wheel не изменён;
+whole failed отчёты сохранены. Связанные499 pure прошли; подробные hashes,
+время и native/fault-probe границы — в [приёмке](NATIVE_DOCUMENT_OPEN_ACCEPTANCE.md).
 
-Это незавершённый L2-блок, он не увеличивает число законченных блоков для
-пакетной отправки. Изменения остаются локальными; CI-fix отправится вместе
-со следующим согласованным пакетом. Стадия1/20 открытых требований сохраняются.
+Следующий блок — L3 first save только own unsaved part1cfg/1solid/no refs,
+затем остатки B1–B4 и same-wheel B5. Unsupported load/reference/dirty-owned/
+retained-reference области видны как D2-LOADREF/D2-CLOSE/D2-DOCUMENTS;
+в завершённый L2 новые случаи не добавляются. Гарантии сохраняются.
+
+Это второй законченный lifecycle-блок после пакетной отправки dev82:
+clean close dev85 и bounded open dev87. Изменения/CI-fix остаются локальными
+до 3–5 законченных блоков либо конца рабочего дня. Стадия1 открыта.
