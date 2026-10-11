@@ -3,8 +3,10 @@
 Кандидат dev71 добавляет measurement_prepare_mass/measurement_get_mass и
 part_mass_selection_measurement_v1. Каталог51 инструмент/18 guarded операций;
 measurement.mass относится к guarded UI effects, геометрия не редактируется.
-Приёмка нового wheel ещё не выполнена. Историческая internal dev34 не
-является приёмкой этого фасада.
+Dev71 принят:4072 pure/323 CAD deselected, metadata51/18, internal22/public6
+accepted=true на одном wheel; cleanup/baseline подтверждены.
+[Точное свидетельство](MASS_MEASUREMENT_ACCEPTANCE.md). Историческая internal
+dev34 не является приёмкой этого фасада.
 
 Явные документ, активная конфигурация, observation revision и необязательный
 persistent body_id: все solid-тела, включая скрытые, или одно заданное тело.

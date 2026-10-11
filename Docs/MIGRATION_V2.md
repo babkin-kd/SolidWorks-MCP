@@ -2,11 +2,14 @@
 
 ## Актуальное состояние — 11.10.2026
 
-Установленный кандидат **dev69**:49 инструментов /17 мутаций, metadata accepted.
+Установленный кандидат **dev71**:51 инструмент/18 guarded операций, metadata
+accepted. Публичная масса детали:4072 pure/323 CAD deselected, internal22/
+public6 accepted=true на одном wheel; [приёмка](MASS_MEASUREMENT_ACCEPTANCE.md).
+Исторический dev69:49 инструментов /17 мутаций, metadata accepted.
 4031 pure passed /323 CAD deselected; diagnostic stdio/native20 reads/internal4
 basic accepted на одном wheel. [Приёмка](DIAGNOSTICS_TIMINGS_ACCEPTANCE.md).
 U-развёртка dev68 принята: internal9/public10 на своём wheel; отбортовка dev67 —
-internal8/public7. Исторические результаты не являются итоговой приёмкой dev69
+internal8/public7. Исторические результаты не являются итоговой приёмкой dev71
 для всех прежних scope или всей стадии1.
 Точный каталог: `scripts/verify_installed_metadata.py:TOOLS`, регистрацию
 проверяет настоящий installed tools/list. Старая рабочая v1 сохранена.
@@ -168,7 +171,7 @@ API-сигнатуры сверены с зарегистрированным SW
 | `suppress_mate` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `delete_component` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `rebuild` | — | Не реализовано в v2; остаток стадии 1 | 1.4. Явный документ/конфигурация; проверка результата. Создание/редактирование — с ревизией и откатом. |
-| `get_mass_properties` | — | Внутренний backend; публичного v2 нет | 1.4-5 /S1-16. Ограниченный internal mass dev34 native accepted; ещё нужны facade/runtime, установленная public-проверка и общая приёмка текущего wheel. |
+| `get_mass_properties` | `measurement_prepare_mass` / `measurement_get_mass` | Принято в ограниченном part scope dev71 | 1.4-5 /S1-16. Durable temporary UI guard, все/выбранное solid, скрытые тела/конфигурации/overrides; internal22/public6 accepted. Assemblies/custom frames и общий итоговый gate остаются. См. MASS_MEASUREMENT_ACCEPTANCE.md. |
 | `get_bounding_box` | — | Не реализовано в v2; остаток стадии 1 | 1.4. Явный документ/конфигурация; проверка результата. Создание/редактирование — с ревизией и откатом. |
 | `list_faces` | `face_list`, `geometry_get` | Изменено / частично | Грани заданного тела, площадь/тип; полный набор геометрических параметров ещё требуется. |
 | `list_edges` | `edge_list`, `geometry_get` | Изменено / частично | Рёбра заданного тела, длины/концы; остальные параметры и фильтры ещё требуется перенести. |

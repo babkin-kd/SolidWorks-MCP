@@ -20,6 +20,10 @@ own cleanup и baseline подтверждены; [свидетельство](S
 Dev69 metadata49/17/stdin/native20 reads/internal4 basic accepted=true;
 [приёмка](DIAGNOSTICS_TIMINGS_ACCEPTANCE.md). Config/storage пункт1.5 принят;
 общие фазы/geometry grouping/performance и стадия1 остаются открытыми.
+Dev71: публичная масса детали — metadata51/18,4072 pure/323 CAD deselected,
+internal22/public6 accepted=true на одном wheel; exact-owned cleanup и baseline
+подтверждены. [Приёмка](MASS_MEASUREMENT_ACCEPTANCE.md). S1-16 частично: bounds,
+distance, assemblies/custom frames и общий gate остаются.
 Новые расширения2.1/2.2 не начинать до закрытия стадии1. Исходный срез ниже
 сохранён как история; сведения о ещё running dev67 не являются текущим итогом.
 

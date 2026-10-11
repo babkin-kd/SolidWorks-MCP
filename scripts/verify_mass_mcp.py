@@ -82,7 +82,7 @@ async def exercise(entry,state,sw,module,owned,report,persist,gate):
             assert sw.CommandInProgress is False
             await record(label,response)
             return args,prepared,request,response
-        args,prepared,request,first=await measure('public_all_solids')
+        args,prepared,request,first=await measure('public_all_solids',ctx)
         again=await call(client,'measurement_get_mass',**args,expected_revision=prepared['revision'],request_id=request,timeout_s=0.)
         assert again['operation_id']==first['operation_id'] and succeeded(again)==succeeded(first)
         await record('request_replay_one_calculation',again)

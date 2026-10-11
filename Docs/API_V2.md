@@ -1,6 +1,8 @@
 Кандидат dev71: публичное измерение массы детали с durable UI guard.
-51 инструмент/18 guarded операций. Installed/native приёмка ещё впереди;
-[точный контракт](MASS_MEASUREMENT_V2.md). Историческая dev69 ниже сохраняется.
+51 инструмент/18 guarded операций;4072 pure/323 CAD deselected, metadata
+и internal22/public6 accepted=true на одном wheel, cleanup/baseline подтверждены.
+[Контракт](MASS_MEASUREMENT_V2.md), [приёмка](MASS_MEASUREMENT_ACCEPTANCE.md).
+Историческая dev69 ниже сохраняется.
 
 # API v2: текущий кандидат первой стадии
 
