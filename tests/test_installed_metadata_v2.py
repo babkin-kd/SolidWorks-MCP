@@ -38,8 +38,8 @@ def example():
     info = {'package_version': wheel['package_version'], 'api_version': 2,
             'build_matches_source': True, 'build': {**wheel, 'source_dirty': False},
             'source_digest': wheel['source_digest'], 'schema_version': '2.0-dev',
-            'mutation_revision_scopes': ['part_feature_tree_v1', 'part_dimension_values_v1', 'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1', 'single_base_circular_through_hole_v1', 'single_base_circular_through_hole_dimension_v1', 'single_base_linear_through_hole_pattern_v1', 'single_base_selected_edge_fillet_v1', 'empty_part_sheet_l_profile_v1', 'single_l_sheet_flat_state_v1'],
-            'development_candidate': True, 'implemented_mutations': ['feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state'],
+            'mutation_revision_scopes': ['part_feature_tree_v1', 'part_dimension_values_v1', 'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1', 'single_base_circular_through_hole_v1', 'single_base_circular_through_hole_dimension_v1', 'single_base_linear_through_hole_pattern_v1', 'single_base_selected_edge_fillet_v1', 'empty_part_sheet_l_profile_v1', 'single_l_sheet_flat_state_v1', 'single_l_sheet_parameters_v1'],
+            'development_candidate': True, 'implemented_mutations': ['feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters'],
             'capabilities': {'pdm': False, 'simulation': False}, 'export_output_configured': False,
             'mcp_sdk_version': '1.30.0', 'schema_hash': hashlib.sha256(schemas.encode()).hexdigest()}
     return verify, tools, info, wheel
@@ -48,7 +48,7 @@ def example():
 def test_matching_implemented_catalog_is_only_metadata_evidence(example):
     verify, tools, info, wheel = example
     result = verify(tools, info, wheel)
-    assert result['public_tool_count'] == 42 and result['output_schemas_verified'] is True
+    assert result['public_tool_count'] == 44 and result['output_schemas_verified'] is True
     assert 'native_acceptance' not in result
 
 

@@ -11,6 +11,30 @@ import pytest
 ROOT=Path(__file__).resolve().parents[1]
 
 
+def test_internal_parameter_branch_passes_exact_model_context_and_checks_first(monkeypatch):
+    import hashlib
+    import sys
+    tree=ast.parse((ROOT/'scripts/verify_part_hole.py').read_text(encoding='utf8'))
+    branch=next(node for node in ast.walk(tree) if isinstance(node,ast.If)
+        and isinstance(node.test,ast.Attribute) and node.test.attr=='sheet_parameters_only')
+    calls=[]
+    monkeypatch.setitem(sys.modules,'verifier_sheet_parameters',NS(exercise_sheet_parameters=lambda *args:calls.append(args)))
+    model=object()
+    namespace={key:object() for key in ('adapter','documents','dimensions','store','runner','gate','sw','module','record')}
+    namespace.update(second_model=model,second_id='doc_exact',report={},hashlib=hashlib,Path=Path,
+        __file__=str(ROOT/'scripts/verify_part_hole.py'),first_identity='first',original=[(('first',),'untouched')],
+        source_state=lambda *args:((None,None,None,[('first',)]),['untouched']))
+    function=ast.FunctionDef(name='branch',args=ast.arguments(posonlyargs=[],args=[],kwonlyargs=[],kw_defaults=[],defaults=[]),
+        body=branch.body,decorator_list=[])
+    exec(compile(ast.fix_missing_locations(ast.Module(body=[function],type_ignores=[])),'parameter_branch','exec'),namespace)
+    namespace['branch']()
+    assert calls[0][6] is model
+    assert calls[0][7]=={'document_id':'doc_exact','configuration':'Основная'}
+    assert namespace['report']['core_suite_passed'] is True
+    namespace['source_state']=lambda *args:((None,None,None,[('first',)]),['changed'])
+    with pytest.raises(AssertionError):namespace['branch']()
+
+
 def test_public_harness_cleanup_always_receives_owner_and_aggregate():
     tree=ast.parse((ROOT/'scripts/verify_part_hole_mcp.py').read_text(encoding='utf8'))
     calls=[node for node in ast.walk(tree) if isinstance(node,ast.Call)
@@ -92,6 +116,11 @@ def test_public_hole_harness_tracks_all_literal_calls_before_sdk_dispatch():
         and any(isinstance(target,ast.Name) and target.id=='TOOL_SPECS' for target in node.targets))
     exec(compile(ast.Module(body=[state_assignment],type_ignores=[]),'sheet_state_specs','exec'),namespace)
     namespace['SHEET_STATE_SPECS']=namespace['TOOL_SPECS']
+    parameters=ast.parse((ROOT/'scripts/verifier_sheet_parameters_mcp.py').read_text(encoding='utf8'))
+    parameter_assignment=next(node for node in parameters.body if isinstance(node,ast.Assign)
+        and any(isinstance(target,ast.Name) and target.id=='TOOL_SPECS' for target in node.targets))
+    exec(compile(ast.Module(body=[parameter_assignment],type_ignores=[]),'sheet_parameter_specs','exec'),namespace)
+    namespace['SHEET_PARAMETER_SPECS']=namespace['TOOL_SPECS']
     exec(compile(ast.Module(body=[assignment],type_ignores=[]),str(script),'exec'),namespace)
     specs=namespace['TOOL_SPECS']
     called={node.args[1].value for node in ast.walk(tree) if isinstance(node,ast.Call)
@@ -111,6 +140,14 @@ def test_public_hole_harness_tracks_all_literal_calls_before_sdk_dispatch():
     state_called={node.args[1].value for node in ast.walk(sheet_state) if isinstance(node,ast.Call)
         and isinstance(node.func,ast.Name) and node.func.id=='call' and len(node.args)>=2 and isinstance(node.args[1],ast.Constant)}
     assert state_called<=specs.keys()
+    parameter_called={node.args[1].value for node in ast.walk(parameters) if isinstance(node,ast.Call)
+        and isinstance(node.func,ast.Name) and node.func.id=='call' and len(node.args)>=2 and isinstance(node.args[1],ast.Constant)}
+    assert parameter_called<=specs.keys()
+    assert specs['sheet_prepare_parameters'].mutates is False
+    assert specs['sheet_set_parameters'].mutates is True
+    assert specs['sheet_set_parameters'].prewrite_failure_codes==frozenset({'stale_revision'})
+    for name in ('sheet_prepare_parameters','sheet_set_parameters'):
+        assert specs[name].float_arguments==frozenset({'thickness_mm','bend_radius_mm','k_factor'})
     assert specs['sheet_prepare_flat_state'].operation=='sheet.prepare_flat_state'
     assert specs['sheet_prepare_flat_state'].mutates is False
     assert specs['sheet_set_flat_state'].operation=='sheet.set_flat_state'

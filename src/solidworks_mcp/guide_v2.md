@@ -441,3 +441,19 @@ restore only the proved original state/names, with full verification; no delete
 or generic Undo. Same request_id never starts another change; timeout only limits
 waiting, not COM execution. Unknown cannot be auto-repeated. No new configuration,
 save, export/DXF or arbitrary sheet geometry is implemented by these tools.
+
+
+### Параметры существующего листового L-профиля
+
+`sheet_prepare_parameters` читает текущие параметры и готовит явное изменение
+толщины, радиуса и K-фактора по одному document/configuration/base_object_id.
+Все три значения обязательны; размеры полок, длина и flat/fold состояние сохраняются.
+`sheet_set_parameters` требует полученную ревизию и request_id. Изменение относится
+к одному самостоятельному L-профилю/телу/конфигурации с native-сгибом90°,
+согласованными template/body defaults и отключённой gauge-table. Материал/таблицы,
+дополнительные сгибы и конфигурации требуют других инженерных сценариев.
+
+Проверяются полный BREP, независимые native t/r/K, исходная сеть размеров,
+настройки разгрузки и неподвижная полка/сторона. Исходные русские имена тела/списка
+сохраняются после доказанного изменения. Неопределённый native-результат не повторять;
+тайм-аут не отменяет COM, используйте job_get. Файловый обмен в этот сценарий не входит.

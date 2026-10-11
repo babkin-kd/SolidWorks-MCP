@@ -1,5 +1,10 @@
 # API v2: текущий кандидат первой стадии
 
+Кандидат **dev63** добавляет `sheet_prepare_parameters` и `sheet_set_parameters`:
+редактирование t/r/K одного существующего native L-профиля. Каталог кандидата —
+44 инструмента /15 мутаций. Source native-цепочка проверена, установленный wheel
+пока не принят. Контракт: [SHEET_PARAMETERS.md](SHEET_PARAMETERS.md).
+
 Текущий принятый инженерный блок — **dev62**, `sheet_prepare_flat_state` и
 `sheet_set_flat_state`, scope `single_l_sheet_flat_state_v1`.
 Контракт: [SHEET_FLAT_STATE.md](SHEET_FLAT_STATE.md).

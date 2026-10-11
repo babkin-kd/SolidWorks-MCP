@@ -28,6 +28,7 @@ from .part_fillet_tools_v2 import register_part_fillet_tools
 from .part_revolve_tools_v2 import register_part_revolve_tools
 from .sheet_profile_tools_v2 import register_sheet_profile_tools
 from .sheet_flat_tools_v2 import register_sheet_flat_tools
+from .sheet_parameter_tools_v2 import register_sheet_parameter_tools
 from .document_creation_tools_v2 import register_document_creation_tools
 from .sketch_tools_v2 import register_sketch_tools
 from .export_tools_v2 import register_export_tools
@@ -100,12 +101,13 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
                              'part_selected_edge_fillet': True,
                              'sheet_l_profile': True,
                              'sheet_flat_state': True,
+                             'sheet_parameters': True,
                              'part_exports': True,
                              'pdm': False, 'simulation': False},
             'export_output_configured': runtime.export_output_configured,
-            'implemented_mutations': ['feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state'],
+            'implemented_mutations': ['feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters'],
             'mutation_revision_scopes': ['part_feature_tree_v1', 'part_dimension_values_v1',
-                                         'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1', 'single_base_circular_through_hole_v1', 'single_base_circular_through_hole_dimension_v1', 'single_base_linear_through_hole_pattern_v1', 'single_base_selected_edge_fillet_v1', 'empty_part_sheet_l_profile_v1', 'single_l_sheet_flat_state_v1'],
+                                         'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1', 'single_base_circular_through_hole_v1', 'single_base_circular_through_hole_dimension_v1', 'single_base_linear_through_hole_pattern_v1', 'single_base_selected_edge_fillet_v1', 'empty_part_sheet_l_profile_v1', 'single_l_sheet_flat_state_v1', 'single_l_sheet_parameters_v1'],
             'journal_schema_version': JOURNAL_SCHEMA_VERSION,
         })
 
@@ -265,6 +267,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None) -> FastMCP:
     register_part_revolve_tools(app, runtime, response, failure)
     register_sheet_profile_tools(app, runtime, response, failure)
     register_sheet_flat_tools(app, runtime, response, failure)
+    register_sheet_parameter_tools(app, runtime, response, failure)
     register_document_creation_tools(app, runtime, response, failure)
     register_sketch_tools(app, runtime, response, failure)
     register_export_tools(app, runtime, response, failure)
