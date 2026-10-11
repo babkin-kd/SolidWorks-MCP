@@ -1,7 +1,7 @@
 # Закрытие чистых native-документов: кандидат L1
 
 Реализованы `document_prepare_close_native` и `document_close_native`.
-Статус на подготовке dev84: pure/installed/native/MCP-приёмка выполняется;
+Статус на подготовке dev85: pure/installed/native/MCP-приёмка выполняется;
 реализация сама по себе не закрывает S1-15 или стадию1.
 
 ## Контракт
@@ -23,6 +23,19 @@ IModelDoc2.GetDependencies/GetNumDependencies, as-saved
 ISldWorks.GetDocumentDependencies2 и live component/drawing view paths.
 Search=false на всех источниках. Пустой modern getter больше не означает
 отсутствие ссылок. Native исходный dev83 не принят.
+
+Dev84:9 internal случаев прошли, затем закрытие чертежа стало unknown при
+неподтверждённой активации UI-locked survivor. Terminal-аудит подтвердил
+точное исчезновение чертежа, полную сохранность двух survivors/windows/files/
+settings и released CIP/UI. Текущее состояние согласовано по постоянной
+авторизации, свои две детали закрыты, unknown-job сохранён без retry.
+Dev84 не принят, public не запускался.
+
+Dev85: после подтверждённого retirement разрешено однократно освободить
+survivor UI locks, сохраняя CIP и selection scopes. После release повторяется
+полный survivor/file/window oracle; только затем выполняется explicit activation.
+На выходе повторного UnLock нет. Guard evidence отдельно фиксирует attempted/
+verified activation_ui_release; неподтверждённый release остаётся unknown.
 
 `require_clean`: target и все скрытые неактивные документы, также закрываемые
 CloseDoc, должны иметь needs_save=false. Весь collateral список передаётся

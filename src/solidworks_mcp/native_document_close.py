@@ -249,6 +249,9 @@ class NativeDocumentCloseCatalog:
             if active_after is not None and observed['semantic']['active_document_id'] != active_after:
                 survivor = next(entry for entry in self.documents._entries if entry.document_id == active_after)
                 context['pending_activation'] = True
+                context['manager'].release_survivor_ui_for_activation()
+                if not self._effect_matches(prepared.before, inspect(prepared)):
+                    raise rejected('native_close_effect_not_verified','Survivors/files/windows changed during the owned UI release phase.')
                 self.adapter.activate_native_close_survivor(survivor.model)
                 context['pending_activation'] = False
             return dict(document_id=document_id, retiring_document_ids=prepared.before['impact']['retiring_document_ids'],
@@ -271,9 +274,13 @@ class NativeDocumentCloseCatalog:
             return (after['semantic'] == before['semantic'] and after['original_files'] == before['semantic']['files']
                     and not after['pending_native_call'] and not after['pending_activation'])
 
+        def execution_guard(prepared):
+            context['manager']=self.adapter.native_close_guard(
+                tuple(entry.model for entry in context['entries'] if entry.document_id in context['guarded_ids']),
+                tuple(context['impact']['retiring_document_ids']))
+            return context['manager']
+
         return self.coordinator.execute(operation_id, document_id=document_id, configuration=configuration,
             expected_revision=expected_revision, prepare=prepare, validate=validate, apply=apply,
             inspect=inspect, verify=verify, restore=restore, verify_restored=restored,
-            guard=lambda prepared: self.adapter.native_close_guard(
-                tuple(entry.model for entry in context['entries'] if entry.document_id in context['guarded_ids']),
-                tuple(context['impact']['retiring_document_ids'])))
+            guard=execution_guard)

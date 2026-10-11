@@ -50,6 +50,13 @@ class Guard:
         a.busy = False
         self.evidence['released'] = True
 
+    def release_survivor_ui_for_activation(self):
+        assert self.adapter.busy and self.models
+        for item in self.models:
+            self.adapter.alive(item)
+            item.blocking_state=0
+        if self.adapter.fault=='activation_release_foreign':self.models[0].state['needs_save']=not self.models[0].state['needs_save']
+
 
 class CloseAdapter(Adapter):
     def __init__(self, folder):
@@ -164,6 +171,7 @@ class CloseAdapter(Adapter):
 
     def activate_native_close_survivor(self, current):
         self.alive(current)
+        assert self.busy and all(item.blocking_state==0 for item in self.models)
         self.activations.append(current)
         if self.fault == 'activation_throw':
             raise RuntimeError('Activation return lost')
@@ -259,6 +267,16 @@ def test_unconfirmed_activation_after_irreversible_close_is_unknown(setup, fault
     result = x.run(revision=p['revision'], **policy)
     assert result['status'] == 'unknown' and x.a.calls == 1 and x.a.activations == [third]
     assert x.run(revision=p['revision'], **policy) == result and x.a.calls == 1
+
+
+def test_changed_survivor_during_activation_unlock_is_unknown_without_activation_or_retry(setup):
+    x=setup;third=x.a.add('Выбранный сосед');x.a.active=x.target
+    chosen=next(row['document_id'] for row in x.d.list()['documents'] if row['title']==third.state['title'])
+    policy=dict(active_after_document_id=chosen);p=x.c.prepare_close(**x.args,**policy)
+    x.a.fault='activation_release_foreign'
+    result=x.run(revision=p['revision'],**policy)
+    assert result['status']=='unknown' and x.a.calls==1 and x.a.activations==[]
+    assert x.run(revision=p['revision'],**policy)==result and x.a.calls==1
 
 
 def test_missing_active_successor_is_refused_before_close(setup):

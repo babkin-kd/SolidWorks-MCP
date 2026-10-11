@@ -116,7 +116,8 @@ def test_destroyed_targets_never_enter_survivor_guards_and_survivors_restore_in_
         'original_command_in_progress': False, 'acquired': True, 'released': True,
         'model_guards': [{'original_state': 0, 'locked_state': 2, 'released_state': 0}] * 2,
         'selection_preserved': True, 'retiring_document_ids': ['doc_retiring'],
-        'retiring_targets_locked_during_close': False}
+        'retiring_targets_locked_during_close': False,
+        'activation_ui_release': {'attempted':False,'verified':False}}
     assert not any(key in guard.evidence for key in ('retired', 'documents_closed', 'close_verified'))
 
 
@@ -130,6 +131,42 @@ def test_last_document_guard_does_not_read_or_change_user_control_and_has_no_mod
     assert guard.evidence['model_guards'] == []
     assert guard.evidence['selection_preserved'] is True
     assert guard.evidence['released'] is True
+
+
+def test_activation_release_unlocks_survivors_once_keeps_flag_and_selection_until_exit():
+    events=[];app=App();models=[Survivor('first',events),Survivor('second',events)]
+    with ApplicationCloseGuard(app,models,selection_scope(events),['doc_retiring']) as guard:
+        guard.release_survivor_ui_for_activation()
+        assert app.busy is True and all(model.block==0 for model in models)
+        assert guard.evidence['activation_ui_release']==dict(attempted=True,verified=True)
+        assert guard.evidence['released'] is False and guard.evidence['selection_preserved'] is False
+        assert not any(event[1]=='selection_exit' for event in events)
+        with pytest.raises(ExecutionFailure):guard.release_survivor_ui_for_activation()
+    assert app.writes==[True,False]
+    assert [event for event in events if event[1]=='unlock']==[('second','unlock'),('first','unlock')]
+    assert guard.evidence['released'] and guard.evidence['selection_preserved']
+
+
+def test_activation_release_failure_never_retries_unlock_and_remains_unverified():
+    events=[];app=App();model=Survivor('survivor',events,unlock_error=True)
+    guard=ApplicationCloseGuard(app,[model],selection_scope(events),['doc_retiring'])
+    with pytest.raises(ExecutionFailure):
+        with guard:guard.release_survivor_ui_for_activation()
+    assert [event for event in events if event[1]=='unlock']==[('survivor','unlock')]
+    assert guard.evidence['activation_ui_release']==dict(attempted=True,verified=False)
+    assert app.writes==[True,False]
+
+
+@pytest.mark.parametrize('phase',['new','closed','zero'])
+def test_activation_release_requires_held_nonempty_survivor_guard(phase):
+    events=[];app=App();guard=ApplicationCloseGuard(app,[] if phase=='zero' else [Survivor('s',events)],selection_scope(events),['doc_retiring'])
+    if phase=='closed':
+        with guard:pass
+    if phase=='zero':
+        with guard:
+            with pytest.raises(ExecutionFailure):guard.release_survivor_ui_for_activation()
+    else:
+        with pytest.raises(ExecutionFailure):guard.release_survivor_ui_for_activation()
 
 
 def test_existing_busy_flag_never_borrowed_and_survivors_not_touched():

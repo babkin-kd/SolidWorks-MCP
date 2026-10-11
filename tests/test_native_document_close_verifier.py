@@ -12,7 +12,8 @@ def close_checkpoint(survivors=1):
     row['mutation']['verification']['evidence']['execution_guard']=dict(
         scope='application_document_close_guard_v1',original_command_in_progress=False,acquired=True,released=True,
         selection_preserved=True,model_guards=[dict(MODEL_GUARD) for _ in range(survivors)],
-        retiring_document_ids=['doc_0'],retiring_targets_locked_during_close=False)
+        retiring_document_ids=['doc_0'],retiring_targets_locked_during_close=False,
+        activation_ui_release=dict(attempted=False,verified=False))
     return owner,row
 
 
@@ -43,4 +44,20 @@ def test_incomplete_close_evidence_keeps_fixtures(fault):
     if fault=='unload_claim':impact['data_unload_claimed']=True
     if fault=='release':g['model_guards'][0]['released_state']=2
     if fault=='fallback':evidence['execution_guard']=guard(1)
+    assert not decision(owner,row).fixture_can_cleanup
+
+
+@pytest.mark.parametrize('release',[{'attempted':True,'verified':False},{'attempted':False,'verified':True},
+                                  {'attempted':1,'verified':True},None,{}])
+def test_unconfirmed_activation_ui_release_retains_fixtures(release):
+    owner,row=close_checkpoint()
+    row['mutation']['verification']['evidence']['execution_guard']['activation_ui_release']=release
+    assert not decision(owner,row).fixture_can_cleanup
+
+
+def test_verified_ui_release_bound_to_requested_survivor_allows_cleanup():
+    owner,row=close_checkpoint();row['mutation']['before_state']['impact']['active_after_document_id']='doc_1'
+    row['mutation']['verification']['evidence']['execution_guard']['activation_ui_release']=dict(attempted=True,verified=True)
+    assert decision(owner,row).fixture_can_cleanup
+    row['mutation']['before_state']['impact']['active_after_document_id']='doc_foreign'
     assert not decision(owner,row).fixture_can_cleanup

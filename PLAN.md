@@ -1,11 +1,12 @@
 # План развития SolidWorks MCP
 
-Dev84: clean-close L1 реализован, [контракт](Docs/NATIVE_DOCUMENT_CLOSE.md).
-Полный pure4661 passed/323 CAD deselected (60,20с); установленная/native/MCP
-приёмка выполняется, S1-15 остаётся открытым. Dev83 не принят: fixture setup
-остановился до MCP-close; пять своих моделей закрыты. Read-only probe выявил
-пустой Extension dependency getter при реальном компоненте, поэтому dev84
-сверяет independent live/as-saved/component/view dependencies.
+Dev85: clean-close L1 реализован, [контракт](Docs/NATIVE_DOCUMENT_CLOSE.md).
+Полный pure4673 passed/323 CAD deselected (60,00с); installed/native/MCP
+приёмка выполняется, S1-15 остаётся открытым. Dev83 setup отказ и dev84
+unknown activation не приняты; все свои модели закрыты, empty/free baseline.
+Реальные dependency/activation риски исправлены; unknown dev84 сохранён,
+его вызов не повторялся. Next candidate освобождает survivor UI locks перед
+explicit activation, сохраняя CIP/selection и повторяя full census oracle.
 
 Dev82: сохранение существующего native-файла детали/сборки/чертежа принято:
 4455 pure/323 CAD deselected перед wheel (55,56 с); после изменения общего

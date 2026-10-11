@@ -49,7 +49,7 @@ def released_close_guard(guard, before):
     """Exact clean-close scope permits zero survivor locks, never target locks."""
     if not isinstance(guard,dict) or not isinstance(before,dict):return False
     keys={'scope','original_command_in_progress','acquired','released','model_guards','selection_preserved',
-          'retiring_document_ids','retiring_targets_locked_during_close'}
+          'retiring_document_ids','retiring_targets_locked_during_close','activation_ui_release'}
     if (set(guard)!=keys or guard['scope']!='application_document_close_guard_v1'
             or before.get('scope')!='native_document_close_clean_v1'):return False
     documents=(before.get('semantic') or {}).get('documents')
@@ -64,7 +64,12 @@ def released_close_guard(guard, before):
             or set(ids)!=set(retiring)|set(survivors) or guard['retiring_document_ids']!=retiring
             or impact.get('target_document_id') not in retiring or impact.get('policy')!='require_clean'
             or impact.get('data_unload_claimed') is not False):return False
-    return (guard['original_command_in_progress'] is False and guard['acquired'] is True
+    release=guard['activation_ui_release']
+    release_valid=(isinstance(release,dict) and set(release)=={'attempted','verified'}
+        and ((release['attempted'] is False and release['verified'] is False)
+             or (release['attempted'] is True and release['verified'] is True and bool(survivors)
+                 and impact.get('active_after_document_id') in survivors)))
+    return (release_valid and guard['original_command_in_progress'] is False and guard['acquired'] is True
             and guard['released'] is True and guard['selection_preserved'] is True
             and guard['retiring_targets_locked_during_close'] is False
             and type(guard['model_guards']) is list and len(guard['model_guards'])==len(survivors)
