@@ -525,3 +525,18 @@ durable application checkpoint. Исходные объекты и marks вос�
 Сборки, произвольные coordinate frames, габариты и расстояния этим scope
 не поддерживаются. Selected UI objects должны иметь native PID roundtrip;
 неадресуемое выделение отвергается до первой записи. Лимит:500 solid-тел.
+# Габариты в явных осях
+
+`measurement_get_bounds` измеряет все solid/surface-тела детали (body_type=all),
+фильтр solid/surface или один persistent body_id; скрытые тела включены.
+Нужны document_id/configuration/expected_observation_revision и request_id.
+Чтение не меняет выделение, UI или модель. Native GetExtremePoint вызывается
+в ±направлениях каждой оси, повторные extrema и полный body roster проверяются.
+Approximate GetBodyBox не используется для этих измерений.
+
+coordinate_frame=None означает модель. Явный frame содержит origin_mm и три
+axes_in_model: p_model_mm=origin_mm+Σ(axis_i*p_frame_mm[i]). Оси ортонормальны,
+правые; scale/shear/reflection запрещены. Возвращаются min_mm/max_mm/size_mm
+в выбранных осях, не автоматически минимальный по объёму ориентированный box.
+Чрезмерный offset, теряющий точность размера, отвергается. Лимит500 BREP-тел;
+mesh/assembly/instance paths и native named-coordinate features пока вне scope.

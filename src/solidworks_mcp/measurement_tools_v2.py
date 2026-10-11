@@ -1,6 +1,8 @@
 """Explicit measurements; guarded temporary UI effects do not edit geometry."""
 import sqlite3
 from pydantic import StrictFloat
+from typing import Literal
+from .measurement_frames import RigidMeasurementFrame
 from .contracts import ResponseEnvelope
 from .jobs import JobError
 
@@ -13,6 +15,25 @@ def register_measurement_tools(app,runtime,response,failure):
             return response(status=job['status'],operation_id=job['operation_id'],
                 context=job['payload']['context'],data=job['result'],error=job['error'])
         except (JobError,sqlite3.Error) as exc:return failure(exc)
+
+    @app.tool()
+    async def measurement_get_bounds(request_id:str,document_id:str,configuration:str,
+            expected_observation_revision:str,body_id:str|None=None,
+            body_type:Literal['all','solid','surface']='all',coordinate_frame:RigidMeasurementFrame|None=None,
+            timeout_s:StrictFloat=10.) -> ResponseEnvelope:
+        """Passive BREP bounds in mm, all/selected bodies including hidden bodies.
+
+        Uses native extreme points, not approximate GetBodyBox corners. None
+        frame means model axes. Explicit frame defines origin_mm and three
+        right-handed unit axes_in_model: p_model=origin+axes*p_frame. No scale,
+        shear or reflection. Returns axis-aligned bounds in these chosen axes,
+        not a minimum-volume box. Rechecks membership and native extrema;
+        never activates another configuration, changes geometry or selection.
+        Assemblies/instance paths/named CAD frames remain separate requirements.
+        """
+        return await dispatch(request_id,'measurement.bounds',dict(document_id=document_id,
+            configuration=configuration,expected_observation_revision=expected_observation_revision,body_id=body_id,
+            body_type=body_type,coordinate_frame=None if coordinate_frame is None else coordinate_frame.model_dump(mode='json')),timeout_s)
 
     @app.tool()
     async def measurement_prepare_mass(request_id:str,document_id:str,configuration:str,

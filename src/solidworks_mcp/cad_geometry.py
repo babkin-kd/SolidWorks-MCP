@@ -2,12 +2,27 @@
 
 import pythoncom
 import win32com.client
+import math
 
 from . import binding
 from .documents import rejected
 
 
 class CadGeometryMixin:
+    def measurement_body_type(self,body):
+        code=body.GetType()
+        kind={0:'solid',1:'surface'}.get(code) if type(code) is int else None
+        if kind is None or body.IsMeshBody() is not False:
+            raise rejected('unsupported_measurement_body','Bounds require native solid/surface BREP, not mesh bodies.')
+        return kind
+
+    def measurement_extreme_point(self,body,direction):
+        result=body.GetExtremePoint(*direction)
+        if (type(result) is not tuple or len(result)!=4 or result[0] is not True
+                or any(type(x) not in (int,float) or not math.isfinite(x) for x in result[1:])):
+            raise rejected('native_extreme_point_unavailable','SolidWorks did not confirm a finite native extreme point.')
+        return tuple(result[1:])
+
     def _extension(self, model):
         return binding.wrap(model.Extension, self._module.IModelDocExtension)
 

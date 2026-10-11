@@ -97,7 +97,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None, *, timings=None)
             'capabilities': {'job_journal': True, 'job_query': True, 'queued_job_cancellation': True,
                              'timing_diagnostics': True,
                              'cad_documents': True, 'cad_mutations': True,
-                             'part_geometry_reads': True, 'part_mass_measurements': True, 'persistent_geometry_references': True,
+                             'part_geometry_reads': True, 'part_bounds_measurements': True, 'part_mass_measurements': True, 'persistent_geometry_references': True,
                              'part_feature_reads': True, 'part_feature_rename': True,
                              'part_dimension_reads': True, 'part_dimension_set_value': True,
                              'new_part_documents': True, 'part_base_extrusion': True,
