@@ -698,3 +698,35 @@ unload внутренних данных не заявляет. Нет discard d
 save, изменения UserControl/visibility или автоматического retry. Неопределённый
 исход удерживает application hold. Пределы5000 моделей/окон,512 MiB/file,2 GiB;
 first save/open/dirty-owned/retained-reference lifecycle остаётся в плане.
+
+## Открытие native-файла: кандидат L2
+
+`document_prepare_open_native` принимает абсолютный native filename, явный
+document_type (`part`, `assembly`, `drawing`), configuration и строгий Boolean
+read_only (по умолчанию false). Для детали/сборки configuration обязательна,
+для чертежа пустая. Возвращаются серверные application_id/native_file_id и
+ревизия полного census моделей/окон/живых ссылок, views/modes/settings и
+двойного saved file manifest с SHA256/identity/configurations/Search=False.
+Уже загруженный source и его файловые aliases отвергаются до OpenDoc6.
+
+`document_open_native` получает application_id в поле document_id, тот же
+native_file_id/configuration/read_only, expected_revision и request_id. До
+guard сохраняется application checkpoint; перед каждым native-шагом — pending,
+после нормального возврата — returned. Эти записи сами по себе не доказывают
+успех: нужны точный возвращённый model handle, нулевые errors/warnings,
+конфигурация/mode и полный граф компонентов/видов с exact handles всех новых
+и borrowed моделей. Baseline dirty-модели, их живые ссылки, окна/виды/файлы и
+настройки должны сохраниться; исходный active document явно восстанавливается
+без rebuild. При пустой исходной сессии новым активным становится source.
+
+Scope native_document_open_resolved_v1 пока требует resolved saved components:
+lightweight/SpeedPak/virtual и external-reference parts отвергаются; произвольный
+режим загрузки не заявлен. После нормального отказа допускается только
+доказанный no-effect либо require-clean CloseDoc exact owned-new root/hidden
+dependencies с независимой проверкой всего baseline. Dirty, foreign, incoming
+references и background last-window risk не очищаются. Throw/pending/journal
+failure остаются unknown с application hold, без retry или adoption по roster.
+Timeout ограничивает ожидание; прежний request_id не повторяет OpenDoc6.
+
+Это реализация кандидата в исходниках: installed-wheel/internal/public native
+приёмка L2 ещё не выполнена. Приёмка dev85 clean close на неё не переносится.

@@ -248,13 +248,62 @@ class JobStore:
                 self._db.execute('ROLLBACK')
                 raise
 
+    def record_mutation_step(self, operation_id: str, *, name: str, phase: str, evidence: dict):
+        """Append a native pending/returned acknowledgement without verifying effects.
+
+        Stored in the existing nullable verification JSON, with outcome=None
+        until the domain's final oracle. The immutable before-state and schema
+        remain unchanged. A pending or merely returned call never releases a hold.
+        """
+        if (type(name) is not str or not name or len(name) > 128 or phase not in ('pending', 'returned')
+                or type(evidence) is not dict or not evidence):
+            raise JobError('invalid_native_step', 'Use a named native pending/returned step with nonempty JSON evidence.')
+        detached = json.loads(_json(evidence))
+        with self._lock:
+            self._ensure_open()
+            self._db.execute('BEGIN IMMEDIATE')
+            try:
+                job = self.get(operation_id)
+                mutation = job.get('mutation')
+                if job['status'] != 'running' or mutation is None or mutation['phase'] != 'prepared':
+                    raise JobError('invalid_transition', 'Native steps require a prepared running mutation.')
+                verification = mutation.get('verification') or {}
+                if verification.get('outcome') is not None:
+                    raise JobError('invalid_transition', 'Native steps cannot follow an already verified outcome.')
+                steps = verification.get('native_steps', [])
+                if len(steps) >= 32:
+                    raise JobError('native_step_budget_exceeded', 'A mutation supports at most 32 native step events.')
+                if phase == 'pending':
+                    if (steps and steps[-1]['phase'] == 'pending') or any(step['name'] == name for step in steps):
+                        raise JobError('invalid_native_step', 'Never replay or overlap a pending native step.')
+                elif not steps or steps[-1]['phase'] != 'pending' or steps[-1]['name'] != name:
+                    raise JobError('invalid_native_step', 'A returned acknowledgement must match the last exact pending step.')
+                steps.append(dict(sequence=len(steps) + 1, name=name, phase=phase, evidence=detached))
+                encoded = _json(dict(outcome=None, evidence={}, native_steps=steps))
+                self._db.execute('UPDATE mutations SET verification=?,updated_at=? WHERE operation_id=?',
+                                 (encoded, time.time(), operation_id))
+                self._db.execute('COMMIT')
+            except BaseException:
+                self._db.execute('ROLLBACK')
+                raise
+
     def verify_mutation(self, operation_id: str, *, outcome: str, evidence: dict):
         """Trusted domain verifier records evidence; a bare failed status cannot unlock."""
         if outcome not in ('committed', 'rolled_back', 'not_started') or not isinstance(evidence, dict) or not evidence:
             raise JobError('invalid_verification', 'An explicit verified outcome and nonempty evidence are required.')
-        encoded = _json({'outcome': outcome, 'evidence': evidence})
+        detached = json.loads(_json(evidence))
         with self._lock:
             self._ensure_open()
+            # Retain the append-only step ledger through the final oracle and
+            # the coordinator's later verified guard-release evidence update.
+            mutation = self.get(operation_id).get('mutation') or {}
+            steps = (mutation.get('verification') or {}).get('native_steps')
+            if steps and steps[-1]['phase'] == 'pending':
+                raise JobError('native_step_unresolved', 'A pending native step cannot be finalized by an outcome claim.')
+            value = dict(outcome=outcome, evidence=detached)
+            if steps is not None:
+                value['native_steps'] = steps
+            encoded = _json(value)
             changed = self._db.execute("UPDATE mutations SET verification=?,updated_at=? "
                 "WHERE operation_id=? AND phase='prepared' AND EXISTS "
                 "(SELECT 1 FROM jobs WHERE jobs.operation_id=mutations.operation_id AND status='running')",

@@ -12,7 +12,7 @@ import threading
 from . import binding
 from .application_open_guard import ApplicationOpenGuard
 from .cad_selection_scope import preserved_selection
-from .constants import SW_OPEN_DOC_SILENT, SW_OPEN_DOC_READ_ONLY
+from .constants import SW_OPEN_DOC_SILENT, SW_OPEN_DOC_READ_ONLY, SW_DONT_REBUILD_ACTIVE_DOC
 from .documents import rejected
 from .jobs import ExecutionFailure
 from .native_document_save import EXTENSIONS, MAX_OPEN_DOCUMENTS
@@ -41,7 +41,108 @@ class NativeOpenReceipt:
     returned_new_identity: bool = False
 
 
+@dataclass
+class NativeActivationReceipt:
+    model: object
+    identity: object
+    thread: int = field(default_factory=threading.get_ident)
+    native_call_attempted: bool = False
+    pending_activation: bool = False
+    native_call_returned: bool = False
+    raw_model: object = None
+    native_error: object = None
+
+
 class CadNativeDocumentOpenMixin:
+    def new_native_activation_receipt(self, model):
+        return NativeActivationReceipt(model, self.identity(model))
+
+    def activate_native_open_document(self, receipt):
+        if (type(receipt) is not NativeActivationReceipt or receipt.native_call_attempted
+                or threading.get_ident() != receipt.thread):
+            raise ExecutionFailure('native_open_activation_receipt_invalid', 'Activation requires one exact unused receipt on its STA.', uncertain=True)
+        expected = receipt.identity
+        title = receipt.model.GetTitle()
+        if type(title) is not str or not title.strip():
+            raise rejected('native_open_activation_unconfirmed', 'An exact live native model requires a nonempty title.')
+        receipt.native_call_attempted = True
+        receipt.pending_activation = True
+        result = timed_call('com', self._sw.ActivateDoc3, title, False, SW_DONT_REBUILD_ACTIVE_DOC, 0)
+        receipt.native_call_returned = True
+        receipt.pending_activation = False
+        if isinstance(result, tuple) and len(result) == 2:
+            receipt.raw_model, receipt.native_error = result
+        if (not isinstance(result, tuple) or len(result) != 2 or type(result[1]) is not int
+                or result[1] not in (0, 2)):
+            raise rejected('native_open_activation_unconfirmed', 'Registered no-rebuild activation acknowledgement required.')
+        returned = binding.wrap(result[0], self._module.IModelDoc2)
+        active = self.active_document()
+        if returned is None or active is None or self.identity(returned) != expected or self.identity(active) != expected:
+            raise rejected('native_open_activation_unconfirmed', 'The explicitly requested live model was not activated.')
+        return dict(native_call_returned=True, native_error=result[1])
+
+    def native_open_model_references(self, model):
+        """Exact handles reached through the returned root, not roster deltas."""
+        kind = model.GetType()
+        if type(kind) is not int or kind not in (1, 2, 3):
+            raise rejected('native_open_resolution_invalid', 'Only native part/assembly/drawing data can enter the resolved receipt.')
+        if kind == 1:
+            return []
+        references = []
+        if kind == 2:
+            assembly = binding.wrap(model, self._module.IAssemblyDoc)
+            count = assembly.GetComponentCount(False)
+            values = assembly.GetComponents(False)
+            if values is None:
+                values = ()
+            if (type(count) is not int or not 0 <= count <= MAX_OPEN_DOCUMENTS
+                    or not isinstance(values, (tuple, list)) or len(values) != count):
+                raise rejected('native_open_resolution_invalid', 'Complete bounded resolved component enumeration is required.')
+            for raw in values:
+                component = binding.wrap(raw, self._module.IComponent2)
+                state = component.GetSuppression2()
+                if (type(state) is not int or state not in (2, 3) or component.IsSpeedPak is not False
+                        or component.IsVirtual is not False):
+                    raise rejected('native_open_component_mode_unsupported', 'Resolved saved components only; no implicit lightweight/SpeedPak/virtual conversion.')
+                target = binding.wrap(component.GetModelDoc2(), self._module.IModelDoc2)
+                references.append((target, dict(path=component.GetPathName(), configuration=component.ReferencedConfiguration,
+                    name=component.Name2, origin='component', native_suppression_state=state)))
+            final_count = assembly.GetComponentCount(False)
+            if type(final_count) is not int or final_count != count:
+                raise rejected('native_open_resolution_changed', 'Component count changed while resolving native handles.')
+        else:
+            drawing = binding.wrap(model, self._module.IDrawingDoc)
+            groups = drawing.GetViews()
+            if groups is None:
+                groups = ()
+            if not isinstance(groups, (tuple, list)) or len(groups) > MAX_OPEN_DOCUMENTS:
+                raise rejected('native_open_resolution_invalid', 'Complete bounded drawing sheet/view enumeration is required.')
+            views = []
+            for group in groups:
+                if not isinstance(group, (tuple, list)) or len(views) + len(group) > MAX_OPEN_DOCUMENTS:
+                    raise rejected('native_open_resolution_invalid', 'Complete bounded drawing view groups required.')
+                views.extend(group)
+            for index, raw in enumerate(views):
+                view = binding.wrap(raw, self._module.IView)
+                path = view.GetReferencedModelName()
+                if type(path) is not str:
+                    raise rejected('native_open_resolution_invalid', 'Drawing view reference names must be native strings.')
+                if not path:
+                    # Sheet view has no referenced model. Empty non-sheet views
+                    # can be broken/detached; they are never silently omitted.
+                    if type(view.Type) is not int or view.Type != 1:  # swDrawingSheet
+                        raise rejected('native_open_drawing_reference_unavailable', 'An unresolved non-sheet drawing view cannot enter the receipt.')
+                    continue
+                target = binding.wrap(view.ReferencedDocument, self._module.IModelDoc2)
+                references.append((target, dict(path=path, configuration=view.ReferencedConfiguration,
+                    name=f'view_{index}', origin='drawing_view', native_suppression_state=None)))
+        for target, info in references:
+            if (target is None or type(info['path']) is not str or not Path(info['path']).is_absolute()
+                    or type(info['configuration']) is not str or not info['configuration'].strip()
+                    or type(info['name']) is not str or not info['name']):
+                raise rejected('native_open_reference_handle_unavailable', 'Each native reference requires an exact live model, saved path, name and configuration.')
+        return references
+
     def native_open_loaded_identity(self, filename):
         # Passive lookup cannot create a receipt or adopt referenced data.
         if type(filename) is not str or not Path(filename).is_absolute() or '\x00' in filename:

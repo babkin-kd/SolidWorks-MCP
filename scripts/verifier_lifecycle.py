@@ -17,12 +17,24 @@ from collections import deque
 from contextlib import asynccontextmanager, closing
 from dataclasses import dataclass, field
 import inspect
+import importlib.util
 import json
 import math
 from pathlib import Path
 import sqlite3
 
 import anyio
+
+
+# Verifiers run both as standalone scripts and through path-based pure test
+# loaders. Resolve this passive sibling module independently of cwd/PYTHONPATH.
+_open_spec = importlib.util.spec_from_file_location('_native_open_evidence',
+    Path(__file__).with_name('verifier_native_open.py'))
+_open_evidence = importlib.util.module_from_spec(_open_spec)
+_open_spec.loader.exec_module(_open_evidence)
+released_open_guard = _open_evidence.released_open_guard
+untouched_busy_open_guard = _open_evidence.untouched_busy_open_guard
+verified_open_native_steps = _open_evidence.verified_open_native_steps
 
 
 TERMINAL = frozenset({'succeeded', 'failed', 'cancelled', 'unknown'})
@@ -425,12 +437,18 @@ class VerifierSupervisor:
                 untouched_busy = (job['status']=='failed' and phase=='not_started'
                     and (job.get('error') or {}).get('code')=='application_busy'
                     and (verification.get('evidence') or {}).get('native_mutation_started') is False
-                    and untouched_busy_guard(guard))
+                    and (untouched_busy_open_guard(guard, before) if job['operation']=='document.open_native'
+                         else untouched_busy_guard(guard)))
                 close_release=(job['operation']=='document.close_native' and released_close_guard(guard,before))
-                released=(close_release if job['operation']=='document.close_native'
+                released=(released_open_guard(guard, before) if job['operation']=='document.open_native'
+                          else close_release if job['operation']=='document.close_native'
                           else released_execution_guard(guard, expected_model_count=expected_model_count))
                 if not released and not untouched_busy:
                     reasons.append('UI release unconfirmed')
+                    safe = False
+                if (job['operation']=='document.open_native' and phase in ('committed','rolled_back')
+                        and not verified_open_native_steps(verification, before)):
+                    reasons.append('native open step acknowledgements unconfirmed')
                     safe = False
         # A coherent terminal job snapshot permits SDK teardown, while unknown
         # effects/transport loss still prohibit native fixture cleanup.

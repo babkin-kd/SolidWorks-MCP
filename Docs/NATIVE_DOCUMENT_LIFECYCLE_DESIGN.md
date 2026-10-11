@@ -3,9 +3,10 @@
 Дата исходного проекта: 11.10.2026, параллельно приёмке Save3 dev82.
 Актуальное состояние: clean L1 принят dev85 по отдельному
 [контракту](NATIVE_DOCUMENT_CLOSE.md)/[приёмке](NATIVE_DOCUMENT_CLOSE_ACCEPTANCE.md).
-В L2 подготовлены внутренние bridge/guard/file manifest,263 связанных pure
-прошли; домен/фасад/installed wheel/native open ещё не приняты, новых open-tools
-в каталоге нет. [Точный статус L2](NATIVE_DOCUMENT_OPEN.md). L3 остаётся проектом.
+В L2 реализованы candidate domain/MCP/live-reference graph/clean rollback и
+supervisor; полный source-набор5200 passed/323 CAD deselected (69,91с).
+Source-каталог71/21, installed dev85 остаётся69/20. Wheel/native open ещё не
+приняты. [Точный статус L2](NATIVE_DOCUMENT_OPEN.md). L3 остаётся проектом.
 Ниже проект полного lifecycle; он не устанавливает исход scoped приёмок.
 Основа: [PLAN](../PLAN.md),
 [S1-15 и N6](STAGE_1_REQUIREMENTS_MATRIX.md),

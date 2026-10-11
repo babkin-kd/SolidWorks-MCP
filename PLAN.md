@@ -1,7 +1,9 @@
 # План развития SolidWorks MCP
 
-Текущая работа S1-15/L2: внутренние open bridge/guard/file manifest подготовлены,
-263 связанных source pure прошли. Домен/фасад/wheel/native open ещё не приняты;
+Текущая работа S1-15/L2: open domain/live-reference graph/clean rollback/MCP
+реализованы в исходном кандидате; supervisor интегрирован,
+полный source-набор5200 passed/323 CAD deselected (69,91с).
+Wheel/native open ещё не приняты;
 [статус и следующие gates](Docs/NATIVE_DOCUMENT_OPEN.md). Стадия1 остаётся открытой.
 
 Dev85: clean native close принят:4673 pure перед wheel; final пакет4677/323 CAD deselected (60,07с). Installed metadata69/20,

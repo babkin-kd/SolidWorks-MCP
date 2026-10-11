@@ -32,13 +32,14 @@ from .sheet_flange_flat_state import SheetFlangeFlatStateCatalog
 from .document_creation import DocumentCreationCatalog
 from .native_document_save import NativeDocumentSaveCatalog
 from .native_document_close import NativeDocumentCloseCatalog
+from .native_document_open import NativeDocumentOpenCatalog
 from .sketches import SketchCatalog
 from .exports_v2 import ExportCatalog
 from .jobs import JobError, JobRunner, _json
 
 
-MUTATING_OPERATIONS = ('document.close_native', 'document.save_native', 'measurement.mass', 'feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters', 'sheet.create_edge_flange', 'sheet.set_flange_flat_state')
-READ_OPERATIONS = ('document.prepare_close_native', 'document.prepare_save_native', 'measurement.component_aggregate_point_distance', 'measurement.component_aggregate_axis_distance', 'measurement.component_aggregate_distance', 'measurement.component_axis_distance', 'measurement.component_point_distance', 'measurement.component_distance', 'component.topology_list', 'component.topology_get', 'component.list', 'component.get', 'component.bodies', 'measurement.bounds', 'measurement.prepare_mass', 'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies', 'feature.deletion_structure', 'feature.deletion_context', 'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion', 'document.list_templates', 'document.prepare_create_part', 'sketch.get', 'sketch.prepare_dimension_change', 'part.prepare_corner_cut', 'part.prepare_base_revolve', 'part.prepare_through_hole', 'part.prepare_hole_dimension_change', 'part.prepare_linear_hole_pattern', 'part.prepare_edge_fillet', 'sheet.prepare_l_profile', 'sheet.prepare_flat_state', 'sheet.prepare_parameters', 'sheet.prepare_edge_flange', 'sheet.prepare_flange_flat_state')
+MUTATING_OPERATIONS = ('document.open_native', 'document.close_native', 'document.save_native', 'measurement.mass', 'feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters', 'sheet.create_edge_flange', 'sheet.set_flange_flat_state')
+READ_OPERATIONS = ('document.prepare_open_native', 'document.prepare_close_native', 'document.prepare_save_native', 'measurement.component_aggregate_point_distance', 'measurement.component_aggregate_axis_distance', 'measurement.component_aggregate_distance', 'measurement.component_axis_distance', 'measurement.component_point_distance', 'measurement.component_distance', 'component.topology_list', 'component.topology_get', 'component.list', 'component.get', 'component.bodies', 'measurement.bounds', 'measurement.prepare_mass', 'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies', 'feature.deletion_structure', 'feature.deletion_context', 'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion', 'document.list_templates', 'document.prepare_create_part', 'sketch.get', 'sketch.prepare_dimension_change', 'part.prepare_corner_cut', 'part.prepare_base_revolve', 'part.prepare_through_hole', 'part.prepare_hole_dimension_change', 'part.prepare_linear_hole_pattern', 'part.prepare_edge_fillet', 'sheet.prepare_l_profile', 'sheet.prepare_flat_state', 'sheet.prepare_parameters', 'sheet.prepare_edge_flange', 'sheet.prepare_flange_flat_state')
 
 def _worker_factory():
     try:
@@ -93,6 +94,7 @@ class Runtime:
         self._document_creation = None
         self._native_document_saves = None
         self._native_document_closes = None
+        self._native_document_opens = None
         self._sketches = None
         self._exports = None
         self._approved_output_root = approved_output_root
@@ -131,6 +133,12 @@ class Runtime:
                 if operation == 'document.prepare_close_native':
                     return self._native_document_closes.prepare_close(**arguments)
                 return self._native_document_closes.close(operation_id, **arguments)
+            if operation in ('document.prepare_open_native', 'document.open_native'):
+                if self._native_document_opens is None:
+                    self._native_document_opens = NativeDocumentOpenCatalog(self._catalog, self.store, self._connection_epoch)
+                if operation == 'document.prepare_open_native':
+                    return self._native_document_opens.prepare_open(**arguments)
+                return self._native_document_opens.open(operation_id, **arguments)
             if operation in ('document.list_templates', 'document.prepare_create_part', 'document.create_part'):
                 if self._document_creation is None:
                     self._document_creation = DocumentCreationCatalog(self._catalog, self.store, self._connection_epoch)
@@ -362,6 +370,7 @@ class Runtime:
         self._document_creation = None
         self._native_document_saves = None
         self._native_document_closes = None
+        self._native_document_opens = None
         self._sketches = None
         self._exports = None
         self._connection_epoch = None

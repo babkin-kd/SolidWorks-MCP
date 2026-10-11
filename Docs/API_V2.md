@@ -1,5 +1,11 @@
 # API v2: текущий кандидат первой стадии
 
+L2 native open domain/MCP реализованы в исходном кандидате: каталог71/21,
+supervisor интегрирован, полный source5200 passed/323 CAD deselected (69,91с).
+Installed dev85 остаётся69/20;
+open wheel/native ещё не приняты, [область и следующие gates](NATIVE_DOCUMENT_OPEN.md).
+Количество инструментов не означает приёмку стадии.
+
 Dev85: clean native close принят:4673 pure перед wheel; final пакет4677/323 CAD deselected (60,07с). Installed metadata69/20,
 internal12/public MCP10 accepted=true на одном точном wheel. Полный retirement
 assembly+explicit hidden collateral, part/drawing, dirty сосед, replay/stale,
