@@ -22,6 +22,7 @@ from .cad_sheet_edge_flange import CadSheetEdgeFlangeMixin
 from .cad_sheet_flange_flat import CadSheetFlangeFlatMixin
 from .cad_document_creation import CadDocumentCreationMixin
 from .cad_native_document_save import CadNativeDocumentSaveMixin
+from .cad_native_document_close import CadNativeDocumentCloseMixin
 from .cad_sketches import CadSketchesMixin
 from .documents import rejected
 from .errors import SolidWorksError
@@ -30,7 +31,7 @@ from .timings_v2 import timed_call
 from .cad_selection_scope import preserved_selection
 
 
-class SolidWorksDocuments(CadComponentsMixin, CadMassPropertiesMixin, CadGeometryMixin, CadFeaturesMixin, CadDimensionsMixin, CadDeletionContextMixin, CadPartCreationMixin, CadPartCutMixin, CadPartHoleMixin, CadPartPatternMixin, CadPartFilletMixin, CadPartRevolveMixin, CadSheetProfileMixin, CadSheetFlatMixin, CadSheetFlatReadMixin, CadSheetParametersMixin, CadSheetEdgeFlangeMixin, CadSheetFlangeFlatMixin, CadDocumentCreationMixin, CadNativeDocumentSaveMixin, CadSketchesMixin):
+class SolidWorksDocuments(CadComponentsMixin, CadMassPropertiesMixin, CadGeometryMixin, CadFeaturesMixin, CadDimensionsMixin, CadDeletionContextMixin, CadPartCreationMixin, CadPartCutMixin, CadPartHoleMixin, CadPartPatternMixin, CadPartFilletMixin, CadPartRevolveMixin, CadSheetProfileMixin, CadSheetFlatMixin, CadSheetFlatReadMixin, CadSheetParametersMixin, CadSheetEdgeFlangeMixin, CadSheetFlangeFlatMixin, CadDocumentCreationMixin, CadNativeDocumentSaveMixin, CadNativeDocumentCloseMixin, CadSketchesMixin):
     def mutation_guard(self, model):
         return ApplicationModelMutationGuard(self._sw, [model],
             lambda current, state: preserved_selection(self, current, state=state, label='model_mutation'))

@@ -676,3 +676,25 @@ COM throw и изменённый failed-save исход остаются unknow
 Повтор request_id возвращает прежнее задание; timeout ограничивает ожидание,
 не отменяет COM. Проверять job_get. Файл/SHA подтверждают native acknowledgement
 и persistence; generic geometry roundtrip отдельный gate.
+
+## Закрытие чистых native-документов
+
+`document_prepare_close_native` фиксирует document_id/configuration, полный
+двойной census моделей и окон, их visibility/modes/views/dependencies,
+UserControl/настройки поиска и SHA256 всех имеющихся native-файлов. Target
+и скрытые неактивные документы, которые также закрывает CloseDoc, должны быть
+чистыми. Полный список скрытых collateral IDs передаётся явно через
+allowed_hidden_document_ids. Для активного target при оставшихся окнах нужен
+active_after_document_id видимого survivor; неактивное закрытие сохраняет
+исходную активацию. Incoming references от survivors и закрытие последнего
+окна при UserControl=false отклоняются до native-вызова.
+
+`document_close_native` принимает тот же impact и expected_revision/request_id.
+Durable application checkpoint предшествует guard только остающихся моделей.
+Один native void CloseDoc проверяется исчезновением exact IDs/окон и полным
+сохранением остальных моделей, файлов и настроек; retired handles не читаются.
+Scope native_document_close_clean_v1 подтверждает census retirement, полного
+unload внутренних данных не заявляет. Нет discard dirty, OpenDoc/Undo rollback,
+save, изменения UserControl/visibility или автоматического retry. Неопределённый
+исход удерживает application hold. Пределы5000 моделей/окон,512 MiB/file,2 GiB;
+first save/open/dirty-owned/retained-reference lifecycle остаётся в плане.

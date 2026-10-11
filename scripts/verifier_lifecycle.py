@@ -43,6 +43,32 @@ def released_execution_guard(guard, *, expected_model_count=1):
                         for item in guard['model_guards']))
     return isinstance(guard, dict) and set(guard)=={'original_state','locked_state','released_state'} and all(type(guard.get(key)) is int and guard[key] == value
         for key, value in (('original_state', 0), ('locked_state', 2), ('released_state', 0)))
+
+
+def released_close_guard(guard, before):
+    """Exact clean-close scope permits zero survivor locks, never target locks."""
+    if not isinstance(guard,dict) or not isinstance(before,dict):return False
+    keys={'scope','original_command_in_progress','acquired','released','model_guards','selection_preserved',
+          'retiring_document_ids','retiring_targets_locked_during_close'}
+    if (set(guard)!=keys or guard['scope']!='application_document_close_guard_v1'
+            or before.get('scope')!='native_document_close_clean_v1'):return False
+    documents=(before.get('semantic') or {}).get('documents')
+    impact=before.get('impact') or {}
+    ids=[row.get('document_id') for row in documents if isinstance(row,dict)] if isinstance(documents,list) else []
+    retiring=impact.get('retiring_document_ids');survivors=impact.get('survivor_document_ids')
+    def valid(values,nonempty=False):
+        return (isinstance(values,list) and (bool(values) or not nonempty)
+                and all(isinstance(value,str) and value for value in values) and len(set(values))==len(values))
+    if (not isinstance(documents,list) or len(ids)!=len(documents) or not valid(ids,True) or len(ids)>5000
+            or not valid(retiring,True) or not valid(survivors) or set(retiring)&set(survivors)
+            or set(ids)!=set(retiring)|set(survivors) or guard['retiring_document_ids']!=retiring
+            or impact.get('target_document_id') not in retiring or impact.get('policy')!='require_clean'
+            or impact.get('data_unload_claimed') is not False):return False
+    return (guard['original_command_in_progress'] is False and guard['acquired'] is True
+            and guard['released'] is True and guard['selection_preserved'] is True
+            and guard['retiring_targets_locked_during_close'] is False
+            and type(guard['model_guards']) is list and len(guard['model_guards'])==len(survivors)
+            and all(released_execution_guard(item) for item in guard['model_guards']))
 DIRECT_QUERIES = frozenset({'system_get_info', 'job_get', 'job_list'})
 _HISTORY_SEAL = object()
 
@@ -395,7 +421,10 @@ class VerifierSupervisor:
                     and (job.get('error') or {}).get('code')=='application_busy'
                     and (verification.get('evidence') or {}).get('native_mutation_started') is False
                     and untouched_busy_guard(guard))
-                if not released_execution_guard(guard, expected_model_count=expected_model_count) and not untouched_busy:
+                close_release=(job['operation']=='document.close_native' and released_close_guard(guard,before))
+                released=(close_release if job['operation']=='document.close_native'
+                          else released_execution_guard(guard, expected_model_count=expected_model_count))
+                if not released and not untouched_busy:
                     reasons.append('UI release unconfirmed')
                     safe = False
         # A coherent terminal job snapshot permits SDK teardown, while unknown
