@@ -48,7 +48,7 @@ def example():
 def test_matching_implemented_catalog_is_only_metadata_evidence(example):
     verify, tools, info, wheel = example
     result = verify(tools, info, wheel)
-    assert result['public_tool_count'] == 59 and result['output_schemas_verified'] is True
+    assert result['public_tool_count'] == 60 and result['output_schemas_verified'] is True
     assert 'native_acceptance' not in result
 
 

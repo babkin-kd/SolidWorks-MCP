@@ -21,6 +21,11 @@ def component_transform(values):
 
 
 class CadComponentsMixin:
+    def component_distance(self, model, first, second):
+        # Early-bound out variants return (distance_m, point_a_m, point_b_m).
+        # Passing components lets SolidWorks apply their full instance transforms.
+        return model.ClosestDistance(first, second)
+
     def components(self, model):
         asm = binding.wrap(model, self._module.IAssemblyDoc)
         return [binding.wrap(c,self._module.IComponent2) for c in asm.GetComponents(False) or ()]

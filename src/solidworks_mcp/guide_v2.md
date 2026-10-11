@@ -566,3 +566,17 @@ Start/end могут совпадать на замкнутой кривой. И
 объекты не перепривязываются. Cursor связан с configuration/instance/body/kind.
 Это observation read scope, не полный BREP certificate/revision для мутации.
 Наследуются ограничения resolved/normal bodies; нет auto resolve/activate/rebuild.
+
+
+### Расстояние между экземплярами деталей
+
+`measurement_get_component_distance` принимает явные document_id, активную
+configuration, expected_observation_revision и два разных component_a_id /
+component_b_id из component_list. Native ClosestDistance учитывает трансформации
+вложенных и повернутых экземпляров, normal solid тела, включая скрытые. Возвращает
+расстояние и две ближайшие точки в мм в системе assembly_model. Surface тела
+не входят в измерение. Подсборка как цель и неподдерживаемые состояния отклоняются.
+Не меняет выделение и модели; ноль не классифицирует пересечение или вложение
+материальных объёмов. Snapshot проверяет моменты тел, membership, конфигурации
+и трансформации на обеих границах; это observation, не полная BREP revision.
+Расстояния до точек/осей и native named frames пока не реализованы.
