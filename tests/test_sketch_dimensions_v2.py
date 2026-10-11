@@ -102,6 +102,35 @@ def change(setup,index=0,value=45.,request='change',revision=None):
         pass_operation_id=True,verify=lambda result:result['verified'] is True)
 
 
+def test_passive_rectangle_classification_does_not_require_active_writable_document(setup):
+    _,catalog,_,_,doc,obj,_=setup
+    capture=catalog._capture(doc,'Основная',obj)
+    semantic=deepcopy(capture.dimensions.state[3])
+    semantic['context']['active_document']=False
+    semantic['context']['read_only']=True
+    original=deepcopy(semantic)
+    result=rectangle_parameters(capture.snapshot,semantic,'Основная',require_editable=False)
+    assert result['width_m']==pytest.approx(.04) and result['depth_m']==pytest.approx(.01)
+    assert semantic==original
+    with pytest.raises(ExecutionFailure) as exc:
+        rectangle_parameters(capture.snapshot,semantic,'Основная')
+    assert exc.value.code=='document_not_active'
+
+
+@pytest.mark.parametrize('fault',['linked','reference','design_table','driven','signed','blocker'])
+def test_passive_rectangle_still_rejects_unobserved_or_dependent_controls(setup,fault):
+    _,catalog,_,_,doc,obj,_=setup
+    capture=catalog._capture(doc,'Основная',obj)
+    semantic=deepcopy(capture.dimensions.state[3])
+    row=semantic['dimensions'][0]
+    if fault in ('linked','reference','design_table'):row[fault]=True
+    elif fault=='driven':row['driven_state']=1
+    elif fault=='signed':row['values_si']['Основная']=-.04
+    else:row['write_blockers'].append('owner_suppressed_frozen_or_rolled_back')
+    with pytest.raises(ExecutionFailure):
+        rectangle_parameters(capture.snapshot,semantic,'Основная',require_editable=False)
+
+
 def test_width_then_height_complete_geometry_and_original_blocker_preserved(setup):
     adapter,catalog,_,_,doc,obj,ids = setup
     other = deepcopy(adapter.models[1].state)

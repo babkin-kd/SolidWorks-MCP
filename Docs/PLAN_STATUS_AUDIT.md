@@ -20,6 +20,12 @@ create/sketch/extrude/edit/first save/close/open/edit/Save3/close при dirty �
 Обязательны explicit target/revision/request_id, полный supported checkpoint,
 STA/durable ledger/holds, no retry unknown, реальные postconditions и native
 точного wheel. Сужение продуктового scope не ослабляет эти гарантии.
+L3 находится в исходной реализации: домен/one-shot bridge и passive oracle
+ещё не интегрированы в публичный каталог. Related255 pure (включая components45
+и filesystem50), отдельная Copy feasibility и реальная NTFS-проба6/6 на
+синтетических файлах не закрывают этот блок. Полный CAD oracle, фасад и
+same-wheel native-приёмка остаются незавершёнными.
+[Фактическое продвижение и оставшиеся gates](NATIVE_FIRST_SAVE_PROGRESS.md).
 Remote CI последнего пакета failure; локальное исправление входит в pure,
 нового push нет. Исторические свидетельства ниже не являются приёмкой dev87
 или итоговой стадии1; прежние «20 из22» не используются как текущий gate.

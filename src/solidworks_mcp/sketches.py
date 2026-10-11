@@ -46,7 +46,24 @@ def persistent_sketch_members(members):
     return tuple((key,value) for key,value in members if not key.startswith('relation:'))
 
 
-def rectangle_profile_parameters(snapshot, semantic, configuration):
+def _rectangle_dimension_policy(semantic, row, *, require_editable):
+    if require_editable:
+        DimensionCatalog._writable(semantic, row, 'mm')
+        return
+    # Passive clone inspection must also work on inactive and file-read-only
+    # readers. Those document modes do not change the native constraint graph.
+    # They never grant write authority; every existing mutation keeps the
+    # default editable policy and the explicit active-document requirement.
+    if (row['unit'] != 'mm' or row['driven_state'] != 2 or row['reference']
+            or row['linked'] or row['design_table']
+            or any(value <= 0 for value in row['values_si'].values())
+            or any(item not in ('read_only',) for item in row['write_blockers'])
+            or any(item['driven_state'] != 2 or item['reference'] or item['linked']
+                   or item['design_table'] for item in semantic['dimensions'])):
+        raise rejected('unsupported_rectangular_sketch', 'Passive rectangle inspection still requires independent positive length constraints.')
+
+
+def rectangle_profile_parameters(snapshot, semantic, configuration, *, require_editable=True):
     """Classify native structure/axis relations, never dimension display names."""
     fail = lambda message: rejected('unsupported_rectangular_sketch', message)
     if snapshot['constraint_status'] != 3 or snapshot['is_3d']:
@@ -127,13 +144,13 @@ def rectangle_profile_parameters(snapshot, semantic, configuration):
     for row in dimension_rows:
         checked = deepcopy(row)
         checked['write_blockers'] = [item for item in checked['write_blockers'] if item != 'sketch_geometry_snapshot_not_implemented']
-        DimensionCatalog._writable(semantic, checked, 'mm')
+        _rectangle_dimension_policy(semantic, checked, require_editable=require_editable)
     return {'width_m': width, 'height_m': height, 'axes': axes}
 
 
-def rectangle_extrusion_parameters(snapshot, semantic, configuration):
+def rectangle_extrusion_parameters(snapshot, semantic, configuration, *, require_editable=True):
     """Prove the independent base profile/depth/frame, without a body claim."""
-    profile = rectangle_profile_parameters(snapshot, semantic, configuration)
+    profile = rectangle_profile_parameters(snapshot, semantic, configuration, require_editable=require_editable)
     width, height, axes = (profile[key] for key in ('width_m', 'height_m', 'axes'))
     fail = lambda message: rejected('unsupported_rectangular_sketch', message)
     dimension_rows = [row for row in semantic['dimensions'] if row['owner']
@@ -143,7 +160,7 @@ def rectangle_extrusion_parameters(snapshot, semantic, configuration):
     if (len(other) != 1 or parent is None or other[0]['owner'] is None or other[0]['owner']['native_id'] != parent
             or other[0]['owner']['feature_type'] not in ('Boss', 'Extrusion') or other[0]['unit'] != 'mm'):
         raise fail('Initial scope supports one independent blind rectangular base extrusion.')
-    DimensionCatalog._writable(semantic, other[0], 'mm')
+    _rectangle_dimension_policy(semantic, other[0], require_editable=require_editable)
     depth = other[0]['values_si'][configuration]
     if depth < 1e-6:
         raise fail('The base extrusion thickness is outside the supported positive branch.')
@@ -155,8 +172,8 @@ def rectangle_extrusion_parameters(snapshot, semantic, configuration):
     return result
 
 
-def rectangle_parameters(snapshot, semantic, configuration):
-    result = rectangle_extrusion_parameters(snapshot, semantic, configuration)
+def rectangle_parameters(snapshot, semantic, configuration, *, require_editable=True):
+    result = rectangle_extrusion_parameters(snapshot, semantic, configuration, require_editable=require_editable)
     if not rectangular_body_matches(semantic['geometry'], result):
         raise rejected('unsupported_rectangular_sketch', 'Complete body boundary does not match this single positive blind base.')
     return result
