@@ -67,12 +67,17 @@ Detached receipt predicate, exact wheel SHA и current trusted helper hashes
 pure-тестами (2,84 с), на искусственном CAD/FS. Source/wheel не менялись;
 повторная сборка или широкий pure-набор для новых внешних верификаторов не требуются.
 
-**Installed L3-I4 warning_after_copy запущен**, private report
-`work/native-first-save-dev88-fault-warning-1/report.json`. Настоящий normal Copy
-receipt записывается до контролируемого warning моста. Это не объявляется actual
-native COM warning. Пока case не завершён, unknown/hold/replay и test-owner
-reconciliation не засчитываются. False/throw/incomplete modes и публичный L3-P1
-остаются отдельными незавершёнными задачами; весь L3 открыт.
+**Installed L3-I4 warning_after_copy прошёл**, 757,28 с, private report
+`work/native-first-save-dev88-fault-warning-1/report.json`: три finite cases passed,
+unknown/unresolved после инъекции, replay без второго Copy, новый request заблокирован;
+released guards, независимый full clone/41-role readback, source/dirty сосед и
+staged bytes сохранены. Own cleanup/empty baseline подтверждены. Exact internal
+accept-current-state reconciliation снял hold; исторический status остаётся unknown.
+SHA256 отчёта: `5e1a0fbf9add4d93c0774e3982cf098906478eeade64621c4c4100a18e304d34`.
+Wheel SHA и current trusted helper hashes проверены отдельно. Настоящий normal
+Copy receipt True/0/0 записан до warning моста: это **не actual native COM warning**.
+Installed `false_after_copy` запущен в `work/native-first-save-dev88-fault-false-1/`;
+throw/incomplete modes и публичный L3-P1 остаются; весь L3 открыт.
 
 ## Остаток
 

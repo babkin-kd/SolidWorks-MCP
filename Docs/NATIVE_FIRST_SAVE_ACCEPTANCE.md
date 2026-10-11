@@ -82,7 +82,9 @@ known own CWD restore, retained stage bytes и empty baseline предшеств
 `accept_current_state` reconciliation. Исторический job остаётся unknown;
 снимается только его exact hold. Любое неподтверждённое состояние сохраняет процесс
 и ресурсы. Скрипт проверен на синтаксис/CLI; installed native L3-I4 warning_after_copy
-запущен и пока не завершён. Остальные fault modes и публичная цепочка остаются видимыми задачами.
+прошёл за757,28 с на dev88: unknown/hold/replay, independent native clone41/readback,
+exact own reconciliation и baseline; historical unknown сохранён. False_after_copy
+запущен; throw/incomplete modes и публичная цепочка остаются видимыми задачами.
 
 Конечный отчёт связывает все шесть условий с метками, фактическими результатами
 и частными артефактами. Он фиксирует wheel SHA/build identity, установленный

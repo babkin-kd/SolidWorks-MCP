@@ -62,6 +62,8 @@ deselected (99,46 с), installed metadata/stdio73/22 accepted. Installed L3-I1
 readback/mapping41, cleanup/baseline. L3-I2 прошёл за686,00 с: existing/stale,
 Copy0 и own cleanup/baseline. L3-I3 прошёл за874,27 с: actual collision/no-overwrite,
 known rollback, foreign bytes/identity, replay и cleanup/baseline. L3-I4 warning
+прошёл за757,28 с: unknown/hold/replay, independent clone41/readback,
+exact own reconciliation и baseline; historical unknown не success. L3-I4 false
 выполняется. Первый JSON-сбой L3-I2
 после создания пустой part сохранён, own cleanup/empty baseline подтверждены
 отдельно; 15 pure-регрессий (0,60 с) проверили scalar projection и creation DTO.
