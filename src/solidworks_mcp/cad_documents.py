@@ -4,6 +4,7 @@ import pythoncom
 
 from . import binding
 from .cad_geometry import CadGeometryMixin
+from .cad_components import CadComponentsMixin
 from .cad_mass_properties import CadMassPropertiesMixin
 from .cad_features import CadFeaturesMixin
 from .cad_dimensions import CadDimensionsMixin
@@ -28,7 +29,7 @@ from .timings_v2 import timed_call
 from .cad_selection_scope import preserved_selection
 
 
-class SolidWorksDocuments(CadMassPropertiesMixin, CadGeometryMixin, CadFeaturesMixin, CadDimensionsMixin, CadDeletionContextMixin, CadPartCreationMixin, CadPartCutMixin, CadPartHoleMixin, CadPartPatternMixin, CadPartFilletMixin, CadPartRevolveMixin, CadSheetProfileMixin, CadSheetFlatMixin, CadSheetFlatReadMixin, CadSheetParametersMixin, CadSheetEdgeFlangeMixin, CadSheetFlangeFlatMixin, CadDocumentCreationMixin, CadSketchesMixin):
+class SolidWorksDocuments(CadComponentsMixin, CadMassPropertiesMixin, CadGeometryMixin, CadFeaturesMixin, CadDimensionsMixin, CadDeletionContextMixin, CadPartCreationMixin, CadPartCutMixin, CadPartHoleMixin, CadPartPatternMixin, CadPartFilletMixin, CadPartRevolveMixin, CadSheetProfileMixin, CadSheetFlatMixin, CadSheetFlatReadMixin, CadSheetParametersMixin, CadSheetEdgeFlangeMixin, CadSheetFlangeFlatMixin, CadDocumentCreationMixin, CadSketchesMixin):
     def mutation_guard(self, model):
         return ApplicationModelMutationGuard(self._sw, [model],
             lambda current, state: preserved_selection(self, current, state=state, label='model_mutation'))

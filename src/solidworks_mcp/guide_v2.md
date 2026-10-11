@@ -540,3 +540,16 @@ axes_in_model: p_model_mm=origin_mm+Σ(axis_i*p_frame_mm[i]). Оси ортон�
 в выбранных осях, не автоматически минимальный по объёму ориентированный box.
 Чрезмерный offset, теряющий точность размера, отвергается. Лимит500 BREP-тел;
 mesh/assembly/instance paths и native named-coordinate features пока вне scope.
+
+# Каталог экземпляров сборки
+
+`component_list` и `component_get`: явная сборка/активная конфигурация/observation_revision,
+opaque component_id, полный native path, referenced configuration и transform к root assembly.
+`component_body_list` и `component_body_get`: normal solid/surface тела конкретного
+экземпляра детали; body_id действует только с исходным component_id. Координаты
+приблизительных bounding boxes локальные, в мм; transform исключает presentation.
+Только полностью resolved native экземпляры, без SpeedPak/mesh/assembly-cut user bodies;
+suppressed/lightweight отвергаются без автоматического разрешения. Выделение/модель
+не изменяются. Страницы сверяют полный состав/метаданные/transform, бюджет100000
+компонентов, не более500 тел на экземпляр. Это не приёмка производительности1000+.
+Приёмка этой области фиксируется в COMPONENT_READS_ACCEPTANCE.md.

@@ -1,0 +1,69 @@
+"""Native passive resolved-instance reads; no resolution/activation/selection."""
+import math
+from . import binding
+from .documents import rejected
+
+
+def component_transform(values):
+    if (values is None or len(values) != 16 or any(type(v) not in (float,int) or not math.isfinite(v) for v in values)):
+        raise rejected('component_transform_unavailable', 'Expected a finite 16-value native transform.')
+    axes = [list(values[i:i+3]) for i in (0,3,6)]
+    if abs(values[12]-1.) > 1e-10 or any(abs(v) > 1e-10 for v in values[13:]):
+        raise rejected('unsupported_component_transform', 'Scaled/nonstandard transforms outside this scope.')
+    for i in range(3):
+        for j in range(3):
+            if abs(sum(axes[i][k]*axes[j][k] for k in range(3))-(1. if i == j else 0.)) > 1e-10:
+                raise rejected('unsupported_component_transform', 'Component axes must be orthonormal.')
+    a,b,c = axes
+    det = sum(a[i]*(b[(i+1)%3]*c[(i+2)%3]-b[(i+2)%3]*c[(i+1)%3]) for i in range(3))
+    return dict(origin_mm=[float(x)*1000. for x in values[9:12]], axes_in_assembly=axes,
+                parity='right_handed' if det > 0. else 'mirrored', scale=1., includes_presentation_transform=False)
+
+
+class CadComponentsMixin:
+    def components(self, model):
+        asm = binding.wrap(model, self._module.IAssemblyDoc)
+        return [binding.wrap(c,self._module.IComponent2) for c in asm.GetComponents(False) or ()]
+
+    def component_parent(self, component):
+        raw = component.GetParent()
+        if raw is None:return None
+        parent = binding.wrap(raw,self._module.IComponent2)
+        return None if parent.IsRoot() else parent
+
+    def component_info(self, component):
+        state = component.GetSuppression2()
+        if type(state) is not int or state not in (2,3):
+            raise rejected('component_not_resolved', f'Resolved instances only; native suppression state {state}. No automatic resolution.')
+        raw = component.GetModelDoc2()
+        if raw is None:raise rejected('component_model_unavailable', 'Referenced model unavailable; no implicit load.')
+        model = binding.wrap(raw,self._module.IModelDoc2)
+        if self.pending_rebuild(model):
+            raise rejected('component_needs_rebuild', 'Referenced model needs an explicit rebuild; no implicit rebuild.')
+        kind = {1:'part',2:'assembly'}.get(model.GetType())
+        if kind is None or component.IsSpeedPak is not False:
+            raise rejected('unsupported_component_type', 'Native parts/assemblies only; SpeedPak outside scope.')
+        configuration = str(component.ReferencedConfiguration)
+        if not configuration:raise rejected('component_configuration_unavailable','Referenced configuration unavailable.')
+        cfg_identity = self.configuration_identity(model,configuration)
+        raw_transform = component.GetTotalTransform(False)
+        if raw_transform is None:raise rejected('component_transform_unavailable','Native assembly transform unavailable.')
+        transform = binding.wrap(raw_transform,self._module.IMathTransform)
+        info = dict(component_path=str(component.Name2), referenced_path=str(component.GetPathName()),
+                    referenced_configuration=configuration, referenced_document_type=kind,
+                    suppression_state='resolved', native_suppression_state=state,
+                    hidden=bool(component.IsHidden(False)), transform=component_transform(transform.ArrayData))
+        if not info['component_path']:raise rejected('component_path_unavailable','Native instance path unavailable.')
+        return info,(self.identity(model),cfg_identity)
+
+    def component_bodies(self, component):
+        result = component.GetBodies3(-1)
+        if type(result) is not tuple or len(result) != 2:
+            raise rejected('component_bodies_unavailable','Native body list/info result unavailable.')
+        raw,info = result
+        bodies,states = tuple(raw or ()),tuple(info or ())
+        if len(bodies) != len(states) or any(type(x) is not int or x != 1 for x in states):
+            raise rejected('unsupported_component_bodies','Only normal native bodies; assembly-cut user bodies need separate acceptance.')
+        result = [binding.wrap(b,self._module.IBody2) for b in bodies]
+        for b in result:self.measurement_body_type(b)
+        return result

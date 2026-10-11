@@ -29,7 +29,7 @@ from verifier_fixture_cleanup import fixture_cleanup_allowed
 
 
 @contextmanager
-def fixtures(*, cleanup_gate=None):
+def fixtures(*, cleanup_gate=None, on_owned_change=None):
     session = SolidWorksSession()
     session._sw = binding.connect(show=False)
     session._mod = binding.module()
@@ -46,8 +46,10 @@ def fixtures(*, cleanup_gate=None):
             session.new_part()
             model = session._model
             owned.append(model)
+            if on_owned_change is not None:on_owned_change(owned)
             title = f'Проверка ссылок {index} ' + uuid.uuid4().hex[:8]
             assert model.SetTitle2(title)
+            if on_owned_change is not None:on_owned_change(owned)
             configuration = binding.wrap(model.GetActiveConfiguration(), module.IConfiguration)
             configuration.Name = 'Основная'
             assert configuration.Name == 'Основная'

@@ -12,6 +12,12 @@ S1-16/S1-06 и общий gate остаются открытыми. Dev71/dev69 
 
 # API v2: текущий кандидат первой стадии
 
+Подготовлен исходный кандидат dev73: четыре passive component-чтения,
+56 инструментов/18 guarded операций в исходном каталоге. Installed/native
+приёмка этой сборки ещё не заявлена. [Контракт экземпляров](COMPONENT_READS.md).
+Точный итог будет обновлён после проверки установленного wheel; исторические
+результаты dev72 ниже остаются приёмкой габаритов на своём wheel.
+
 Блок диагностики dev69 стадии 1 принят в ограниченном scope:
 `diagnostics_get_timings`, bounded private store/CLI, JobRunner/MutationCoordinator
 и выбранные COM/rebuild intervals. Полный pure4031/323 CAD deselected;34 новых
