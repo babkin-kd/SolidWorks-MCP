@@ -23,7 +23,7 @@ from verifier_lifecycle import ToolSpec,open_supervised_session
 
 SPECS={'document_list':ToolSpec('document.list',False),
        'document_prepare_save_native':ToolSpec('document.prepare_save_native',False),
-       'document_save_native':ToolSpec('document.save_native',True)}
+       'document_save_native':ToolSpec('document.save_native',True,prewrite_failure_codes=frozenset({'stale_revision'}))}
 INTERNAL_CASES=10
 PUBLIC_CASES=5
 
@@ -103,7 +103,12 @@ def roundtrip(sw,module,model,state,kind,report,persist):
     else:assert 'Лист после сохранения' in binding.wrap(clone,module.IDrawingDoc).GetSheetNames()
     current=[binding.wrap(raw,module.IModelDoc2) for raw in sw.GetDocuments() or ()]
     assert len(current)==len(models)+1 and all(any(native_identity(item)==native_identity(allowed) for allowed in models+[clone]) for item in current)
-    assert clone.GetBlockingState()==0 and clone.GetSaveFlag() is False
+    assert clone.GetBlockingState()==0
+    # A reopened assembly can be dirty because it shares the deliberately
+    # dirty loaded child. This copy is read back and closed without saving;
+    # original metadata/files are still required to match below.
+    if kind!='сборка':assert clone.GetSaveFlag() is False
+    else:report['assembly_readback_needs_save']=bool(clone.GetSaveFlag());persist()
     sw.CloseDoc(clone.GetTitle());assert not any(native_identity(item)==native_identity(clone) for item in [binding.wrap(raw,module.IModelDoc2) for raw in sw.GetDocuments() or ()])
     original=next(item for item in models if native_identity(item)==physical[1]);activate_owned(sw,original,original.GetTitle())
     assert native_snapshot()==before and physical_state(sw,module)==physical and hashlib.sha256(source.read_bytes()).hexdigest()==source_hash
@@ -133,6 +138,8 @@ async def cases(read,context,safe,sw,module,targets,report,persist,public=False)
     await safe()
     first_hash=hashlib.sha256(Path(first.GetPathName()).read_bytes()).hexdigest()
     assert first.AddCustomInfo3('','Несохранённое свойство',30,'Не сохранять вместе со сборкой')
+    assert first.GetCustomInfoValue('','Несохранённое свойство')=='Не сохранять вместе со сборкой'
+    first.SetSaveFlag() # AddCustomInfo3 need not mark a nonactive document dirty.
     assert first.GetSaveFlag() is True
     await save('real_referenced_assembly_file_save',assembly)
     assert first.GetSaveFlag() is True and hashlib.sha256(Path(first.GetPathName()).read_bytes()).hexdigest()==first_hash
@@ -198,13 +205,15 @@ def main():
     assert not os.environ.get('PYTHONPATH')
     wheel=validate_wheel(args.wheel,expected_version=args.expected_version,expected_git_sha=args.expected_git_sha);entry=installed_identity(wheel)
     verifier_sha=hashlib.sha256(Path(__file__).read_bytes()).hexdigest();fixture_sha=hashlib.sha256(Path(__file__).with_name('verify_geometry_reads.py').read_bytes()).hexdigest()
+    lifecycle_sha=hashlib.sha256(Path(__file__).with_name('verifier_lifecycle.py').read_bytes()).hexdigest()
     if args.public:
         assert args.internal_report;prior=json.loads(args.internal_report.read_text(encoding='utf8'))
         assert prior['accepted'] and prior['scope']=='internal_native_current_file_save_v1' and len(prior['cases'])==INTERNAL_CASES and prior['verifier_sha256']==verifier_sha and prior['fixture_sha256']==fixture_sha
+        assert prior['lifecycle_sha256']==lifecycle_sha
         assert all(prior['wheel'][key]==wheel[key] for key in ('git_sha','source_digest','package_version','wheel_sha256'))
     private=Path(__file__).resolve().parents[1]/'work';state=args.state_dir.resolve();assert state.is_relative_to(private) and state!=private and not state.exists();state.mkdir(parents=True)
     report=dict(accepted=False,scope=('public' if args.public else 'internal')+'_native_current_file_save_v1',wheel=wheel,cases=[],
-                verifier_sha256=verifier_sha,fixture_sha256=fixture_sha,state_dir=str(state))
+                verifier_sha256=verifier_sha,fixture_sha256=fixture_sha,lifecycle_sha256=lifecycle_sha,state_dir=str(state))
     def persist():(state/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
     def record(owned):report['owned_documents']=[dict(title=model.GetTitle(),path=model.GetPathName(),type=model.GetType()) for model in owned];persist()
     start=time.perf_counter();pythoncom.CoInitialize();sw=None;owns_setup=False;gate=SessionCleanupGate()

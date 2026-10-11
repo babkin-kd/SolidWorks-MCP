@@ -1,6 +1,18 @@
 # Аудит статусов плана — 11.10.2026
 
-Dev79: расстояния от полного solid-агрегата part/subassembly до точки
+Dev82: сохранение существующего native-файла детали/сборки/чертежа принято:
+4455 pure/323 CAD deselected перед wheel (55,56 с); после изменения общего
+verifier и добавления69 pure-регрессий итоговый пакет4524 passed/323 deselected
+(59,92 с). Installed metadata67/19, internal native10/public MCP5 accepted=true
+на одном точном wheel. Перечитывание трёх типов файлов, сохранность dirty
+referenced child, replay/stale и exact-owned cleanup/baseline подтверждены.
+[Контракт](NATIVE_DOCUMENT_SAVE.md), [приёмка](NATIVE_DOCUMENT_SAVE_ACCEPTANCE.md).
+Первое сохранение и публичные open/close остаются обязательными S1-15;
+[проект следующего блока](NATIVE_DOCUMENT_LIFECYCLE_DESIGN.md).
+Стадия1 открыта;20 из22 требований остаются открытыми полностью/частично.
+Legacy20/20 — отдельный source-пилот, не приёмка v2.
+
+Исторический dev79: расстояния от полного solid-агрегата part/subassembly до точки
 и бесконечной оси приняты:4409 pure/323 CAD deselected (57,25 с), installed
 metadata65/18, internal native24/public MCP8 accepted=true на одном wheel.
 Exact4-owned cleanup, пустой/free baseline и non-STL preferences подтверждены.

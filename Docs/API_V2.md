@@ -1,7 +1,8 @@
 # API v2: текущий кандидат первой стадии
 
-Исходный кандидат dev82: current native file Save3 для явного документа,
-каталог67/19. [Контракт](NATIVE_DOCUMENT_SAVE.md); installed/native ожидаются.
+Dev82: current native file Save3 принят для явного документа; каталог67/19.
+Internal10/public5 accepted=true на одном wheel. [Приёмка](NATIVE_DOCUMENT_SAVE_ACCEPTANCE.md).
+Первое сохранение/open/close остаются обязательными; стадия1 открыта.
 Принятый dev79 ниже относится к своему точному wheel.
 
 Dev79: расстояния от полного solid-агрегата part/subassembly до точки

@@ -30,13 +30,15 @@ CONTEXT_KEYS = ('document_id', 'configuration', 'expected_observation_revision',
                 'expected_revision', 'body_id', 'object_id', 'dimension_id')
 
 
-def released_execution_guard(guard):
+def released_execution_guard(guard, *, expected_model_count=1):
     if isinstance(guard, dict) and guard.get('scope') in ('application_document_create_guard_v1','application_model_mutation_guard_v1'):
         keys = {'scope', 'original_command_in_progress', 'acquired', 'released', 'model_guards', 'selection_preserved'}
         return (set(guard) == keys and guard['original_command_in_progress'] is False
                 and guard['acquired'] is True and guard['released'] is True and guard['selection_preserved'] is True
-                and type(guard['model_guards']) is list and len(guard['model_guards']) <= 1000
-                and (guard['scope']!='application_model_mutation_guard_v1' or len(guard['model_guards'])==1)
+                and type(guard['model_guards']) is list
+                and (len(guard['model_guards']) <= 1000 if guard['scope']=='application_document_create_guard_v1'
+                     else type(expected_model_count) is int and 1 <= expected_model_count <= 5000
+                          and len(guard['model_guards'])==expected_model_count)
                 and all(isinstance(item, dict) and 'scope' not in item and released_execution_guard(item)
                         for item in guard['model_guards']))
     return isinstance(guard, dict) and set(guard)=={'original_state','locked_state','released_state'} and all(type(guard.get(key)) is int and guard[key] == value
@@ -383,11 +385,17 @@ class VerifierSupervisor:
             before = mutation.get('before_state') or {}
             if before.get('_mutation_effect_scope') == 'application':
                 guard = (verification.get('evidence') or {}).get('execution_guard') or {}
+                expected_model_count = 1
+                if job['operation']=='document.save_native' and before.get('scope')=='native_document_current_file_save_v1':
+                    documents=(before.get('semantic') or {}).get('documents')
+                    ids=[row.get('document_id') for row in documents if isinstance(row,dict)] if isinstance(documents,list) else []
+                    expected_model_count=(len(ids) if isinstance(documents,list) and len(ids)==len(documents)
+                        and all(isinstance(value,str) and value for value in ids) and len(set(ids))==len(ids) else 0)
                 untouched_busy = (job['status']=='failed' and phase=='not_started'
                     and (job.get('error') or {}).get('code')=='application_busy'
                     and (verification.get('evidence') or {}).get('native_mutation_started') is False
                     and untouched_busy_guard(guard))
-                if not released_execution_guard(guard) and not untouched_busy:
+                if not released_execution_guard(guard, expected_model_count=expected_model_count) and not untouched_busy:
                     reasons.append('UI release unconfirmed')
                     safe = False
         # A coherent terminal job snapshot permits SDK teardown, while unknown

@@ -1,9 +1,9 @@
 # Сохранение текущего native-файла
 
-Исходный кандидат dev82: `document_prepare_save_native` /
+Принят dev82: `document_prepare_save_native` /
 `document_save_native`, scope `native_document_current_file_save_v1`.
-Каталог67 tools/19 guarded operations. Pure/реализация не являются
-native-приёмкой; installed/native результаты пока ожидаются.
+Каталог67 tools/19 guarded operations; internal10/public5 accepted=true на
+одном wheel. [Точная приёмка](NATIVE_DOCUMENT_SAVE_ACCEPTANCE.md). Общий N6 открыт.
 
 Точные document_id, активная configuration, prepared revision и request_id.
 Деталь, сборка или чертёж должны уже иметь существующий native-путь.
@@ -19,6 +19,13 @@ fingerprinted по path/identity/bytes/SHA256/mtime/ctime. Unsaved соседн�
 остаётся в application checkpoint, но не получает выдуманный file fingerprint.
 Symlink/junction в файле или ancestry отвергается. Ограничения5000 моделей,
 512 MiB/file и2 GiB уникальных путей; partial checkpoint не публикуется.
+
+В обычной сборке root edit target не является in-place редактированием.
+В чертеже штатный активный sketch листа определяется по canonical identity
+GetFirstView().GetSketch(); template/другой sketch блокируется. Полный список
+листов и current sheet входят в revision/postconditions. Save3 может обновить
+заголовок окна после прежнего переименования листа: допускается только точный
+заголовок из неизменных native path/current sheet, другие title-изменения запрещены.
 
 После durable application checkpoint и verified command/UI/selection guard
 повторно сверяются revision и файл. Native True, errors=warnings=0,
