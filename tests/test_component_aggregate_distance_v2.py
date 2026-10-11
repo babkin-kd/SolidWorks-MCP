@@ -175,3 +175,13 @@ def test_runtime_shared_ids_replay_conflict_and_read_only_journal(tmp_path):
         assert all(x['payload']['mutates'] is False for x in store.list()['items'])
     try:asyncio.run(exercise())
     finally:assert r.shutdown() is True;store.close()
+
+
+def test_relist_both_targets_after_configuration_recreates_related_native_instance(setup):
+    a,d,c,args,ids=setup;a.a.info['referenced_configuration']='Вариант';a.b.identity=object()
+    ctx={key:args[key] for key in ('document_id','configuration','expected_observation_revision')}
+    fresh={row['component_path']:row['component_id'] for row in c.list(**ctx)['items']}
+    updated={**args,'component_a_id':fresh[a.a.info['component_path']]}
+    fails('persistent_reference_mismatch',lambda:c.measure_aggregate(**updated));assert not a.calls
+    got=c.measure_aggregate(**{**updated,'component_b_id':fresh[a.b.info['component_path']]})
+    assert got['distance_mm']==pytest.approx(15.) and len(a.calls)==4

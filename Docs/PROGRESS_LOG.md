@@ -903,3 +903,11 @@ non-STL prefs и terminal jobs, новых unknown нет. Диагностич�
 до сборки учтён отдельно, не как native tool acceptance. Общий stage1 gate открыт.
 Один агент, dev install, v1 не менялась; push/CI нет. Далее остатки адресации/
 измерений и общие N0–N6; новых stage2 расширений не начинать.
+
+
+11.10.2026 — dev78 complete aggregate pair distance принят:4365 pure/323 CAD
+deselected, metadata63/18, internal19/public6 accepted=true на exact wheel.
+Стенд исправлен вне пакета, неуспешные результаты сохранены; own4 cleanup,
+baseline/non-STL prefs подтверждены. Приёмка COMPONENT_AGGREGATE_DISTANCE_ACCEPTANCE.
+Новые контрольные точки3–5 блоков/конец дня применяются; отдельный legacy
+реестр/оболочка/pilot готовятся, native v2 и legacy не смешиваются.

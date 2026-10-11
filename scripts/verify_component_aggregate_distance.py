@@ -26,7 +26,7 @@ from verifier_lifecycle import ToolSpec,open_supervised_session
 SPECS={**COMPONENT_SPECS,
  'measurement_get_component_aggregate_distance':ToolSpec('measurement.component_aggregate_distance',False,argument_defaults={'frame':None}),
 }
-INTERNAL_CASES=18
+INTERNAL_CASES=19
 PUBLIC_CASES=6
 
 
@@ -58,8 +58,8 @@ async def cases(read,context,safe,sw,module,owned,session,paths,report,persist,p
     await safe();ctx=await context(asm)
     rows=succeeded(await read('component_list',ctx))['items'];await safe();assert len(rows)==9
     roots=[r for r in rows if r['referenced_document_type']=='assembly'];assert len(roots)==2
-    sub_a=next(r for r in roots if r['transform']['origin_mm']==[100.,0.,0.])
-    sub_b=next(r for r in roots if r['transform']['origin_mm']==[250.,0.,0.])
+    sub_a=next(r for r in roots if math.dist(r['transform']['origin_mm'],[100.,0.,0.])<1e-8)
+    sub_b=next(r for r in roots if math.dist(r['transform']['origin_mm'],[250.,0.,0.])<1e-8)
     main=next(r for r in rows if Path(r['referenced_path']).resolve()==paths[0] and r['referenced_configuration']=='Основная' and r['parent_component_id'] is None)
     variant=next(r for r in rows if Path(r['referenced_path']).resolve()==paths[0] and r['parent_component_id'] is None and r['referenced_configuration']=='Вариант')
     child=next(r for r in rows if r['parent_component_id']==sub_a['component_id'] and Path(r['referenced_path']).resolve()==paths[0])
@@ -107,13 +107,33 @@ async def cases(read,context,safe,sw,module,owned,session,paths,report,persist,p
     await invoke('changed_subassembly_configuration_old_target_rejected',sub_a,sub_b,error=('component_reference_context_changed','persistent_reference_mismatch'))
     await safe();fresh=succeeded(await read('component_list',await context(asm)))['items'];await safe()
     current=next(r for r in fresh if r['referenced_document_type']=='assembly' and r['referenced_configuration']=='Вариант')
+    sibling=next(r for r in fresh if r['referenced_document_type']=='assembly' and math.dist(r['transform']['origin_mm'],[250.,0.,0.])<1e-8)
+    if sibling['component_id']!=sub_b['component_id']:
+        await invoke('post_change_related_sibling_old_reference_rejected',current,sub_b,error=('component_reference_context_changed','persistent_reference_mismatch','object_deleted','object_reference_invalid'))
+    else:
+        await invoke('post_change_related_sibling_reference_stable',current,sub_b,84.,solid_counts=(3,2))
+    report['related_sibling_reference_refreshed']=sibling['component_id']!=sub_b['component_id'];persist();sub_b=sibling
     current_child=next(r for r in fresh if r['parent_component_id']==current['component_id'] and Path(r['referenced_path']).resolve()==paths[0])
     assert current_child['referenced_configuration']=='Основная'
     await invoke('fresh_configuration_complete_multibody_leaf_census',current,sub_b,84.,solid_counts=(3,2))
     await invoke('old_child_configuration_no_reassignment',sub_b,child,error=('component_reference_context_changed','persistent_reference_mismatch','object_deleted','object_suppressed','object_reference_invalid'))
-    await safe();sw.CommandInProgress=True;assert sw.CommandInProgress is True
-    try:changed.Name2='Контрольная переименованная подсборка';assert changed.Name2=='Контрольная переименованная подсборка';assert asm.ForceRebuild3(False)
-    finally:sw.CommandInProgress=False;assert sw.CommandInProgress is False
+    # Configuration changes invalidate traversal objects; reacquire the owned
+    # native fixture target too, rather than modifying an old interface pointer.
+    await safe()
+    native=[binding.wrap(x,module.IComponent2) for x in binding.wrap(asm,module.IAssemblyDoc).GetComponents(False)]
+    changed=next(c for c in native if c.Name2==current['component_path']);native=None
+    await safe()
+    tlb=pythoncom.LoadTypeLib(r'C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\swconst.tlb');guid,lcid,syskind,major,minor,flags=tlb.GetLibAttr()
+    toggle=gencache.EnsureModule(guid,lcid,major,minor).constants.swExtRefUpdateCompNames
+    preference=sw.GetUserPreferenceToggle(toggle);sw.CommandInProgress=True;assert sw.CommandInProgress is True
+    try:
+        activate_owned(sw,asm,asm.GetTitle());asm.ClearSelection2(True);assert changed.Select4(False,None,False)
+        sw.SetUserPreferenceToggle(toggle,False);assert sw.GetUserPreferenceToggle(toggle) is False
+        changed.Name2='Контрольная переименованная подсборка';assert changed.Name2.startswith('Контрольная переименованная подсборка')
+        asm.ClearSelection2(True);assert asm.ForceRebuild3(False)
+    finally:
+        sw.SetUserPreferenceToggle(toggle,preference);assert sw.GetUserPreferenceToggle(toggle)==preference
+        sw.CommandInProgress=False;assert sw.CommandInProgress is False
     await invoke('native_ancestor_rename_preserves_aggregate_ids',current,sub_b,84.,solid_counts=(3,2))
     await safe();sw.CommandInProgress=True;assert sw.CommandInProgress is True
     try:session._model=asm;session._apply_transform(changed,200.,0.,0.,0.,0.,0.);assert asm.ForceRebuild3(False)
@@ -133,7 +153,10 @@ async def cases(read,context,safe,sw,module,owned,session,paths,report,persist,p
         activate_owned(sw,subasm,subasm.GetTitle());session._model=subasm;assert subasm.ForceRebuild3(False)
         activate_owned(sw,asm,asm.GetTitle());session._model=asm;assert asm.ForceRebuild3(False)
     finally:sw.CommandInProgress=False;assert sw.CommandInProgress is False
-    await invoke('native_aggregate_without_solid_leaves_refused',current,sub_b,error='component_has_no_solid_bodies')
+    await safe();final_rows=succeeded(await read('component_list',await context(asm)))['items'];await safe()
+    empty_target=next(r for r in final_rows if r['referenced_document_type']=='assembly' and math.dist(r['transform']['origin_mm'],[200.,0.,0.])<1e-8)
+    final_sibling=next(r for r in final_rows if r['referenced_document_type']=='assembly' and math.dist(r['transform']['origin_mm'],[250.,0.,0.])<1e-8)
+    await invoke('native_aggregate_without_solid_leaves_refused',empty_target,final_sibling,error='component_has_no_solid_bodies')
 
 
 async def internal(state,sw,module,owned,session,paths,report,persist):

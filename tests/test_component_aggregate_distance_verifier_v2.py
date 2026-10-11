@@ -48,7 +48,7 @@ def test_public_protocol_complete_targets_shared_zero_and_replay(verifier,monkey
         return dict(component_id=cid,referenced_path=str(path),referenced_configuration=cfg,component_path=name,
             referenced_document_type='assembly' if assembly else 'part',parent_component_id=parent,transform={'origin_mm':[x,0.,0.]},hidden=hidden)
     rows=[row('main',paths[0],'Основная','Деталь-1'),row('var',paths[0],'Вариант','Деталь-2'),
-        row('a',paths[2],'Основная','Подсборка-1',x=100.,assembly=True),row('b',paths[2],'Основная','Подсборка-2',x=250.,assembly=True),
+        row('a',paths[2],'Основная','Подсборка-1',x=99.99999999999999,assembly=True),row('b',paths[2],'Основная','Подсборка-2',x=250.,assembly=True),
         row('child_a',paths[0],'Вариант','Подсборка-1/Деталь-1',parent='a',x=130.),row('cylinder_a',paths[1],'Основная','Подсборка-1/Цилиндр-1',parent='a',x=190.,hidden=True),
         row('child_b',paths[0],'Вариант','Подсборка-2/Деталь-1',parent='b',x=280.),row('cylinder_b',paths[1],'Основная','Подсборка-2/Цилиндр-1',parent='b',x=340.),row('root_cylinder',paths[1],'Основная','Цилиндр-1',x=150.)]
     saved={};calls=[]

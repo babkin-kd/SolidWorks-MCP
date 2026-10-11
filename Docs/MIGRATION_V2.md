@@ -1,13 +1,24 @@
 # Миграция legacy-инструментов в API v2
 
-Dev77: расстояние resolved экземпляра детали до бесконечной оси принято:
+Dev78: расстояние между полными solid-агрегатами part/subassembly принято:
+4365 pure/323 CAD deselected (54,78с), installed metadata63/18,
+internal native19/public MCP6 accepted=true на одном wheel. Exact4-owned
+cleanup, пустой/free baseline и non-STL preferences подтверждены. Полный
+leaf census/все пары, hidden cylinder minimum84 мм, shared descendant0,
+explicit rigid frame, native смена конфигурации/rename/move проверены.
+[Контракт](COMPONENT_AGGREGATE_DISTANCE.md), [точная приёмка](COMPONENT_AGGREGATE_DISTANCE_ACCEPTANCE.md).
+Point/axis distance агрегатов, native named frames и общий N0–N6 остаются;
+S1-06/S1-16 и стадия1 открыты. Legacy-пилот учитывается отдельно.
+
+
+Исторический dev77: расстояние resolved экземпляра детали до бесконечной оси принято:
 4335 pure/323 CAD deselected (54,63с), installed metadata62/18,
 internal native18/public MCP6 accepted=true на одном wheel; exact4-owned
 cleanup, baseline и non-STL preferences подтверждены. Exact directional
 supports + memory-only wire, hidden/rotated/nested instances, oblique axis,
 explicit rigid frame, far origin/reversed direction, cylinder surface gap/tangency.
 [Контракт](COMPONENT_AXIS_DISTANCE.md), [точная приёмка](COMPONENT_AXIS_DISTANCE_ACCEPTANCE.md).
-Aggregate subassembly, named native frames и общий N0–N6 остаются;
+На момент dev77 aggregate subassembly, named native frames и общий N0–N6 оставались;
 S1-06/S1-16 и стадия1 открыты, расширения2 отложены. Старые приёмки ниже
 относятся к их wheel и не засчитываются в итоговый gate текущего кандидата.
 
@@ -235,7 +246,7 @@ API-сигнатуры сверены с зарегистрированным SW
 | `set_component_transform` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `add_mate` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `check_interference` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
-| `measure_distance` | `measurement_get_component_distance`, `measurement_get_component_point_distance`, `measurement_get_component_axis_distance`, `measurement_get_component_aggregate_distance` | Частично; dev75 distance13/6, dev76 point19/6 приняты; axis dev77 native18/public6 принят на его exact wheel | 1.4. Explicit resolved part instances/config/observation; minimum component distance, individual-boundary point distance/location, infinite-axis distance с exact directional support span и memory-only wire. Root/explicit rigid frame мм; dev78 aggregate pair minimum реализован, native ожидается. Point/axis aggregate и named frames остаются. |
+| `measure_distance` | `measurement_get_component_distance`, `measurement_get_component_point_distance`, `measurement_get_component_axis_distance`, `measurement_get_component_aggregate_distance` | Частично; dev75 distance13/6, dev76 point19/6 приняты; axis dev77 native18/public6 принят на его exact wheel | 1.4. Explicit resolved part instances/config/observation; minimum component distance, individual-boundary point distance/location, infinite-axis distance с exact directional support span и memory-only wire. Root/explicit rigid frame мм; Dev78 aggregate pair minimum принят internal19/public6 на его exact wheel. Point/axis aggregate и named frames остаются. |
 | `check_motion` | — | Отложено в v2 | 3.1. Несколько входов, дискретная траектория, зазоры и достоверность покрытия. |
 | `swept_region` | — | Отложено в v2 | 3.1. Несколько входов, дискретная траектория, зазоры и достоверность покрытия. |
 | `get_assembly_bounding_box` | — | Не реализовано в v2; остаток стадии 1 | 1.4: необходимые базовые операции; 2.6: компоненты/сопряжения, большие сборки и библиотеки. |

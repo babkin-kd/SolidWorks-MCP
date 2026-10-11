@@ -1,13 +1,24 @@
 # API v2: текущий кандидат первой стадии
 
-Dev77: расстояние resolved экземпляра детали до бесконечной оси принято:
+Dev78: расстояние между полными solid-агрегатами part/subassembly принято:
+4365 pure/323 CAD deselected (54,78с), installed metadata63/18,
+internal native19/public MCP6 accepted=true на одном wheel. Exact4-owned
+cleanup, пустой/free baseline и non-STL preferences подтверждены. Полный
+leaf census/все пары, hidden cylinder minimum84 мм, shared descendant0,
+explicit rigid frame, native смена конфигурации/rename/move проверены.
+[Контракт](COMPONENT_AGGREGATE_DISTANCE.md), [точная приёмка](COMPONENT_AGGREGATE_DISTANCE_ACCEPTANCE.md).
+Point/axis distance агрегатов, native named frames и общий N0–N6 остаются;
+S1-06/S1-16 и стадия1 открыты. Legacy-пилот учитывается отдельно.
+
+
+Исторический dev77: расстояние resolved экземпляра детали до бесконечной оси принято:
 4335 pure/323 CAD deselected (54,63с), installed metadata62/18,
 internal native18/public MCP6 accepted=true на одном wheel; exact4-owned
 cleanup, baseline и non-STL preferences подтверждены. Exact directional
 supports + memory-only wire, hidden/rotated/nested instances, oblique axis,
 explicit rigid frame, far origin/reversed direction, cylinder surface gap/tangency.
 [Контракт](COMPONENT_AXIS_DISTANCE.md), [точная приёмка](COMPONENT_AXIS_DISTANCE_ACCEPTANCE.md).
-Aggregate subassembly, named native frames и общий N0–N6 остаются;
+На момент dev77 aggregate subassembly, named native frames и общий N0–N6 оставались;
 S1-06/S1-16 и стадия1 открыты, расширения2 отложены. Старые приёмки ниже
 относятся к их wheel и не засчитываются в итоговый gate текущего кандидата.
 

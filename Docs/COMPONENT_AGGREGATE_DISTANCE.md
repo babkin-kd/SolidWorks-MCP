@@ -1,6 +1,7 @@
 # Расстояние между агрегатами экземпляров
 
-Кандидат dev78, native-приёмка ожидается. Инструмент
+Dev78 принят на exact wheel: internal19/public MCP6, оба accepted=true.
+[Точная приёмка](COMPONENT_AGGREGATE_DISTANCE_ACCEPTANCE.md). Инструмент
 `measurement_get_component_aggregate_distance`, read операция
 `measurement.component_aggregate_distance`, scope
 `resolved_component_aggregate_distance_v1`.

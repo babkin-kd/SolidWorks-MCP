@@ -1,13 +1,24 @@
 # План развития SolidWorks MCP
 
-Dev77: расстояние resolved экземпляра детали до бесконечной оси принято:
+Dev78: расстояние между полными solid-агрегатами part/subassembly принято:
+4365 pure/323 CAD deselected (54,78с), installed metadata63/18,
+internal native19/public MCP6 accepted=true на одном wheel. Exact4-owned
+cleanup, пустой/free baseline и non-STL preferences подтверждены. Полный
+leaf census/все пары, hidden cylinder minimum84 мм, shared descendant0,
+explicit rigid frame, native смена конфигурации/rename/move проверены.
+[Контракт](Docs/COMPONENT_AGGREGATE_DISTANCE.md), [точная приёмка](Docs/COMPONENT_AGGREGATE_DISTANCE_ACCEPTANCE.md).
+Point/axis distance агрегатов, native named frames и общий N0–N6 остаются;
+S1-06/S1-16 и стадия1 открыты. Legacy-пилот учитывается отдельно.
+
+
+Исторический dev77: расстояние resolved экземпляра детали до бесконечной оси принято:
 4335 pure/323 CAD deselected (54,63с), installed metadata62/18,
 internal native18/public MCP6 accepted=true на одном wheel; exact4-owned
 cleanup, baseline и non-STL preferences подтверждены. Exact directional
 supports + memory-only wire, hidden/rotated/nested instances, oblique axis,
 explicit rigid frame, far origin/reversed direction, cylinder surface gap/tangency.
 [Контракт](Docs/COMPONENT_AXIS_DISTANCE.md), [точная приёмка](Docs/COMPONENT_AXIS_DISTANCE_ACCEPTANCE.md).
-Aggregate subassembly, named native frames и общий N0–N6 остаются;
+На момент dev77 aggregate subassembly, named native frames и общий N0–N6 оставались;
 S1-06/S1-16 и стадия1 открыты, расширения2 отложены. Старые приёмки ниже
 относятся к их wheel и не засчитываются в итоговый gate текущего кандидата.
 
@@ -62,7 +73,7 @@ solid cylinder и hollow cavity/material, old replaced body/face rejection.
 На момент dev76 axis distance, aggregate subassembly targets, named native frames и общий
 N0–N6 остаются; стадия1 открыта, расширения2 отложены.
 
-Далее — native документы, расстояния до агрегата подсборки и прочие измерения сборок, базовые операции/адресация
+Далее — native документы, point/axis расстояния агрегатов и прочие измерения сборок, базовые операции/адресация
 и общие installed/native gates. Работать одним агентом, собирать
 пакет локально, выполнять обязательную native-приёмку; skipped не засчитывать.
 Статусы стадий открыты. Импорт/экспорт отложены и не блокируют стадию1.
@@ -467,6 +478,10 @@ endpoint хранятся в разных переменных; регресси
 - [ ] Отдельная installed-wheel/native-приёмка каждого выпускаемого блока; STL остаётся в 3.2. Эта работа не является условием завершения стадий 1 и 2, кроме минимального вывода DXF/PDF для принятых производственных сценариев стадии 2.
 
 ## 6. Организация GitHub и выпуска
+
+**Контрольные точки — 11.10.2026:** после 3–5 законченных связанных блоков либо в конце рабочего дня проверять итоговый кандидат и отправлять накопленный пакет в форк с обезличенной сводкой и штатным CI. Это не расписание фоновых запусков и не замена общей приёмки стадии. Уже принятые проверки неизменного точного wheel без причины не повторять; новый wheel требует своих доказательств. Подробности: [NATIVE_TESTING.md](Docs/NATIVE_TESTING.md) и [GIT_WORKFLOW.md](Docs/GIT_WORKFLOW.md).
+
+- [ ] Организовать отдельный baseline legacy CAD-набора: реестр областей/прежних доказательств, проверяемая очистка оболочки, пилот 15–30 приоритетных случаев с замером времени, затем последовательные группы по потребности. `323 deselected` не считать накоплением новых непроверенных v2-тестов; legacy-результаты не заменяют N0–N6 и installed/native/MCP-приёмку. Полный legacy-набор не становится новым gate стадий 1/2; обязательные проверки определяются действующей матрицей и затронутым кодом.
 
 - `main` — стабильное состояние; ветки `stage-1-fixes`, `stage-2-core`, `stage-3-extensions` — работа по стадиям. Изменения проходят PR в собственный форк.
 - Три milestones соответствуют стадиям. Задачи имеют критерий готовности и ссылку на пункт плана; блоки 2.1–2.4 обозначаются как первый рабочий выпуск.
