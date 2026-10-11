@@ -4,6 +4,17 @@ L3 **не принят**. Два публичных инструмента за�
 новый wheel не собран и не установлен. Приёмка открытия dev87 относится к своему точному артефакту;
 новые исходники не наследуют её автоматически.
 
+**Текущий source domain probe2 прошёл**, 994,58 с: job succeeded/committed,
+отдельный протокольный predicate подтвердил 24 native ledger rows. Полное
+независимое CAD-чтение подтвердило clone/mapping (41 роль), writable final,
+неизменность dirty соседа; собственные документы закрыты, baseline/CWD/non-STL
+восстановлены, owned=[], native_calls_live=false. Это положительная source-проба,
+а не installed/internal/public gate L3. SHA256 окончательного отчёта:
+`4b1648f9e2670ec054df8640080823dfdd798113b7fe073ddf0802c19da8fbe1`.
+Частные артефакты: `work/native-first-save-domain-probe-2/report.json`,
+`protocol-check.json`, `oracle-captures/`. Прежний unknown остаётся unknown;
+успех нового задания не устанавливает задним числом причину прежнего расхождения.
+
 Полный source domain probe1 завершился **unknown**, 988,76 с: native Copy,
 stage read/close, публикация, final open и source close вернулись нормально,
 но полное постусловие после retirement не совпало. Первоначальный журнал не
@@ -77,6 +88,9 @@ Baseline допускает видимые self-contained parts того же н
 
 | Проверка | Фактический результат | Что подтверждает |
 | --- | --- | --- |
+| Full source domain probe2 | passed, 994,58 с; job committed, 24 protocol rows verified, independent full readback=true, mapping41, cleanup/baseline=true | Первый успешный полный source-протокол с actual CAD/NTFS, UI guards и durable журналом. Не новый wheel; stale/race/negative cases и public MCP-приёмка L3 ещё не завершены |
+| Текущий source metadata/runtime/MCP-набор | 44 passed, 4,56 с | Installed verifier ожидает реализованные 73 tools/22 mutations, включая два first-save tools и их scope; прежний каталог без L3 отвергается. Проверка искусственная/source, без CAD и нового wheel. Первая попытка остановилась на collection из-за импорта установленного dev87 вместо src, затем исправлен PYTHONPATH |
+| Текущий полный source pure-набор | 5973 passed, 323 CAD deselected, 99,38 с | Штатный фильтр `not solidworks`, без `--run-solidworks`; source PYTHONPATH указан явно. Не является installed metadata или native-приёмкой. Подробный журнал: ignored `work/pytest-first-save-full-2.log` |
 | Связанный source pure-набор, итог прототипа | 255 passed, 12,76 с | Мост, доменный протокол с искусственным CAD/FS, файловые receipt и NT-фаза публикации, пассивная классификация rectangle; native не запускался |
 | Последующий связанный source pure-набор | 419 passed, 13,03 с | Дополнительно actual QueryInterface helper на fake COM, составные dimension/annotation anchors, native-plane PID нормализация и целый capture на искусственной модели. Это не новый wheel и не CAD-приёмка |
 | Whole passive source probe 3 | Обе реальные собственные детали: два совпавших capture каждой; metadata_unchanged=true; 174,78 и 173,51 с | Полное чтение заявленного исходного профиля, шаблонных служебных данных и PID roundtrip. Только source-прототип, без SaveAs/clone/disk/readback или installed gate |
@@ -118,11 +132,11 @@ Baseline допускает видимые self-contained parts того же н
    остаются unknown. Нет path-based overwrite или удаления final.
 2. Source/clone oracle и41 mappings подтверждены Copy-прототипом3; совместимость
    filesystem leases, final writable document и source retirement — составным
-   source CAD/NTFS-прототипом1. Доказать полный доменный протокол с UI guards и
-   durable журналом, включая отказы/восстановление. Прототип совместимости не
-   заменяет эту приёмку и не является проверкой установленного wheel.
-3. Домен интегрирован в runtime и MCP-фасад исходников. Проверить полный
-   native domain positive и подготовить конечные internal failure cases и
+   source CAD/NTFS-прототипом1. Положительный полный доменный протокол с UI guards
+   и durable журналом теперь подтверждён source domain probe2. Остались конечные
+   отказы/восстановление и установленный кандидат. Прототипы не заменяют эту приёмку.
+3. Домен интегрирован в runtime и MCP-фасад исходников. Подготовить exact installed
+   native domain positive, конечные internal failure cases и
    публичную пользовательскую цепочку без дублирования CAD.
 4. Полный pure → итоговый wheel → exact installed metadata/stdio → обязательная
    native/MCP-приёмка L3. Stale/replay, destination race, unknown/hold,

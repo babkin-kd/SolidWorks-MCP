@@ -41,15 +41,22 @@ legacy-основании; его исход не переписан. Новый
 явно. Составной source CAD/NTFS-прототип1 прошёл за44,28 с: строгие leases
 совместимы с Copy/readback, no-replace publication, writable final,41 mappings
 и source retirement; cleanup/baseline=true, pending=false, owned=[], leases
-освобождены. Native UI guards, durable журнал полного домена, installed фасад и
-same-wheel native остаются; source experiment не installed gate и не закрывает L3.
+освобождены. Эти самостоятельные прототипы не подтверждали native UI guards
+и журнал полного домена; нынешняя полная source-проба описана ниже. Installed
+фасад и same-wheel native остаются; source experiment не закрывает L3.
 [Фактическое продвижение и оставшиеся gates](NATIVE_FIRST_SAVE_PROGRESS.md).
 Full source domain probe1 — unknown после нормального source close,988,76 с.
 Точное первоначальное расхождение не сохранено; независимый разбор подтвердил
 полный clone/file и сосед, затем own cleanup и empty baseline приняты отдельно.
 Журнал unknown сохранён. Canonical snapshot/strict bool-int clone comparison,
 exact-final activation и durable mismatch evidence исправлены; related278 pure
-passed/20,23 с. Новый source probe2 выполняется, L3 и installed/native gate открыты.
+passed/20,23 с. Full source domain probe2 прошёл за994,58 с: job succeeded/committed,
+24 native ledger rows прошли отдельный predicate; независимый full CAD readback,
+mapping41, writable final, dirty сосед и own cleanup/baseline подтверждены.
+Native_calls_live=false, owned=[]; прежний unknown не переписан.
+Текущий полный source pure5973 passed/323 CAD deselected,99,38 с; related
+metadata/runtime/MCP44 passed/4,56 с. Новый installed verifier ожидает73 tools/22
+mutations; нового wheel ещё нет. L3 и installed/native/public gates открыты.
 Remote CI последнего пакета failure; локальное исправление входит в pure,
 нового push нет. Исторические свидетельства ниже не являются приёмкой dev87
 или итоговой стадии1; прежние «20 из22» не используются как текущий gate.
