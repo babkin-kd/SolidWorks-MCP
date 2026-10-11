@@ -85,7 +85,9 @@ known own CWD restore, retained stage bytes и empty baseline предшеств
 прошёл за757,28 с на dev88: unknown/hold/replay, independent native clone41/readback,
 exact own reconciliation и baseline; historical unknown сохранён. False_after_copy
 прошёл за756,52 с на dev88 с unknown/hold/replay, independent clone41, stage
-retention и exact reconciliation/baseline. Throw запущен; incomplete/public остаются.
+retention и exact reconciliation/baseline. Throw прошёл за757,30 с с unknown/hold/
+replay, independent clone41, own cleanup/empty baseline и exact reconciliation;
+historical unknown сохранён. Incomplete запущен; public/S1-B5-ACT остаются.
 Для полной публичной open→edit цепочки выявлен bounded S1-B5-ACT
 (см. STAGE_1_BLOCK_ACCEPTANCE.md); ручную activation нельзя считать MCP automation.
 

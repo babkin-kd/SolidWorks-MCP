@@ -83,8 +83,16 @@ source/dirty сосед, stage retention, own cleanup/empty baseline и exact ho
 reconciliation. Historical status остаётся unknown. SHA256:
 `bf89c0e9340b3b62ba423668d65b2e2b03c55e1a65ef8eee74236a924d0fa590`.
 Wheel/current helper hashes проверены отдельно. Это controlled bridge false,
-не actual native COM false. `throw_after_copy` запущен в
-`work/native-first-save-dev88-fault-throw-1/`; incomplete/public остаются; L3 открыт.
+не actual native COM false. **Installed throw_after_copy прошёл**, 757,30 с,
+`work/native-first-save-dev88-fault-throw-1/report.json`: три finite cases passed,
+original normal Copy True/0/0, unknown/hold/replay, independent clone41 и source/
+neighbor/stage preservation, own cleanup/empty baseline, exact reconciliation.
+Historical status остаётся unknown. SHA256:
+`5d13daa4a1d620e4e48dc9ff71cd58a1354063d4b7dd7a0aa3a1030872ac9964`.
+Wheel/current helper hashes проверены отдельно. Это bridge throw после normal
+native return, не actual COM throw. Incomplete_after_copy запущен в
+`work/native-first-save-dev88-fault-incomplete-1/`; public и S1-B5-ACT остаются;
+L3 открыт.
 
 При подготовке публичной цепочки подтверждён S1-B5-ACT: open сохраняет исходный
 active dirty сосед, а dimension edit требует активного target. Публичный explicit

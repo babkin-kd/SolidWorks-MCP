@@ -65,7 +65,9 @@ known rollback, foreign bytes/identity, replay и cleanup/baseline. L3-I4 warnin
 прошёл за757,28 с: unknown/hold/replay, independent clone41/readback,
 exact own reconciliation и baseline; historical unknown не success. L3-I4 false
 прошёл за756,52 с: unknown/hold/replay, clone41, stage retention и exact
-reconciliation/empty baseline. Throw выполняется, incomplete/public открыты.
+reconciliation/empty baseline. Throw прошёл за757,30 с: unknown/hold/replay,
+clone41, source/neighbor/stage preservation и reconciliation/empty baseline.
+Incomplete выполняется, public/S1-B5-ACT открыты.
 Дополнительно выявлен S1-B5-ACT: open восстанавливает active сосед, dimension edit
 требует active target; ручная активация не засчитывается как MCP automation.
 L2 scope не расширяется. Первый JSON-сбой L3-I2

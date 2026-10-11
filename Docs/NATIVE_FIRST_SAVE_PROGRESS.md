@@ -9,7 +9,9 @@ L3-I3 прошёл (874,27 с): actual no-replace collision, known rollback, for
 replay и cleanup/baseline. Installed L3-I4 warning_after_copy прошёл (757,28 с): unknown/hold/replay,
 independent clone/readback и exact own reconciliation, historical unknown сохранён.
 L3-I4 false_after_copy прошёл (756,52 с): unknown/hold/replay, independent clone41
-и exact own reconciliation/baseline. Throw_after_copy запущен; incomplete/public остаются.
+и exact own reconciliation/baseline. Throw_after_copy прошёл (757,30 с): unknown/hold/replay, clone41, source/neighbor/stage
+preservation, cleanup/baseline и reconciliation; historical unknown сохранён.
+Incomplete_after_copy запущен; public/S1-B5-ACT остаются.
 Для полного open→edit MCP-сценария выявлен S1-B5-ACT: explicit active part
 ещё не реализован, ручная test-owner activation не закрывает этот остаток.
 [Точный артефакт и проверенные факты dev88](CHECKPOINT_DEV88.md).
