@@ -11,7 +11,7 @@ import sysconfig
 
 from verify_wheel_artifact import require, validate_wheel
 
-TOOLS = frozenset({'measurement_get_component_point_distance', 'measurement_get_component_distance', 'component_face_list', 'component_edge_list', 'component_topology_get', 'component_list', 'component_get', 'component_body_list', 'component_body_get', 'measurement_get_bounds', 'measurement_prepare_mass', 'measurement_get_mass', 'system_get_info', 'job_get', 'job_list', 'job_cancel', 'diagnostics_get_timings',
+TOOLS = frozenset({'measurement_get_component_axis_distance', 'measurement_get_component_point_distance', 'measurement_get_component_distance', 'component_face_list', 'component_edge_list', 'component_topology_get', 'component_list', 'component_get', 'component_body_list', 'component_body_get', 'measurement_get_bounds', 'measurement_prepare_mass', 'measurement_get_mass', 'system_get_info', 'job_get', 'job_list', 'job_cancel', 'diagnostics_get_timings',
     'document_list', 'document_get', 'body_list', 'face_list', 'edge_list', 'geometry_get',
     'feature_list', 'feature_get', 'feature_rename', 'dimension_list', 'dimension_get',
     'dimension_set_value', 'export_prepare', 'export_part', 'part_prepare_base_extrusion', 'part_create_base_extrusion',

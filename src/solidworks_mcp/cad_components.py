@@ -23,6 +23,33 @@ def component_transform(values):
 
 
 class CadComponentsMixin:
+    def component_axis_distance(self, model, component, ends_m, direction):
+        # All proxies, including the temporary wire, are created/released on STA.
+        modeler = curve = trimmed = wire = edge = None
+        try:
+            modeler = binding.wrap(self._sw.GetModeler(), self._module.IModeler)
+            curve = binding.wrap(modeler.CreateLine(VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_R8, ends_m[0]),
+                VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_R8, direction)), self._module.ICurve)
+            if curve is None or curve.IsLine() is not True:
+                raise rejected('temporary_axis_unavailable', 'Modeler did not create a native line.')
+            trimmed = binding.wrap(curve.CreateTrimmedCurve2(*ends_m[0], *ends_m[1]), self._module.ICurve)
+            if trimmed is None or trimmed.IsLine() is not True:
+                raise rejected('temporary_axis_unavailable', 'Native line trimming failed.')
+            wire = binding.wrap(trimmed.CreateWireBody(), self._module.IBody2)
+            if wire is None or wire.IsTemporaryBody() is not True or wire.GetType() != 2:
+                raise rejected('temporary_axis_unavailable', 'Expected a temporary wire body only.')
+            edges = tuple(wire.GetEdges() or ())
+            if len(edges) != 1:raise rejected('temporary_axis_unavailable', 'Expected one bounded line edge.')
+            edge = binding.wrap(edges[0], self._module.IEdge)
+            vertices = [binding.wrap(v, self._module.IVertex) for v in (edge.GetStartVertex(), edge.GetEndVertex())]
+            from .point_measurement import point3
+            actual = [point3(v.GetPoint(), 'temporary_axis_unavailable') if v is not None else None for v in vertices]
+            if any(p is None for p in actual) or not any(all(math.dist(a, b) <= 1e-8 for a, b in zip(actual, order)) for order in (ends_m, list(reversed(ends_m)))):
+                raise rejected('temporary_axis_unavailable', 'Native temporary edge endpoints disagree with the certified span.')
+            return model.ClosestDistance(component, edge)
+        finally:
+            edge = wire = trimmed = curve = modeler = None
+
     def face_closest_point(self, face, point_m):
         return face.GetClosestPointOn(*point_m)
 

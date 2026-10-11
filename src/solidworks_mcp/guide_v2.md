@@ -595,3 +595,18 @@ solids включены, surface исключены. Подсборки как �
 и неподдерживаемые состояния не приняты. Closing gates включают all body/
 face membership, summaries, geometric moments, configuration/transform;
 это observation, не полная BREP mutation revision. UI/model не изменяются.
+
+
+### Расстояние от экземпляра детали до оси
+
+`measurement_get_component_axis_distance` требует root assembly/document,
+активную configuration, observation_revision, component_id и request_id.
+`axis_origin_mm` задаёт точку бесконечной прямой, `axis_direction` — конечный
+ненулевой вектор; он нормализуется. Необязательный `frame` задаёт явные rigid
+оси/начало в root assembly. Результат: distance_mm и две ближайшие точки в
+входной frame и root assembly, normalized direction, infinite_line semantics.
+Normal hidden solids включены, surface исключены. Exact GetExtremePoint
+ограничивает временное ребро в памяти; в CAD-дерево ничего не вставляется,
+выделение/активация/rebuild не выполняются. Zero не классифицирует пересечение.
+Подсборки как агрегат, named native frames и unresolved/assembly-cut/mesh/SpeedPak
+состояния ещё не поддерживаются. Это read-scope, а не полная BREP mutation revision.
