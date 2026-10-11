@@ -1,5 +1,19 @@
 # API v2: текущий кандидат первой стадии
 
+Dev76: point boundary distance/native location для resolved part instance принят:
+4287 pure/323 CAD deselected (53,93с), installed metadata61/18,
+internal native19/public MCP6 accepted=true на одном wheel; exact4-owned
+cleanup, baseline и non-STL preferences подтверждены. Hidden rotated
+inside/outside/boundary, explicit frame/trimmed corner, nested/multibody,
+solid cylinder и hollow cavity/material, old replaced body/face rejection.
+[Контракт](COMPONENT_POINT_DISTANCE.md), [точная приёмка](COMPONENT_POINT_DISTANCE_ACCEPTANCE.md).
+Axis distance, aggregate subassembly targets, named native frames и общий
+N0–N6 остаются; стадия1 открыта, расширения2 отложены.
+
+| Инструмент | Реализованная операция |
+| --- | --- |
+| `measurement_get_component_point_distance` | Explicit instance/point/frame; minimum до normal solid boundaries и native ENTER/EXIT location, original closest body/face IDs, closing snapshots. Hidden solids включены, surface исключены; boundary inside=null. |
+
 Dev75: расстояние между двумя resolved экземплярами деталей принято:
 4236 pure/323 CAD deselected (53,88с), installed metadata60/18,
 internal native13/public MCP6 accepted=true на одном wheel; exact-owned cleanup

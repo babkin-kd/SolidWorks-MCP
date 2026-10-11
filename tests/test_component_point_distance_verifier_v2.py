@@ -22,6 +22,28 @@ def test_native_optin_before_any_wheel_or_cad(verifier,monkeypatch,tmp_path):
     assert exc.value.code==2 and not (tmp_path/'state').exists()
 
 
+def test_fixture_already_active_requires_readback_without_redundant_switch(verifier,monkeypatch):
+    monkeypatch.setattr(verifier.binding,'wrap',lambda obj,cls:obj)
+    model=NS(GetActiveConfiguration=lambda:NS(Name='Основная'),ShowConfiguration2=lambda name:pytest.fail('No redundant switch'))
+    verifier.ensure_fixture_configuration(model,NS(IConfiguration=object),'Основная')
+
+
+def test_fixture_switches_only_when_needed_and_confirms_readback(verifier,monkeypatch):
+    monkeypatch.setattr(verifier.binding,'wrap',lambda obj,cls:obj)
+    state=NS(Name='Вариант');calls=[]
+    def switch(name):calls.append(name);state.Name=name;return True
+    model=NS(GetActiveConfiguration=lambda:state,ShowConfiguration2=switch)
+    verifier.ensure_fixture_configuration(model,NS(IConfiguration=object),'Основная')
+    assert calls==['Основная']
+
+
+@pytest.mark.parametrize('returns',[False,True])
+def test_fixture_wrong_config_is_never_accepted_from_return_value(verifier,monkeypatch,returns):
+    monkeypatch.setattr(verifier.binding,'wrap',lambda obj,cls:obj)
+    model=NS(GetActiveConfiguration=lambda:NS(Name='Вариант'),ShowConfiguration2=lambda name:returns)
+    with pytest.raises(AssertionError):verifier.ensure_fixture_configuration(model,NS(IConfiguration=object),'Основная')
+
+
 def test_point_spec_maps_frame_default_and_explicit_context(verifier):
     args=dict(request_id='r',timeout_s=0.,document_id='d',configuration='Основная',expected_observation_revision='o',component_id='c',point_mm=[1.,2.,3.])
     spec=verifier.SPECS['measurement_get_component_point_distance'];payload=spec.payload(args)

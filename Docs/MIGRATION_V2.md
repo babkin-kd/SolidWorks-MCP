@@ -1,5 +1,15 @@
 # Миграция legacy-инструментов в API v2
 
+Dev76: point boundary distance/native location для resolved part instance принят:
+4287 pure/323 CAD deselected (53,93с), installed metadata61/18,
+internal native19/public MCP6 accepted=true на одном wheel; exact4-owned
+cleanup, baseline и non-STL preferences подтверждены. Hidden rotated
+inside/outside/boundary, explicit frame/trimmed corner, nested/multibody,
+solid cylinder и hollow cavity/material, old replaced body/face rejection.
+[Контракт](COMPONENT_POINT_DISTANCE.md), [точная приёмка](COMPONENT_POINT_DISTANCE_ACCEPTANCE.md).
+Axis distance, aggregate subassembly targets, named native frames и общий
+N0–N6 остаются; стадия1 открыта, расширения2 отложены.
+
 Dev75: расстояние между двумя resolved экземплярами деталей принято:
 4236 pure/323 CAD deselected (53,88с), installed metadata60/18,
 internal native13/public MCP6 accepted=true на одном wheel; exact-owned cleanup
@@ -214,7 +224,7 @@ API-сигнатуры сверены с зарегистрированным SW
 | `set_component_transform` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `add_mate` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
 | `check_interference` | — | Отложено в v2 | 2.6: компоненты/сопряжения, большие сборки и библиотеки. |
-| `measure_distance` | `measurement_get_component_distance` | Частично; dev75 internal13/public6 native accepted | 1.4. Два явных resolved part-instance ID, active assembly cfg/observation, native minimum/две root точки мм; normal solids включая hidden. Point/axis и агрегат подсборки остаются; не collision classifier. |
+| `measure_distance` | `measurement_get_component_distance`, `measurement_get_component_point_distance` | Частично; dev75 distance13/6 и dev76 point19/6 native accepted на их точных wheel | 1.4. Explicit part instances/config/observation; native minimum либо individual-boundary point distance и native point location; root/explicit rigid frame мм. Axis/aggregate-subassembly/named frames остаются. |
 | `check_motion` | — | Отложено в v2 | 3.1. Несколько входов, дискретная траектория, зазоры и достоверность покрытия. |
 | `swept_region` | — | Отложено в v2 | 3.1. Несколько входов, дискретная траектория, зазоры и достоверность покрытия. |
 | `get_assembly_bounding_box` | — | Не реализовано в v2; остаток стадии 1 | 1.4: необходимые базовые операции; 2.6: компоненты/сопряжения, большие сборки и библиотеки. |

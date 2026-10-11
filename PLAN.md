@@ -41,7 +41,17 @@ curved overlap/tangent0, native move14 мм, cylinder gap24 мм вместо ax
 S1-16/S1-06 частично: point/axis distance, агрегат подсборки, native named
 frames и общий N0–N6 остаются; стадии1/2 не объявлены завершёнными.
 
-Далее — native документы, расстояния до точек/осей и прочие измерения сборок, базовые операции/адресация
+Dev76: point boundary distance/native location для resolved part instance принят:
+4287 pure/323 CAD deselected (53,93с), installed metadata61/18,
+internal native19/public MCP6 accepted=true на одном wheel; exact4-owned
+cleanup, baseline и non-STL preferences подтверждены. Hidden rotated
+inside/outside/boundary, explicit frame/trimmed corner, nested/multibody,
+solid cylinder и hollow cavity/material, old replaced body/face rejection.
+[Контракт](Docs/COMPONENT_POINT_DISTANCE.md), [точная приёмка](Docs/COMPONENT_POINT_DISTANCE_ACCEPTANCE.md).
+Axis distance, aggregate subassembly targets, named native frames и общий
+N0–N6 остаются; стадия1 открыта, расширения2 отложены.
+
+Далее — native документы, расстояния до осей/подсборок и прочие измерения сборок, базовые операции/адресация
 и общие installed/native gates. Работать одним агентом, собирать
 пакет локально, выполнять обязательную native-приёмку; skipped не засчитывать.
 Статусы стадий открыты. Импорт/экспорт отложены и не блокируют стадию1.

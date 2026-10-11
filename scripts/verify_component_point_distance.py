@@ -33,6 +33,14 @@ PUBLIC_CASES=6
 FRAME={'origin_mm':[50.,10.,20.],'axes_in_model':[[0.,1.,0.],[-1.,0.,0.],[0.,0.,1.]]}
 
 
+def ensure_fixture_configuration(model,module,name):
+    # ShowConfiguration2 can return False for an already active configuration.
+    # The fixture requires a positive final native readback, not a redundant switch.
+    if str(binding.wrap(model.GetActiveConfiguration(),module.IConfiguration).Name)!=name:
+        assert model.ShowConfiguration2(name)
+    assert str(binding.wrap(model.GetActiveConfiguration(),module.IConfiguration).Name)==name
+
+
 def check_point(value,expected,location,point,nearest=None,frame=None):
     assert value['measurement_scope']=='resolved_part_component_point_distance_v1'
     assert value['length_unit']=='mm' and value['coordinate_frame']==('assembly_model' if frame is None else 'explicit_rigid_frame')
@@ -147,7 +155,7 @@ async def cases(read,context,safe,sw,module,owned,session,paths,report,persist,p
     await invoke('native_hollow_material_is_inside',hollow,[154.,15.,0.],2.,location='inside')
     await safe();sw.CommandInProgress=True;assert sw.CommandInProgress is True
     try:
-        activate_owned(sw,first,first.GetTitle());session._model=first;assert first.ShowConfiguration2('Основная')
+        activate_owned(sw,first,first.GetTitle());session._model=first;ensure_fixture_configuration(first,module,'Основная')
         for feature in session._iter_features():
             if feature.Name in ('Контрольный блок 1','Контрольный блок 2'):assert feature.SetSuppression2(0,1,None)
         assert first.ForceRebuild3(False);activate_owned(sw,asm,asm.GetTitle());session._model=asm;assert asm.ForceRebuild3(False)

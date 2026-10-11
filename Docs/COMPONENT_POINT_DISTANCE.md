@@ -1,6 +1,6 @@
 # Расстояние от экземпляра детали до точки
 
-Кандидат dev76: `measurement_get_component_point_distance` →
+Принятый dev76: `measurement_get_component_point_distance` →
 `measurement.component_point_distance`, passive read; каталог61 инструментов/
 18 guarded операций. Проверки pure не заменяют приёмку exact installed wheel.
 
@@ -71,3 +71,5 @@ surface-only target. Все модели собственные; native setup н
 Point-направление legacy measure_distance закрывается в указанной part-instance
 области. Axis distance, aggregate subassembly targets, named frames, прочие
 states и общие installed/native gates остаются в матрице стадии1.
+
+[Приёмка exact wheel](COMPONENT_POINT_DISTANCE_ACCEPTANCE.md).
