@@ -196,6 +196,20 @@ bounded storage/privacy и end-to-end/queue/COM/rebuild/restore intervals из �
 
 ## S1-B5 — сквозной выпуск
 
+**Выявленный остаток S1-B5-ACT:** после L2 open ранее активный dirty сосед
+снова становится active (`native_document_open.py`: active-after задан baseline).
+`dimension.set_value` допускает только активный explicit target и возвращает
+`document_not_active` для открытого неактивного документа. Поэтому цепочка
+open→edit требует публичного явного управления active part. Ручная test-owner
+activation не является доказательством полностью автоматической MCP-цепочки.
+Это необходимый шаг уже заданного сценария, не расширение принятого L2.
+Минимальный supported случай — точная открытая самостоятельная writable part
+с одной конфигурацией поддержанного профиля; остальное activation/type/config
+scope остаётся D2-DOCUMENTS. Приёмка: explicit document/config/revision/request,
+однократная native activation, exact active-after, unchanged data/dirty/selection/
+view/file соседей, known no-effect/restore либо unknown/hold без повтора,
+exact installed/native/public gate. Реализация и приёмка **не завершены**.
+
 **Результат:** пользователь выполняет конечную цепочку на одном exact installed
 wheel через публичный MCP, сохраняя открытый dirty сосед:
 

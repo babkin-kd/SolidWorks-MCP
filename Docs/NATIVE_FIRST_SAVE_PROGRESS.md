@@ -8,7 +8,10 @@ installed L3-I2 прошёл (686,00 с): existing/stale до записи, Copy
 L3-I3 прошёл (874,27 с): actual no-replace collision, known rollback, foreign bytes/identity,
 replay и cleanup/baseline. Installed L3-I4 warning_after_copy прошёл (757,28 с): unknown/hold/replay,
 independent clone/readback и exact own reconciliation, historical unknown сохранён.
-L3-I4 false_after_copy запущен; throw/incomplete/public gates остаются.
+L3-I4 false_after_copy прошёл (756,52 с): unknown/hold/replay, independent clone41
+и exact own reconciliation/baseline. Throw_after_copy запущен; incomplete/public остаются.
+Для полного open→edit MCP-сценария выявлен S1-B5-ACT: explicit active part
+ещё не реализован, ручная test-owner activation не закрывает этот остаток.
 [Точный артефакт и проверенные факты dev88](CHECKPOINT_DEV88.md).
 Приёмка открытия dev87 относится к своему точному артефакту;
 новые исходники не наследуют её автоматически.

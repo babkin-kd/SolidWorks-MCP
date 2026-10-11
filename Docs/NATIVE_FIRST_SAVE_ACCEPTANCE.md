@@ -84,7 +84,10 @@ known own CWD restore, retained stage bytes и empty baseline предшеств
 и ресурсы. Скрипт проверен на синтаксис/CLI; installed native L3-I4 warning_after_copy
 прошёл за757,28 с на dev88: unknown/hold/replay, independent native clone41/readback,
 exact own reconciliation и baseline; historical unknown сохранён. False_after_copy
-запущен; throw/incomplete modes и публичная цепочка остаются видимыми задачами.
+прошёл за756,52 с на dev88 с unknown/hold/replay, independent clone41, stage
+retention и exact reconciliation/baseline. Throw запущен; incomplete/public остаются.
+Для полной публичной open→edit цепочки выявлен bounded S1-B5-ACT
+(см. STAGE_1_BLOCK_ACCEPTANCE.md); ручную activation нельзя считать MCP automation.
 
 Конечный отчёт связывает все шесть условий с метками, фактическими результатами
 и частными артефактами. Он фиксирует wheel SHA/build identity, установленный

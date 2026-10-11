@@ -25,7 +25,8 @@ independent full readback/mapping41 и cleanup/baseline подтверждены
 (686,00 с): existing/stale, Copy0, cleanup/baseline. L3-I3 прошёл (874,27 с): actual
 no-replace collision/rollback/replay, foreign preserved и cleanup/baseline. L3-I4 warning
 прошёл (757,28 с): unknown/hold/replay и independent own reconciliation;
-L3-I4 false выполняется. Конечные
+L3-I4 false прошёл (756,52 с): unknown/hold/replay, independent clone41 и
+reconciliation/baseline; throw выполняется. Конечные
 отказы и публичная MCP-цепочка не приняты. Исторический dev87 сохраняет свой
 accepted scope71/21. [Артефакт и контрольная точка dev88](CHECKPOINT_DEV88.md).
 [Прогресс и обязательные оставшиеся gates](NATIVE_FIRST_SAVE_PROGRESS.md).

@@ -76,8 +76,21 @@ accept-current-state reconciliation снял hold; исторический stat
 SHA256 отчёта: `5e1a0fbf9add4d93c0774e3982cf098906478eeade64621c4c4100a18e304d34`.
 Wheel SHA и current trusted helper hashes проверены отдельно. Настоящий normal
 Copy receipt True/0/0 записан до warning моста: это **не actual native COM warning**.
-Installed `false_after_copy` запущен в `work/native-first-save-dev88-fault-false-1/`;
-throw/incomplete modes и публичный L3-P1 остаются; весь L3 открыт.
+**Installed false_after_copy прошёл**, 756,52 с,
+`work/native-first-save-dev88-fault-false-1/report.json`: три finite cases passed,
+original normal Copy True/0/0, unknown/hold/replay, independent full clone41,
+source/dirty сосед, stage retention, own cleanup/empty baseline и exact hold
+reconciliation. Historical status остаётся unknown. SHA256:
+`bf89c0e9340b3b62ba423668d65b2e2b03c55e1a65ef8eee74236a924d0fa590`.
+Wheel/current helper hashes проверены отдельно. Это controlled bridge false,
+не actual native COM false. `throw_after_copy` запущен в
+`work/native-first-save-dev88-fault-throw-1/`; incomplete/public остаются; L3 открыт.
+
+При подготовке публичной цепочки подтверждён S1-B5-ACT: open сохраняет исходный
+active dirty сосед, а dimension edit требует активного target. Публичный explicit
+active-part шаг для минимального сценария ещё не реализован. Ручную активацию
+нельзя засчитать как всю MCP-цепочку; L2 scope не меняется. Точная ограниченная
+задача и приёмка записаны в STAGE_1_BLOCK_ACCEPTANCE.md.
 
 ## Остаток
 

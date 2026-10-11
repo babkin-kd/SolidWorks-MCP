@@ -17,6 +17,14 @@ Whole failed internal1/2 и прежний unknown dev86 сохранены от
 
 ## Шесть оставшихся блоков для пользователя
 
+Внутри S1-B5 отдельно виден **S1-B5-ACT** — отсутствующий public active-part
+шаг для уже заданной open→edit цепочки. L2 open восстанавливает исходный active
+сосед, dimension edit требует active target. Нужна limited явная активация part
+с full revision/request/one-shot/postconditions/native gate; ручная test-owner
+активация не закрывает этот остаток. Принятый L2 не расширяется, arbitrary
+activation/type/config scope остаётся D2-DOCUMENTS. Точные критерии:
+[приёмка S1-B5](STAGE_1_BLOCK_ACCEPTANCE.md).
+
 Это краткая граница работ; подробные отказы, восстановление и доказательства
 перечислены ниже и в [приёмке блоков](STAGE_1_BLOCK_ACCEPTANCE.md).
 Числа — конечные условия, а не дополнительные отдельные CAD-прогоны.

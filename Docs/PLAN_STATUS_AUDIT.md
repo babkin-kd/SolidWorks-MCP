@@ -64,7 +64,11 @@ Copy0 и own cleanup/baseline. L3-I3 прошёл за874,27 с: actual collisio
 known rollback, foreign bytes/identity, replay и cleanup/baseline. L3-I4 warning
 прошёл за757,28 с: unknown/hold/replay, independent clone41/readback,
 exact own reconciliation и baseline; historical unknown не success. L3-I4 false
-выполняется. Первый JSON-сбой L3-I2
+прошёл за756,52 с: unknown/hold/replay, clone41, stage retention и exact
+reconciliation/empty baseline. Throw выполняется, incomplete/public открыты.
+Дополнительно выявлен S1-B5-ACT: open восстанавливает active сосед, dimension edit
+требует active target; ручная активация не засчитывается как MCP automation.
+L2 scope не расширяется. Первый JSON-сбой L3-I2
 после создания пустой part сохранён, own cleanup/empty baseline подтверждены
 отдельно; 15 pure-регрессий (0,60 с) проверили scalar projection и creation DTO.
 L3 и конечные native/public gates открыты.
