@@ -108,3 +108,14 @@ default и float contracts для first-save/close/open/Save3 и dimension read/
 opaque object_id; имя/порядок не служат fallback. Связанные selector/runtime/facade
 source-тесты: 30 passed (3,31 с). Это подготовленный контракт; публичный native
 driver и прогон ещё не завершены, L3-P1 не принят.
+
+`scripts/verifier_first_save_internal_acceptance.py` задаёт detached preflight
+перед публичным dispatch: I1/I2/I3 и четыре I4 modes должны иметь terminal
+installed reports одного exact wheel/source identity с полным trusted current
+helper hash inventory, конечными passed labels, own cleanup/empty baseline и
+отсутствием pending/hold. Source-проба или частичный набор не допускаются.
+Positive/race receipts проверяются своими predicates; fault cases сохраняют
+исторический unknown и требуют exact reconciliation после independent clone41
+readback. Preflight не заменяет CAD/file oracle и сам не снимает holds.
+38 связанных pure-тестов passed (7,02 с); это schema/report evidence,
+публичная native-приёмка остаётся открытой.
