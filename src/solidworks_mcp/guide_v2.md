@@ -652,3 +652,27 @@ leaves учитываются в census, но исключаются из мин
 Бюджеты:1000 leaves на цель,5000 normal bodies суммарно,10000 leaf pairs.
 Unsupported unresolved/SpeedPak/mesh/assembly-cut states и native named frames
 ещё не поддержаны. Scoped read snapshots не заменяют полную BREP mutation revision.
+
+
+## Сохранение текущего native-файла документа
+
+`document_prepare_save_native` принимает явные document_id/configuration и
+возвращает revision/path/file SHA256 для сохранения в существующий native-файл.
+Part/assembly/drawing, активная configuration, без implicit activation.
+Полный census открытых моделей, metadata/update stamps/configs/views/read-only
+и fingerprints всех открытых native-файлов закрывается на обеих границах.
+Первое сохранение, save-as/rename/copy, open/close остаются отдельными остатками
+стадии1. Библиотечные имена файлов не меняются; ReadOnly не сбрасывается.
+
+`document_save_native` использует exact target/config/revision/request_id,
+durable application checkpoint и verified guard. Один IModelDoc2.Save3 Silent,
+без SaveReferenced; success=true/errors=warnings=0, needs_save=false,
+неизменные path/config/view/activation и fingerprints остальных файлов.
+Native/file observation revision не является full BREP/add-in revision или
+filesystem CAS против сторонних процессов. Максимум5000 документов,
+512 MiB/file,2 GiB уникальных native-файлов; без partial checkpoint.
+COM throw и изменённый failed-save исход остаются unknown с application hold;
+не выполнять повторную запись/замену дисковых байтов/delete/reset save flag.
+Повтор request_id возвращает прежнее задание; timeout ограничивает ожидание,
+не отменяет COM. Проверять job_get. Файл/SHA подтверждают native acknowledgement
+и persistence; generic geometry roundtrip отдельный gate.

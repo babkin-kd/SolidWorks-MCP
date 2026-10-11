@@ -1,5 +1,9 @@
 # API v2: текущий кандидат первой стадии
 
+Исходный кандидат dev80: current native file Save3 для явного документа,
+каталог67/19. [Контракт](NATIVE_DOCUMENT_SAVE.md); installed/native ожидаются.
+Принятый dev79 ниже относится к своему точному wheel.
+
 Dev79: расстояния от полного solid-агрегата part/subassembly до точки
 и бесконечной оси приняты:4409 pure/323 CAD deselected (57,25 с), installed
 metadata65/18, internal native24/public MCP8 accepted=true на одном wheel.
