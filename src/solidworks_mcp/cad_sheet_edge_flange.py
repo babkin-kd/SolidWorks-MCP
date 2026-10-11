@@ -127,7 +127,7 @@ class CadSheetEdgeFlangeMixin:
         binder=SketchEntityBinder(wrap=lambda raw,name:binding.wrap(raw,getattr(self._module,name)),
             reference=lambda obj:self.persistent_id(model,obj),resolve=resolve,identity=self.identity,coalesce=True)
         def source_definition(raw):
-            selected=self._sheet_flange_edge_current(model,receipt,definition,frame)
+            selected=self._sheet_flange_profile_edge_current(model,receipt,definition,frame)
             edge=binding.wrap(raw,self._module.IEdge)
             if edge is None:return None
             pid=self.persistent_id(model,edge)
@@ -173,7 +173,7 @@ class CadSheetEdgeFlangeMixin:
                 or _coordinates(binding.wrap(sketch.ModelToSketchTransform,self._module.IMathTransform).ArrayData,16)!=snapshot['model_to_sketch']):
             raise rejected('sheet_flange_profile_changed','The anonymous native plane or transform changed within the read boundary.')
         self._sheet_flange_feature_current(model,feature,receipt.sketch_identity,receipt.sketch_pid,'ProfileFeature')
-        if phase=='before_factory':self._sheet_flange_edge_current(model,receipt,definition,frame)
+        if phase=='before_factory':self._sheet_flange_profile_edge_current(model,receipt,definition,frame)
         self._sheet_state_target_current(model,receipt.source_target)
         return snapshot,members
 
@@ -323,6 +323,59 @@ class CadSheetEdgeFlangeMixin:
             points.append(vertex.GetPoint())
         if not l_flange_edge_points(points,definition.source,frame):
             raise rejected('sheet_flange_edge_unsupported','Only the full longitudinal free edge on the inner face is supported.')
+        return edge
+
+    def _sheet_flange_profile_edge_current(self,model,receipt,definition,frame):
+        """Resolve the source edge inside the exact own pre-factory sketch phase.
+
+        Native sketch insertion may refresh topology interfaces. This is not a
+        client-reference upgrade or a cross-request alias: the original PID,
+        both complete edge descriptors, current topology and the entire source
+        body/feature/parameter baseline must still agree in this capture.
+        """
+        if (receipt.sketch is None or receipt.native_sketch is None or receipt.flange is not None
+                or receipt.pending_creation or receipt.pending_deletion or receipt.selection_uncertain or receipt.restored):
+            raise rejected('sheet_flange_source_phase','Only the exact completed own input sketch permits this source capture.')
+        self._sheet_state_target_current(model,receipt.source_target)
+        self._sheet_flange_feature_current(model,receipt.sketch,receipt.sketch_identity,receipt.sketch_pid,'ProfileFeature')
+        native=binding.wrap(receipt.sketch.GetSpecificFeature2(),self._module.ISketch)
+        status=native.GetConstrainedStatus() if native is not None else None
+        manager=binding.wrap(model.SketchManager,self._module.ISketchManager)
+        if (native is None or self.identity(native)!=self.identity(receipt.native_sketch)
+                or type(status) is not int or status!=3 or manager.ActiveSketch is not None):
+            raise rejected('sheet_flange_source_phase','Only the same fully defined closed own input sketch permits source binding.')
+        if (self.part_creation_controls(model)!=receipt.controls
+                or self._sheet_flange_source_parameters(model,receipt.source_target)!=receipt.original_parameters
+                or not sheet_l_body_matches(self.dimension_geometry_snapshot(model),definition.source.expected_geometry(frame))):
+            raise rejected('sheet_flange_source_changed','The complete original L material, parameters and controls must remain unchanged.')
+        allowed=[*receipt.baseline_features,receipt.sketch]
+        current=self._sheet_flange_coalesce_features(model,self.features(model),allowed,receipt.source_target)
+        if not _same_identities([self.identity(f) for f in current],[self.identity(f) for f in allowed]):
+            raise rejected('sheet_flange_source_changed','Only the exact own input sketch may extend the entire baseline census.')
+        for member in receipt.source_target.members:self._sheet_member_reference(model,member)
+        retained_pid=self.persistent_id(model,receipt.edge)
+        if not retained_pid or not self.same_persistent_id(model,retained_pid,receipt.edge_pid):
+            raise rejected('sheet_flange_edge_changed','The retained source edge must still report the prepared native PID.')
+        edge=self.resolve_persistent_id(model,receipt.edge_pid,'edge');pid=self.persistent_id(model,edge)
+        if (not pid or not self.same_persistent_id(model,pid,retained_pid)
+                or not l_flange_edge_points(self.pattern_edge_points(receipt.edge),definition.source,frame)
+                or not l_flange_edge_points(self.pattern_edge_points(edge),definition.source,frame)):
+            raise rejected('sheet_flange_edge_changed','Both complete finite source-edge descriptors and native PIDs must agree.')
+        body=self.resolve_persistent_id(model,receipt.source_target.body_pid,'body');bodies=self.bodies(model,'all')
+        edges=[binding.wrap(raw,self._module.IEdge) for raw in body.GetEdges() or ()]
+        token=self.identity(edge)
+        if (len(bodies)!=1 or self.identity(body)!=self.identity(bodies[0]) or body.IsSheetMetal() is not True
+                or sum(self.identity(e)==token for e in edges)!=1):
+            raise rejected('sheet_flange_edge_membership','The resolved source edge must occur exactly once in the sole retained current sheet body.')
+        for view in (receipt.edge,edge):
+            owner=binding.wrap(view.GetBody(),self._module.IBody2)
+            owner_pid=self.persistent_id(model,owner) if owner is not None else b''
+            if (not owner_pid or not self.same_persistent_id(model,owner_pid,receipt.source_target.body_pid)
+                    or self.identity(self.resolve_persistent_id(model,owner_pid,'body'))!=self.identity(body)):
+                raise rejected('sheet_flange_edge_membership','Both source-edge views must bind the exact current owner body by native PID.')
+        if self.identity(self.resolve_persistent_id(model,pid,'edge'))!=token:
+            raise rejected('sheet_flange_edge_changed','The refreshed source-edge reference changed before capture closed.')
+        self._sheet_state_target_current(model,receipt.source_target)
         return edge
 
     def sheet_flange_parameters(self,feature):

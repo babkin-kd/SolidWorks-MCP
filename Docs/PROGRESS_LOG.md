@@ -1,5 +1,21 @@
 # Ход разработки
 
+## 11.10.2026 — source-edge views после native insertion
+
+Source20 reader stopped before factory: retained edge PID resolver возвращает
+другой native interface после own sketch insertion. Строгий прежний canonical
+edge check отклонил продолжение. Experimental restoration отсутствует, поэтому
+job unknown сохранён. All calls terminal, own control closed, baseline пуст/free;
+это не native acceptance. Digest source20
+`751648617d0b94551926b77b6b1273298cf50cec6b5652aec80b168a50bf35a0`.
+
+Отдельный capture ограничен exact fully-defined closed own pre-factory sketch:
+full original L/body/baseline/parameters/controls, native PID equality, оба finite
+edge descriptors и unique current topology/owner. Нет client-reference upgrade,
+межоперационного cache или координатного fallback. До own insertion прежняя
+строгая проверка сохранена. **376 связанных pure passed**,18 новых cases source
+views. Native новое связывание пока не принято; installed dev63 остаётся44/15.
+
 ## 11.10.2026 — полный профиль отбортовки подключён к bridge
 
 Dedicated reader ограничен own rectangular projection profile; общий named-plane

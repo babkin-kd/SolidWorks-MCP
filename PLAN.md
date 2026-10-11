@@ -9,6 +9,14 @@
 ### Актуальные приоритеты — решение пользователя от 10.10.2026
 
 **В работе — штатная отбортовка явного ребра листовой детали (2.2).**
+Source20 отклонила refresh COM interface исходного ребра после own sketch insertion
+до factory; unknown сохранён, calls terminal, свой контроль закрыт. Добавлен
+ограниченный capture source-edge для exact closed fully-defined own input phase:
+full original L/body/baseline/parameters/controls, native PID equality, обе полные
+edge geometry и unique current topology. Нет upgrade клиентской ссылки или alias
+cache; до первого CAD-write строгий check сохранён. **376 связанных pure passed**;
+native этой доработки ещё не завершён, MCP/wheel не готовы.
+
 Добавлен полный dedicated профильный reader и native readback, подключённый к
 create/naming/completed restore: exact own entities, projection definitions
 до/после factory, вся сеть/transform и native height driver. **358 связанных pure

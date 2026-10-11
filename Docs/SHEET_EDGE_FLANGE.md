@@ -2,6 +2,19 @@
 
 ## Текущий следующий шаг
 
+Source20 с новым reader отклонена до factory: после создания own input sketch
+resolver исходного edge PID вернул другой COM interface, строгий pre-write edge
+check не прошёл. Job unknown сохранён; all_calls_terminal/fixtures_closed true,
+baseline пуст/free. Этот результат не засчитывается приёмке.
+
+Добавлен отдельный source capture только для exact fully-defined closed own
+pre-factory sketch. Исходный клиентский edge reference не обновляется. Проверяются
+retained/current PID equality, оба полных line descriptors, unique current body
+topology/owner, весь original L BREP, полный original feature census с единственным
+новым own sketch, параметры и controls. До первого CAD-write старый строгий check
+сохраняется. **376 связанных pure passed**,18 новых случаев source views. Native
+нового кода ещё требует проверки; MCP/wheel не опубликованы.
+
 В исходники добавлены dedicated `EdgeFlangeSketchReader` и полный native profile
 readback. Они проверяют четыре user points, четыре линии и единственный own
 internal projection, пять relations, жёсткий model-to-sketch transform, strong

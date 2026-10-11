@@ -37,6 +37,7 @@ def native_profile(profile,monkeypatch):
     a._extension=lambda model:NS(GetObjectByPersistReference3=lambda pid:(refs[pid],0))
     a._sheet_state_target_current=lambda *args:None
     a._sheet_flange_edge_current=lambda *args:edge
+    a._sheet_flange_profile_edge_current=lambda *args:edge
     a.pattern_edge_points=lambda e:((.002,.02,0.),(.002,.02,.03))
     receipt=NativeEdgeFlangeReceipt(NS(body_pid=b'body'),{},edge,id(edge),b'edge',(),{},
         sketch=feature,sketch_identity=id(feature),sketch_pid=b'feature',native_sketch=sketch,
