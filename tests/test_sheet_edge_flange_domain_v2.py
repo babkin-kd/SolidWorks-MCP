@@ -166,3 +166,42 @@ def test_foreign_effect_stays_unknown_without_deletion(transaction):
 def test_request_id_deduplicates_the_exact_creation_job(transaction):
     run,_,_,events,_=transaction;first=run(request='same-flange');second=run(request='same-flange')
     assert first['operation_id']==second['operation_id'] and events.count('create')==1
+
+
+@pytest.mark.parametrize('fault',['none','member','driver','options','mass','body'])
+def test_two_closing_captures_bind_profile_members_and_original_source(part_setup,profile,fault):
+    from solidworks_mcp.jobs import ExecutionFailure
+    before,after,d=effect(part_setup,profile)
+    first=NS(state=(NS(model=object()),None,None,deepcopy(after['semantic'])))
+    second=NS(state=(first.state[0],None,None,deepcopy(after['semantic'])))
+    captures=iter((first,second));evidences=[deepcopy(after['evidence']),deepcopy(after['evidence'])]
+    memberships=[(('own point',[1]),),(('own point',[1]),)]
+    if fault=='member':memberships[1]=(('own point',[2]),)
+    elif fault=='driver':second.state[3]['dimensions'][-1]['values_si']['Основная']=.014
+    elif fault=='options':evidences[1]['source']['parameter_options']['base']['ReliefWidth']=.0002
+    elif fault=='mass':evidences[1]['source']['volume_mm3']+=1.
+    elif fault=='body':evidences[1]['source']['body_pid_hex']='ff'
+    reads=iter(zip(evidences,memberships));events=[]
+    adapter=NS(sheet_edge_flange_evidence=lambda *args:next(reads))
+    dimensions=NS(adapter=adapter,documents=NS(adapter=adapter),features=None,
+        _capture=lambda *args:next(captures),_same_capture=lambda a,b:a.state[3]==b.state[3],
+        _close_capture_pair=lambda *args:events.append('closed'))
+    catalog=SheetEdgeFlangeCatalog(dimensions);receipt=NS(restored=False,sketch=object())
+    if fault=='none':
+        result=catalog._inspect_flange('doc','Основная',(None,None,before),d,receipt,'base')
+        assert result['phase']=='completed' and result['semantic']==after['semantic']
+    else:
+        with pytest.raises(ExecutionFailure,match='closing flange captures'):
+            catalog._inspect_flange('doc','Основная',(None,None,before),d,receipt,'base')
+    assert events==['closed']
+
+
+@pytest.mark.parametrize('flag',['pending_creation','pending_deletion','selection_uncertain'])
+def test_missing_returned_sketch_never_erases_an_uncertain_native_receipt(part_setup,flag):
+    from solidworks_mcp.jobs import ExecutionFailure
+    _,parts,_,_=part_setup;catalog=SheetEdgeFlangeCatalog(parts.dimensions)
+    receipt=NS(restored=False,sketch=None,**{flag:True})
+    catalog._capture=lambda *args:pytest.fail('An uncertain receipt must not be treated as an original-state capture.')
+    with pytest.raises(ExecutionFailure) as failure:
+        catalog._inspect_flange('doc','Основная',None,None,receipt,'base')
+    assert failure.value.code=='sheet_flange_outcome_unconfirmed'

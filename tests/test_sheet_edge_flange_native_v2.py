@@ -266,6 +266,32 @@ def test_input_restoration_selects_only_retained_sketch_and_uses_no_dependant_de
     assert events==['proof','clear',('delete',0),'rebuild'] and receipt.restored is True
 
 
+def test_original_relation_views_do_not_pollute_namespaced_strong_members(input_restore,flange):
+    from solidworks_mcp.sketches import persistent_sketch_members
+    a,model,r,_=input_restore;target=r.source_target
+    target.base=NS(GetID=lambda:1);target.body_pid=b'body'
+    original=NS(GetID=lambda:2,GetTypeName2=lambda:'ProfileFeature')
+    flat=NS(GetID=lambda:3,GetTypeName2=lambda:'FlatPattern')
+    target.members=[NS(role=role,feature=f,persistent_id=role.encode(),reference_strategy='owned_persistent_feature_v1')
+        for role,f in (('sketch',original),('flat',flat))]
+    r.sketch.GetTypeName2=lambda:'ProfileFeature'
+    a.sketch_snapshot=lambda *args:({'reference_plane':{'pid_hex':'ff'},'relations':[{'type':4,'entities':['line:1']}]},
+        (('point:1',[7]),('relation:1',object())))
+    body=NS(Name='Тело');a.resolve_persistent_id=lambda m,p,k:body if k=='body' else object()
+    a.sheet_flat_fixed_face=lambda *args:dict(face={},options={})
+    a.rectangle_body_measurements=lambda m:dict(volume_mm3=1.,surface_area_mm2=2.)
+    a._sheet_flange_source_parameters=lambda *args:dict(base={},sheet={})
+    a.sheet_parameter_options_retained=lambda *args:{}
+    a.reference_plane_transform=lambda p:IDENTITY
+    a.persistent_id=lambda *args:b'own-profile'
+    a._sheet_state_target_current=lambda *args:None
+    first,members1=a.sheet_edge_flange_evidence(model,r,flange,IDENTITY)
+    second,members2=a.sheet_edge_flange_evidence(model,r,flange,IDENTITY)
+    assert first==second and first['source']['sketch']['relations']==[{'type':4,'entities':['line:1']}]
+    assert persistent_sketch_members(members1)==persistent_sketch_members(members2)
+    assert ('original:point:1',[7]) in members1
+
+
 @pytest.mark.parametrize('fault',['pending_creation','pending_deletion','selection_uncertain','restored','missing_profile','changed_profile','foreign_selection','extra_selection','foreign_final_shape'])
 def test_partial_unknown_or_foreign_input_never_gains_restoration_authority(input_restore,flange,fault):
     a,model,receipt,events=input_restore

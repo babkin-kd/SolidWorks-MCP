@@ -1,5 +1,36 @@
 # Ход разработки
 
+## 11.10.2026 — dev65 готов к installed/native приёмке
+
+Full pure3872 passed/323 CAD deselected47,30с. Terminal read-only audit dev64
+проверил полный исходный L, original sketch/strong members, exact durable-owned
+roster и free flags; namespace mismatch вызван только5 transient original:relation:
+wrappers. Свои controls закрыты без сохранения, empty/free baseline восстановлен.
+Unknown journal hash сохранён; failed native-report остаётся accepted=false.
+Доказательства — work/native-sheet-flange-dev64-2/cleanup-audit.json.
+
+
+## 11.10.2026 — dev64: metadata принят, native input-restoration unknown
+
+3856 pure/323 CAD deselected (47,63с). Clean source75a14edc51691006de524a8312c20d982971be1f,
+installed digest31a0465f7bef08428e043d896b0c56ec99643118ef7df0a6a9e68f8b4ba9242c,
+wheel SHAbe0b8f70c38f2a0878d9f4dafb5c83f10bb7336a633f990628cdd6df4f776fa3.
+Installed console metadata46/16 accepted=true; CAD-операций этот smoke не вызывает.
+Native-1 остановлен на ошибке верификатора выбора ребра до flange write, свои
+документы закрыты. Predicate исправлен: geometric rejection — исключение,
+а неFalse. Native-2 подтверждает invalid/stale; own input-restoration unknown:
+полный input доказан до factory, но closing flange captures disagree.
+Отчёты/journal сохранены, package dev64 не принят; публичная цепочка не запущена.
+
+Обнаружена причина в evidence bridge: prefix original: добавлялся до фильтрации
+временных relation wrappers. Полные relation semantics остаются в JSON; только
+addresses отфильтровываются до namespace. Pending receipt больше нельзя считать
+original при отсутствующем sketch handle. Связанные проверки121 passed; готовится
+единый dev65. Выбор ребра в верификаторе использует уже доказанную construction
+fixture; все свежие полные domain prepare/validate/postconditions сохраняются.
+Один агент, без push/CI; импорт/экспорт отложены, все стадии открыты.
+
+
 ## 11.10.2026 — цельный домен и MCP-фасад отбортовки перед dev64
 
 Подключены подготовка/создание, явный fixed-leg scope, полный semantic/native

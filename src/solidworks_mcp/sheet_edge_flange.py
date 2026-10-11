@@ -83,6 +83,8 @@ class SheetEdgeFlangeCatalog(SheetParameterCatalog):
         return self._prepare_edge_flange(document_id,configuration,**arguments)[0]
 
     def _inspect_flange(self,document_id,configuration,captured,definition,receipt,base_object_id):
+        if receipt is not None and any(getattr(receipt,key,False) for key in ('pending_creation','pending_deletion','selection_uncertain')):
+            raise rejected('sheet_flange_outcome_unconfirmed','Pending creation, deletion or selection cannot be adopted as an unchanged original state.')
         if receipt is None or receipt.restored or receipt.sketch is None:
             return dict(phase='original',state=self._capture(document_id,configuration,
                 base_object_id,captured[1])[2])

@@ -4,7 +4,7 @@
 
 Подготовлены доменный writer, runtime и MCP-фасад:
 `sheet_prepare_edge_flange` / `sheet_create_edge_flange`, scope
-`single_l_sheet_edge_flange_v1`. Dev64 готовится к приёмке, принятой сборкой
+`single_l_sheet_edge_flange_v1`. Dev64 не принят; готовится dev65, принятой сборкой
 остаётся dev63. Первый scope: согнутый собственный L-профиль, горизонтальная
 фиксированная полка, одно тело/конфигурация, полное внутреннее продольное ребро;
 одна отбортовка90° внутрь. Длина до наружного виртуального пересечения, r2 и
@@ -14,7 +14,13 @@ K2 обязательны. Исходные размеры, первый сги�
 независимые native-параметры и полный профиль/driver. Durable checkpoint — до
 STA guard. Восстановление допускает только полный собственный input либо
 completed U; неполное/чужое состояние остаётся unknown. Request_id не повторяет
-создание, timeout не отменяет COM. Native-прогоны кандидата ещё не выполнены.
+создание, timeout не отменяет COM. Dev64:3856 pure/323 CAD deselected, installed metadata46/16 прошли.
+Native invalid/stale подтверждены; input-restoration остановлена на сравнении
+transient original relation wrappers после namespace. Unknown сохранён.
+Исправление фильтрует только relation addresses до добавления prefix;
+полные relation semantics и сильные entity references остаются обязательными.
+Pending creation/deletion/selection receipt всегда удерживает неизвестный исход.
+Native-приёмка dev65 ещё нужна.
 Развёртка U/углы/разгрузки и произвольные листовые детали остаются расширениями.
 
 ## История исследования перед кандидатом
@@ -256,3 +262,10 @@ Dev63/wheel/catalog44/15 остаются прежними.
   также требует расширения нынешнего L-only контракта и отдельной native-проверки.
 
 Весь пункт2.2 и стадии PLAN.md остаются открытыми. Импорт/экспорт отложены.
+
+
+Dev64 terminal-аудит подтвердил совпадение исходного эскиза и strong members,
+различаются только5 original:relation: wrappers. Full L сохранён; свои документы
+закрыты, empty/free baseline восстановлен, unknown-журнал не изменён.
+**Dev65:3872 pure passed /323 CAD deselected (47,30с)** перед сборкой.
+Installed-wheel/native приёмка dev65 ещё не выполнена.

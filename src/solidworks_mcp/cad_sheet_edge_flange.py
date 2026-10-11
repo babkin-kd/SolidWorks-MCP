@@ -485,7 +485,11 @@ class CadSheetEdgeFlangeMixin:
         created=dict(complete=True,phase=phase,profile=profile,parameters=parameters,
             owned=[dict(role=role,pid_hex=self.persistent_id(model,f).hex(),**self.feature_summary(f)) for role,f in owned])
         self._sheet_state_target_current(model,target)
-        return dict(source=evidence,created=created),tuple(('original:'+key,token) for key,token in original_members)+members
+        from .sketches import persistent_sketch_members
+        # ISketchRelation has transient wrappers. Filter before namespacing;
+        # its full semantics and strongly bound entities remain in the snapshot.
+        stable_original=persistent_sketch_members(original_members)
+        return dict(source=evidence,created=created),tuple(('original:'+key,token) for key,token in stable_original)+members
 
     def restore_sheet_edge_flange(self,model,receipt,definition,frame,body_name,cut_list_name):
         """Only a proved completed U or completed unconsumed input may be deleted."""

@@ -6,6 +6,7 @@ from solidworks_mcp.sheet_profile_definition import SheetLProfile
 from solidworks_mcp.sheet_edge_flange_definition import l_flange_edge_points
 from verify_dimension_mcp import call,succeeded
 from verifier_lifecycle import ToolSpec
+from verifier_sheet_edge_flange_edges import flange_edge_candidate
 
 
 DEFAULTS={'sketch_name':'Эскиз отбортовки','feature_name':'Отбортовка'}
@@ -30,8 +31,7 @@ async def exercise_sheet_edge_flange(client,context,model,module,record,report):
     read_context=dict(context,expected_observation_revision=observed)
     bodies=succeeded(await call(client,'body_list',**read_context))['items'];assert len(bodies)==1
     edges=succeeded(await call(client,'edge_list',**read_context,body_id=bodies[0]['object_id']))['items']
-    selected=[r['object_id'] for r in edges if r.get('start_mm') is not None and r.get('end_mm') is not None
-        and l_flange_edge_points(tuple(tuple(v/1000. for v in r[k]) for k in ('start_mm','end_mm')),definition,prepared['plane_transform'])]
+    selected=[r['object_id'] for r in edges if flange_edge_candidate(r,definition,prepared['plane_transform'])]
     assert len(selected)==1
     args=dict(context,base_object_id=base['object_id'],edge_id=selected[0],flange_length_mm=15.,bend_radius_mm=2.5,k_factor=.38)
     prepared=succeeded(await call(client,'sheet_prepare_edge_flange',**args))
