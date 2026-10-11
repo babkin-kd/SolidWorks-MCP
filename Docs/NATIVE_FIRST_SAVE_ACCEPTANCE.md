@@ -68,6 +68,20 @@ baseline. `scripts/verifier_first_save_race.py` проверяет detached жу
 он не является независимым CAD/file oracle. Связанные 18 pure-тестов прошли
 на искусственном CAD/FS; физическая native-приёмка L3-I3 запущена и пока не завершена.
 
+L3-I4 подготовлен в `scripts/verify_native_first_save_fault.py`. Кроме обычных
+installed/opt-in параметров требуется явный `--fault`: `false_after_copy`,
+`warning_after_copy`, `throw_after_copy` или `incomplete_after_copy`. Один процесс
+проверяет один выбранный случай. До инъекции отдельно фиксируется настоящий
+normal Copy receipt; это сбой моста, не свидетельство native COM false/warning/throw.
+Требуются unknown/unresolved, replay без второго Copy, блокировка другого request,
+неизменные исходные модели, released guards и отсутствующая publication.
+Только после доказательства терминального реального Copy допускается test-owner
+read-only reader для независимого full clone/41-role readback. Его точное закрытие,
+known own CWD restore, retained stage bytes и empty baseline предшествуют internal
+`accept_current_state` reconciliation. Исторический job остаётся unknown;
+снимается только его exact hold. Любое неподтверждённое состояние сохраняет процесс
+и ресурсы. Скрипт проверен на синтаксис/CLI; native L3-I4 ещё не запускался.
+
 Конечный отчёт связывает все шесть условий с метками, фактическими результатами
 и частными артефактами. Он фиксирует wheel SHA/build identity, установленный
 package origin без source PYTHONPATH, версии SolidWorks, hashes верификаторов,
