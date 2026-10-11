@@ -44,6 +44,12 @@ legacy-основании; его исход не переписан. Новый
 освобождены. Native UI guards, durable журнал полного домена, installed фасад и
 same-wheel native остаются; source experiment не installed gate и не закрывает L3.
 [Фактическое продвижение и оставшиеся gates](NATIVE_FIRST_SAVE_PROGRESS.md).
+Full source domain probe1 — unknown после нормального source close,988,76 с.
+Точное первоначальное расхождение не сохранено; независимый разбор подтвердил
+полный clone/file и сосед, затем own cleanup и empty baseline приняты отдельно.
+Журнал unknown сохранён. Canonical snapshot/strict bool-int clone comparison,
+exact-final activation и durable mismatch evidence исправлены; related278 pure
+passed/20,23 с. Новый source probe2 выполняется, L3 и installed/native gate открыты.
 Remote CI последнего пакета failure; локальное исправление входит в pure,
 нового push нет. Исторические свидетельства ниже не являются приёмкой dev87
 или итоговой стадии1; прежние «20 из22» не используются как текущий gate.

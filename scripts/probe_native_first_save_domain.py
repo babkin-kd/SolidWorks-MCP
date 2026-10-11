@@ -39,6 +39,8 @@ def main():
     state = args.state_dir.absolute()
     assert state.is_relative_to(Path.cwd() / 'work') and not state.exists()
     state.mkdir()
+    capture_directory = state / 'oracle-captures'
+    capture_directory.mkdir()
     start = time.perf_counter()
     report = dict(scope='source_first_save_domain_positive_only', probe_passed=False,
                   native_first_save_accepted=False, exact_installed_acceptance=False,
@@ -65,7 +67,10 @@ def main():
             persist()
             try:
                 value = super().first_save_part_snapshot(model)
+                artifact = capture_directory / f"capture-{row['number']:04d}.json"
+                artifact.write_text(json.dumps(value, ensure_ascii=False, allow_nan=False), encoding='utf-8')
                 row.update(status='returned', elapsed_s=time.perf_counter() - start - row['started_s'],
+                           snapshot_file=str(artifact.relative_to(state)),
                            sha256=hashlib.sha256(json.dumps(value, sort_keys=True,
                                                            ensure_ascii=False).encode()).hexdigest())
                 return value
@@ -86,6 +91,7 @@ def main():
         assert sw.CommandInProgress is False and sw.UserControl is True
         baseline = snapshot(sw, module)
         preferences = application_preferences(sw)
+        report['original_preferences'] = preferences
         original_directory = sw.GetCurrentWorkingDirectory()
         dimension_preference = sw.GetUserPreferenceToggle(SW_TOGGLE_INPUT_DIM_VAL_ON_CREATE)
         assert type(dimension_preference) is bool
@@ -207,7 +213,7 @@ def main():
         sw.CommandInProgress = False
         assert sw.CommandInProgress is False
         assert snapshot(sw, module) == baseline
-        assert_non_stl_preferences(application_preferences(sw), preferences)
+        assert_non_stl_preferences(lambda: application_preferences(sw), preferences, report, 'restored_preferences')
         report.update(phase='terminal', probe_passed=True, baseline_restored=True,
                       own_cleanup_verified=True, native_calls_live=False)
         persist()

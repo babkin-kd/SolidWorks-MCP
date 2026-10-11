@@ -18,6 +18,8 @@ external verifier regressions passed (1,15 с). Собственные фикс�
 полный baseline/CWD/dirty сосед сохранён; historical failures/unknown не переписаны.
 [Точная приёмка](Docs/NATIVE_DOCUMENT_OPEN_ACCEPTANCE.md).
 **L2 закрыт в прежнем конечном scope; L3 и S1-B1…S1-B5 остаются открытыми.**
+Остаток стадии 1 — шесть блоков, перечисленных в матрице. Расширение открытия
+не входит в этот остаток; дополнительные режимы ведутся отдельно как D2-LOADREF.
 Native отдельных блоков не заменяет итоговую same-wheel цепочку.
 
 [Конечная матрица и перенос требований](Docs/STAGE_1_REQUIREMENTS_MATRIX.md),
@@ -129,7 +131,7 @@ standalone тесты отдельных методов её не заменяю
 | ID | Поддержанный результат и конечная приёмка | Фактический статус / блокер |
 | --- | --- | --- |
 | L2 | Part/assembly/drawing resolved open: exact source/config/read_only, new и borrowed references, dirty baseline, replay/stale, clean rollback, CWD restoration. Только конечный список [L2](Docs/NATIVE_DOCUMENT_OPEN.md) | Принят dev87 internal13/public11 на exact wheel, cleanup/baseline подтверждены. Новые load/reference modes — отдельный D2-LOADREF |
-| L3 | Первое сохранение собственной unsaved part: одна конфигурация, одно solid, без внешних refs; новый путь без overwrite/race, доказанная привязка live identity/path и native disk/readback | Реализация в работе: [промежуточная контрольная точка](Docs/NATIVE_FIRST_SAVE_PROGRESS.md); filesystem/full CAD oracle, интеграция, installed/native приёмка остаются. Публичной регистрации нет; Save3 dev82 не подтверждает first save |
+| L3 | Первое сохранение собственной unsaved part: одна конфигурация, одно solid, без внешних refs; новый путь без overwrite/race, доказанная привязка live identity/path и native disk/readback | Реализация в работе: [промежуточная контрольная точка](Docs/NATIVE_FIRST_SAVE_PROGRESS.md). Составной source CAD/NTFS-прототип прошёл: публикация нового файла, открытие для записи, retirement исходника и cleanup. Runtime и MCP-фасад подключены в исходниках (related366 pure). Полный native-протокол с UI guards/журналом и приёмка установленного wheel/MCP остаются. Save3 dev82 не подтверждает first save |
 | S1-B1 | Русская новая деталь → явно выбранная существующая плоскость → собственный прямоугольный 2D-эскиз → одно blind выдавливание. Аналитические размеры/BREP/объём, stale/replay и owned restoration | Исторические dev41/dev49 подтверждают ограниченные цепочки; остатки самостоятельного явного контракта и приёмка итогового wheel открыты |
 | S1-B2 | Driving length поддержанного основания; readback/rename; suppress/unsuppress и preview/delete собственного leaf без зависимостей. Полный inventory поддержанного графа; чужой/старый/зависимый объект отвергается | Исторические размеры/rename частично приняты; конечные suppression/delete и общий gate открыты. Arbitrary graph/signed/angle/tolerance не добавлять сюда |
 | S1-B3 | Явная адресация тела/грани/ребра/эскиза/размера простой детали; supported resolved instance paths. Публичные mass/bounds/distance в заявленных единицах и уже поддержанных frames; foreign/stale/deleted refs | Scoped dev3/dev71–dev79 — история; не исследовать новые frames/состояния. Обновить coverage текущего wheel для конечного поддержанного набора |

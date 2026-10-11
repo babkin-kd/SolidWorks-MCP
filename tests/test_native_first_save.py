@@ -309,6 +309,50 @@ def test_complete_fake_roundtrip_replaces_only_source_and_replays_once(setup):
     assert not x.c.receipts and not x.a.busy and all(not lease.active for lease in x.f.leases)
 
 
+def test_native_tuple_arrays_and_durable_json_have_one_snapshot_representation(setup):
+    import json
+    x = setup
+    snapshot = x.a.first_save_part_snapshot(x.source)
+    snapshot['clone_state']['native_array'] = (1., 2., (3., 4.))
+    durable = json.loads(json.dumps(snapshot))
+    assert validated_part_snapshot(snapshot) == durable
+    assert clone_mapping(snapshot, durable)
+
+
+def test_clone_comparison_does_not_alias_boolean_and_integer_controls(setup):
+    x = setup
+    snapshot = x.a.first_save_part_snapshot(x.source)
+    snapshot['clone_state']['boolean_control'] = False
+    changed = deepcopy(snapshot)
+    changed['clone_state']['boolean_control'] = 0
+    with pytest.raises(ExecutionFailure) as error:
+        clone_mapping(snapshot, changed)
+    assert error.value.code == 'first_save_copy_not_equivalent'
+
+
+def test_post_retirement_mismatch_keeps_complete_read_only_evidence_before_guard_exit(setup):
+    x = setup
+    close = x.a.close_native_first_save_document
+    def changed_survivor(receipt):
+        close(receipt)
+        if receipt.model is x.source:
+            x.a.oracle_states[x.neighbor.identity] = {'full_fake_changed_geometry': True}
+    x.a.close_native_first_save_document = changed_survivor
+    result = x.run()
+    assert result['status'] == 'unknown' and x.source.retired
+    steps = result['mutation']['verification']['native_steps']
+    pending, returned = steps[-2:]
+    assert pending['name'] == returned['name'] == 'first_save_effect_check'
+    assert pending['phase'] == 'pending' and pending['evidence']['read_only'] is True
+    assert returned['phase'] == 'returned' and returned['evidence']['matched'] is False
+    proof = returned['evidence']
+    assert proof['baseline_matches'] is False
+    assert len(proof['observed']['snapshots']) == 2
+    assert any(snapshot['clone_state'] == {'full_fake_changed_geometry': True}
+               for snapshot in proof['observed']['snapshots'].values())
+    assert x.run() == result and x.a.native_events.count('close_source') == 1
+
+
 def test_stage_reader_close_releases_survivor_ui_then_activates_exact_source_once(setup):
     x=setup;x.a.stage_close_activates_survivor=True
     result=x.run()
@@ -320,6 +364,27 @@ def test_stage_reader_close_releases_survivor_ui_then_activates_exact_source_onc
     publication=steps.index(('first_save_publish','pending'))
     assert release < activation < publication
     assert x.run()==result and x.a.activations==[x.source]
+
+
+def test_source_close_activation_of_neighbor_restores_exact_returned_final_once(setup):
+    x = setup
+    close = x.a.close_native_first_save_document
+    def neighbor_activated(receipt):
+        close(receipt)
+        if receipt.model is x.source:
+            x.a.active = x.neighbor
+    x.a.close_native_first_save_document = neighbor_activated
+    result = x.run()
+    assert result['status'] == 'succeeded', result
+    final_id = result['result']['value']['document_id']
+    assert x.a.active is x.d.resolve(final_id, 'Основная')[0].model
+    steps = native_steps(result)
+    retirement = steps.index(('first_save_close_source_native', 'returned'))
+    activation = steps.index(('first_save_activate_final_native', 'pending'))
+    assert retirement < activation
+    assert len(x.a.activations) == 1 and x.a.activations[0] is x.a.active
+    assert x.a.dead_getters == 0
+    assert x.run() == result and len(x.a.activations) == 1
 
 
 @pytest.mark.parametrize('fault',['activation_throw','activation_no_effect','activation_release_foreign'])

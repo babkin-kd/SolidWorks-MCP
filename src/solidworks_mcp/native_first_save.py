@@ -8,6 +8,7 @@ SaveAs, a delta-ownership protocol, or a registered/publicly accepted tool.
 from contextlib import ExitStack
 from copy import deepcopy
 import hashlib
+import json
 from pathlib import Path
 
 from . import native_first_save_files as default_files
@@ -76,7 +77,10 @@ def validated_part_snapshot(value):
                     or row['full_name']!=row['name']+'@'+owners[0][1]['name']+'@'+observations['document_dimension_namespace']+'.Part'
                     or ('dimension',row['role']) not in roles):
                 raise rejected('first_save_snapshot_unsupported','Every qualification must agree with the complete bound native dimension and owner role.')
-    return deepcopy(value)
+    # Native SAFEARRAY tuples and durable JSON arrays describe the same data.
+    # Detach once at the oracle boundary; never compare live containers with
+    # a differently serialized checkpoint. Scalars keep their JSON types.
+    return json.loads(_json(value))
 
 
 def clone_mapping(original, saved):
@@ -85,7 +89,7 @@ def clone_mapping(original, saved):
     # persisted semantic state; every other field is compared exactly.
     original, saved = validated_part_snapshot(original), validated_part_snapshot(saved)
     fields = ('configuration', 'configurations', 'solid_body_count', 'selection_count', 'clone_state')
-    if any(original[key] != saved[key] for key in fields):
+    if any(_json(original[key]) != _json(saved[key]) for key in fields):
         raise rejected('first_save_copy_not_equivalent', 'Full declared clone state/configuration/geometry differs.')
     left = {(row['kind'], row['role']): row['token'] for row in original['references']}
     right = {(row['kind'], row['role']): row['token'] for row in saved['references']}
@@ -164,7 +168,7 @@ class NativeFirstSaveCatalog:
 
     def first_save(self, operation_id, document_id, configuration, expected_revision, filename):
         context = dict(guarded_ids=(), stage=None, stage_plan=None, copy=None, stage_open=None, final_open=None,
-            stage_close=None, source_close=None, activation=None, directory=None, journal_failed=False,
+            stage_close=None, source_close=None, activation=None, final_activation=None, directory=None, journal_failed=False,
             published=None, cleanup=None, stage_closed=False, source_closed=False, released_ui=False,
             pending_release=False, final_file=None, final_id=None, stage_id=None)
 
@@ -199,6 +203,7 @@ class NativeFirstSaveCatalog:
                     (context['copy'], 'pending_copy'), (context['stage_open'], 'pending_open'),
                     (context['final_open'], 'pending_open'), (context['stage_close'], 'pending_close'),
                     (context['source_close'], 'pending_close'), (context['activation'], 'pending_activation'),
+                    (context['final_activation'], 'pending_activation'),
                     (context['directory'], 'pending_directory'))),
                 pending_release=context['pending_release'], journal_failed=context['journal_failed'])
 
@@ -230,6 +235,11 @@ class NativeFirstSaveCatalog:
             if (observed['pending'] or observed['pending_release'] or observed['journal_failed']
                     or not baseline_matches(prepared.before, observed, source_present=source_present, extra_ids=extra_ids)
                     or (active is not None and observed['semantic']['active_document_id'] != active)):
+                record('first_save_effect_check', 'pending', dict(read_only=True, source_present=source_present,
+                    extra_document_ids=list(extra_ids), expected_active_document_id=active))
+                record('first_save_effect_check', 'returned', dict(matched=False, before=prepared.before,
+                    observed=observed, baseline_matches=baseline_matches(prepared.before, observed,
+                        source_present=source_present, extra_ids=extra_ids)))
                 raise ExecutionFailure('first_save_effect_unconfirmed', 'Complete source/baseline/files/reference/UI oracle does not match.', uncertain=True)
             if context.get('final_expected') is not None:
                 final_id = context['final_id']
@@ -237,6 +247,10 @@ class NativeFirstSaveCatalog:
                     windows=[row for row in observed['semantic']['windows'] if row['document_id'] == final_id],
                     snapshot=observed['snapshots'].get(final_id))
                 if actual != context['final_expected'] or observed['destination_file'] != context['final_file']:
+                    record('first_save_final_check', 'pending', dict(read_only=True, saved_document_id=final_id))
+                    record('first_save_final_check', 'returned', dict(matched=False,
+                        expected=context['final_expected'], actual=actual, expected_file=context['final_file'],
+                        actual_file=observed['destination_file']))
                     raise ExecutionFailure('first_save_final_changed', 'Full verified final CAD/file/window state changed.', uncertain=True)
             return observed
 
@@ -332,6 +346,29 @@ class NativeFirstSaveCatalog:
                 dict(document_id=document_id), activation=True)
             check(prepared, active=document_id)
 
+        def activate_final(prepared):
+            final_id = context['final_id']
+            observed = check(prepared, source_present=False, extra_ids=(final_id,))
+            if observed['semantic']['active_document_id'] == final_id:
+                return
+            # CloseDoc of the inactive source can activate a surviving neighbor
+            # in SW2023. Prove every model/file/window before a separate one-shot
+            # activation of the exact normally returned final receipt.
+            if context['guarded_ids'] and not context['released_ui']:
+                record('first_save_release_final_survivor_ui', 'pending', dict(document_ids=list(context['guarded_ids'])))
+                context['pending_release'] = True
+                context['native_guard'].release_survivor_ui_for_activation()
+                context['pending_release'], context['released_ui'] = False, True
+                record('first_save_release_final_survivor_ui', 'returned', dict(verified=True))
+                check(prepared, source_present=False, extra_ids=(final_id,))
+            receipt = self.adapter.new_native_activation_receipt(context['final_open'].model)
+            context['final_activation'] = receipt
+            native_step('first_save_activate_final_native', receipt, 'pending_activation',
+                self.adapter.activate_native_open_document,
+                ('native_call_attempted', 'pending_activation', 'native_call_returned', 'native_error'),
+                dict(document_id=final_id), activation=True)
+            check(prepared, source_present=False, extra_ids=(final_id,), active=final_id)
+
         def restore_directory(prepared, *, source_present=True, extra_ids=(), active=None):
             observed = check(prepared, source_present=source_present, extra_ids=extra_ids, active=active)
             original = prepared.before['semantic']['application']['current_directory']
@@ -419,6 +456,7 @@ class NativeFirstSaveCatalog:
                 raise ExecutionFailure('first_save_final_file_changed', 'Final persisted file changed during native open.', uncertain=True)
             context['final_mapping'] = mapping
             close_exact(prepared, context['source'], 'source_close', 'first_save_close_source_native', source=True)
+            activate_final(prepared)
             restore_directory(prepared, source_present=False, extra_ids=(final.document_id,), active=final.document_id)
             observed = check(prepared, source_present=False, extra_ids=(final.document_id,), active=final.document_id)
             if observed['destination_file'] != context['final_file']:
