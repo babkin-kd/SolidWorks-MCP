@@ -62,4 +62,6 @@ Source digest: `9b6b83d336de326864ca6f138c14db8d41deac746a5197baea7881fb4310d321
 Wheel SHA256: `aa8f4cb2c31a844e017fb927710518c35ce36d43a44ebb196e2450fc77aeae3f`.
 Wheel построен офлайн в чистом worktree и установлен только в `.venv` проекта.
 Metadata48/17 accepted, без CAD-вызовов и без PYTHONPATH исходников.
-Native/public acceptance этого кандидата пока не подтверждена.
+Internal native9/public MCP10 accepted=true на одном wheel, собственные
+контрольные документы закрыты, baseline восстановлен.
+[Точное свидетельство](SHEET_FLANGE_FLAT_ACCEPTANCE.md).

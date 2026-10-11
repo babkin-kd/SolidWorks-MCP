@@ -24,6 +24,7 @@ from solidworks_mcp.part_hole import PartHoleCatalog
 from solidworks_mcp.part_hole_edit import PartHoleEditCatalog
 from solidworks_mcp.sketches import SketchCatalog, same_sketch_geometry
 from solidworks_mcp.jobs import JobRunner, JobStore
+from solidworks_mcp.timings_v2 import TimingConfig,TimingRecorder
 from verify_document_reads import native_snapshot
 from verify_export_operations import application_preferences
 from verify_mass_properties import source_state
@@ -124,6 +125,7 @@ class Adapter(SolidWorksDocuments):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-solidworks', action='store_true')
+    parser.add_argument('--timings-only',action='store_true',help='Stage-one timing instrumentation on own basic plate and thickness edit.')
     parser.add_argument('--hole-edit-only', action='store_true', help='Complete editing block; older guard/cut fault cases are not run or counted.')
     parser.add_argument('--pattern-only',action='store_true',help='Complete native linear hole pattern block; hole-edit cases are not counted.')
     parser.add_argument('--fillet-only',action='store_true',help='Complete native selected-edge fillet block; hole/pattern cases are not counted.')
@@ -137,7 +139,7 @@ def main():
     parser.add_argument('--expected-git-sha', required=True)
     parser.add_argument('--state-dir', type=Path, required=True)
     args = parser.parse_args()
-    if sum((args.pattern_only,args.hole_edit_only,args.fillet_only,args.sheet_only,args.sheet_flat_only,args.sheet_parameters_only,args.sheet_flange_only,args.sheet_flange_flat_only))>1:parser.error('Choose one engineering block.')
+    if sum((args.timings_only,args.pattern_only,args.hole_edit_only,args.fillet_only,args.sheet_only,args.sheet_flat_only,args.sheet_parameters_only,args.sheet_flange_only,args.sheet_flange_flat_only))>1:parser.error('Choose one engineering block.')
     if not args.run_solidworks: parser.error('Explicit native opt-in required.')
     assert not os.environ.get('PYTHONPATH'), 'Installed package only, without source PYTHONPATH.'
     package = Path(solidworks_mcp.__file__).resolve().parent
@@ -168,7 +170,10 @@ def main():
         documents, store = DocumentCatalog(adapter), JobStore(state / 'jobs.sqlite')
         catalog = DocumentCreationCatalog(documents, store, 'new-document-native-verifier')
         dimensions = DimensionCatalog(documents, store, 'new-document-native-verifier', mutation_guard=adapter.mutation_guard)
-        parts, runner = PartCreationCatalog(dimensions), JobRunner(store, Worker())
+        timings = TimingRecorder(state/'timings.sqlite',config=TimingConfig(enabled=True),
+            build={key:wheel[key] for key in ('package_version','git_sha','source_digest')},
+            operations=('document.create_part','part.create_base_extrusion','dimension.set_value')) if args.timings_only else None
+        parts, runner = PartCreationCatalog(dimensions), JobRunner(store, Worker(),timings=timings)
         template = catalog.list_templates()['templates'][0]['template_id']
         suffix = uuid.uuid4().hex[:8]
         def record(label, job, expected='succeeded'):
@@ -296,6 +301,30 @@ def main():
             context={key: arguments[key] for key in ('document_id', 'configuration', 'expected_revision')},
             mutates=True, pass_operation_id=True, verify=lambda result: result['verified'] is True)
         record('plate_in_server_created_document_40_20_10', built)
+        if args.timings_only:
+            report['scope']='internal_stage_one_timing_basic_plate_v1'
+            page=dimensions.list(second_id,'Основная')
+            thickness=next(row for row in page['items'] if row['name']=='Толщина')
+            values=dict(document_id=second_id,configuration='Основная',object_id=thickness['object_id'],
+                expected_revision=page['revision'],value=12.,unit='mm')
+            edited=guarded_inline_submit(gate,runner,store,uuid.uuid4().hex,'dimension.set_value',values,
+                lambda op:dimensions.set_value(op,**values),
+                context={key:values[key] for key in ('document_id','configuration','expected_revision')},
+                mutates=True,pass_operation_id=True,verify=lambda value:value['verified'] is True)
+            record('timing_native_thickness_12',edited)
+            bodies=adapter.bodies(second_model,'all');assert len(bodies)==1
+            volume=float(bodies[0].GetMassProperties(1.)[3])*1e9
+            assert math.isclose(volume,9600.,rel_tol=1e-7)
+            snapshot=timings.report(kind='job');assert snapshot['sample_count']==4
+            groups={row['operation']:row for row in snapshot['groups']}
+            assert all(row['outcome']=='succeeded' for row in groups.values())
+            for operation in ('part.create_base_extrusion','dimension.set_value'):
+                assert {'queue','prepare','validate','apply_bundle','postconditions','journal','com','rebuild'}<=groups[operation]['phases'].keys()
+            report['timing_aggregates']=snapshot;report['plate_volume_after_edit_mm3']=volume
+            snap,facts=source_state(sw,module)
+            assert [(row,fact) for row,fact in zip(snap[3],facts) if row[0]==first_identity]==original
+            report['core_suite_passed']=True
+            return
         if args.fillet_only:
             from verifier_part_fillet import exercise_fillet
             report['fillet_helper_sha256']=hashlib.sha256(Path(__file__).with_name('verifier_part_fillet.py').read_bytes()).hexdigest()

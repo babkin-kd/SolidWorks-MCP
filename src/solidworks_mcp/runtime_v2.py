@@ -26,6 +26,9 @@ from .exports_v2 import ExportCatalog
 from .jobs import JobError, JobRunner, _json
 
 
+MUTATING_OPERATIONS = ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters', 'sheet.create_edge_flange', 'sheet.set_flange_flat_state')
+READ_OPERATIONS = ('document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies', 'feature.deletion_structure', 'feature.deletion_context', 'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion', 'document.list_templates', 'document.prepare_create_part', 'sketch.get', 'sketch.prepare_dimension_change', 'part.prepare_corner_cut', 'part.prepare_base_revolve', 'part.prepare_through_hole', 'part.prepare_hole_dimension_change', 'part.prepare_linear_hole_pattern', 'part.prepare_edge_fillet', 'sheet.prepare_l_profile', 'sheet.prepare_flat_state', 'sheet.prepare_parameters', 'sheet.prepare_edge_flange', 'sheet.prepare_flange_flat_state')
+
 def _worker_factory():
     try:
         from .com_worker import ComWorker
@@ -45,8 +48,9 @@ def _catalog_factory():
 
 class Runtime:
     def __init__(self, store, *, worker_factory=_worker_factory, catalog_factory=_catalog_factory,
-                 approved_output_root=None):
+                 approved_output_root=None, timings=None):
         self.store = store
+        self.timings = timings
         self._worker_factory = worker_factory
         self._catalog_factory = catalog_factory
         self._runner = None
@@ -238,11 +242,7 @@ class Runtime:
         # Validate before recording/dispatch. A bad timeout must not start CAD.
         if isinstance(timeout_s, bool) or not isinstance(timeout_s, (int, float)) or not 0 <= timeout_s <= 120:
             raise JobError('invalid_timeout', 'timeout_s must be finite and between 0 and 120.')
-        allowed = ('feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet','sheet.create_l_profile','sheet.set_flat_state','sheet.set_parameters','sheet.create_edge_flange','sheet.set_flange_flat_state') if mutates else (
-            'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies',
-            'feature.deletion_structure', 'feature.deletion_context',
-            'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion',
-            'document.list_templates', 'document.prepare_create_part', 'sketch.get', 'sketch.prepare_dimension_change', 'part.prepare_corner_cut', 'part.prepare_base_revolve', 'part.prepare_through_hole', 'part.prepare_hole_dimension_change', 'part.prepare_linear_hole_pattern', 'part.prepare_edge_fillet','sheet.prepare_l_profile','sheet.prepare_flat_state','sheet.prepare_parameters','sheet.prepare_edge_flange','sheet.prepare_flange_flat_state')
+        allowed = MUTATING_OPERATIONS if mutates else READ_OPERATIONS
         if operation not in allowed:
             raise JobError('unsupported_operation', 'No domain implementation for this operation.')
         if operation.startswith('export.') and self._approved_output_root is None:
@@ -255,7 +255,7 @@ class Runtime:
                 worker = self._worker_factory()
                 if hasattr(worker, 'add_finalizer'):
                     worker.add_finalizer(self._release_catalog)
-                self._runner = JobRunner(self.store, worker)
+                self._runner = JobRunner(self.store, worker, timings=self.timings)
             runner = self._runner
             context = {key: arguments[key] for key in ('document_id', 'configuration',
                        'expected_observation_revision', 'expected_revision', 'body_id', 'object_id', 'dimension_id') if key in arguments}

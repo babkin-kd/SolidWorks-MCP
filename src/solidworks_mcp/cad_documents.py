@@ -24,6 +24,7 @@ from .cad_sketches import CadSketchesMixin
 from .documents import rejected
 from .errors import SolidWorksError
 from .application_guard import ApplicationModelMutationGuard
+from .timings_v2 import timed_call
 from .cad_selection_scope import preserved_selection
 
 
@@ -42,7 +43,7 @@ class SolidWorksDocuments(CadMassPropertiesMixin, CadGeometryMixin, CadFeaturesM
 
     def documents(self):
         return [binding.wrap(raw, self._module.IModelDoc2)
-                for raw in self._sw.GetDocuments() or ()]
+                for raw in timed_call('com', self._sw.GetDocuments) or ()]
 
     def identity(self, model):
         # PyIUnknown compares canonical IUnknown addresses according to COM's

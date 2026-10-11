@@ -14,6 +14,7 @@ import win32com.client
 
 from . import binding
 from .documents import rejected
+from .timings_v2 import timed_call
 from .cad_planar_brep import PLANAR_BREP_SCOPE, PlanarBrepError
 from .cad_analytical_brep import ANALYTICAL_BREP_SCOPE, analytical_body_snapshot
 
@@ -328,7 +329,8 @@ class CadDimensionsMixin:
     @staticmethod
     def set_dimension_value(record, value_si, configuration):
         # swSetValue_InSpecificConfigurations=3; never UseCurrentSetting or All.
-        return record.dimension.SetSystemValue3(value_si, 3, CadDimensionsMixin._named_configuration(configuration))
+        return timed_call('com', record.dimension.SetSystemValue3, value_si, 3,
+            CadDimensionsMixin._named_configuration(configuration))
 
     def rebuild_dimension_document(self, model):
         active = binding.wrap(self._sw.ActiveDoc, self._module.IModelDoc2)
@@ -337,5 +339,5 @@ class CadDimensionsMixin:
         # SW2023 EditRebuild3 can return True after SetSystemValue3 while the
         # body remains unchanged and NeedsRebuild2 stays set. Recompute this
         # explicit active part, then confirm the pending flag is cleared.
-        rebuilt = model.ForceRebuild3(False)
+        rebuilt = timed_call('rebuild', timed_call, 'com', model.ForceRebuild3, False)
         return rebuilt is True and self.pending_rebuild(model) is False

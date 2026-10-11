@@ -18,6 +18,8 @@ import time
 from typing import Callable
 import uuid
 
+from .timings_v2 import timed_call
+
 
 TERMINAL = frozenset({'succeeded', 'failed', 'cancelled', 'unknown'})
 JOURNAL_SCHEMA_VERSION = 3
@@ -425,9 +427,10 @@ class JobRunner:
     an uncertain outcome remains unknown until the document layer reconciles it.
     """
 
-    def __init__(self, store: JobStore, worker):
+    def __init__(self, store: JobStore, worker, *, timings=None):
         self.store = store
         self.worker = worker
+        self.timings = timings
         self._lock = threading.RLock()
         self._stopped = False
         self._pending = {}
@@ -442,20 +445,22 @@ class JobRunner:
         with self._lock:
             if self._stopped:
                 raise JobError('runtime_stopped', 'This runtime no longer accepts new jobs.')
-            job, created = self.store.create(request_id, operation, arguments, context, mutates=mutates)
+            job, created = timed_call('journal', self.store.create, request_id, operation, arguments, context, mutates=mutates)
             if created:
                 job_id = job['operation_id']
+                trace = self.timings.begin(operation, operation_id=job_id) if self.timings is not None else None
                 try:
-                    future = self.worker.submit(lambda: self._execute(job_id, function, mutates, verify, pass_operation_id))
+                    future = self.worker.submit(lambda: self._measured_execute(job_id, function, mutates, verify, pass_operation_id, trace))
                     self._pending[job_id] = future
-                    future.add_done_callback(lambda done: self._forget(job_id, done))
+                    future.add_done_callback(lambda done: self._forget(job_id, done, trace))
                 except Exception as exc:
                     # Dispatch failed before execution; retain a terminal record.
                     if self.store.start(job_id):
                         self.store.finish(job_id, 'failed', error={'code': 'dispatch_failed', 'message': str(exc)})
+                    self._finish_trace(job_id, trace)
             return self.store.get(job['operation_id'])
 
-    def _forget(self, job_id, future):
+    def _forget(self, job_id, future, trace=None):
         if future.cancelled() or future.exception() is not None:
             # A worker failure before _execute started is a verified non-write.
             # Do not overwrite a running/terminal operation (including storage
@@ -465,21 +470,49 @@ class JobRunner:
                     'message': 'Worker stopped before queued execution.'})
         with self._lock:
             self._pending.pop(job_id, None)
+        self._finish_trace(job_id, trace)
+
+    def _finish_trace(self, job_id, trace):
+        if trace is None or trace.finished:return
+        # Storage failure cannot turn an unconfirmed operation into success.
+        # This optional record never changes the mandatory journal or its hold.
+        try:
+            status = self.store.get(job_id)['status']
+            outcome = status if status in TERMINAL else 'unknown'
+        except Exception:
+            outcome = 'unknown'
+        trace.end_queue()
+        trace.finish(outcome)
+
+    def _measured_execute(self, job_id, function, mutates, verify, pass_operation_id, trace):
+        if trace is None:
+            return self._execute(job_id, function, mutates, verify, pass_operation_id)
+        trace.end_queue()
+        try:
+            with trace.activate():
+                if mutates:
+                    measured_function = function
+                else:
+                    phase = 'prepare' if '.prepare' in trace.metadata['operation'] else 'read_bundle'
+                    measured_function = lambda *args: timed_call(phase, function, *args)
+                return self._execute(job_id, measured_function, mutates, verify, pass_operation_id)
+        finally:
+            self._finish_trace(job_id, trace)
 
     def _execute(self, job_id, function, mutates, verify, pass_operation_id=False):
-        if not self.store.start(job_id):
+        if not timed_call('journal', self.store.start, job_id):
             return  # Cancellation won the atomic queued -> running race.
         try:
             result = function(job_id) if pass_operation_id else function()
             if isinstance(result, dict) and result.get('ok') is False:
                 raise ExecutionFailure('operation_failed', str(result.get('error', 'Operation failed.')),
                                        uncertain=mutates)
-            if verify is not None and verify(result) is not True:
+            if verify is not None and timed_call('postconditions', verify, result) is not True:
                 raise ExecutionFailure('postcondition_failed', 'Operation postconditions were not confirmed.')
-            self.store.finish(job_id, 'succeeded', result=result)
+            timed_call('journal', self.store.finish, job_id, 'succeeded', result=result)
         except BaseException as exc:
             uncertain = exc.uncertain if isinstance(exc, ExecutionFailure) else mutates
-            self.store.finish(job_id, 'unknown' if uncertain else 'failed', error={
+            timed_call('journal', self.store.finish, job_id, 'unknown' if uncertain else 'failed', error={
                 'code': getattr(exc, 'code', 'operation_exception'), 'message': str(exc),
                 'requires_reconciliation': bool(uncertain)})
 

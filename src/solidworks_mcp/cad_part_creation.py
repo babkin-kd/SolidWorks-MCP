@@ -7,6 +7,7 @@ from . import binding
 from .constants import SW_FULLY_CONSTRAINED, SW_TOGGLE_INPUT_DIM_VAL_ON_CREATE
 from .documents import rejected
 from .jobs import ExecutionFailure
+from .timings_v2 import timed_call
 
 
 @dataclass
@@ -117,7 +118,7 @@ class CadPartCreationMixin:
             if not plane.Select2(False, 0):
                 raise rejected('construction_plane_select_failed', 'The exact plane could not be selected.')
             receipt.pending_creation = True
-            manager.InsertSketch(True)  # Native void, not an acknowledged cancellation on timeout.
+            timed_call('com', manager.InsertSketch, True)  # Native void, not cancellation on timeout.
             sketch = binding.wrap(manager.ActiveSketch, self._module.ISketch)
             if sketch is None:
                 raise ExecutionFailure('construction_sketch_unconfirmed', 'Sketch creation returned no active sketch.', uncertain=True)
@@ -143,14 +144,14 @@ class CadPartCreationMixin:
             current = binding.wrap(manager.ActiveSketch, self._module.ISketch)
             if current is None or self.identity(current) != receipt.native_sketch_identity:
                 raise rejected('construction_sketch_changed', 'An unrelated sketch replaced the owned open sketch.')
-            manager.InsertSketch(True)
+            timed_call('com', manager.InsertSketch, True)
             if manager.ActiveSketch is not None:
                 raise rejected('construction_sketch_close_failed', 'The exact owned sketch did not close.')
             if not sketch_feature.Select2(False, 0):
                 raise rejected('construction_sketch_select_failed', 'Owned profile selection failed.')
             factory = binding.wrap(model.FeatureManager, self._module.IFeatureManager)
             receipt.pending_creation = True
-            raw = factory.FeatureExtrusion3(True, False, False, 0, 0, definition.depth_m, 0.,
+            raw = timed_call('com', factory.FeatureExtrusion3, True, False, False, 0, 0, definition.depth_m, 0.,
                 False, False, False, False, 0., 0., False, False, False, False,
                 True, True, True, 0, 0., False)
             extrusion = self._retain_base_feature(model, receipt, 'extrusion', raw)

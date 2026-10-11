@@ -1,5 +1,26 @@
 # Ход разработки
 
+## 11.10.2026 — возвращение к конечным остаткам стадии 1, диагностика dev69
+
+По решению пользователя базовая область стадии 1 содержит31 legacy-пункт:
+документы/адресация, эскизы/плоскости/базовое выдавливание, размеры,
+удаление/подавление, измерения/диагностика. [Матрица22 конечных требований](STAGE_1_REQUIREMENTS_MATRIX.md)
+фиксирует проверки и блокеры, группы N0–N6. Все92 legacy-пункта сверены;
+остальные61 остаются инженерной/дополнительной областью. Общие gates сохранены.
+
+Завершена ранее начатая U-приёмка dev68:3997 pure/323 CAD deselected,
+metadata48/17, internal9/public10 accepted=true на одном wheel ff5f038,
+own fixtures закрыты и baseline восстановлен. [Точное свидетельство](SHEET_FLANGE_FLAT_ACCEPTANCE.md).
+
+Подготовлен единый блок диагностики dev69: bounded private store и CLI,
+JobRunner/MutationCoordinator/MCP traces, diagnostics_get_timings, selected
+COM/rebuild intervals и guide.34 новых timing pure passed; полный набор
+4031 passed/323 CAD deselected,50,99с. Первые4 full-failures были устаревшими
+ожиданиями counts/template version, исправлены; failed прогон не засчитан.
+Installed/native dev69 пока не выполнялись. Все стадии открыты, новые расширения
+стадии 2 не начинались. Git локальный, дополнительных агентов/push/CI нет.
+
+
 ## 11.10.2026 — dev65 готов к installed/native приёмке
 
 Full pure3872 passed/323 CAD deselected47,30с. Terminal read-only audit dev64
