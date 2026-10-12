@@ -1,0 +1,116 @@
+# S1-B3: конечная карта приёмки адресации и измерений
+
+12.10.2026. Read-only аудит реализации и существующих стендов. **B3 открыт**:
+этот документ задаёт конечный набор совместимости итогового установленного
+wheel; native/MCP-вызовы и тесты при подготовке карты не запускались.
+Основание: [план](../PLAN.md), [матрица](STAGE_1_REQUIREMENTS_MATRIX.md),
+[пять условий B3](STAGE_1_BLOCK_ACCEPTANCE.md#s1-b3--адресация-и-измерения).
+Исторический accepted конкретного wheel не переносится на итоговый кандидат.
+
+## Поддержанный результат и границы
+
+Пользователь получает актуальные ссылки документа, элемента, тела, грани,
+ребра и размера; различает повторные экземпляры одного файла; получает
+измерения с проверенными единицами, frame и исходными witnesses.
+
+| Семейство реализованных tools | Заявленная область и обязательное различие |
+| --- | --- |
+| `document_list/get`, `feature_list/get`, `dimension_list/get`, `sketch_get` | Явная самостоятельная part и область конкретного чтения. Document metadata может описать существующую конфигурацию без её активации; геометрические чтения требуют активную конфигурацию. Feature/dimension snapshots не обещают произвольный CAD/add-in scope. Размеры возвращаются в mm/deg; sketch dimensions read-only. |
+| `body_list`, `face_list`, `edge_list`, `geometry_get` | Normal solid/surface BREP в активной конфигурации part; persistent owner/membership и страницы. Body summary `GetBodyBox` приблизительный, не точный measurement bounds и не mutation BREP proof. |
+| `component_list/get`, `component_body_list/get`, `component_face_list`, `component_edge_list`, `component_topology_get` | Малая полностью resolved root assembly; repeated/nested instances, referenced configurations, normal solid/surface и hidden. Body/face/edge координаты локальные `component_model`; total transform переводит в root assembly. Part IDs и instance IDs невзаимозаменяемы. |
+| `measurement_prepare_mass/get_mass` | Все solid или одно явно выбранное solid-тело part, включая hidden; surfaces исключены, overrides запрещены. mm³/mm²/kg, center в model mm. Временное выделение защищается application checkpoint и восстанавливается. Масса сборки и custom mass frame не реализованы этим scope. |
+| `measurement_get_bounds` | Native extrema normal solid/surface part; все или одно тело, фильтр типа. Model либо явно переданный правый rigid frame; нулевой extent плоской поверхности допустим. Не assembly bounds/минимальный OBB/native named frame. |
+| Три `measurement_get_component_{distance,point_distance,axis_distance}` | Explicit resolved part instances, hidden solids включены, surfaces исключены. Pair — root metric/witnesses; point/axis допускают explicit rigid frame. Point — минимум до индивидуальных solid boundaries, axis — бесконечная прямая, zero не classifier interference. |
+| Три `measurement_get_component_aggregate_{distance,point_distance,axis_distance}` | Part/subassembly, полный supported leaf/body census, включая hidden; surfaces/empty leaves проверяются, но не входят в solid минимум. Root либо explicit rigid frame, исходные nearest instance/body/face в соответствии с DTO. Никакой sampled/partial замены. |
+
+Новые load/topology/frame/scale случаи остаются D2-LOADREF, D2-GEOMETRY,
+D2-FRAMES, D2-LARGE; multi-config записи — D2-CONFIG. Численные budgets
+реализации не являются доказательством работы со сборками 1000+.
+Отражённый transform имеет контракт чтения, но исторический native mirrored
+instance не принят; представительный B3 использует уже проверенные rigid
+rotated/shifted экземпляры и не расширяет это обещание.
+
+## Конечный manifest
+
+Предлагается **13 именованных внутренних групп** ниже: фиксированные inputs и
+assertions, а не сумма всех исторических native-наборов. Внутри каждой группы
+полный необходимый inventory/closing snapshots сохраняются. Число физических
+вызовов измеряется отдельно и не подменяется числом строк manifest.
+
+Две последовательные fixture-сессии, один CAD-владелец. Part-профиль: два блока
+20×10×5 мм с X-offset 0/40, поверхность 15×10 мм, цилиндр Ø12×30 мм; отдельный
+dirty сосед 5×6×7 мм. Assembly-профиль переиспользует существующие helpers:
+повторные part/config instances, две подсборки, вложенный hidden cylinder,
+rotated/shifted placement. Создание fixtures — служебный setup, не приёмка новых
+v2 инженерных операций. Все собственные новые имена русские.
+
+| ID / условие | Конечная проверка и критерий |
+| --- | --- |
+| B3-I01 /N1 | `document_list/get` двух part; metadata обоих существующих configs; feature/dimension list→get в поддержанном профиле, `sketch_get` отдельно на одноконфигурационной прямоугольной пластине B1 того же wheel. Не требовать sketch API на multibody/surface fixture. mm/deg, owner и actual native значения совпадают; active document/config остаются прежними. Для unsupported встроенных feature/dimension rows допустим только объявленный `object_id=null`. |
+| B3-I02 /N1 | Два solid + surface: body/face/edge list→get, одна полная face pagination с limit=2. У блока 6 faces/12 edges, суммарные area 700 мм² и edge length 140 мм; у surface 1 face/4 edges, 150 мм²/50 мм. Foreign body и inactive geometry config отвергаются. |
+| B3-I03 /N2 | Repeated file: distinct instance IDs, два referenced configs с разными body rosters, nested parent path, independent total transform. Component/body/face/edge roundtrip подтверждает exact owner; передача body между instances/part/другим root отвергается. Чтение referenced config не переключает общий part document. |
+| B3-I04 /N3 | Native rename собственного part feature и assembly instance: исходные feature/instance/face refs разрешаются к прежней canonical identity. Новая enumeration может вернуть native PID alias; текст имени не становится ключом и побайтовое равенство новых IDs не навязывается. B2 rename receipt можно переиспользовать только на том же wheel с полным evidence. |
+| B3-I05 /N3 | Собственный cylinder instance удалить и вставить тот же файл заново: старый instance/face ID после обоих событий отвергается при свежем observation; новая ссылка принадлежит новой инкарнации. Это проверка адресации, не приёмка публичного delete/restore B2. |
+| B3-I06 /N3 | Сменить referenced configuration только собственной fixture; старые component/body/face refs отвергаются, новые имеют exact новый roster. Старая конфигурационная part body reference также отвергается; чтение inactive config не делает hidden switch. |
+| B3-I07 /N4 | Mass: all solids и explicit второй solid; объём 2000/1000 мм³, area 1400/700 мм², center X=30/50 мм. Масса сверяется с независимо наблюдаемой эффективной native density: V·density/10⁹ kg, без произвольной заданной плотности. Hidden solid включён, surface исключена; выбранное чужое UI-тело возвращается точно. |
+| B3-I08 /N4 | Bounds: второй блок в shifted/rotated explicit frame; planar surface с нулевым extent; цилиндр в tilted frame. Независимые углы блока/поверхности и support круга дают expected extrema. Reflection frame, foreign body, stale observation отклоняются; approximate AABB corners не oracle. |
+| B3-I09 /N4 | Part-instance pair distance на известном placement: 15 мм и nested 70 мм, closer surface исключена. Witnesses в root, metric, exact instances и полный solid census проверены независимо. |
+| B3-I10 /N4 | Part-instance point/axis: explicit frame point-to-trimmed-corner √425 мм с local/root nearest; cylinder axis gap 2 мм и intersecting axis 0 мм. Native point location и original nearest face/body проверены; ось бесконечная и witnesses лежат на ней. |
+| B3-I11 /N4 | Aggregate pair: part→subassembly 70 мм; repeated subassemblies 84 мм со всеми четырьмя leaf pairs; explicit frame преобразует оба witnesses независимо. Nearest hidden cylinder принадлежит полному составу; early-stop после zero запрещён контрактом. |
+| B3-I12 /N4 | Aggregate point/axis: hidden nested cylinder outside point 3 мм /inside 6 мм, axis 2 мм /through 0 мм; explicit shifted/rotated frame обоих результатов. Leaf/body/face census и nearest original refs проверены; surface-only aggregate даёт отказ, не частичный success. |
+| B3-I13 /N5 | Replay одного passive geometry/measurement read и одного guarded mass на прежнем request/payload: тот же operation/result, нет второго solver/calculation. Все I01…I12 имеют independent before/after selection marks/identity, view, dirty/file/config/active/visibility, geometry/rosters, CIP/lock и соседа. После terminal/quiescent calls закрыты только owned fixtures, полный исходный baseline восстановлен. |
+
+Публичная приёмка — один представительный маршрут по каждой fixture-сессии:
+все перечисленные read tools вызываются хотя бы один раз через stdio с exact
+input/output schemas, `job_get` и durable journal. В неё входят document/object
+roundtrip, repeated/nested membership, **каждый из восьми measurement tools**
+(mass, bounds, три part-instance, три aggregate), explicit frame там, где он
+поддержан, один foreign отказ и оба replay из I13. Подробные native rename/
+delete/config отказные переходы I04…I06 не повторяются физически в public.
+`measurement_prepare_mass` вызывается до mass; это отдельный tool, не девятое
+числовое измерение. Public сохраняет собственную ownership/baseline проверку.
+
+## Переиспользуемые стенды и конкретные пробелы
+
+| Имеющееся средство | Что можно взять без нового CAD scope | Что мешает конечному B3 gate |
+| --- | --- | --- |
+| `verify_geometry_reads.py`, `verify_document_reads.py` | Part normal solid/surface, pagination/foreign/inactive/deleted geometry; document metadata. | Legacy harness assertions `13 tools`/единственная mutation `feature.rename` не соответствуют текущему catalog. `verify_geometry_reads.check` использует fixtures без supervisor cleanup gate; как готовый итоговый safety driver его запускать нельзя. Нужна внешняя интеграция этих checks с ownership/journal/unknown gating. |
+| `verify_component_reads.py`, `verify_component_topology.py` + `verifier_component_fixtures.py` | I02/I03/I04…I06: repeated/config/nested/native identity, surface/cylinder topology, deletion/recreation. | Существующие CLI принимают только полные исторические internal/public наборы; public preflight требует их точные counts. Нет selective finite manifest B3 и общего same-wheel gate. |
+| `verify_mass_properties.py --guarded-public-domain`, `verify_mass_mcp.py`, `verify_bounds_measurements.py` | I07/I08/I13: analytic oracle, selection restore, mass guard, rigid extrema и known отказ. | Проверка mass требует guarded domain, не старый passive mass backend. Public gates ожидают полные 22/14 internal cases; их accepted нельзя подставить от другого wheel либо сократить counts ради прохождения. |
+| `verify_component_distance.py`, `verify_component_point_distance.py`, `verify_component_axis_distance.py` | I09/I10: independent metric, instance witnesses, explicit point/axis frames, native body/face refs. | Каждый driver выполняет отдельный полный internal/public профиль; общей fixture-сессии и сокращённого representational route нет. |
+| `verify_component_aggregate_distance.py`, `verify_component_aggregate_probes.py`, `verifier_aggregate_fixtures.py` | I11/I12: 70/84 мм, 3/6/2/0 мм, complete census, frame projections, part-regression helpers. | Part regression в aggregate harness использует общий internal read path; не заменяет публичные отдельные part-instance tool/schema проверки. Public prerequisites также tied к полным historical counts. |
+| `verify_dimension_mcp.py`, accepted B1/B2 receipts итогового wheel | I01/I04: exact feature/sketch/driving-dimension IDs, native length/units/rename membership. | Частные успешные creation/edit receipts не закрывают multiple-config/multibody/instance чтения. Нужны явные cross-links manifest→tool→receipt; старые размерные wheel evidence не подставляются. |
+
+Самая малая доработка — **отдельный bounded B3 supervisor/manifest**, который
+вызывает выбранные существующие checks/oracles и использует один современный
+ownership/job protocol; не ослабление старых gates и не запуск всех исторических
+drivers подряд. После завершения текущей frozen native-проверки сначала pure
+проверить новый preflight/coverage/cleanup gates, затем выполнить native internal
+и public на одном итоговом wheel. Здесь исходники/helpers не изменялись.
+
+## Какие свидетельства закрывают пять условий
+
+В локальных исторических файлах mass dev71, bounds dev72, component reads dev73
+и topology dev74 пассивно подтверждены `accepted=true`, scopes/counts и SHA256,
+совпадающие с их четырьмя опубликованными acceptance-документами. В public и
+последних трёх internal отчётах также есть `fixtures_closed/baseline_restored`;
+mass internal использует другую структуру полей, отсутствие этих двух ключей
+не переобъявляется failure/success cleanup. Это **история тех wheel**; данные
+CAD и журналы не экспортируются. Исторические distance/probe результаты описаны
+в [контракте/приёмке агрегатов](COMPONENT_AGGREGATE_PROBES_ACCEPTANCE.md) и
+смежных acceptance-документах; текущей native-валидации здесь нет.
+
+Нужен приватный terminal report нового B3 с точными wheel SHA256/version/Git/
+source digest, installed metadata и verifier/helper hashes; все I01…I13 с
+сырыми независимыми native receipts и public tool/job mapping. Gate проверяет
+пять N-условий, объявленные numerical tolerances каждого oracle, отсутствие
+необъяснённых skipped/unknown, полностью возвращённые native calls, exact-owned
+cleanup, initial/restored baseline. Read summaries/stamp/mass не заменяют
+полную требуемую наблюдаемую область сохранности. Rebuild/recovery/restart
+гарантии B4 и release/CI B5 подтверждаются своими gates.
+
+**Блокирует закрытие B3:** отсутствуют конечный bounded supervisor/общий gate,
+native internal/public evidence перечисленного набора на итоговом wheel и
+manifest связь с переиспользуемыми итоговыми B1/B2 чтениями. Новый доменный
+CAD-функционал для этого набора заранее не требуется; обнаруженная регрессия
+существующего scope исправляется до принятия. Статусы плана не изменены.
