@@ -2,9 +2,12 @@
 
 ## Текущее состояние dev89
 
-L3 открыт. Ограниченная явная активация S1-B5-ACT уже принята на dev89,
-включая четыре внутренних случая и public MCP/native. Saved-file интеграция
-L3-P1 ещё не принята. [Контракт активации](NATIVE_PART_ACTIVATION.md).
+**L3 принят dev89:** семь внутренних отчётов и public L3-P1 accepted4/4,
+3183,64 с, terminal/exit0. Saved-file ACT/Save3 и independent disk readback
+подтверждены; dirty сосед и исходная сессия восстановлены.
+[Итоговая сводка и SHA256](NATIVE_FIRST_SAVE_DEV89_ACCEPTANCE.md).
+Ниже сохранена последовательная история внутренних проверок; прежние
+формулировки «остаётся/запущен» относятся к их промежуточным срезам.
 
 Положительная installed **L3-I1 dev89 прошла за980,22 с**, terminal/exit0:
 `work/native-first-save-dev89-positive-1/report.json`, без source PYTHONPATH.

@@ -2,12 +2,12 @@
 
 ## Текущий итог
 
-Стадия 1 открыта: L2 принят в ограниченном scope dev87; **остаются шесть
-блоков L3 и S1-B1…S1-B5**. S1-B5-ACT принят отдельно на dev89 (четыре
-внутренних случая и public MCP/native); saved-file интеграция L3-P1 и сквозной
-B5 не приняты. Все семь внутренних отчётов L3-I1…I4 повторно подтверждены
-на dev89 общим gate; результаты dev88 остаются историей. Публичный L3-P1
-того же dev89 выполняется и ещё не принят.
+Стадия 1 открыта: L2 принят в ограниченном scope dev87, **L3 принят dev89**;
+остаются пять блоков S1-B1…S1-B5. S1-B5-ACT принят отдельно, saved-file
+интеграция ACT/Save3 подтверждена в L3-P1. Все семь внутренних отчётов L3
+и public4/4 одного wheel, независимый disk readback и полный baseline
+проверены. [Точная приёмка](NATIVE_FIRST_SAVE_DEV89_ACCEPTANCE.md).
+Сквозной B5 итогового wheel не принят; результаты dev88 остаются историей.
 
 Минимальный результат, поддержанные случаи и конечные критерии каждого блока
 зафиксированы в [плане](../PLAN.md), [матрице](STAGE_1_REQUIREMENTS_MATRIX.md)
@@ -33,8 +33,13 @@ unknown/hold/replay, independent clone41 и exact reconciliation/empty baseline.
 запущены последовательной private очередью; false принят752,30 с, exact native
 unknown/reconciled/clone41/empty baseline подтверждены. Throw принят755,45 с,
 incomplete принят721,84 с; все семь dev89-отчётов прошли общий detached gate,
-queue terminal/exit0. Запущен public L3-P1 того же wheel; пока не принят,
-общий L3 остаётся открыт.
+queue terminal/exit0. Public L3-P1 того же wheel завершился accepted=true,
+3183,64 с, exit0: все четыре условия, девять returned captures, 22 succeeded
+jobs/10 committed mutations, own=[], empty original/restored baseline и
+application совпали. Все 20 current helper hashes и exact wheel подтверждены.
+Supported non-STL preferences восстановлены; STL scope не засчитывается.
+Отдельный detached audit public committed job и всех семи internal-отчётов
+повторно прошёл. L3 закрыт; B1…B5 остаются.
 [Точные факты L3](NATIVE_FIRST_SAVE_PROGRESS.md).
 
 GitHub-задачи №1–4 синхронизированы напрямую через API с опубликованной
@@ -61,6 +66,17 @@ native executor и recovery ещё остаются.
 полный artificial BREP/classifier, неизменный baseline sketch/anchors и exact
 dependency delta. Это не installed/native-приёмка B1; executor/recovery и фасады
 остаются открыты. [Ограничения](PART_CREATION.md).
+
+Текущий source-шаг B1: добавлен внутренний executor в
+`rectangle_construction_execution.py`: immutable application checkpoint,
+durable pending/returned native steps, guard release до final proof,
+условное own restoration под новым guard. Lost ACK/storage failure/foreign
+delta сохраняют unknown/hold без inverse/retry. Стабильные result IDs,
+runtime/MCP и installed/native gates остаются; каталог dev89 не изменён.
+Ранние source-срезы выше не являются фактической installed-приёмкой.
+Итог related B1 pure194 passed/3,01 с на искусственном SDK и настоящем
+JobStore/MutationCoordinator; `work/pytest-rectangle-executor-final-2.log`.
+Full pure/build нового кандидата выполняется после законченных фасадов.
 
 ## Хронология приёмки до текущего итога
 
@@ -399,5 +415,6 @@ Installed metadata/stdio75/23 принят без source PYTHONPATH. Полож�
 ACT-N1 прошёл (1027,38 с), ACT-N2 already-active прошёл (1018,36 с). Stale/foreign
 прошёл (675,30 с); controlled failure прошёл (696,41 с). Actual four-report
 preflight принят; public MCP/native ACT принят (2049,55 с). Сквозной
-saved-file L3-P1/B5 ещё открыт, L2 не расширен, стадия1 не закрыта.
+saved-file L3-P1 принят на том же wheel; полный B5 остаётся, L2 не расширен,
+стадия1 не закрыта.
 [Контрольная точка dev89](CHECKPOINT_DEV89.md).

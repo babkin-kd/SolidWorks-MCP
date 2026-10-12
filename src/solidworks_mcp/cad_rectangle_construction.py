@@ -27,23 +27,40 @@ class NativeRectangleStageReceipt(NativeBaseReceipt):
     raw_extrusion_return: object = None
     restore_attempted: bool = False
     pending_native_step: str = None
+    native_step_recorder: object = None
+    native_step_journal_failed: bool = False
 
 
 class CadRectangleConstructionMixin:
     @staticmethod
     def _rectangle_native_step(receipt, label, call, *args, **kwargs):
-        if receipt.pending_native_step is not None:
+        if receipt.pending_native_step is not None or receipt.native_step_journal_failed:
             raise ExecutionFailure('construction_native_pending', 'An earlier native step is unconfirmed.', uncertain=True)
         receipt.pending_native_step = label
+        recorder = receipt.native_step_recorder
+        if recorder is not None:
+            receipt.native_step_journal_failed = True
+            recorder(label, 'pending', {'native_call_returned': False})
+            receipt.native_step_journal_failed = False
         value = timed_call('com', call, *args, **kwargs)
+        if recorder is not None:
+            receipt.native_step_journal_failed = True
+            # No native handle or arbitrary repr enters the durable JSON journal.
+            # A normal return is evidence of completion of this call, not success
+            # of the operation; the independent admission still decides success.
+            recorder(label, 'returned', {'native_call_returned': True})
+            receipt.native_step_journal_failed = False
         # Deliberately not finally: an exception cannot acknowledge a native call.
         receipt.pending_native_step = None
         return value
 
-    def new_rectangle_stage_receipt(self, model, features, controls, *, sketch=None):
+    def new_rectangle_stage_receipt(self, model, features, controls, *, sketch=None, recorder=None):
+        if recorder is not None and not callable(recorder):
+            raise rejected('construction_journal_invalid', 'Only a server-owned native step recorder is supported.')
         base = self.new_base_receipt(model, features, controls)
         receipt = NativeRectangleStageReceipt(base.model_identity, base.configuration_identity,
             base.baseline_features, dict(base.controls))
+        receipt.native_step_recorder = recorder
         if sketch is not None:
             token = self.identity(sketch)
             if not any(token == identity for identity, _ in receipt.baseline_features):
@@ -59,7 +76,8 @@ class CadRectangleConstructionMixin:
         return receipt
 
     def _rectangle_stage_ready(self, model, receipt):
-        if receipt.attempted or receipt.restored or receipt.restore_attempted or receipt.pending_native_step:
+        if (receipt.attempted or receipt.restored or receipt.restore_attempted
+                or receipt.pending_native_step or receipt.native_step_journal_failed):
             raise rejected('construction_receipt_consumed', 'A native stage receipt cannot be repeated.')
         self._base_target(model, receipt)
         if self.bodies(model, 'all') or self.part_creation_controls(model) != receipt.controls:
@@ -169,15 +187,17 @@ class CadRectangleConstructionMixin:
 
     def restore_rectangle_sketch(self, model, receipt):
         if (receipt.pending_creation or receipt.pending_sketch_close or receipt.pending_native_step
+                or receipt.native_step_journal_failed
                 or receipt.selection_uncertain or receipt.restore_attempted or receipt.borrowed_sketch is not None):
             raise ExecutionFailure('construction_restore_unsafe', 'Unknown or borrowed sketch cannot be deleted.', uncertain=True)
         receipt.restore_attempted = True
         # Only this stage's exact newly created sketch is owned by the base restorer.
-        self.restore_base_rectangle(model, receipt)
+        self._rectangle_native_step(receipt, 'restore_owned_sketch', self.restore_base_rectangle, model, receipt)
 
     def restore_rectangle_extrusion(self, model, receipt):
         if (receipt.pending_creation or receipt.pending_sketch_close or receipt.selection_uncertain
-                or receipt.pending_native_step or receipt.restore_attempted or receipt.borrowed_sketch is None):
+                or receipt.pending_native_step or receipt.native_step_journal_failed
+                or receipt.restore_attempted or receipt.borrowed_sketch is None):
             raise ExecutionFailure('construction_restore_unsafe', 'Unknown effects cannot authorize deletion/retry.', uncertain=True)
         self._base_target(model, receipt)
         features = self.features(model)

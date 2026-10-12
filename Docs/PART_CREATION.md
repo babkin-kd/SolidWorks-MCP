@@ -2,6 +2,13 @@
 
 ## Отдельные стадии B1 — исходный кандидат 12.10.2026
 
+Текущий source-кандидат включает внутренний executor/checkpoint/native-step
+журнал и условное восстановление доказанного собственного эффекта. Он ещё
+не зарегистрирован в runtime/MCP: нужны стабильные result IDs, законченные
+фасады, итоговый wheel и installed/native-приёмка. Установленный dev89 остаётся
+неизменным; L3 того wheel принят [отдельно](NATIVE_FIRST_SAVE_DEV89_ACCEPTANCE.md).
+Ниже сохранены исходные шаги разработки; их pure-результаты не суммируются.
+
 Добавлены чистые определения `RectangleSketch` / `BlindRectangleExtrusion`
 и внутренние native-мосты в `cad_rectangle_construction.py`. Создание эскиза
 и выдавливание имеют отдельные receipts: второй шаг заимствует точный baseline
@@ -70,7 +77,32 @@ classifiers. Дополнительные native dependency links остаютс
 Новая annotation проверяется по полной объявленной структуре и anchor,
 body metadata — по имени/visible и типизированной паре material.
 Executor/recovery, публичная регистрация и installed/native B1 не приняты;
-установленный dev89 и выполняющаяся L3-приёмка не изменены.
+установленный dev89 и завершённая L3-приёмка не изменены.
+
+`rectangle_construction_execution.py` добавляет immutable application-wide
+checkpoint, full prewrite revision, exact reference/target identity и
+независимый sketch/base admission после освобождения guard. Native-мосты
+записывают pending до эффекта и returned только после нормального ответа;
+COM handles никогда не сериализуются. Потерянный ответ или запись журнала
+блокирует inverse/retry. Восстановление допускает только полный доказанный
+own effect и reacquires отдельный журналируемый guard после release; чужая
+дельта или неполное восстановление сохраняет unknown/hold. Документ, сосед,
+files/UI/anchors проверяются полностью, документированные target counters
+не скрывают отсутствующие поля или изменённый dirty flag.
+
+Первый связанный executor-прогон16 failed/23 passed выявил неверный путь
+checkpoint-поля в artificial guard, второй подтвердил ту же ошибку; поле
+исправлено по реальному JobStore, затем39 passed/1,27 с. Это не CAD-отказы.
+Native-step bridge отдельно119 pure passed/1,46 с. Итог связанного B1 контура
+фиксируется после последней проверки ниже; полный pure/build запускается
+после законченных фасадов перед новым wheel, а не после каждой правки.
+
+Итог связанного исходного контура: **194 pure passed, 3,01 с**, без CAD,
+installed или MCP-приёмки; `work/pytest-rectangle-executor-final-2.log`.
+Проверены обе стадии, реальный JobStore/MutationCoordinator, replay/conflict,
+stale до записи, lost ACK, foreign delta, guard-release/storage failures,
+восстановление под вторым guard и отказ неполного восстановления. Runtime
+остаётся на dev89 с75/23; новых tools/list пока нет.
 
 ## Исторические принятые bundled-сценарии
 

@@ -1,7 +1,6 @@
-"""Full-session read preparation for independent rectangle stages.
+"""Full-session preparation and internal independent rectangle-stage execution.
 
-No construction is dispatched here. Executors must add durable application
-checkpoints, one-shot receipts, post-release proof and scoped recovery.
+Runtime/facade registration and installed/native acceptance remain separate gates.
 """
 import hashlib
 import math
@@ -15,18 +14,20 @@ from .native_document_save import MAX_OPEN_DOCUMENTS
 from .part_creation import validated_plane_transform, _positive_length
 from .rectangle_construction import RectangleSketch, BlindRectangleExtrusion
 from .rectangle_snapshot import BASE, EMPTY, SKETCH, validated_rectangle_snapshot
+from .rectangle_construction_execution import RectangleConstructionExecutionMixin
 
 
 SKETCH_SCOPE = 'empty_part_rectangle_sketch_v1'
 EXTRUSION_SCOPE = 'closed_rectangle_blind_extrusion_v1'
 
 
-class RectangleConstructionCatalog:
+class RectangleConstructionCatalog(RectangleConstructionExecutionMixin):
     def __init__(self, documents, store, connection_epoch):
         self.documents, self.adapter = documents, documents.adapter
         self.store, self.connection_epoch = store, connection_epoch
         self.sessions = NativeDocumentOpenCatalog(documents, store, connection_epoch)
         self.features = FeatureCatalog(documents, store, connection_epoch)
+        self.receipts = {}
 
     def _capture(self, target_id, guarded_ids=()):
         entries, semantic = self.sessions._capture_session(guarded_ids)
@@ -75,10 +76,11 @@ class RectangleConstructionCatalog:
             raise rejected('unsupported_creation_ui', 'Disable AddToDB and interactive dimension input before preparation.')
         return entry, entries, dict(semantic=semantic, snapshots=snapshots)
 
-    def _prepare(self, document_id, configuration, definition, profile, scope, feature_id, feature_kind):
-        if self.adapter.application_busy():
+    def _prepare(self, document_id, configuration, definition, profile, scope, feature_id, feature_kind,
+                 guarded_ids=()):
+        if not guarded_ids and self.adapter.application_busy():
             raise rejected('application_busy', 'An existing application command cannot be borrowed.')
-        entry, entries, state = self._state(document_id, configuration, profile)
+        entry, entries, state = self._state(document_id, configuration, profile, guarded_ids)
         identity = self.adapter.configuration_identity(entry.model, configuration)
         objects = self.adapter.features(entry.model)
         feature, reference = self.features._resolve(entry, configuration, identity, objects, feature_id)
@@ -111,7 +113,7 @@ class RectangleConstructionCatalog:
                 raise rejected('part_measurement_overflow', 'The expected solid cannot be represented.')
             expected = dict(solid_body_count=1, volume_mm3=volume, surface_area_mm2=area)
         token = self.adapter.identity(feature)
-        closing, closing_entries, after = self._state(document_id, configuration, profile)
+        closing, closing_entries, after = self._state(document_id, configuration, profile, guarded_ids)
         closing_cfg = self.adapter.configuration_identity(closing.model, configuration)
         closing_feature, closing_ref = self.features._resolve(closing, configuration, closing_cfg,
             self.adapter.features(closing.model), feature_id)

@@ -13,9 +13,12 @@ deselected (77,43 с). Final internal13/13 (210,07 с), public MCP11/11
 Own cleanup, полный baseline/CWD и dirty сосед сохранены.
 Whole failed internal1/2 и прежний unknown dev86 сохранены отдельно;
 [точная приёмка](NATIVE_DOCUMENT_OPEN_ACCEPTANCE.md).
-**L2 закрыт в прежнем scope. Остались шесть блоков L3/S1-B1…S1-B5; стадия1 открыта.**
+**L2 закрыт в прежнем scope. L3 принят на dev89:** семь internal-отчётов и
+public4/4, независимый saved-file readback и baseline подтверждены.
+[Точная приёмка L3](NATIVE_FIRST_SAVE_DEV89_ACCEPTANCE.md).
+**Остались пять блоков S1-B1…S1-B5; стадия1 открыта.**
 
-## Шесть оставшихся блоков для пользователя
+## Конечные блоки для пользователя: L3 принят, B1…B5 остаются
 
 Внутри S1-B5 отдельно виден **S1-B5-ACT** — принятый в ограниченном dev89 scope public active-part
 шаг для уже заданной open→edit цепочки. L2 open восстанавливает исходный active
@@ -48,7 +51,7 @@ activation/type/config scope остаётся D2-DOCUMENTS. Точные кри�
 
 | Пользовательский результат | Поддержанные случаи | Конечная приёмка | Статус |
 | --- | --- | --- | --- |
-| После открытия выбрать точную деталь для следующего изменения через MCP | Одна уже открытая самостоятельная writable part поддержанного прямоугольного профиля, одна конфигурация; поддержанные соседи | Явные document/config/revision/request; один native вызов и exact active-after; неизменные data/dirty/selection/view/files соседей; stale/replay/no-effect и unknown/hold без повтора; installed/public native доказательство | Dev89 metadata75/23, четыре internal и public native ACT приняты. Saved-file интеграция L3-P1/B5 остаётся. Не меняет active-after политики L2. Arbitrary activation/type/config — D2-DOCUMENTS |
+| После открытия выбрать точную деталь для следующего изменения через MCP | Одна уже открытая самостоятельная writable part поддержанного прямоугольного профиля, одна конфигурация; поддержанные соседи | Явные document/config/revision/request; один native вызов и exact active-after; неизменные data/dirty/selection/view/files соседей; stale/replay/no-effect и unknown/hold без повтора; installed/public native доказательство | Dev89 metadata75/23, четыре internal и public native ACT приняты; saved-file интеграция подтверждена L3-P1. Полный B5 остаётся. Не меняет active-after политики L2. Arbitrary activation/type/config — D2-DOCUMENTS |
 
 ## Законченный пользовательский результат
 
@@ -93,15 +96,14 @@ part того же наблюдаемого профиля. Гарантия с�
 Расширенная возможность поддерживается только после отдельного блока с этими
 же гарантиями. Unsupported отказ — доказательство защиты, а не реализации.
 
-## Фактические блокеры шести оставшихся блоков
+## Фактические блокеры пяти оставшихся блоков
 
 Одна рабочая таблица результатов/входов/критериев находится выше; подробные
 условия P/I/N — в приёмке блоков. Статус отделён от обещанной возможности.
 
 | Блок | Что ещё требуется | Что снимает блокер |
 | --- | --- | --- |
-| L3 | Public MCP L3-P1; все семь internal-отчётов и их общий gate уже подтверждены dev89, ACT принят отдельно | Завершить выполняющийся public first-save/close/open/activate/edit/Save3 на том же wheel: новые ID, независимый readback и полный baseline. Частично успешная цепочка не закрывает L3 |
-| B1 | Исходные определения/native-мосты, full passive snapshot, read-only подготовка и независимая проверка эскиза готовы частично (117/128/57/75 related pure); mutation executor/checkpoint/recovery, публичные фасады и итоговая приёмка остаются | Все 5 условий B1 на настроенном пустом шаблоне, прямоугольнике и blind-основании; новые виды плоскостей не нужны. [Точные ограничения кандидата](PART_CREATION.md) |
+| B1 | Исходный domain executor/checkpoint/журнал и ограниченное восстановление добавлены; полные postconditions эскиза/основания проверены на искусственных данных. Стабильные result IDs, runtime/MCP-фасады и installed/native-приёмка остаются | Все 5 условий B1 на настроенном пустом шаблоне, прямоугольнике и blind-основании; новые виды плоскостей не нужны. [Точные ограничения кандидата](PART_CREATION.md) |
 | B2 | Подавление/возврат, preview/delete собственного leaf и общий gate | Все 6 условий B2; отдельная собственная fixture для разрушительных проверок, без произвольного графа зависимостей |
 | B3 | Конечный набор совместимости уже реализованных чтений текущего wheel | Все 5 условий B3 на заявленных профилях; старые отчёты не подменяют текущие, новые frames/load modes не добавляются |
 | B4 | Итоговые installed/native recovery и диагностика | Все 6 условий B4; поздний реальный результат и controlled faults явно различены; полный COM census не нужен |
@@ -109,18 +111,16 @@ part того же наблюдаемого профиля. Гарантия с�
 
 **L2 закрыт:** internal13/public11 dev87, exact wheel и baseline. Область и
 manifest открытия не меняются. Новые режимы ведутся как D2-LOADREF.
-**L3 открыт:** I1/I2/I3 и четыре управляемых I4 завершены на dev89; все семь
-отчётов проверены общим gate с точным wheel и текущими hash верификаторов.
-Публичный L3-P1 того же wheel ещё выполняется. Пройденные внутренние случаи
-и gate согласованности не заменяют public-приёмку.
-[Артефакты и ограничения](NATIVE_FIRST_SAVE_PROGRESS.md).
+**L3 закрыт в заданном scope:** семь internal-отчётов и public4/4 одного dev89,
+текущие helper hashes, terminal/own cleanup и полный baseline подтверждены.
+[Артефакты и ограничения](NATIVE_FIRST_SAVE_DEV89_ACCEPTANCE.md).
 
 ## Порядок и конечные условия снятия блокеров
 
 | Очередь | Блок | Что снимает оставшийся блокер |
 | --- | --- | --- |
 | Завершён | L2 | Уже имеются accepted internal13/public11, exact wheel и baseline; дополнительные load/reference modes сюда не добавляются |
-| 1 | L3 | Закончить L3-P1 dev89 с явной bounded S1-B5-ACT; семь internal-отчётов того же wheel уже приняты общим gate, но не заменяют публичную цепочку |
+| Завершён | L3 | Приняты семь internal-отчётов и public4/4 dev89, saved-file ACT/Save3, независимый readback и baseline; типы с refs не добавляются |
 | 2 | S1-B1 | Отдельные явные контракты plane/sketch/blind extrusion доведены до пользовательской цепочки и конечных P/I/N gates без добавления auxiliary planes или произвольных профилей |
 | 3 | S1-B2 | Driving length/rename/suppress/unsuppress/own-leaf preview-delete проходят шесть условий своего контракта; точные survivor/retired sets и восстановление подтверждены |
 | 4 | S1-B3 | Конечный manifest существующих supported reads связан с текущими IDs/frames и независимыми аналитическими результатами; новый topology/load/scale scope не требуется |
