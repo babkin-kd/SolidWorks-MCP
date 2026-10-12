@@ -76,3 +76,12 @@ Controlled fault вводится после normal actual native activation, о
 accept-current-state reconciliation; исторический status остаётся unknown.
 CLI/синтаксис проверены; native-прогоны этих трёх случаев ещё не выполнены.
 Их accepted=false не объявляет завершение всего S1-B5-ACT.
+
++
++Положительный installed ACT-N1 dev89 прошёл за1027,38 с, включая native readback,
++replay и owned cleanup/full baseline. Это частичный отчёт accepted=false.
++Already-active case выполняется; stale/controlled failure и public не приняты.
++`verifier_native_part_activation_acceptance.py` требует все четыре terminal
++internal отчёта exact wheel перед публичным dispatch.49 artificial admission/
++protocol tests passed (11,23 с); реальный полный preflight пока не принят.
++

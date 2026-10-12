@@ -38,9 +38,16 @@ Dev89 собран и установлен только в проектную `.
   origin/provenance без source PYTHONPATH; CAD tools не вызывались.
   Свидетельство: `work/metadata-dev89-report-1.json`.
 
-Положительная installed native-проба запущена одним CAD-владельцем:
-`work/native-part-activation-dev89-positive-1/report.json`.
-На контрольной точке идёт full domain prepare; результат ещё не принят.
+Положительная installed native-проба **прошла за1027,38 с**:
+`work/native-part-activation-dev89-positive-1/report.json`, terminal/exit0.
+Точная цель активирована один раз; replay без нового эффекта. Полный независимый
+native readback сохранил target/dirty сосед; 25 captures returned, exact-owned
+cleanup, baseline/CWD/application context и non-STL preferences подтверждены.
+Detached committed predicate и current trusted helper hashes проверены отдельно.
+Report SHA256: `012f64de56d1f38aa47698e99cbd6fd085047cc170a8bbafe5d5f3c1e77bee19`.
+`activation_positive_passed=true`, **accepted=false**: это ACT-N1 и replay-часть
+ACT-N2, не вся задача. Следующий `already_active` case выполняется в
+`work/native-part-activation-dev89-noop-1/`; новый единственный CAD-владелец.
 Все package/helpers её артефакта сохраняются неизменными до терминального исхода.
 Native/MCP gates остаются открыты.
 `scripts/verify_native_part_activation_positive.py` готовит отдельную installed
@@ -60,4 +67,13 @@ gate нового wheel. L3-P1, S1-B5-ACT и стадия 1 открыты. Но
 +27 pure predicate cases passed (4,63 с): `work/pytest-activation-protocol-2.log`.
 +Это manufactured journal/guard evidence, не native CAD. Новый driver прошёл
 +синтаксис/CLI; его native cases и public gate остаются открытыми.
++
++
++Подготовлен detached preflight перед public ACT: нужны positive/already_active/
++stale/controlled_after_call terminal отчёты одного exact wheel, current trusted
++helper inventories, finite passed labels, independent readback и cleanup/baseline.
++Known failures, исторический unknown и его exact reconciliation различаются.
++49 связанных artificial admission/protocol cases passed (11,23 с):
++`work/pytest-activation-admission-1.log`. Полный actual four-report gate ещё не
++принят: already_active выполняется, stale/controlled_after_call не запускались.
 +
