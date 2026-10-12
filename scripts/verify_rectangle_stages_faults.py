@@ -175,9 +175,14 @@ def main():
                 context=arguments,mutates=True,pass_operation_id=True,verify=lambda result:result['verified'] is True)
             assert replay==job;return job
         neighbor_id=next(e.document_id for e in documents._entries if e.identity==adapter.identity(neighbor))
-        foreign_rows=domain.features.list(neighbor_id,'Основная')['items']
+        foreign_listing=domain.features.list(neighbor_id,'Основная')
+        foreign_rows=foreign_listing['items']
         foreign_plane=next(r['object_id'] for r in foreign_rows if r['feature_type']=='RefPlane' and r['object_id'])
         foreign_sketch=next(r['object_id'] for r in foreign_rows if r['feature_type']=='ProfileFeature' and r['object_id'])
+        report.update(reference_scope=dict(target_document_id=target_id,neighbor_document_id=neighbor_id,
+            target_plane_id=matches[0],foreign_plane_id=foreign_plane,foreign_sketch_id=foreign_sketch),
+            foreign_feature_listing=foreign_listing,native_case_evidence={})
+        persist()
 
         def independent(label):
             report['phase']=label;persist()
@@ -188,9 +193,12 @@ def main():
             sw.CommandInProgress=False;assert sw.CommandInProgress is False
             return current
 
-        def same_snapshot(before,after):
+        def same_snapshot(before,after,normalize_counters=True):
             from solidworks_mcp.jobs import _json
             a,b=deepcopy(before),deepcopy(after)
+            if not normalize_counters:
+                assert _json(a)==_json(b)
+                return
             old=a['clone_state']['dimensions'];new=b['clone_state']['dimensions']
             assert len(old)==len(new) and all(set(x)==set(y) for x,y in zip(old,new))
             for row in [*old,*new]:
@@ -208,7 +216,13 @@ def main():
             report[label]=job;persist()
             assert verified_rectangle_prewrite(job,expected_code=code,expected_arguments=arguments),job.get('error')
             assert counts==(adapter.creates,adapter.extrusions,adapter.injected_failures) and not domain.receipts
-            same_snapshot(baseline,independent(label+'-after'))
+            after=independent(label+'-after')
+            report['native_case_evidence'][label]=dict(before_snapshot=baseline,after_snapshot=after,
+                dispatch_counts_before=list(counts),
+                dispatch_counts_after=[adapter.creates,adapter.extrusions,adapter.injected_failures],
+                expected_arguments=deepcopy(arguments))
+            persist()
+            same_snapshot(baseline,after,normalize_counters=False)
             report['cases'].append(dict(label=label,passed=True,native_creation_dispatches=0));persist()
 
         def rollback(label,kind,operation,arguments,function):
@@ -223,7 +237,13 @@ def main():
             expected=(counts[0]+int(kind=='sketch'),counts[1]+int(kind=='extrusion'),counts[2]+1)
             assert expected==(adapter.creates,adapter.extrusions,adapter.injected_failures) and not domain.receipts
             adapter.fault_kind=None
-            same_snapshot(baseline,independent(label+'-after'))
+            after=independent(label+'-after')
+            report['native_case_evidence'][label]=dict(before_snapshot=baseline,after_snapshot=after,
+                dispatch_counts_before=list(counts),
+                dispatch_counts_after=[adapter.creates,adapter.extrusions,adapter.injected_failures],
+                expected_arguments=deepcopy(arguments))
+            persist()
+            same_snapshot(baseline,after)
             replay=runner.submit(label,operation,arguments,lambda op:(_ for _ in ()).throw(AssertionError('Inverse replay')),
                 context=arguments,mutates=True,pass_operation_id=True,verify=lambda result:result['verified'] is True)
             assert replay==job
