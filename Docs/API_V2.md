@@ -602,5 +602,5 @@ Dev67 перед сборкой: **3897 pure passed /323 CAD deselected (47,59с
 75 tools/23 mutations, full pure6075/323 CAD deselected (104,01 с).
 Installed metadata/stdio75/23 принят без source PYTHONPATH. Положительный native
 ACT-N1 прошёл (1027,38 с), ACT-N2 already-active прошёл (1018,36 с). Stale/foreign
-выполняется; остальные native/public gates открыты, L2 не расширен, стадия1 не закрыта.
+прошёл (675,30 с); controlled failure выполняется, public gates открыты, L2 не расширен, стадия1 не закрыта.
 [Контрольная точка dev89](CHECKPOINT_DEV89.md).

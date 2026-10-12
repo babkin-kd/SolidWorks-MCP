@@ -112,3 +112,15 @@ gate нового wheel. L3-P1, S1-B5-ACT и стадия 1 открыты. Но
 +самого dev89; dev88 остаётся историческим артефактом. Wheel не пересобирался,
 +native helpers текущего ACT-N3 не менялись. Новый push/CI не выполнялся.
 +
++
++**Installed ACT-N3 stale/foreign прошёл**,675,30 с, terminal/exit0:
++`work/native-part-activation-dev89-stale-1/report.json`.
++Реальное own переименование после prepare сохранило отдельные original/new
++snapshots; stale_revision до mutation checkpoint/activation. Foreign document
++и configuration — document_not_open/configuration_not_found до записи.
++Independent readback, owned cleanup и full baseline/application подтверждены;
++exact wheel/current helper hashes проверены отдельно. Report SHA256:
++`32ae54c5806d68af90d7e0af3581da75da2cab2e17106f1ada1e0f50dd1e60a6`.
++Whole accepted=false; ACT-N4 controlled_after_call запущен в
++`work/native-part-activation-dev89-controlled-1/`; public остаётся.
++
