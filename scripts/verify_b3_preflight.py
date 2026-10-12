@@ -19,7 +19,7 @@ from verify_wheel_artifact import validate_wheel
 
 HELPERS = ('verify_b3_preflight.py', 'verifier_b3_manifest.py',
            'verifier_b3_public_contract.py', 'verifier_b3_journal.py',
-           'verifier_b3_witnesses.py',
+           'verifier_b3_witnesses.py', 'verifier_b3_reader.py',
            'verifier_lifecycle.py', 'verify_installed_metadata.py', 'verify_wheel_artifact.py')
 
 

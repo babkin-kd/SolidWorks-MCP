@@ -84,12 +84,19 @@ async def observe_durable_job(client, journal_path, *, operation_id, tool, argum
         if raw.isError is not False or type(raw.structuredContent) is not dict:
             raise ValueError('No complete public job_get envelope.')
         envelope = raw.structuredContent
-        if envelope.get('status') != 'succeeded' or type(envelope.get('data')) is not dict:
+        status = 'succeeded' if expected_error is None else 'failed'
+        if envelope.get('status') != status or type(envelope.get('data')) is not dict:
             raise ValueError('Public job_get did not return a complete DTO.')
+        dto = envelope['data']
+        if (envelope.get('operation_id') != operation_id or dto.get('operation_id') != operation_id
+                or envelope.get('status') != dto.get('status')
+                or canonical(envelope.get('context')) != canonical((dto.get('payload') or {}).get('context'))
+                or canonical(envelope.get('error')) != canonical(dto.get('error'))):
+            raise ValueError('Public job_get envelope disagrees with its bound job.')
         matches = [row for row in read_journal(journal_path) if row['operation_id'] == operation_id]
         if len(matches) != 1:
             raise ValueError('One exact operation must occur in the coherent journal.')
-        return bind_durable_job(dto=envelope['data'], row=matches[0], tool=tool,
+        return bind_durable_job(dto=dto, row=matches[0], tool=tool,
                                 arguments=arguments, expected_error=expected_error)
     except BaseException:
         client.retain('B3 public DTO/independent journal observation unconfirmed')
@@ -101,15 +108,16 @@ class ReceiptIndex:
     def __init__(self):
         self._requests = {}
 
-    def add(self, *, tool, arguments, row):
+    def add(self, *, tool, arguments, row, expected_error=None):
         key = arguments.get('request_id')
         if type(key) is not str or not key:
             raise ValueError('Explicit replay request required.')
         projection = {name: value for name, value in row.items() if name != 'digest'}
         if projection.get('mutation') is None:
             projection.pop('mutation', None)
-        bind_durable_job(dto=projection, row=row, tool=tool, arguments=arguments)
-        value = canonical(dict(tool=tool, payload=SPECS[tool].payload(arguments), row=row))
+        bind_durable_job(dto=projection, row=row, tool=tool, arguments=arguments, expected_error=expected_error)
+        value = canonical(dict(tool=tool, payload=SPECS[tool].payload(arguments),
+                               expected_error=expected_error, row=row))
         if key in self._requests and self._requests[key] != value:
             raise ValueError('Replay changed tool, payload, operation or durable result.')
         self._requests[key] = value

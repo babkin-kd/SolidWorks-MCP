@@ -65,3 +65,19 @@ native_b4_accepted=false, process_stop_authorized=false,
 cad_cleanup_authorized=false. Это не доказательство фактического native restart
 и не разрешение остановить исполняющийся COM. Отдельные installed/native
 прогоны и независимый quiescence proof до остановки своего сервера остаются.
+
+Подготовлен отдельный `FinishBarrierStore` в `verifier_b4_finish_barrier.py`:
+instance proxy для JobRunner, одно точное request/operation/payload finish после
+возврата Python callback. Синхронно сохраняется полная coherent raw journal и
+return result; running/prepared с committed verification и holds сохраняются
+до явного release. Нет timeout, автоматически публикующего success, retry,
+COM-вызовов, process stop или cleanup. Перед original finish проверяется весь
+неизменный journal, не только target. Schema3/orphans/budget проверяются общим
+пассивным reader. Ошибки persistence/verification/finish удерживаются.
+
+Последний отдельный barrier-набор: **28 passed /1,12 с**; до safety-уточнения
+shared reader/history был связан с92 core checks. Итоговая интеграция с новым
+B3 reader: **89 passed /5,03 с**, наборы перекрываются. Барьер — подготовка N4,
+не доказательство native quiescence: соответствующий флаг и разрешения на
+остановку процесса/очистку остаются false. Следующий installed/native driver
+должен получить независимый exact-scope proof до остановки своего сервера.

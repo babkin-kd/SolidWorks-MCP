@@ -162,3 +162,21 @@ oracle итоговый related-набор: **294 passed /18,44 с**; private lo
 аналитическими oracles и exact fixture ownership/cleanup, public маршрут и
 строгий общий acceptance gate. Запуск CAD B3 выполняется после текущего B1 и
 согласованного B2; искусственное выполнение callbacks не объявляется passed CAD.
+
+Следующий подготовленный слой — `verifier_b3_reader.py`: один tracked durable
+send, late polling того же operation_id, исходный tool acknowledgement и полная
+job_get/SQLite сверка. Первичный terminal tool result нельзя подменить правильным
+последующим job_get. Known failed read принимается только с явным ожидаемым code;
+unknown и протокольное расхождение удерживают маршрут без дальнейшего dispatch.
+Cancellation ожидания не вызывает job_cancel или повтор. Replay сохраняет весь
+terminal row и явно заданный тип ожидаемого исхода.
+
+При сверке с настоящим job_get исправлена первоначальная ошибка нового стенда:
+outer status известного отказа тоже failed. Проверяются operation_id, status,
+context и error внешней оболочки, затем полный DTO/SQL row. Новые tests используют
+настоящие JobStore и публичный job_get; callbacks CAD запрещены.
+Итоговый совместный related-прогон B3 reader/journal/preflight и B4 barrier:
+**89 passed /5,03 с**; private `work/reader-barrier-integration-1.log`.
+Актуальный offline helper manifest: `work/b3-preflight-dev93-reader-final.json`;
+прежние preflight сохранены как история. Concrete native handlers/B3 acceptance
+gate остаются открытыми.

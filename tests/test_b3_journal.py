@@ -9,6 +9,8 @@ from types import SimpleNamespace as NS
 import pytest
 
 from solidworks_mcp.jobs import JobStore
+from solidworks_mcp.runtime_v2 import Runtime
+from solidworks_mcp.server_v2 import create_app
 
 
 scripts = str(Path(__file__).resolve().parents[1] / 'scripts')
@@ -145,20 +147,25 @@ class Client:
         self.receipt, self.safe = receipt, safe
         self.dto = dto if dto is not None else receipt.dto
         self.calls, self.retained = [], []
+        def forbidden():raise AssertionError('No worker/catalog/CAD allowed in job_get.')
+        self.app = create_app(receipt.store, Runtime(None, worker_factory=forbidden, catalog_factory=forbidden))
 
     async def observe_once(self):
         return NS(child_can_close=self.safe, fixture_can_cleanup=self.safe)
 
     async def call_tool(self, name, arguments):
         self.calls.append((name, arguments))
-        return NS(isError=False, structuredContent={'status': 'succeeded', 'data': self.dto})
+        response = await self.app._tool_manager.get_tool(name).fn(**arguments)
+        envelope = response.model_dump(mode='json')
+        envelope['data'] = self.dto
+        return NS(isError=False, structuredContent=envelope)
 
     def retain(self, reason):self.retained.append(reason)
 
 
-def observe(receipt, client):
+def observe(receipt, client, **kwargs):
     return asyncio.run(helper.observe_durable_job(client, receipt.path,
-        operation_id=receipt.row['operation_id'], tool=receipt.tool, arguments=receipt.arguments))
+        operation_id=receipt.row['operation_id'], tool=receipt.tool, arguments=receipt.arguments, **kwargs))
 
 
 def test_live_observation_binds_independent_coherent_sqlite_snapshot(receipt):
@@ -180,3 +187,33 @@ def test_protocol_failure_quarantines_the_live_owner(receipt):
     client = Client(receipt, dto=dto)
     with pytest.raises(ValueError):observe(receipt, client)
     assert len(client.retained) == 1
+
+
+def test_actual_failed_job_get_envelope_is_admitted_only_as_explicit_known_refusal(receipt):
+    arguments = {**receipt.arguments, 'request_id': 'foreign-reference'}
+    spec = helper.SPECS[receipt.tool]
+    payload = spec.payload(arguments)
+    job, _ = receipt.store.create(arguments['request_id'], spec.operation, payload['arguments'], payload['context'])
+    receipt.store.start(job['operation_id'])
+    receipt.store.finish(job['operation_id'], 'failed', error={
+        'code': 'object_body_mismatch', 'message': 'Wrong native owner.', 'requires_reconciliation': False})
+    row = next(r for r in helper.read_journal(receipt.path) if r['operation_id'] == job['operation_id'])
+    refusal = NS(store=receipt.store, path=receipt.path, tool=receipt.tool, arguments=arguments,
+                 row=row, dto=receipt.store.get(job['operation_id']))
+    assert observe(refusal, Client(refusal), expected_error='object_body_mismatch') == row
+    client = Client(refusal)
+    with pytest.raises(ValueError):observe(refusal, client)
+    assert client.retained
+
+
+@pytest.mark.parametrize('field,value', [('operation_id', 'another_operation'),
+    ('context', {'document_id': 'foreign_document'}), ('error', {'code': 'fabricated'})])
+def test_public_envelope_cannot_contradict_exact_journal_dto(receipt, field, value):
+    class Tampered(Client):
+        async def call_tool(self, name, arguments):
+            response = await super().call_tool(name, arguments)
+            response.structuredContent[field] = value
+            return response
+    client = Tampered(receipt)
+    with pytest.raises(ValueError):observe(receipt, client)
+    assert client.retained

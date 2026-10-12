@@ -194,3 +194,17 @@ B1-N4-stale-extrusion; три sketch cases подтверждены, весь fa
 не закрывались внешним потоком. Статусы B1–B5 остаются открытыми. Нового push/CI
 нет: подготовленные проверки входят в следующий локальный пакет, а не подменяют
 обязательные native handlers/public цепочки и общий release gate.
+
+В следующем независимом блоке добавлен B3 tracked reader: первоначальный
+tool response, late operation polling, whole job_get/SQL proof и replay
+связаны одним исходным запросом. Найденное расхождение failed outer envelope
+исправлено через настоящую facade-проверку. После uncertainty дальнейший dispatch
+того же маршрута запрещён. Одновременно подготовлен B4 pre-finish barrier
+с полной coherent journal/history проверкой; он не выдаёт kill/cleanup permits.
+Итоговая интеграция89 pure/5,03 с, актуальный offline installed B3 preflight
+`work/b3-preflight-dev93-reader-final.json`; native_acceptance=false.
+
+Native N4/N5 продолжает тот же36515, последняя фаза —
+B1-N5-owned-extrusion-restoration. Четыре N4 prewrite cases и N5 sketch повторно
+прошли passive exact gates; private `work/dev93-five-cases-preflight.json`.
+Полный fault/public B1 пока не принят. Нового native процесса/установки/push нет.
