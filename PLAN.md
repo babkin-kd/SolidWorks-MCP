@@ -341,6 +341,12 @@ D2-SHEET, D2-WELD, D2-DRAW, D2-LIBRARY, D2-LARGE, D2-PDM. Их результа�
 
 Milestones: [три стадии проекта](https://github.com/babkin-kd/SolidWorks-MCP/milestones).
 
+12.10.2026 задачи №1–4 обновлены напрямую через GitHub API по опубликованной
+конечной матрице: обязательные гарантии отделены от расширений, импорт/экспорт/STL
+перенесены явно, criteria B1–B5/L3 указаны конечными. Задачи остаются open
+в milestone первой стадии; прежние ранние свидетельства №2 сохранены как история.
+CI head9489360 успешен, но не закрывает native-gates или эти задачи.
+
 | Стадия | Задачи |
 | --- | --- |
 | Исправление | [1.1 Репозиторий и сборка](https://github.com/babkin-kd/SolidWorks-MCP/issues/1), [1.2 API и объекты](https://github.com/babkin-kd/SolidWorks-MCP/issues/2), [1.3 Задания](https://github.com/babkin-kd/SolidWorks-MCP/issues/3), [1.4–1.5 Изменения и приёмка](https://github.com/babkin-kd/SolidWorks-MCP/issues/4) |
