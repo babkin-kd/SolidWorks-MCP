@@ -47,3 +47,24 @@ Private evidence: `work/pytest-dev90-full-2.log`, `work/wheel-dev90-report-1.jso
 own restoration либо unknown/hold. Internal покрывает подробные отказы,
 public MCP — пользовательскую цепочку и контракт того же wheel. L3 dev89
 не подменяет native dev90. Стадия1 открыта: B1…B5.
+
+## Начало native-приёмки
+
+Подготовлен внешний `verify_rectangle_stages_positive.py`: отдельный sketch
+без тела → extrusion по returned ID, replay каждой записи, независимый native
+BREP/объём8000 и dirty сосед, exact-owned cleanup и baseline. Это только
+положительный finite scope, `accepted=false`; N4/N5 и public MCP остаются.
+Detached gate проверяет actual checkpoint/revision/guard/step ledger/result ID
+и full primitive geometry admission. Related80 pure passed4,86 с; первоначально
+исправлены синтаксис gate и неверные operation names искусственной fixture.
+Обновлённые helpers не меняют executable wheel/digest.
+
+Installed positive dev90 запущен одним CAD-владельцем;
+`work/native-rectangle-dev90-positive-1/report.json`. Пока выполняется read-only
+`sketch.prepare_rectangle`, native-успех не объявляется. New-part setup имеет
+только exact normal creation returns; unknown/pending сохраняют процесс/receipts,
+никакой roster-adoption или повторной COM-записи нет.
+
+Независимая public payload обвязка подготовлена отдельно; related62 pure
+passed3,63 с без CAD/SDK startup. Общие supervisor helpers работающего процесса
+не меняются до его завершения. Нового push/CI нет.
