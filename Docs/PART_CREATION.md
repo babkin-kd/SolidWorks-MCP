@@ -36,6 +36,18 @@ Related128 source pure passed/1,38 с, `work/pytest-rectangle-snapshot-2.log`;
 запрет сохранён. Домен/global session guard, runtime/фасады и native B1
 ещё не готовы; новые snapshot/mixin не подключены к runtime-адаптеру.
 
+Добавлена read-only подготовка в `rectangle_construction_catalog.py`: целевой
+empty/sketch stage, полная поддержанная сессия и два наблюдения каждой модели,
+точное разрешение ссылки через FeatureCatalog, frame/controls/name checks,
+полная ревизия с параметрами и данными соседа. Whole-prepare watches охватывают
+все baseline parts и освобождаются через ExitStack даже при poll failure.
+Related57 source pure passed/0,50 с (`work/pytest-rectangle-preparation-2.log`):
+revision меняется при изменении соседа без изменения target stamp; чужие refs,
+unsupported target states и neighbor edit-and-undo отвергаются. Предыдущий
+прогон53/4 failed относился к ошибкам новой тестовой обвязки параметров/props;
+исправлен отдельно. Native execution_available=false: executor/checkpoint,
+post-release proof/recovery, фасады и native-приёмка остаются.
+
 ## Исторические принятые bundled-сценарии
 
 Установленный dev51 принят для цепочки «новая деталь → пластина 40 × 20 × 10 мм → сквозной угловой вырез 10 × 5 мм»: **2426 pure passed, 323 CAD deselected; fresh same-wheel internal 6 native passed и public MCP stdio 7 native passed, оба accepted=true**. Каталог — **28 инструментов, 7 mutations**. Подтверждены полный L-образный BREP (12 вершин, 18 рёбер, 8 граней), независимые native объём около 7500 мм³ и площадь 2700 мм², internal stale-отказ и scoped restoration после настоящего создания выреза, публичный повтор request_id без второй операции и сохранность исходной детали/выделения/вида. Свои модели закрыты, флаг свободен, non-STL настройки сохранены. Это ограниченная приёмка указанной цепочки; исторические проверки других scope не засчитываются за новые прогоны dev51. Импорт/экспорт отложены, стадия 1 открыта. См. [PART_CUT.md](PART_CUT.md).

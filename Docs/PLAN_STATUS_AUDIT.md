@@ -49,6 +49,10 @@ B1: в исходниках добавлены отдельные определ
 Добавлен passive full snapshot пустой детали/закрытого прямоугольного эскиза:
 related128 source pure passed/1,38 с; это artificial SDK, не CAD. Полный домен,
 session guard, публичные фасады и installed/native B1 остаются.
+Whole-session read-only подготовка B1 добавлена: related57 source pure/0,50 с,
+точные FeatureCatalog refs, neighbor-bound revision и span-event watches всех
+baseline parts. Native execution ещё недоступен, mutation executor/recovery
+и public/installed/native gates остаются. Это не новая CAD-приёмка dev89.
 
 ## Хронология приёмки до текущего итога
 
