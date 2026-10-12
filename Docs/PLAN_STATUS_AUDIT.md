@@ -100,7 +100,8 @@ helper относится к следующему кандидату и не п�
 Source wheel Git b2cfa7a сохранён локально; нового push/CI нет.
 
 B1 installed positive native запущен на exact dev90, один владелец COM;
-пока выполняется sketch preparation, ни один native gate B1 не закрыт.
+sketch preparation succeeded, sketch.create_rectangle running; ни один
+native gate B1 не закрыт.
 Внешний detached job gate прошёл80 artificial pure/4,86 с; public payload
 обвязка62 pure/3,63 с. N4/N5 и public MCP остаются отдельными условиями.
 [Живой срез и ограничения](CHECKPOINT_DEV90.md).

@@ -60,8 +60,9 @@ Detached gate проверяет actual checkpoint/revision/guard/step ledger/re
 Обновлённые helpers не меняют executable wheel/digest.
 
 Installed positive dev90 запущен одним CAD-владельцем;
-`work/native-rectangle-dev90-positive-1/report.json`. Пока выполняется read-only
-`sketch.prepare_rectangle`, native-успех не объявляется. New-part setup имеет
+`work/native-rectangle-dev90-positive-1/report.json`. Read-only
+`sketch.prepare_rectangle` завершилась succeeded; теперь выполняется
+`sketch.create_rectangle`. Native-успех записи не объявляется. New-part setup имеет
 только exact normal creation returns; unknown/pending сохраняют процесс/receipts,
 никакой roster-adoption или повторной COM-записи нет.
 
