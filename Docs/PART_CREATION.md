@@ -4,9 +4,10 @@
 
 Текущий source-кандидат dev90 включает executor/checkpoint/native-step
 журнал и условное восстановление доказанного собственного эффекта. Устойчивые
-result IDs и runtime/MCP-фасады подключены; нужны итоговый wheel и
-installed/native-приёмка. Установленный dev89 остаётся
-неизменным; L3 того wheel принят [отдельно](NATIVE_FIRST_SAVE_DEV89_ACCEPTANCE.md).
+result IDs и runtime/MCP-фасады подключены; нужна native-приёмка.
+Dev90 установлен, metadata/stdio79/25 принят; L3 прежнего dev89 принят
+[отдельно](NATIVE_FIRST_SAVE_DEV89_ACCEPTANCE.md).
+[Точная контрольная точка dev90](CHECKPOINT_DEV90.md).
 Ниже сохранены исходные шаги разработки; их pure-результаты не суммируются.
 
 Подключены четыре отдельные инструмента: `sketch_prepare_rectangle`,
@@ -19,14 +20,14 @@ installed/native-приёмка. Установленный dev89 остаётс
 поддерживается; служебные folder nodes не получают вымышленных PID.
 Related294 source pure passed13,28 с: MCP validation/routing, actual durable
 JobStore/coordinator и artificial SDK. `work/pytest-rectangle-facades-final-2.log`.
-Каталог исходного кандидата79/25; установленный dev89 остаётся75/23.
+Каталог установленного dev90 подтверждён79/25.
 
 Final source pure: **6390 passed, 323 CAD deselected, 139,96 с**;
 `work/pytest-dev90-full-2.log`. Первый полный прогон6389/1 failed (127,63 с)
 выявил только несинхронизированную версию registry template; metadata
 исправлена, никакая публикация registry/PyPI не выполнялась. Native-проверки
-не запускались и deselected не засчитываются. Следующий gate — точный wheel,
-его installed metadata/stdio и самостоятельная native-приёмка B1.
+не запускались и deselected не засчитываются. Wheel и installed metadata/stdio
+теперь приняты; самостоятельная internal/public native-приёмка B1 остаётся.
 
 Добавлены чистые определения `RectangleSketch` / `BlindRectangleExtrusion`
 и внутренние native-мосты в `cad_rectangle_construction.py`. Создание эскиза

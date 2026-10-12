@@ -11,8 +11,10 @@ mutations. Подготовка read-only; записи требуют document/
 только прямоугольник на origin plane, одна конфигурация и один blind solid.
 Восстановление сохраняет заимствованный эскиз. Обе операции имеют application
 checkpoint, native pending/returned journal и независимые post-release proof.
-Связанные294 source pure прошли13,28 с; installed/native B1 ещё не приняты.
-Установка dev89 пока не менялась. [Точный scope и остатки](PART_CREATION.md).
+Связанные294 source pure прошли13,28 с; full6390/323 CAD deselected прошёл139,96 с.
+Dev90 собран/установлен, metadata/stdio79/25 принят без source `PYTHONPATH`;
+native B1 ещё не принят. [Точная привязка](CHECKPOINT_DEV90.md).
+[Scope и остатки](PART_CREATION.md).
 
 **L3 принят на dev89:** семь внутренних отчётов и public4/4/3183,64 с,
 saved-file ACT/Save3, independent disk readback и полный baseline подтверждены.

@@ -90,6 +90,15 @@ pure дал6389 passed/1 failed/323 CAD deselected (127,63 с): registry templat
 L3 dev89 остаётся принятым по своему exact wheel/отчёту; обновлённый metadata
 helper относится к следующему кандидату и не переписывает старые hashes.
 
+**Текущий installed кандидат dev90:** wheel/build accepted, установлен только
+в dev .venv; metadata/stdio79/25, output schemas и provenance приняты без source
+`PYTHONPATH`. Adapter MRO связывает новые construction/snapshot mixins;
+конструктор/COM не вызывались. Native B1 остаётся, source6390/323 deselected
+не заменяет его. [Точная привязка и остаток](CHECKPOINT_DEV90.md).
+Упаковка через `python -m build` не запустилась (build не установлен);
+успешная offline pip/setuptools сборка и wheel gate подтверждены отдельно.
+Source wheel Git b2cfa7a сохранён локально; нового push/CI нет.
+
 ## Хронология приёмки до текущего итога
 
 Следующие записи сохраняют состояние на момент своих контрольных точек;
