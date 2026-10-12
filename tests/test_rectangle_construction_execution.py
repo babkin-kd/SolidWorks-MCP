@@ -20,21 +20,42 @@ from test_native_document_close_v2 import Worker
 def execution(request, sketch_proof, extrusion_proof, tmp_path):
     kind = request.param
     before, after, definition = sketch_proof if kind == 'sketch' else extrusion_proof
+    if kind=='sketch':
+        next(r for r in after['snapshots']['target']['references']
+            if r['kind']=='feature' and r['role']=='feature:4')['token']='aa1234'
     adapter = NS(state=deepcopy(before), busy=False, dispatches=0, inverses=0, releases=0,
                  fault=None, guard_count=0)
     model, neighbor, cfg = object(), object(), object()
     reference = NS(native_id=0 if kind == 'sketch' else 4)
+    reference_position=next(i for i,r in enumerate(before['snapshots']['target']['clone_state']['features'])
+        if r['native_id']==reference.native_id)
+    reference_token=bytes.fromhex(next(r['token'] for r in before['snapshots']['target']['references']
+        if r['kind']=='feature' and r['role']==f'feature:{reference_position}'))
+    current_features = [reference]
     entry = NS(document_id='target', model=model, identity=id(model), features={})
     other = NS(document_id='neighbor', model=neighbor, identity=id(neighbor), features={})
     adapter.application_busy = lambda: adapter.busy
     adapter.configuration_identity = lambda *args: cfg
-    adapter.features = lambda current: [reference]
+    adapter.features = lambda current: list(current_features)
     adapter.identity = id
     adapter.feature_summary = lambda current: {'native_id': current.native_id}
     store = JobStore(tmp_path/'construction.sqlite')
     documents = NS(adapter=adapter, resolve=lambda *args: (entry, {}))
     catalog = RectangleConstructionCatalog(documents, store, 'construction_epoch')
-    catalog.features._resolve = lambda *args: (reference, NS(persistent_id=b'exact-reference'))
+    catalog.features._resolve = lambda *args: (reference, NS(persistent_id=reference_token))
+    original_resolve = catalog.features._resolve
+    # Use the real register/resolve implementation against exact artificial PIDs.
+    created_tokens={}
+    adapter.persistent_id=lambda current,obj: created_tokens[id(obj)]
+    adapter.resolve_persistent_id=lambda current,token,kind: next(obj for obj in current_features
+        if created_tokens.get(id(obj))==token)
+    adapter.same_persistent_id=lambda current,a,b:a==b
+    from solidworks_mcp.features import FeatureCatalog
+    catalog.features._register=FeatureCatalog._register.__get__(catalog.features)
+    def resolve(*args):
+        if args[-1]==('feat_'+'a'*32): return original_resolve(*args)
+        return FeatureCatalog._resolve(catalog.features,*args)
+    catalog.features._resolve=resolve
     catalog.sessions.census._disk_files = lambda semantic: deepcopy(adapter.state['semantic']['files'])
 
     def capture(target_id, guarded_ids=()):
@@ -48,7 +69,8 @@ def execution(request, sketch_proof, extrusion_proof, tmp_path):
     def prepared(*args, **kwargs):
         return dict(scope='construction_artificial_test_v1', revision='rev_'+hashlib.sha256(
             _json(before).encode()).hexdigest(), baseline=deepcopy(before),
-            reference_persistent_id_hex=b'exact-reference'.hex(), plane_transform=[1.,0.,0.])
+            reference_persistent_id_hex=reference_token.hex(), plane_transform=[float.fromhex(v)
+                for v in after['snapshots']['target']['clone_state']['sketch']['reference_plane']['transform']])
     catalog.prepare_sketch = catalog.prepare_extrusion = prepared
     catalog._prepare = lambda *args, **kwargs: {
         **prepared(), 'revision': prepared()['revision'] if adapter.state == before else 'rev_changed'}
@@ -73,6 +95,10 @@ def execution(request, sketch_proof, extrusion_proof, tmp_path):
                 owned.pending_creation = True
                 raise RuntimeError('Artificial lost native response after effect')
             created = NS(native_id=4 if kind == 'sketch' else 5)
+            token=next(r['token'] for r in adapter.state['snapshots']['target']['references']
+                if r['kind']=='feature' and r['role']==('feature:4' if kind=='sketch' else 'feature:5'))
+            created_tokens[id(created)]=bytes.fromhex(token)
+            current_features.append(created)
             setattr(owned, kind, created)
             setattr(owned, kind+'_identity', id(created))
             owned.native_call_returned = True
@@ -88,6 +114,7 @@ def execution(request, sketch_proof, extrusion_proof, tmp_path):
         def effect():
             adapter.inverses += 1
             adapter.state = deepcopy(before)
+            current_features[:]=[reference]
             owned.restored, owned.restore_attempted = True, True
             if adapter.fault == 'bad_restored_counter':
                 adapter.state['semantic']['documents'][0].pop('observation_sequence')
@@ -143,6 +170,9 @@ def test_full_domain_success_is_proved_after_guard_release_and_journal_is_durabl
     steps = job['mutation']['verification']['native_steps']
     assert steps[-1]['name'] == 'rectangle_released_check' and steps[-1]['evidence']['verified'] is True
     assert job['result']['after']['guard_released'] is True
+    object_id=job['result']['value']['object_id']
+    assert object_id.startswith('feat_') and len(object_id)==37
+    assert job['result']['value']['sketch_object_id' if execution.kind=='sketch' else 'feature_object_id']==object_id
     assert job['result']['execution_guard']['full_release_check'] == 'effect'
     assert not execution.catalog.receipts
 
@@ -206,6 +236,28 @@ def test_request_payload_conflict_never_reuses_or_repeats_a_native_effect(execut
     first=run(execution)
     with pytest.raises(JobError): run(execution,revision='rev_different_payload')
     assert execution.adapter.dispatches==1 and first['status']=='succeeded'
+
+
+def test_result_reference_failure_keeps_unknown_hold_without_deleting_a_proved_created_feature(execution,monkeypatch):
+    def fail(*args):raise RuntimeError('Artificial persistent-reference read failure')
+    monkeypatch.setattr(execution.catalog.features,'_register',fail)
+    job=run(execution)
+    assert job['status']=='unknown' and job['mutation']['phase']=='unresolved'
+    assert execution.adapter.dispatches==1 and execution.adapter.inverses==0
+    assert execution.catalog.receipts[job['operation_id']]['reference_binding_unconfirmed'] is True
+
+
+def test_registered_result_pid_must_equal_the_independent_current_native_anchor(execution,monkeypatch):
+    old=execution.catalog.features._resolve
+    fake=NS(object_id='feat_'+'f'*32,persistent_id=b'foreign PID')
+    monkeypatch.setattr(execution.catalog.features,'_register',lambda *args:fake)
+    def resolve(*args):
+        if args[-1]==fake.object_id:return execution.adapter.features(execution.catalog.documents.resolve('target','Основная')[0].model)[-1],fake
+        return old(*args)
+    monkeypatch.setattr(execution.catalog.features,'_resolve',resolve)
+    job=run(execution)
+    assert job['status']=='unknown' and execution.adapter.inverses==0
+    assert execution.adapter.dispatches==1
 
 
 @pytest.mark.parametrize('fault',['bad_restored_counter','bad_restored_stamp'])

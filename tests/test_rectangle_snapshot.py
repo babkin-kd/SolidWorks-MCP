@@ -52,11 +52,16 @@ class Adapter(CadRectangleSnapshotMixin):
     def feature_deletion_context(self, model):
         return dict(equations=dict(enumerated_count=0, disabled_count=0, disabled_definitions_captured=True),
             external_references={'count': 0}, auxiliary_references={'count': 0})
-    def feature_external_references(self, features): return {'total_reference_rows': 0}
+    def feature_external_references(self, features):
+        return dict(scope='native_feature_external_references_v1',feature_count=len(features),
+            total_reference_rows=0,features=[dict(native_id=f.identifier,count=0,rows=[]) for f in features])
     def dimension_geometry_snapshot(self, model):
         return {'representation': 'planar_polyhedral_brep_v1', 'bodies': []}
     def dimensions(self, model, features): return []
-    def feature_dependencies(self, features): return {'nodes': []}
+    def feature_dependencies(self, features):
+        return dict(scope='native_feature_relation_capture_v1',feature_count=len(features),
+            parent_links=[],child_links=[],absorbed_links=[],parent_links_without_child_confirmation=[],
+            child_links_without_parent_confirmation=[],relations_read=0)
     def reference_plane_transform(self, plane): return IDENTITY
     def persistent_id(self, model, obj):
         return next(token for token, value in self.objects.items() if value is obj)

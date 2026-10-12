@@ -4,6 +4,7 @@ import json
 from .documents import rejected
 from .jobs import _json
 from .native_first_save import SNAPSHOT_KEYS, SNAPSHOT_SCOPE, validated_part_snapshot
+from .rectangle_inventory import feature_relations, empty_feature_external_inventory
 
 
 SCOPE = 'native_rectangle_construction_snapshot_v1'
@@ -78,6 +79,11 @@ def validated_rectangle_snapshot(value):
             raise fail('Every declared data inventory must contain a complete observation.')
     if type(data['annotations']) is not list:
         raise fail('The complete native annotation inventory is required.')
+    try:
+        feature_relations(data)
+        empty_feature_external_inventory(data)
+    except (KeyError, ValueError, TypeError) as exc:
+        raise fail('Complete typed feature relations and external inventories are required before construction.') from exc
     refs = value['references']
     if type(refs) is not list or not 4 <= len(refs) <= 5000:
         raise fail('Every structural reference needs a current native anchor.')

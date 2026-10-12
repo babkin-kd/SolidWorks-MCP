@@ -10,6 +10,8 @@ from .cad_features import CadFeaturesMixin
 from .cad_dimensions import CadDimensionsMixin
 from .cad_deletion_context import CadDeletionContextMixin
 from .cad_part_creation import CadPartCreationMixin
+from .cad_rectangle_construction import CadRectangleConstructionMixin
+from .cad_rectangle_snapshot import CadRectangleSnapshotMixin
 from .cad_part_cut import CadPartCutMixin
 from .cad_part_hole import CadPartHoleMixin
 from .cad_part_pattern import CadPartPatternMixin
@@ -34,7 +36,7 @@ from .timings_v2 import timed_call
 from .cad_selection_scope import preserved_selection
 
 
-class SolidWorksDocuments(CadComponentsMixin, CadMassPropertiesMixin, CadGeometryMixin, CadFeaturesMixin, CadDimensionsMixin, CadDeletionContextMixin, CadPartCreationMixin, CadPartCutMixin, CadPartHoleMixin, CadPartPatternMixin, CadPartFilletMixin, CadPartRevolveMixin, CadSheetProfileMixin, CadSheetFlatMixin, CadSheetFlatReadMixin, CadSheetParametersMixin, CadSheetEdgeFlangeMixin, CadSheetFlangeFlatMixin, CadDocumentCreationMixin, CadNativeDocumentSaveMixin, CadNativeDocumentCloseMixin, CadNativeDocumentOpenMixin, CadNativeFirstSaveMixin, CadNativeFirstSaveSnapshotMixin, CadSketchesMixin):
+class SolidWorksDocuments(CadComponentsMixin, CadMassPropertiesMixin, CadGeometryMixin, CadFeaturesMixin, CadDimensionsMixin, CadDeletionContextMixin, CadRectangleConstructionMixin, CadRectangleSnapshotMixin, CadPartCreationMixin, CadPartCutMixin, CadPartHoleMixin, CadPartPatternMixin, CadPartFilletMixin, CadPartRevolveMixin, CadSheetProfileMixin, CadSheetFlatMixin, CadSheetFlatReadMixin, CadSheetParametersMixin, CadSheetEdgeFlangeMixin, CadSheetFlangeFlatMixin, CadDocumentCreationMixin, CadNativeDocumentSaveMixin, CadNativeDocumentCloseMixin, CadNativeDocumentOpenMixin, CadNativeFirstSaveMixin, CadNativeFirstSaveSnapshotMixin, CadSketchesMixin):
     def mutation_guard(self, model):
         return ApplicationModelMutationGuard(self._sw, [model],
             lambda current, state: preserved_selection(self, current, state=state, label='model_mutation'))

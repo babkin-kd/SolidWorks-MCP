@@ -127,7 +127,9 @@ class RectangleConstructionCatalog(RectangleConstructionExecutionMixin):
         revision = 'rev_' + hashlib.sha256(_json(payload).encode('utf-8')).hexdigest()
         return dict(**payload, revision=revision,
                     revision_scope=scope, expected_geometry=expected,
-                    native_execution_available=False)
+                    native_execution_available=all(callable(getattr(self.adapter, name, None)) for name in (
+                        'native_open_guard', 'new_rectangle_stage_receipt',
+                        'create_rectangle_sketch' if profile == EMPTY else 'extrude_rectangle_sketch')))
 
     def prepare_sketch(self, document_id, configuration, **parameters):
         definition = RectangleSketch.validate(**parameters)

@@ -1,5 +1,25 @@
 # API v2: текущий кандидат первой стадии
 
+**Исходный кандидат dev90, B1:** реализованы отдельные
+`sketch_prepare_rectangle` / `sketch_create_rectangle` и
+`part_prepare_rectangle_extrusion` / `part_extrude_rectangle`.
+Runtime, CAD adapter и MCP-фасады подключены; источник содержит79 tools/25
+mutations. Подготовка read-only; записи требуют document/configuration/object ID,
+полной revision и request_id. Создание эскиза возвращает закрытый sketch без тела
+и `data.value.sketch_object_id`; затем новая подготовка выдавливания использует
+этот ID как baseline. Выдавливание возвращает `feature_object_id`; поддержан
+только прямоугольник на origin plane, одна конфигурация и один blind solid.
+Восстановление сохраняет заимствованный эскиз. Обе операции имеют application
+checkpoint, native pending/returned journal и независимые post-release proof.
+Связанные294 source pure прошли13,28 с; installed/native B1 ещё не приняты.
+Установка dev89 пока не менялась. [Точный scope и остатки](PART_CREATION.md).
+
+**L3 принят на dev89:** семь внутренних отчётов и public4/4/3183,64 с,
+saved-file ACT/Save3, independent disk readback и полный baseline подтверждены.
+[Привязка к wheel и ограничения](NATIVE_FIRST_SAVE_DEV89_ACCEPTANCE.md).
+Пять блоков B1…B5 остаются. Следующие записи dev88 и более ранних кандидатов
+сохранены как история, без переноса их статусов на dev90.
+
 L2 bounded native open принят на exact installed dev87: metadata71/21,
 internal13/13 (210,07 с), public MCP11/11 (189,68 с), оба accepted=true.
 Полный source pure5560 passed/323 CAD deselected (77,43 с); external cleanup

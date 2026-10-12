@@ -26,7 +26,22 @@ def proof(empty_adapter, monkeypatch):
     data['profile'] = SKETCH
     data['features'].append(dict(native_id=4, feature_type='ProfileFeature', name='Эскиз основания',
                                 suppressed=False, error_code=0, owner_native_id=None))
+    data['dependencies']=dict(scope='native_feature_relation_capture_v1',feature_count=5,
+        parent_links=[[0,4]],child_links=[[0,4]],absorbed_links=[],
+        parent_links_without_child_confirmation=[],child_links_without_parent_confirmation=[],relations_read=2)
+    data['feature_external_reference_inventory']=dict(scope='native_feature_external_references_v1',
+        feature_count=5,total_reference_rows=0,
+        features=[dict(native_id=r['native_id'],count=0,rows=[]) for r in data['features']])
+    annotation_capture=native.first_save_part_snapshot(native.model)
+    data['annotations']=deepcopy(annotation_capture['clone_state']['annotations'][:2])
+    for row in annotation_capture['references']:
+        if row['kind']=='annotation' and row['role'] in {r['role'] for r in data['annotations']}:
+            new['references'].append(deepcopy(row))
     raw['feature_native_id'] = 4
+    raw['feature_pid_hex']={'reference_role':'feature:4'}
+    raw['reference_plane']['pid_hex']={'reference_role':'feature:0'}
+    raw['model_origin']['pid_hex']={'reference_role':'feature:3'}
+    raw.pop('entity_references')
     data['sketch'] = raw
     dimensions = [native.dimension_summary(d, ['Основная']) for d in native.dimensions(native.model, native.feature_rows)[:2]]
     renames = {}
@@ -104,3 +119,30 @@ def test_partial_and_nonfinite_proof_never_admit_success(proof):
     assert not verified_rectangle_sketch(before, after, 'target', definition, 4)
     after.pop('snapshots')
     assert not verified_rectangle_sketch(before, after, 'target', definition, 4)
+
+
+def test_declared_model_origin_parent_is_supported_without_allowing_other_new_dependencies(proof):
+    before,after,definition=proof
+    deps=after['snapshots']['target']['clone_state']['dependencies']
+    deps['parent_links'].append([3,4]);deps['child_links'].append([3,4]);deps['relations_read']=4
+    assert verified_rectangle_sketch(before,after,'target',definition,4)
+
+
+@pytest.mark.parametrize('fault',['missing_plane_dependency','foreign_dependency','external_inventory',
+    'extra_annotation','missing_annotation','annotation_position','annotation_extra_field','extra_anchor'])
+def test_complete_declared_relation_annotation_and_anchor_delta_is_required(proof,fault):
+    before,after,definition=proof
+    data=after['snapshots']['target']['clone_state']
+    if fault=='missing_plane_dependency':
+        data['dependencies']['parent_links']=[];data['dependencies']['child_links']=[]
+        data['dependencies']['relations_read']=0
+    elif fault=='foreign_dependency':
+        data['dependencies']['parent_links'].append([1,4]);data['dependencies']['child_links'].append([1,4])
+        data['dependencies']['relations_read']=4
+    elif fault=='external_inventory':data['feature_external_reference_inventory']['features'].pop()
+    elif fault=='extra_annotation':data['annotations'].append({**data['annotations'][0],'role':'annotation:Чужая'})
+    elif fault=='missing_annotation':data['annotations'].pop()
+    elif fault=='annotation_position':data['annotations'][0]['position'][0]='nan'
+    elif fault=='annotation_extra_field':data['annotations'][0]['unknown']='unobserved meaning'
+    else:after['snapshots']['target']['references'].append(dict(kind='body',role='body:0',token='foreign'))
+    assert not verified_rectangle_sketch(before,after,'target',definition,4)

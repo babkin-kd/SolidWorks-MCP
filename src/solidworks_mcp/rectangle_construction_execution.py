@@ -1,4 +1,4 @@
-"""Guarded standalone construction executor; no public registration yet.
+"""Guarded standalone construction executor and exact returned feature IDs.
 
 Only fully observed effects may authorize an owned inverse. Missing receipts,
 pending calls, storage failures and foreign deltas retain application holds.
@@ -28,7 +28,8 @@ class RectangleConstructionExecutionMixin:
                            definition, prepare_public, admission, kind):
         context = dict(entries=(), receipt=None, guarded_ids=(), manager=None,
             guard_released=False, release_attempted=False, pending_release=False,
-            journal_failed=False, guards=[], created_native_id=None, verified_mode=None)
+            journal_failed=False, reference_binding_unconfirmed=False,
+            guards=[], created_native_id=None, verified_mode=None)
 
         def record(label, phase, evidence):
             context['journal_failed'] = True
@@ -45,7 +46,8 @@ class RectangleConstructionExecutionMixin:
 
         def pending():
             r = receipt_evidence()
-            return (context['journal_failed'] or context['pending_release'] or (r is not None and
+            return (context['journal_failed'] or context['pending_release']
+                or context['reference_binding_unconfirmed'] or (r is not None and
                 (r['pending_creation'] or r['pending_sketch_close'] or r['selection_uncertain']
                  or r['pending_native_step'] is not None or r['native_step_journal_failed'])))
 
@@ -73,6 +75,7 @@ class RectangleConstructionExecutionMixin:
             self.receipts[operation_id] = context
             return PreparedMutation(public['revision'], dict(scope=public['scope'], baseline=state,
                 definition=vars(definition), reference_persistent_id_hex=reference.persistent_id.hex(),
+                reference_native_id=self.adapter.feature_summary(feature)['native_id'],
                 plane_transform=public['plane_transform']), effect_scope='application')
 
         def validate(prepared):
@@ -116,6 +119,16 @@ class RectangleConstructionExecutionMixin:
 
         def effect(before, observed):
             r = observed['receipt']
+            if kind=='sketch':
+                snapshot=observed['state']['snapshots'][document_id]
+                sketch=snapshot['clone_state'].get('sketch')
+                if not isinstance(sketch,dict):return False
+                plane=sketch['reference_plane']
+                role=plane['pid_hex']['reference_role']
+                anchors=[ref['token'] for ref in snapshot['references'] if ref['kind']=='feature' and ref['role']==role]
+                if (plane['native_id']!=before['reference_native_id']
+                        or anchors!=[before['reference_persistent_id_hex']]
+                        or plane['transform']!=[float(v).hex() for v in before['plane_transform']]):return False
             return (observed['pending'] is False and r is not None and r['attempted'] is True
                 and r['native_call_returned'] is True and r['restored'] is False
                 and (kind != 'sketch' or r['sketch_closed'] is True)
@@ -141,6 +154,35 @@ class RectangleConstructionExecutionMixin:
 
         def verify(before, after, value):
             good = after['guard_released'] is True and effect(before, after)
+            if good:
+                context['reference_binding_unconfirmed'] = True
+                entry, _ = self.documents.resolve(document_id, configuration)
+                receipt = context['receipt']
+                created = receipt.sketch if kind == 'sketch' else receipt.extrusion
+                owned_identity = receipt.sketch_identity if kind == 'sketch' else receipt.extrusion_identity
+                if entry.identity != context['entry'].identity or self.adapter.identity(created) != owned_identity:
+                    raise ExecutionFailure('rectangle_created_reference_changed', 'Only the exact retained feature may receive a result ID.', uncertain=True)
+                cfg = self.adapter.configuration_identity(entry.model, configuration)
+                reference = self.features._register(entry, configuration, cfg, created)
+                current, _ = self.features._resolve(entry, configuration, cfg,
+                    self.adapter.features(entry.model), reference.object_id)
+                rows = after['state']['snapshots'][document_id]['clone_state']['features']
+                matches = [i for i, row in enumerate(rows) if row['native_id'] == context['created_native_id']]
+                if len(matches) != 1:
+                    raise ExecutionFailure('rectangle_created_reference_changed', 'The created native ID has no exact observed role.', uncertain=True)
+                role = 'feature:' + str(matches[0])
+                anchors = after['state']['snapshots'][document_id]['references']
+                tokens = [r['token'] for r in anchors if r['kind'] == 'feature' and r['role'] == role]
+                if tokens != [reference.persistent_id.hex()] or self.adapter.identity(current) != owned_identity:
+                    raise ExecutionFailure('rectangle_created_reference_changed', 'Returned ID must bind the independently observed exact persistent anchor.', uncertain=True)
+                context['reference_binding_unconfirmed'] = False
+                # Registration/getters cannot adopt a changed model or neighbor.
+                closing = inspect(PreparedMutation('', before))
+                good = closing['guard_released'] is True and effect(before, closing)
+                if good:
+                    after.update(closing)
+                    value['object_id'] = reference.object_id
+                    value['sketch_object_id' if kind == 'sketch' else 'feature_object_id'] = reference.object_id
             record('released_check', 'pending', dict(document_id=document_id))
             record('released_check', 'returned', dict(verified=good, observed=after))
             if good: context['verified_mode'] = 'effect'
@@ -208,7 +250,9 @@ class RectangleConstructionExecutionMixin:
                 return dict(scope='rectangle_construction_guard_v1',
                     native_guards=[deepcopy(g.evidence) for g in context['guards']],
                     guard_released=context['guard_released'], pending_release=context['pending_release'],
-                    journal_failed=context['journal_failed'], full_release_check=context['verified_mode'])
+                    journal_failed=context['journal_failed'],
+                    reference_binding_unconfirmed=context['reference_binding_unconfirmed'],
+                    full_release_check=context['verified_mode'])
 
         try:
             result = MutationCoordinator(self.store, self.connection_epoch).execute(operation_id,

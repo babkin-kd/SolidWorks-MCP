@@ -78,6 +78,18 @@ runtime/MCP и installed/native gates остаются; каталог dev89 н�
 JobStore/MutationCoordinator; `work/pytest-rectangle-executor-final-2.log`.
 Full pure/build нового кандидата выполняется после законченных фасадов.
 
+Следующий source-кандидат dev90: устойчивые result IDs по actual FeatureCatalog,
+четыре отдельные MCP-функции B1 и runtime/CAD adapter подключены. Schema79/25
+отражает реализованные функции; installed/native пока не принято, dev89
+остаётся75/23. Related294 source pure прошли13,28 с, включая actual stdio,
+MCP validation, replay/hold и exact PID/plane/inventory проверки. Первый full
+pure дал6389 passed/1 failed/323 CAD deselected (127,63 с): registry template
+ещё содержалdev89. Исправлены только две версии metadata; final full прошёл
+**6390 passed/323 CAD deselected, 139,96 с**. Native не запускался;
+`work/pytest-dev90-full-2.log`. Wheel/build/installed и native B1 остаются.
+L3 dev89 остаётся принятым по своему exact wheel/отчёту; обновлённый metadata
+helper относится к следующему кандидату и не переписывает старые hashes.
+
 ## Хронология приёмки до текущего итога
 
 Следующие записи сохраняют состояние на момент своих контрольных точек;

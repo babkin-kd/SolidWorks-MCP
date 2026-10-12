@@ -25,10 +25,14 @@ wheel без source `PYTHONPATH`. Общая стадия 1 остаётся о�
 
 Все девять внешних captures вернулись. Журнал публичного сервера содержит
 22 succeeded jobs и 10 committed mutations; running/unknown не осталось.
-Точные 20 helper hashes сверены с текущим доверенным inventory драйвера.
+Точные 20 helper hashes сверены с доверенным inventory драйвера на момент приёмки.
 Отдельный detached audit повторно подтвердил actual committed first-save job
 и общий gate всех семи внутренних отчётов. Приватный отчёт, CAD и SQLite
 остаются в ignored `work/`, в Git публикуется только эта сводка.
+
+Позднейшие изменения metadata helper для dev90 не переписывают этот отчёт
+или его hashes. Новому кандидату нужны собственные installed/native gates;
+старую приёмку нельзя переименовать в приёмку нового wheel.
 
 Поддержанные non-STL настройки совпали с исходными. STL preferences исключены
 из обязательного scope; их приёмка не объявляется. Их наблюдаемое совпадение
