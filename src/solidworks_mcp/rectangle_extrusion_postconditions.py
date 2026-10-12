@@ -52,7 +52,7 @@ def _restore_qualifications(snapshot):
     return data
 
 
-def _dependency_delta(old, new, old_features, new_features, sketch_id, created_id):
+def _dependency_delta(old, new, old_features, new_features, sketch_id, created_id, plane_id, origin_id):
     keys = {'scope', 'feature_count', 'parent_links', 'child_links', 'absorbed_links',
             'parent_links_without_child_confirmation', 'child_links_without_parent_confirmation', 'relations_read'}
 
@@ -84,8 +84,16 @@ def _dependency_delta(old, new, old_features, new_features, sketch_id, created_i
 
     first, last = read(old, old_features), read(new, new_features)
     expected = (sketch_id, created_id)
+    # SW2023 also reports the borrowed sketch's exact supporting plane/origin
+    # as direct parents of the first extrusion. These are independently bound
+    # above, and may project only an already confirmed baseline sketch link.
+    allowed = {expected} | {(parent, created_id) for parent in (plane_id, origin_id)
+        if (parent, sketch_id) in first['parent_links'] & first['child_links']}
+    extra = last['parent_links'] - first['parent_links']
+    if not {expected} <= extra <= allowed:
+        return False
     for key in ('parent_links', 'child_links'):
-        if last[key] != first[key] | {expected}:
+        if last[key] != first[key] | extra:
             return False
     if last['absorbed_links'] != first['absorbed_links'] | {(created_id, sketch_id)}:
         return False
@@ -108,10 +116,17 @@ def _external_delta(old, new, old_features, new_features, created_id):
 
 
 def _controls(extrusion, depth):
+    # ThinWallType describes a thin extrusion only. SW2023 returns -1 for the
+    # first non-thin solid; the artificial/older capture uses 0. Admit precisely
+    # those inactive encodings while retaining IsThinFeature=False, both zero
+    # wall thicknesses, no cap/link, and the complete independent solid BREP.
+    inactive_thin_type = extrusion.get('ThinWallType')
+    if type(inactive_thin_type) is not int or inactive_thin_type not in (-1, 0):
+        return False
     expected = {k: False for k in ('BothDirections', 'ReverseDirection', 'FeatureScope',
         'FromOffsetReverse', 'FlipSideToCut', 'NormalCut', 'LinkToThickness', 'CapEnds', 'thin_feature')}
     expected.update(Merge=True, AutoSelect={'availability': 'unavailable_feature_scope_disabled_v1'},
-        FromType=0, ThinWallType=0, FromOffsetDistance=0.0.hex(), CapThickness=0.0.hex(), contour_count=0)
+        FromType=0, ThinWallType=inactive_thin_type, FromOffsetDistance=0.0.hex(), CapThickness=0.0.hex(), contour_count=0)
     expected['directions'] = [dict(forward=forward, end_condition=0, depth=float(value).hex(),
         draft_angle=0.0.hex(), draft_enabled=False, draft_outward=False, reverse_offset=False,
         translate_surface=False, wall_thickness=0.0.hex()) for forward, value in ((True, depth), (False, 0.))]
@@ -303,7 +318,8 @@ def verified_rectangle_extrusion(before, after, target_id, definition, created_n
                 or not _boundary(b['geometry'], params) or not _controls(b['extrusion'], definition.depth_m)
                 or b['body'] != {'name': definition.body_name, 'visible': True}
                 or type(b['body_material']) is not list or len(b['body_material']) != 2 or any(type(v) is not str for v in b['body_material'])): return False
-        if not _dependency_delta(a['dependencies'], b['dependencies'], first, last, sketch_id, created_native_id): return False
+        if not _dependency_delta(a['dependencies'], b['dependencies'], first, last, sketch_id, created_native_id,
+                a['sketch']['reference_plane']['native_id'], origin_ids[0]): return False
         if not _external_delta(a['feature_external_reference_inventory'], b['feature_external_reference_inventory'], first, last, created_native_id): return False
         for plane in b['planes']:
             plane['role'] = roles[plane['role']]

@@ -74,11 +74,13 @@ def verified_rectangle_job(job):
         receipt=after['receipt']
         if (receipt['attempted'] is not True or receipt['native_call_returned'] is not True
                 or any(receipt[k] is not False for k in ('pending_creation','pending_sketch_close','selection_uncertain',
-                    'restore_attempted','restored','native_step_journal_failed'))
+                    'restore_attempted','restored','native_step_journal_failed','view_state_uncertain'))
                 or receipt['pending_native_step'] is not None
                 or (kind=='sketch' and receipt['sketch_closed'] is not True)):return False
         steps=verification['native_steps']
-        if type(steps) is not list or not 6<=len(steps)<=32 or len(steps)%2:return False
+        # Up to three one-shot, typed model-view setters add six rows to the
+        # existing finite construction/view-binding/guard/readback profile.
+        if type(steps) is not list or not 6<=len(steps)<=38 or len(steps)%2:return False
         names=set()
         for i in range(0,len(steps),2):
             a,b=steps[i:i+2]

@@ -208,6 +208,23 @@ def test_unconfirmed_or_foreign_effect_is_retained_without_retry_or_inverse(exec
     assert next_job['status'] == 'failed' and execution.adapter.dispatches == 1
 
 
+def test_unconfirmed_model_view_holds_even_when_geometry_is_exact(execution, monkeypatch):
+    name = 'create_rectangle_sketch' if execution.kind == 'sketch' else 'extrude_rectangle_sketch'
+    original = getattr(execution.adapter, name)
+    def returned_but_unconfirmed_view(*args):
+        result = original(*args)
+        args[-1].view_state_uncertain = True
+        return result
+    monkeypatch.setattr(execution.adapter, name, returned_but_unconfirmed_view)
+    job = run(execution)
+    assert job['status'] == 'unknown' and job['mutation']['phase'] == 'unresolved'
+    assert execution.adapter.dispatches == 1 and execution.adapter.inverses == 0
+    assert job['error']['requires_reconciliation'] is True and execution.catalog.receipts
+    assert run(execution) == job and execution.adapter.dispatches == 1
+    assert run(execution, 'new-view-request')['status'] == 'failed'
+    assert execution.adapter.dispatches == 1
+
+
 def test_proved_owned_effect_can_restore_under_a_new_guard_after_released_observation_failure(execution):
     execution.adapter.fault = 'inspect_once'
     job = run(execution)

@@ -91,6 +91,9 @@ def wrappers(monkeypatch):
     def retire(adapter, model, state, **kwargs): state.retired = True
     monkeypatch.setattr(bridge, 'retain_rectangle_view', retain)
     monkeypatch.setattr(bridge, 'retire_rectangle_view', retire)
+    # Target model-view math/identity/readback is tested by its separate suite.
+    monkeypatch.setattr(bridge, 'capture_model_view', lambda *args: object())
+    monkeypatch.setattr(bridge, 'restore_model_view', lambda *args, **kwargs: None)
 
 
 def extrusion(**changes):

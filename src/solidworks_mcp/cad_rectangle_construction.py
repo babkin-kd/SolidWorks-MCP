@@ -11,6 +11,7 @@ from . import binding
 from .cad_part_creation import NativeBaseReceipt
 from .cad_rectangle_view_retirement import (
     capture_rectangle_views, retain_rectangle_view, retire_rectangle_view)
+from .cad_rectangle_model_view import capture_model_view, restore_model_view
 from .constants import SW_FULLY_CONSTRAINED
 from .documents import rejected
 from .jobs import ExecutionFailure
@@ -32,6 +33,8 @@ class NativeRectangleStageReceipt(NativeBaseReceipt):
     native_step_recorder: object = None
     native_step_journal_failed: bool = False
     annotation_views: object = None
+    model_view: object = None
+    view_state_uncertain: bool = False
 
 
 class CadRectangleConstructionMixin:
@@ -65,6 +68,7 @@ class CadRectangleConstructionMixin:
             base.baseline_features, dict(base.controls))
         receipt.native_step_recorder = recorder
         receipt.annotation_views = capture_rectangle_views(self, model)
+        receipt.model_view = capture_model_view(self, model)
         if sketch is not None:
             token = self.identity(sketch)
             if not any(token == identity for identity, _ in receipt.baseline_features):
@@ -81,7 +85,7 @@ class CadRectangleConstructionMixin:
 
     def _rectangle_stage_ready(self, model, receipt):
         if (receipt.attempted or receipt.restored or receipt.restore_attempted
-                or receipt.pending_native_step or receipt.native_step_journal_failed):
+                or receipt.pending_native_step or receipt.native_step_journal_failed or receipt.view_state_uncertain):
             raise rejected('construction_receipt_consumed', 'A native stage receipt cannot be repeated.')
         self._base_target(model, receipt)
         if self.bodies(model, 'all') or self.part_creation_controls(model) != receipt.controls:
@@ -148,6 +152,7 @@ class CadRectangleConstructionMixin:
             retain_rectangle_view(self, model, receipt.annotation_views, feature,
                 step=lambda label, call, *args: self._rectangle_native_step(receipt, label, call, *args),
                 dimension_count=2)
+            restore_model_view(self, model, receipt)
         if self.bodies(model, 'all') or self.part_creation_controls(model) != receipt.controls:
             raise rejected('construction_sketch_postcondition', 'Sketch-only creation must preserve empty geometry and controls.')
 
@@ -192,12 +197,13 @@ class CadRectangleConstructionMixin:
             retain_rectangle_view(self, model, receipt.annotation_views, extrusion,
                 step=lambda label, call, *args: self._rectangle_native_step(receipt, label, call, *args),
                 dimension_count=1)
+            restore_model_view(self, model, receipt)
         if self.part_creation_controls(model) != receipt.controls:
             raise rejected('construction_controls_changed', 'Original creation controls were not restored.')
 
     def restore_rectangle_sketch(self, model, receipt):
         if (receipt.pending_creation or receipt.pending_sketch_close or receipt.pending_native_step
-                or receipt.native_step_journal_failed
+                or receipt.native_step_journal_failed or receipt.view_state_uncertain
                 or receipt.selection_uncertain or receipt.restore_attempted or receipt.borrowed_sketch is not None
                 or receipt.annotation_views is None or not receipt.annotation_views.bound):
             raise ExecutionFailure('construction_restore_unsafe', 'Unknown or borrowed sketch cannot be deleted.', uncertain=True)
@@ -212,11 +218,12 @@ class CadRectangleConstructionMixin:
         with self._base_selection(model, receipt):
             retire_rectangle_view(self, model, receipt.annotation_views,
                 step=lambda label, call, *args: self._rectangle_native_step(receipt, label, call, *args))
+            restore_model_view(self, model, receipt, inverse=True)
         receipt.restored = True
 
     def restore_rectangle_extrusion(self, model, receipt):
         if (receipt.pending_creation or receipt.pending_sketch_close or receipt.selection_uncertain
-                or receipt.pending_native_step or receipt.native_step_journal_failed
+                or receipt.pending_native_step or receipt.native_step_journal_failed or receipt.view_state_uncertain
                 or receipt.restore_attempted or receipt.borrowed_sketch is None
                 or receipt.annotation_views is None or not receipt.annotation_views.bound):
             raise ExecutionFailure('construction_restore_unsafe', 'Unknown effects cannot authorize deletion/retry.', uncertain=True)
@@ -253,4 +260,5 @@ class CadRectangleConstructionMixin:
         with self._base_selection(model, receipt):
             retire_rectangle_view(self, model, receipt.annotation_views,
                 step=lambda label, call, *args: self._rectangle_native_step(receipt, label, call, *args))
+            restore_model_view(self, model, receipt, inverse=True)
         receipt.restored = True

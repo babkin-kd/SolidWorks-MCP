@@ -39,7 +39,7 @@ def verified_rectangle_restoration(job):
         if len(set(ids))!=len(ids) or target not in ids or not released_rectangle_guard(guard,ids,mode='restored'):return False
         receipt=after['receipt']
         if (receipt['restored'] is not True or receipt['restore_attempted'] is not True
-                or any(receipt[k] is not False for k in ('pending_creation','pending_sketch_close','selection_uncertain','native_step_journal_failed'))
+                or any(receipt[k] is not False for k in ('pending_creation','pending_sketch_close','selection_uncertain','native_step_journal_failed','view_state_uncertain'))
                 or receipt['pending_native_step'] is not None
                 or after['original_files']!=before['baseline']['semantic']['files']):return False
         a,b=deepcopy(before['baseline']),deepcopy(after['state'])
@@ -58,10 +58,9 @@ def verified_rectangle_restoration(job):
                 row.pop('owner_update_stamp')
         if _json(a)!=_json(b):return False
         steps=verification['native_steps'];names=[]
-        # Extrusion owns five construction calls, three view-feature bindings,
-        # two initial guard calls, and seven inverse/release/proof calls: 34
-        # pending/returned rows. Sketch owns at most 32 in its bounded profile.
-        maximum_steps=32 if kind=='sketch' else 34
+        # Original finite bounds32/34 plus at most three model-view setters
+        # during creation and three during inverse: twelve paired rows total.
+        maximum_steps=44 if kind=='sketch' else 46
         if type(steps) is not list or not 12<=len(steps)<=maximum_steps or len(steps)%2:return False
         for i in range(0,len(steps),2):
             pending,returned=steps[i:i+2]

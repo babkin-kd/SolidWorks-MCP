@@ -110,6 +110,46 @@ def test_real_full_capture_classifier_admits_exact_new_blind_base(proof):
     assert all('owner_update_stamp' not in d for d in after['snapshots']['target']['clone_state']['dimensions'])
 
 
+@pytest.mark.parametrize('thin_type', [-1, 0])
+def test_native_non_thin_encoding_and_exact_borrowed_parent_projection(proof, thin_type):
+    before, after, definition = proof
+    old = before['snapshots']['target']['clone_state']
+    new = after['snapshots']['target']['clone_state']
+    new['extrusion']['ThinWallType'] = thin_type
+    # Native first-solid capture confirms plane/origin->sketch before, and
+    # plane/origin->extrusion as well as sketch->extrusion after. No other
+    # ancestor or new relationship is admitted.
+    for data in (old, new):
+        links = data['dependencies']
+        for key in ('parent_links', 'child_links'):
+            links[key].append([3, 4])
+        links['relations_read'] += 2
+    for key in ('parent_links', 'child_links'):
+        new['dependencies'][key].extend([[0, 5], [3, 5]])
+    new['dependencies']['relations_read'] += 4
+    assert verified_rectangle_extrusion(before, after, 'target', definition, 5)
+
+
+@pytest.mark.parametrize('fault', ['thin', 'unknown_inactive_type', 'boolean_type',
+    'wall', 'unrelated_parent', 'unconfirmed_parent', 'removed_baseline_parent'])
+def test_native_shape_does_not_admit_thin_geometry_or_unbound_parent(proof, fault):
+    before, after, definition = proof
+    data = after['snapshots']['target']['clone_state']
+    data['extrusion']['ThinWallType'] = -1
+    if fault == 'thin': data['extrusion']['thin_feature'] = True
+    elif fault == 'unknown_inactive_type': data['extrusion']['ThinWallType'] = -2
+    elif fault == 'boolean_type': data['extrusion']['ThinWallType'] = False
+    elif fault == 'wall': data['extrusion']['directions'][0]['wall_thickness'] = .001.hex()
+    else:
+        links = data['dependencies']
+        edge = [1, 5] if fault == 'unrelated_parent' else [3, 5]
+        for key in ('parent_links', 'child_links'):
+            if fault == 'removed_baseline_parent': links[key].remove([0, 4])
+            else: links[key].append(edge)
+        links['relations_read'] += -2 if fault == 'removed_baseline_parent' else 2
+    assert not verified_rectangle_extrusion(before, after, 'target', definition, 5)
+
+
 @pytest.mark.parametrize('fault', ['neighbor_snapshot','neighbor_dirty','files','window','cwd','active',
     'target_path','target_view','target_selection','target_extra','target_observation_type','config',
     'baseline_feature','sketch_name','extrusion_name','body_name','depth_name','sketch_owner','dimension_owner',

@@ -42,14 +42,14 @@ class RectangleConstructionExecutionMixin:
             if receipt is None: return None
             return {key: getattr(receipt, key) for key in ('attempted', 'native_call_returned',
                 'pending_creation', 'pending_sketch_close', 'sketch_closed', 'selection_uncertain',
-                'restore_attempted', 'restored', 'pending_native_step', 'native_step_journal_failed')}
+                'restore_attempted', 'restored', 'pending_native_step', 'native_step_journal_failed', 'view_state_uncertain')}
 
         def pending():
             r = receipt_evidence()
             return (context['journal_failed'] or context['pending_release']
                 or context['reference_binding_unconfirmed'] or (r is not None and
                 (r['pending_creation'] or r['pending_sketch_close'] or r['selection_uncertain']
-                 or r['pending_native_step'] is not None or r['native_step_journal_failed'])))
+                 or r['pending_native_step'] is not None or r['native_step_journal_failed'] or r['view_state_uncertain'])))
 
         def prepare():
             if len(self.receipts) >= 1000:

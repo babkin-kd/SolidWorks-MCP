@@ -53,7 +53,7 @@ def test_unsafe_or_incomplete_rollback_never_releases_native_fixtures(rollback_j
     assert not helper.verified_rectangle_restoration(job)
 
 
-def native_shaped_ledger(job):
+def native_shaped_ledger(job, *, restore_views=True):
     """Expand artificial calls to the actual finite rectangle bridge sequence."""
     job=deepcopy(job);steps=job['mutation']['verification']['native_steps']
     sketch=job['operation']=='sketch.create_rectangle'
@@ -62,6 +62,9 @@ def native_shaped_ledger(job):
     binding=[f'bind_annotation_view_feature_{i}' for i in range(2 if sketch else 3)]
     inverse=(['restore_owned_sketch'] if sketch else ['restore_delete_extrusion','restore_rebuild'])
     inverse+=['restore_select_annotation_view','restore_delete_annotation_view']
+    if restore_views:
+        creation += ['restore_view_' + key for key in ('orientation','scale','translation')]
+        inverse += ['inverse_restore_view_' + key for key in ('orientation','scale','translation')]
     expanded=[]
     for row in steps:
         labels=creation+binding if row['name']=='rectangle_construct_artificial' else (
@@ -78,9 +81,10 @@ def native_shaped_ledger(job):
     return job
 
 
-def test_exact_native_view_binding_and_retirement_ledger_fits_finite_stage_budget(rollback_job):
-    job=native_shaped_ledger(rollback_job)
-    expected=32 if job['operation']=='sketch.create_rectangle' else 34
+@pytest.mark.parametrize('restore_views', [False, True])
+def test_exact_native_view_binding_and_retirement_ledger_fits_finite_stage_budget(rollback_job,restore_views):
+    job=native_shaped_ledger(rollback_job,restore_views=restore_views)
+    expected=(32 if job['operation']=='sketch.create_rectangle' else 34) + (12 if restore_views else 0)
     assert len(job['mutation']['verification']['native_steps'])==expected
     assert helper.verified_rectangle_restoration(job)
 

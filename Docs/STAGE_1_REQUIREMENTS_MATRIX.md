@@ -104,7 +104,7 @@ part того же наблюдаемого профиля. Гарантия с�
 
 | Блок | Что ещё требуется | Что снимает блокер |
 | --- | --- | --- |
-| B1 | Dev90 pure6390 и installed metadata79/25 приняты, но native sketch дал unknown: созданная annotation view не прошла postcondition. Extrusion не выполнялся. Очистка/reconciliation доказаны. Source binding/retirement views подключены и pure проверены; новый wheel и полный native возврат view inventory ещё не приняты | Исправленный exact wheel: положительная цепочка committed с независимым readback; все 5 условий B1, включая восстановление полного baseline либо ожидаемый unknown/hold в отрицательном случае. Не повторять старый unknown request. [Факты](CHECKPOINT_DEV90.md) |
+| B1 | Dev92 sketch/replay прошёл, extrusion unknown; собственная очистка/baseline/reconciliation доказаны. Source dev93 сохраняет исходный view и учитывает точные native non-thin/borrowed-parent данные. Новый installed positive/N4/N5/public ещё не принят | Исправленный exact wheel: положительная цепочка committed с независимым readback; все 5 условий B1, включая восстановление полного baseline либо ожидаемый unknown/hold в отрицательном случае. Не повторять старый unknown request. [Факты dev93](CHECKPOINT_DEV93.md) |
 | B2 | Подавление/возврат, preview/delete собственного leaf и общий gate | Все 6 условий B2; отдельная собственная fixture для разрушительных проверок, без произвольного графа зависимостей |
 | B3 | Конечный набор совместимости уже реализованных чтений текущего wheel | Все 5 условий B3 на заявленных профилях; старые отчёты не подменяют текущие, новые frames/load modes не добавляются |
 | B4 | Итоговые installed/native recovery и диагностика | Все 6 условий B4; поздний реальный результат и controlled faults явно различены; полный COM census не нужен |
@@ -127,6 +127,12 @@ fault report; native N4/N5 не запускался, public driver ещё не 
 При возобновлении сначала разобрать postcondition-дефект extrusion;
 никакое целое условие B1 по этой очистке не закрыто.
 Точка продолжения: [checkpoint dev92](CHECKPOINT_DEV92.md).
+
+Цель после паузы возобновлена. В source dev93 исправляются только три
+доказанные расхождения extrusion: target view, inactive ThinWallType и exact
+borrowed plane/origin parent projections. Полная исходная безопасность и
+native-приёмка сохраняются. Source/short interop не закрывают B1;
+итоговые gates — [checkpoint dev93](CHECKPOINT_DEV93.md).
 
 **L2 закрыт:** internal13/public11 dev87, exact wheel и baseline. Область и
 manifest открытия не меняются. Новые режимы ведутся как D2-LOADREF.

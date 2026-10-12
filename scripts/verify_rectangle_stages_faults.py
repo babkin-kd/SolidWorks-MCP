@@ -62,7 +62,14 @@ def main():
     def persist():
         report['elapsed_seconds']=time.perf_counter()-started
         (state/'report.json').write_text(json.dumps(report,ensure_ascii=False,allow_nan=False,indent=2),encoding='utf-8')
-    def record(models):report['owned_documents']=owned_document_rows(models);persist()
+    def record(models):
+        report['owned_documents']=owned_document_rows(models)
+        windows=adapter.native_close_windows()
+        tokens=[adapter.identity(model) for model in models]
+        report['owned_windows']=[dict(window=window,metadata=adapter.snapshot(model))
+            for model,window in windows if adapter.identity(model) in tokens]
+        assert len(report['owned_windows'])==len(models)
+        persist()
     try:
         report.update(package_evidence(args,installed=True))
         prior=json.loads(args.positive_report.read_text(encoding='utf8'))
