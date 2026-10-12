@@ -69,3 +69,13 @@ Installed positive dev90 запущен одним CAD-владельцем;
 Независимая public payload обвязка подготовлена отдельно; related62 pure
 passed3,63 с без CAD/SDK startup. Общие supervisor helpers работающего процесса
 не меняются до его завершения. Нового push/CI нет.
+
+Отдельный `verifier_rectangle_restoration.py` проверяет scoped rollback:
+actual application checkpoint/revision, оба released guards, paired native
+ledger, full baseline/dirty/files/sketch возврат и terminal failed/rolled_back.
+Missing counters/fields, чужая дельта и pending/unknown не разрешают очистку.
+Related78 source pure passed5,38 с на real JobStore/coordinator + artificial
+CAD. Первый rollback-fixture прогон ошибочно повторно использовал уже созданную
+искусственную модель; заменён свежим fixture, production code не менялся.
+Это не native N5. Native positive продолжает тот же процесс/журнал; пока
+sketch.create_rectangle running, итог не принят.

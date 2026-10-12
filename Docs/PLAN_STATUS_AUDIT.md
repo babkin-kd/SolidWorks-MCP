@@ -106,6 +106,11 @@ native gate B1 не закрыт.
 обвязка62 pure/3,63 с. N4/N5 и public MCP остаются отдельными условиями.
 [Живой срез и ограничения](CHECKPOINT_DEV90.md).
 
+N5 detached restoration gate добавлен отдельно: related78 pure/5,38 с,
+полный baseline/двойной guard/ledger и небезопасные отрицательные вариации.
+Native positive остаётся running на том же dev90; native restoration и
+public MCP ещё не выполнены. Executable wheel/helpers active прогона не менялись.
+
 ## Хронология приёмки до текущего итога
 
 Следующие записи сохраняют состояние на момент своих контрольных точек;

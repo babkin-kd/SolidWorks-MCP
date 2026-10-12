@@ -16,7 +16,7 @@ gate=importlib.util.module_from_spec(spec);spec.loader.exec_module(gate)
 
 
 @pytest.fixture
-def proof_job(execution,monkeypatch):
+def configured(execution,monkeypatch):
     x=execution
     original=x.catalog.prepare_sketch
     def prepare(*args,**kwargs):
@@ -52,6 +52,12 @@ def proof_job(execution,monkeypatch):
         operation={'rectangle.sketch':'sketch.create_rectangle','rectangle.extrusion':'part.extrude_rectangle'}.get(operation,operation)
         return submit(request_id,operation,*args,**kwargs)
     monkeypatch.setattr(x.runner,'submit',route)
+    return x
+
+
+@pytest.fixture
+def proof_job(configured):
+    x=configured
     job=run(x)
     assert job['status']=='succeeded',job.get('error')
     assert gate.verified_rectangle_job(job)
