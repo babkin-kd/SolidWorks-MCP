@@ -87,3 +87,35 @@ no-dispatch/full-baseline proof и не принимает not_started/rollback/
 Положительный native процесс подтвердил returned open/draw/define/close/rebuild
 sketch steps и guard release; post-release independent проверка ещё running.
 До committed/owned cleanup результат не засчитывается.
+
+## Первый native positive: unknown и подтверждённая очистка
+
+Dev90 positive завершил `sketch.create_rectangle` как **unknown/unresolved**,
+1654,61 с. Actual sketch open/draw/define/close/rebuild и guard release вернулись
+нормально; независимая проверка отвергла незаявленную display delta. Появился
+второй пустой assigned annotation view (`shown=false`, `unassigned=false`);
+старый view/light data и поддержанная сессия сохранены. Это не accepted B1
+и не основание игнорировать display_data. Extrusion/public/N4/N5 не выполнялись.
+
+После terminal jobs, полного paired ledger и отсутствия live COM владение
+проверено по recorded HWND + полным snapshots/PID. Отдельный own-retirement
+закрыл только две контрольные детали. Baseline/application/non-STL settings
+восстановлены; retirement report accepted/terminal, SHA256
+`8297644b31cde777529c6873274afa85eb15fcaf0b691f43e1ce255d5052e7bb`.
+Private unknown согласован как accept_current_state по exact-owned retirement:
+job status **unknown сохранён**, mutation phase=reconciled. Это не success CAD.
+
+Retained verifier держал STA-подписки в sleep-loop без PumpWaitingMessages;
+после передачи проверенного владения завершён только этот неисполняющий COM
+helper, активный cleaner не прерывался. Cleaner завершился exit0. Будущий
+retained loop исправлен: только PumpWaitingMessages/sleep, без повторной CAD-записи.
+
+Добавлено чистое admission `rectangle_annotation_views.py`: новый view допускается
+только при сохранных native view incarnations и независимой привязке обоих
+sketch driving dimensions. Scalar lookalike без bindings отвергается; lights,
+старые views/metadata сохраняются. Related18 pure passed0,13 с (17 view cases
+и retained-STA проверка). Native bindings/reader и runtime-интеграция ещё
+отсутствуют; установленный dev90 не менялся. Getter принадлежности определён
+в [IAnnotation.AnnotationView](https://help.solidworks.com/2023/english/api/sldworksapi/SOLIDWORKS.Interop.sldworks~SOLIDWORKS.Interop.sldworks.IAnnotation~AnnotationView.html).
+Нужен исправленный кандидат и новая native-приёмка; старый unknown не повторяется
+и не переписывается. Все private CAD/журналы/retirement evidence остаются вне Git.

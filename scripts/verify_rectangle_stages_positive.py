@@ -184,7 +184,12 @@ def main():
         report.update(phase='failed',error=str(error),traceback=traceback.format_exc());persist()
         if owned or report['native_calls_live'] is not False:
             report['retained_process']=True;persist()
-            while True:time.sleep(.5)
+            while True:
+                # Retained STA receipts/events must still service incoming
+                # notifications. This never retries a CAD mutation or adopts
+                # a model; it prevents owned cleanup waiting on this apartment.
+                pythoncom.PumpWaitingMessages()
+                time.sleep(.5)
         raise
     finally:persist();pythoncom.CoUninitialize()
     print(json.dumps(dict(scope=report['scope'],positive_case_passed=True,elapsed_seconds=report['elapsed_seconds'])),flush=True)

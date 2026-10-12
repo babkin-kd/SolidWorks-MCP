@@ -10,6 +10,13 @@ Dev90 установлен, metadata/stdio79/25 принят; L3 прежнег�
 [Точная контрольная точка dev90](CHECKPOINT_DEV90.md).
 Ниже сохранены исходные шаги разработки; их pure-результаты не суммируются.
 
+Первый installed native positive dev90 дал unknown: независимый admission
+не ожидал автоматически появившийся assigned annotation view после создания
+эскиза. Exact-owned retirement/baseline подтверждены; historic unknown сохранён.
+Нужен native binding нового view к driving dimensions; display data не исключается
+из сравнения. Чистое view admission/retained-loop18 pure прошло0,13 с,
+native reader/runtime fix ещё не реализован. [Факты](CHECKPOINT_DEV90.md).
+
 Подключены четыре отдельные инструмента: `sketch_prepare_rectangle`,
 `sketch_create_rectangle`, `part_prepare_rectangle_extrusion`,
 `part_extrude_rectangle`. После full post-release proof реальный FeatureCatalog

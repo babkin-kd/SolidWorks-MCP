@@ -116,6 +116,16 @@ checkpoint; combined98 artificial pure/6,00 с. В live native positive появ
 returned sketch construction/close/rebuild и released guard; job ещё running
 на независимой проверке, ни один gate по этим промежуточным событиям не закрыт.
 
+**Последний фактический B1:** native positive dev90 завершился unknown после
+нормального sketch close/rebuild/release: новая assigned annotation view
+не входила в declared display delta. B1 не принят, extrusion не выполнялся.
+Exact HWND/full snapshot/PID own-retirement подтверждён, исходная пустая
+сессия/application/non-STL восстановлены, private hold reconciled с сохранением
+historic unknown. Retained helper завершён после verified ownership transfer;
+active cleaner закончил exit0. Source view admission/retained pump18 pure/0,13 с
+приняты только на искусственных данных, native reader/bindings ещё требуются.
+[Диагностика и очистка](CHECKPOINT_DEV90.md).
+
 ## Хронология приёмки до текущего итога
 
 Следующие записи сохраняют состояние на момент своих контрольных точек;
