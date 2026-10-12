@@ -33,10 +33,15 @@ passed. Исполняемые файлы после полного набора
 её failed-отчёт сохранён. Повторная проверка завершилась успешно; ни одна из
 этих проверок не запускала CAD и не заменяет native-приёмку.
 
-Свежая positive native-проверка установленного dev94 выполняется в
-`work/native-rectangle-dev94-positive-1`; промежуточный running не засчитывается.
-Internal faults и public MCP ещё не запущены. Wheel и исполняемые зависимости
-активной проверки заморожены до её завершения и подтверждения очистки.
+Свежая positive native-проверка установленного dev94 **прошла**, normal exit0,
+**2673,43 с /75 returned captures**: separate sketch/extrusion и replay,
+независимые8000 мм³, dirty сосед и полный own cleanup/baseline. Own documents0,
+native_calls_live=false, retained_process=false. Raw report —
+`work/native-rectangle-dev94-positive-1/report.json`; strict positive gate
+accepted (`work/native-dev94-chain-1/positive-gate.json`). Gate принимает только
+эту positive-подобласть; whole/native B1=false. Internal N4/N5 уже выполняется
+в fresh `work/native-rectangle-dev94-faults-1`; public ещё не запущен. Wheel и
+исполняемые зависимости batch заморожены до завершения и подтверждения очистки.
 
 13.10.2026 подготовлен и запущен приватный последовательный batch
 `work/continue_rectangle_dev94_native.ps1`, status — `work/native-dev94-chain-1`.
@@ -54,7 +59,9 @@ Running-report gate отдельно проверен: текущий running о
 batch state останавливает дальнейшие фазы между terminal-проверками, если
 пользователь снова запросит паузу. Итог batch всегда требует отдельного root
 аудита всех native доказательств; он самостоятельно не закрывает B1/стадию1.
-Сейчас batch ждёт текущий positive; отсутствие следующего отчёта не failure.
+Оба exact positive процесса завершились normal exit0; gate подтвердил данные
+того же wheel/10 helpers. Batch автоматически перешёл к конечному N4/N5 после
+full cleanup/baseline. Последующие unknown/failure остаются stop-условиями.
 
 Последняя CAD-сессия независимо восстановлена после own cleanup. Исторический
 dev93 unknown сохранён, hold reconciled; новый native driver использует новый

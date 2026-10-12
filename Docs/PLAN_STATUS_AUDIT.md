@@ -3,8 +3,10 @@
 ## Текущий итог
 
 **Текущий installed кандидат — dev94:** full pure7157/323 CAD deselected,
-artifact и metadata/stdIO79/25 приняты. Fresh positive native выполняется;
-running не принимается. N4/N5 и public dev94 ещё не запущены. Точные wheel/Git/
+artifact и metadata/stdIO79/25 приняты. Fresh positive native прошёл2673,43 с:
+75 returned captures, sketch/extrusion/replay,8000 мм³, neighbor/own cleanup/
+baseline. Strict positive gate принят; N4/N5 dev94 выполняется, public ещё не
+запущен. Running N4/N5 не принимается. Точные wheel/Git/
 source digest и факты — [CHECKPOINT_DEV94](CHECKPOINT_DEV94.md). B1–B5 открыты;
 разработка продолжается, пауза отменена последующими указаниями пользователя.
 
