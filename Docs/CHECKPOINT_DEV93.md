@@ -172,3 +172,25 @@ fault-прогона или B1. Очистка до terminal/quiescence не в�
 
 Один независимый поток готовит только конечную карту оставшейся B3-приёмки,
 без COM, тестов и правок исполняемых файлов. CAD и интеграцией управляет root.
+
+## Независимая подготовка B3/B4 во время native B1
+
+После прямого решения пользователя продолжать независимую работу реализованы
+в новых внешних files B3 finite manifest/scheduling, exact27 public contracts,
+independent full DTO/SQLite binding, replay и pure metric/frame/axis witnesses.
+Итоговый related-набор **294 passed /18,44 с**; installed offline preflight dev93
+принят с актуальными helper hashes, без нового SDK/CAD workload. accepted
+preflight не означает native_acceptance. Подробности: [карта B3](B3_ACCEPTANCE_MAP.md).
+
+Отдельный агент подготовил passive B4 restart receipt gate, сохраняя реальные
+JobStore/SQLite checkpoints/history/holds. Related **92 passed /3,59 с**,62 новых
+cases. Kill/cleanup/native acceptance этот gate не разрешает.
+[Карта B4](B4_ACCEPTANCE_MAP.md). Во время этих проверок один CAD-владелец root,
+активный N4/N5 тот же36515; новый native/public не запускался. Последняя фаза —
+B1-N4-stale-extrusion; три sketch cases подтверждены, весь fault-прогон открыт.
+
+Установленный wheel93, исполняемые package sources и frozen native helpers
+не изменены; их hashes повторно сверены. Документы/кандидат/current CAD session
+не закрывались внешним потоком. Статусы B1–B5 остаются открытыми. Нового push/CI
+нет: подготовленные проверки входят в следующий локальный пакет, а не подменяют
+обязательные native handlers/public цепочки и общий release gate.

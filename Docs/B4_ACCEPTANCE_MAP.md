@@ -47,3 +47,21 @@ throw и не самостоятельное доказательство rebuil
 Большие CAD-нагрузки, произвольные новые профили и общий benchmarking не входят
 в этот конечный блок. Обязательные полнота checkpoint, pending/returned ledger,
 reconciliation и native-постусловия сохраняются.
+
+## Реализованная пассивная проверка restart — 12.10.2026
+
+Добавлены `scripts/verifier_b4_recovery.py` и `tests/test_b4_recovery.py`, без
+правок пакета, установленного wheel и helpers текущего B1. Предикат принимает
+полные coherent before/after journal rows и фактически полученные blocker
+observations. Проверяются полный набор job/request IDs, payload/digest, exact
+checkpoint scope/native ledger, unfinished→unknown и prepared→unresolved,
+сохранность terminal history, holds для другой цели и новой эпохи. Отдельно
+виден conservative legacy-unbound fallback при отсутствии исходного checkpoint.
+
+Связанные pure-проверки на настоящем JobStore/SQLite: **92 passed /3,59 с**,
+включая62 новых B4 cases и30 существующих JobStore/application-hold cases.
+CAD не вызывался. accepted относится только к journal receipt:
+native_b4_accepted=false, process_stop_authorized=false,
+cad_cleanup_authorized=false. Это не доказательство фактического native restart
+и не разрешение остановить исполняющийся COM. Отдельные installed/native
+прогоны и независимый quiescence proof до остановки своего сервера остаются.

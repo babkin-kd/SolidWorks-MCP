@@ -114,3 +114,51 @@ native internal/public evidence перечисленного набора на �
 manifest связь с переиспользуемыми итоговыми B1/B2 чтениями. Новый доменный
 CAD-функционал для этого набора заранее не требуется; обнаруженная регрессия
 существующего scope исправляется до принятия. Статусы плана не изменены.
+
+## Реализованная подготовка стенда — 12.10.2026
+
+Добавлены отдельные внешние модули, без изменения установленного dev93,
+исходников пакета и helpers текущего native B1:
+
+- `verifier_b3_manifest.py`: точные13 групп и покрытие27 tools; две fixture-сессии,
+  fresh supervisor gate перед/после каждого handler, сохранение running до
+  dispatch. Ошибка native/protocol/storage или cancellation не запускает следующий
+  handler и не выполняет автоматическую очистку. Replay собирается внутри живой
+  соответствующей сессии; I13 проверяет собранные receipts и итоговый baseline.
+- `verifier_b3_public_contract.py`: defaults/constants и настоящая normalization
+  всех27 фасадов, включая вложенные StrictFloat vectors/rigid frames. Единственный
+  guarded mutation здесь — mass. Проверено через настоящие create_app и
+  Runtime._dispatch, без исполнения callbacks/worker/CAD.
+- `verifier_b3_journal.py`: fresh supervisor proof, полная job_get/независимая
+  SQLite сверка, исходные request/payload/digest, exact mass checkpoint и replay.
+  В SQL observation mutation=None присутствует, passive DTO его не содержит;
+  разрешено только это известное различие decoder, не отбрасывание иных полей.
+- `verify_b3_preflight.py`: offline artifact/installed identity и повторное
+  использование exact-wheel metadata report, manifest/catalog/helper hashes.
+  Нет нового SDK subprocess или CAD; can_start_native=false и
+  native_acceptance=false остаются явными.
+- `verifier_b3_witnesses.py`: общий pure oracle шести component-измерений;
+  absolute metric/frame tolerance1e-6 мм, root/local correspondence,
+  нормализованная бесконечная ось, принадлежность точки оси и перпендикулярность
+  кратчайшего отрезка. Native boundary/minimum/census по-прежнему доказывают
+  независимые физические проверки конкретного CAD handler.
+
+Related integration: **254 passed /18,27 с** (новые modules и существующий
+supervisor). После уточнения полной SQL schema и двух новых cases: **24 journal
+passed /0,68 с**; набор перекрывается с integration. Preflight: **18 passed**.
+Первая попытка временных SQLite tests была ограничена доступом sandbox и не
+засчитана; окончательные проверки выполнены в отдельных каталогах проекта.
+
+Offline preflight exact installed dev93 принят:13 groups/27 tools, без source
+PYTHONPATH, native_acceptance=false. Private итоговый отчёт
+`work/b3-preflight-dev93-final.json`. Промежуточные preflight сохранены отдельно
+и не используются как актуальный helper manifest. После интеграции witness
+oracle итоговый related-набор: **294 passed /18,44 с**; private log
+`work/b3-related-final-1.log`. Это один набор с перекрытием предыдущих проверок,
+не сумма дополнительных native-случаев.
+
+Это подготовка общего контура, **не законченный native driver и не приёмка B3**.
+Остались конкретные installed/native handlers с независимыми полными snapshots,
+аналитическими oracles и exact fixture ownership/cleanup, public маршрут и
+строгий общий acceptance gate. Запуск CAD B3 выполняется после текущего B1 и
+согласованного B2; искусственное выполнение callbacks не объявляется passed CAD.
