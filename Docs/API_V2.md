@@ -601,6 +601,6 @@ Dev67 перед сборкой: **3897 pure passed /323 CAD deselected (47,59с
 **Установленный кандидат dev89:** bounded S1-B5-ACT реализован в домене/runtime/MCP;
 75 tools/23 mutations, full pure6075/323 CAD deselected (104,01 с).
 Installed metadata/stdio75/23 принят без source PYTHONPATH. Положительный native
-ACT-N1 прошёл (1027,38 с), already-active case выполняется; остальные native/public
-gates открыты, L2 не расширен, стадия1 не закрыта.
+ACT-N1 прошёл (1027,38 с), ACT-N2 already-active прошёл (1018,36 с). Stale/foreign
+выполняется; остальные native/public gates открыты, L2 не расширен, стадия1 не закрыта.
 [Контрольная точка dev89](CHECKPOINT_DEV89.md).

@@ -80,7 +80,8 @@ CLI/синтаксис проверены; native-прогоны этих трё
 +
 +Положительный installed ACT-N1 dev89 прошёл за1027,38 с, включая native readback,
 +replay и owned cleanup/full baseline. Это частичный отчёт accepted=false.
-+Already-active case выполняется; stale/controlled failure и public не приняты.
++Already-active dev89 прошёл за1018,36 с: no-op/replay, independent readback и
+cleanup/baseline. Stale/foreign выполняется; controlled failure и public не приняты.
 +`verifier_native_part_activation_acceptance.py` требует все четыре terminal
 +internal отчёта exact wheel перед публичным dispatch.49 artificial admission/
 +protocol tests passed (11,23 с); реальный полный preflight пока не принят.

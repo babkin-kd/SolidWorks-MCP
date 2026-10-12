@@ -92,3 +92,14 @@ gate нового wheel. L3-P1, S1-B5-ACT и стадия 1 открыты. Но
 +продолжает full post-release capture; stale/fault и public native не запускались.
 +Сам wheel и файлы executing case driver/helper inventory не изменены.
 +
++
++**Installed ACT-N2 already_active прошёл**,1018,36 с, terminal/exit0:
++`work/native-part-activation-dev89-noop-1/report.json`.
++No-op не вызвал native activation; replay без нового эффекта. Independent full
++readback, own cleanup, full baseline/CWD/application и non-STL preferences
++подтверждены. Detached committed/no-op predicate и current trusted helpers
++проверены отдельно на том же exact wheel.
++SHA256: `8a4c3e9ab4651b39876e913379c6520e713aea557693b08e6278e1cb4005db86`.
++Whole accepted=false: N1/N2 завершены, N3 stale/foreign выполняется в
++`work/native-part-activation-dev89-stale-1/`; N4 и public ещё не запускались.
++
