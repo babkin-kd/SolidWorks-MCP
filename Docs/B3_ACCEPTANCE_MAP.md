@@ -205,3 +205,18 @@ distinct body census, explicit frame/query, native method/read postconditions
 Свои36 pure cases прошли0,15 с. Общая интеграция новых B2/B3 preparations —
 **200 passed /7,79 с**; этот набор перекрывает указанные выше related-прогоны.
 Concrete native producers/handlers остальных групп и final B3 gate остаются.
+
+Следующий concrete route `verifier_b3_part_bounds.py` использует live I02
+reference receipts и выполняет ровно7 durable reads: cylinder census,
+четыре positive bounds, foreign body и stale observation. Без переключения
+конфигураций, скрытия тел, fixture edits и повторного общего body census I02.
+Четыре результата проходят analytic oracle; независимый observer подтверждает
+actual radius6/length30/model-Y cylinder и полный before/after session.
+Прежние wheel/retired refs или неполный I02 перед dispatch отвергаются.
+
+Reflection input публичный typed schema отвергает до durable job; эта source/
+schema проверка не подменяется выдуманным public job. Internal domain rejection
+остаётся отдельным manifest assertion. Route — evidence preparation, accepted/
+native_acceptance/cleanup=false, не полный B3-I08 native gate.
+Свои14 pure /0,18 с; related route/I02/oracle/reader/journal —
+**114 passed /4,18 с**. New geometry fixtures искусственные, CAD не вызывался.
