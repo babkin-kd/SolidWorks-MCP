@@ -23,7 +23,8 @@ L2 закрыт без расширения объёма. Остаются L3 и
 ещё не приняты. После отправки пакета отдельная L3-I1 dev89 прошла980,22 с:
 terminal/exit0, actual committed predicate, independent full readback/mapping41,
 131 captures returned, own cleanup/baseline и current helper hashes подтверждены.
-L3-I2 этого же wheel выполняется; весь L3/public не принят. Это результат
+L3-I2 dev89 прошла685,28 с: existing/stale, Copy0 и own baseline.
+L3-I3 этого же wheel выполняется; весь L3/public не принят. Это результат
 после отправленного head9489360; [факты L3](NATIVE_FIRST_SAVE_PROGRESS.md)
 накапливаются локально для следующего пакета, отдельного push нет.
 

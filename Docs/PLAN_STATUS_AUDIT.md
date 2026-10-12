@@ -22,7 +22,9 @@ B5 не приняты. Внутренние L3-I1…I4 приняты на dev8
 сохранён в истории. Merge/main не выполнен. [Пакетная сводка](CHECKPOINT_DEV89_BATCH.md).
 Native L3-I1 dev89 прошёл980,22 с: committed/full readback/mapping41,
 131 captures returned, own cleanup/baseline и текущие hashes подтверждены.
-L3-I2 этого wheel запущен отдельно, ещё не принят; общий L3/P1 остаётся открыт.
+L3-I2 dev89 прошёл685,28 с: existing/stale до записи, Copy0,
+foreign file preserved, 16 captures returned и own cleanup/baseline.
+L3-I3 того же wheel запущен отдельно, ещё не принят; общий L3/P1 остаётся открыт.
 [Точные факты L3](NATIVE_FIRST_SAVE_PROGRESS.md).
 
 GitHub-задачи №1–4 синхронизированы напрямую через API с опубликованной

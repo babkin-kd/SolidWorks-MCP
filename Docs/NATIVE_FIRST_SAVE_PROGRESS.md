@@ -15,9 +15,18 @@ replay без нового вызова, own cleanup/empty baseline и non-STL p
 SHA256 отчёта: `3c99c999d11ff82037a0281fa76dee0b88fb39c777f66602f13762d7fbcae05a`.
 `positive_case_passed=true`, **accepted=false**: только I1, не весь L3.
 
-После терминального завершения и подтверждённой очистки I1 запущена L3-I2
-в `work/native-first-save-dev89-rejections-1/`: existing destination/stale revision.
-Единственный CAD-владелец работает на том же wheel; I2 пока не accepted/passed.
+Installed **L3-I2 dev89 прошла за685,28 с**, terminal/exit0:
+`work/native-first-save-dev89-rejections-1/report.json`. Existing destination
+и real rename-induced stale revision отказали до записи: Copy0, failed без
+mutation; прежний файл сохранён. Все три finite labels пройдены, 16 captures
+returned, own cleanup/empty baseline и current helper hashes подтверждены.
+SHA256 отчёта: `5a09f2bf47278f70e7e78b0e822005e8ae07711330443a7c8d4cfb94c178d235`.
+`rejection_cases_passed=true`, **accepted=false**: не whole L3.
+
+После terminal I2 и подтверждённой очистки запущена L3-I3 dev89
+в `work/native-first-save-dev89-race-1/`: actual destination race после
+Copy/readback, no-replace publication, exact rollback/retained own stage.
+Единственный CAD-владелец работает на том же wheel; I3 ещё не passed.
 
 Для публичного L3-P1 обязательны внутренние свидетельства этого же wheel.
 Следующие записи dev88 сохраняют историю, не являются приёмкой dev89.
