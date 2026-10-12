@@ -78,6 +78,24 @@ exit0. Private log `work/pytest-dev93-full-1.log`. CAD cases в этом зап�
 исключены и не засчитываются passed. Исполняемые файлы после этого набора
 не менялись; агент завершён, интеграцией и native по-прежнему управляет root.
 
+## Точный установленный wheel и текущая native-проверка
+
+- Версия `2.0.0.dev93`, clean build Git
+  `5710f6395c84ecff01d014fffafe932d2c66b797`.
+- Source digest `f87391ff089daf16f79da1be075d22b69d6a215f9d4d37cac97a148f1ad993e0`.
+- Wheel SHA256 `af09a868c8718ac74a44dda6f807edb59a7179206bd48a78281e1435cead6a4e`.
+- Offline artifact и installed metadata/stdio приняты, **79 tools /25 mutations**;
+  никакие CAD tools при metadata-проверке не вызывались. Установка только в
+  проектной dev .venv; рабочая v1 сохранена. Source PYTHONPATH отсутствует.
+
+Private evidence: `work/wheel-dev93-report-1.json`,
+`work/metadata-dev93-report-1.json`, wheel в `work/wheels-dev93/`.
+Positive domain driver запущен в свежем state
+`work/native-rectangle-dev93-positive-1`; unified session **15395**.
+Один CAD-владелец, новый connection/request scope; старый unknown не повторяется.
+Wheel/десять positive helpers фиксированы до terminal/quiescence. Running не
+засчитывается как accepted и не разрешает следующий N4/N5/native/public запуск.
+
 Полный pure-набор → clean-source commit → один wheel dev93/installed metadata →
 positive domain native → N4/N5 с независимыми snapshots/dispatch counts →
 public stdio B1. Всё последовательно в одной CAD-сессии, helpers/wheel frozen

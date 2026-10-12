@@ -134,6 +134,11 @@ borrowed plane/origin parent projections. Полная исходная безо
 native-приёмка сохраняются. Source/short interop не закрывают B1;
 итоговые gates — [checkpoint dev93](CHECKPOINT_DEV93.md).
 
+Итоговый dev93 собран и установлен из clean source5710f63: full pure6824/323
+CAD deselected, metadata79/25 приняты. Positive domain native выполняется в
+новом state, не accepted; N4/N5/public ещё не запускались. Этот статус не
+подменяет конечные условия B1 и не снимает release gates стадии1.
+
 **L2 закрыт:** internal13/public11 dev87, exact wheel и baseline. Область и
 manifest открытия не меняются. Новые режимы ведутся как D2-LOADREF.
 **L3 закрыт в заданном scope:** семь internal-отчётов и public4/4 одного dev89,
