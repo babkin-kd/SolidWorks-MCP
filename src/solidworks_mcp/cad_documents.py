@@ -75,5 +75,6 @@ class SolidWorksDocuments(CadComponentsMixin, CadMassPropertiesMixin, CadGeometr
     def close(self):
         # Release the application proxy in its apartment. Never close user CAD
         # documents, change visibility, save, or quit SolidWorks on shutdown.
+        self._rectangle_view_incarnations = []
         self._sw = None
         self._module = None

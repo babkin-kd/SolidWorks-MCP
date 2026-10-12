@@ -119,3 +119,21 @@ sketch driving dimensions. Scalar lookalike без bindings отвергаетс
 в [IAnnotation.AnnotationView](https://help.solidworks.com/2023/english/api/sldworksapi/SOLIDWORKS.Interop.sldworks~SOLIDWORKS.Interop.sldworks.IAnnotation~AnnotationView.html).
 Нужен исправленный кандидат и новая native-приёмка; старый unknown не повторяется
 и не переписывается. Все private CAD/журналы/retirement evidence остаются вне Git.
+
+## Source исправление после unknown
+
+Добавлены passive native bindings вида к actual driving dimension annotations
+через IAnnotation.AnnotationView и bounded STA incarnation cache. В rectangle
+snapshot появились typed sidecars; base oracle first-save сохранён отдельно.
+Новый sketch view допускается только для width/height, новый extrusion view —
+только для depth; baseline views/lights/old dimension bindings неизменны.
+Cache освобождается на owning STA при закрытии адаптера.
+Related335 pure passed14,11 с, `work/pytest-rectangle-view-final-1.log`.
+
+Private interop probes 1 fixture каждый подтвердили getter/membership и
+own-cleanup/baseline. Они не являются native acceptance инструмента. Geometry
+inverse удалил body, но оставил все3 annotation views. У IAnnotationView
+нет delete/select метода в установленном SDK; IFeature.Name через этот объект
+дал DISP_E_MEMBERNOTFOUND, MultiSelect2 raw views дал0. N5 exact-owned view
+retirement ещё нужен; нельзя пропустить metadata либо удалять по именам/дельте
+списка без native ownership. Установленный wheel dev90 неизменен, нового CI нет.

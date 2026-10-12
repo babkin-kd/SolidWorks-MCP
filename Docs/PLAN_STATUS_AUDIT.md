@@ -126,6 +126,14 @@ active cleaner закончил exit0. Source view admission/retained pump18 pur
 приняты только на искусственных данных, native reader/bindings ещё требуются.
 [Диагностика и очистка](CHECKPOINT_DEV90.md).
 
+Native-view reader и B1 admissions source интегрированы: полные view
+incarnation/dimension sidecars, сохранность старых views/lights, только exact
+bound новая дельта. Related335 artificial pure/14,11 с; wheel dev90 не менялся.
+Короткие interop probes подтвердили AnnotationView getters и independently
+owned cleanup/baseline, но не B1. Inverse оставляет view inventory при удалённой
+геометрии; direct view MultiSelect2 выбрал0. N5 scoped view retirement остаётся,
+source-fix нельзя объявить полной native-приёмкой или новым candidate wheel.
+
 ## Хронология приёмки до текущего итога
 
 Следующие записи сохраняют состояние на момент своих контрольных точек;

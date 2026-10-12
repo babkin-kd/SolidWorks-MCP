@@ -6,6 +6,7 @@ from .jobs import _json
 from .rectangle_snapshot import EMPTY, SKETCH, validated_rectangle_snapshot
 from .sketches import rectangle_profile_parameters
 from .rectangle_inventory import feature_relations as _relations, empty_feature_external_inventory
+from .rectangle_annotation_views import verified_new_sketch_view
 
 
 VOLATILE_TARGET = frozenset(('needs_save', 'update_stamp', 'observation_revision', 'observation_sequence'))
@@ -82,7 +83,7 @@ def verified_rectangle_sketch(before, after, target_id, definition, created_nati
                 or new['configuration'] != old['configuration']
                 or new['configurations'] != old['configurations']
                 or new['selection_count'] != old['selection_count']
-                or new['native_observations'] != old['native_observations']
+                or new['native_observations']['document_dimension_namespace'] != old['native_observations']['document_dimension_namespace']
                 or type(created_native_id) is not int):
             return False
         old_ids = {r['native_id'] for r in a['features']}
@@ -98,9 +99,11 @@ def verified_rectangle_sketch(before, after, target_id, definition, created_nati
         old_anchors, new_anchors = _feature_anchors(old), _feature_anchors(new)
         if any(new_anchors.get(key) != token for key, token in old_anchors.items()): return False
         mutable = {'profile', 'features', 'dependencies', 'dimensions', 'sketch', 'parameters', 'annotations',
-                   'origin','feature_external_reference_inventory'}
+                   'origin','feature_external_reference_inventory','display_data'}
         for key in a:
             if key not in mutable and _json(a[key]) != _json(b[key]): return False
+        if not verified_new_sketch_view(a['display_data'],b['display_data'],
+                old['native_observations']['annotation_view_bindings'],new['native_observations']['annotation_view_bindings']):return False
         origin = deepcopy(b['origin'])
         origin['point_role'] = a['origin']['point_role']
         if origin != a['origin']: return False

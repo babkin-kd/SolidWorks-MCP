@@ -9,6 +9,7 @@ from .rectangle_construction import BlindRectangleExtrusion
 from .rectangle_postconditions import same_unmodified_session
 from .rectangle_snapshot import BASE, SKETCH, validated_rectangle_snapshot
 from .sketches import rectangle_parameters, rectangle_profile_parameters
+from .rectangle_annotation_views import verified_new_dimension_view
 
 
 def _refs(snapshot):
@@ -227,6 +228,9 @@ def verified_rectangle_extrusion(before, after, target_id, definition, created_n
         old = validated_rectangle_snapshot(before['snapshots'][target_id])
         new = validated_rectangle_snapshot(after['snapshots'][target_id])
         a, b = old['clone_state'], _restore_qualifications(new)
+        if not verified_new_dimension_view(a['display_data'],b['display_data'],
+                old['native_observations']['annotation_view_bindings'],new['native_observations']['annotation_view_bindings'],
+                created_axes={'depth'}):return False
         if (a['profile'] != SKETCH or b['profile'] != BASE or old['solid_body_count'] != 0
                 or new['solid_body_count'] != 1 or any(old[k] != new[k] for k in ('configuration', 'configurations', 'selection_count'))
                 or old['native_observations']['document_dimension_namespace'] != new['native_observations']['document_dimension_namespace']
@@ -325,7 +329,7 @@ def verified_rectangle_extrusion(before, after, target_id, definition, created_n
         expected_new |= {('annotation', role) for role in new_annotations.keys() - old_annotations.keys()}
         if refs_b.keys() != old_new_roles | expected_new: return False
         changed = {'profile','features','dependencies','geometry','dimensions','sketch','parameters','origin',
-                   'feature_external_reference_inventory','planes','annotations'}
+                   'feature_external_reference_inventory','planes','annotations','display_data'}
         return all(_json(a[k]) == _json(b[k]) for k in a if k not in changed)
     except Exception:
         return False

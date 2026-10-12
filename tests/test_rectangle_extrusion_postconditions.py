@@ -10,6 +10,7 @@ from solidworks_mcp.rectangle_snapshot import SCOPE, SKETCH, validated_rectangle
 from solidworks_mcp.sketches import rectangle_profile_parameters
 from test_native_first_save_full_capture import CaptureAdapter
 from test_planar_brep_v2 import POINTS, make_body, snapshot
+from rectangle_view_fixtures import bind_artificial_views
 
 
 def dependencies(features, *, extruded):
@@ -48,6 +49,7 @@ def proof(monkeypatch):
     new = native.first_save_part_snapshot(native.model)
     new['scope'] = SCOPE
     new['clone_state']['creation_controls'] = dict(add_to_db=False,auto_solve=True,display_when_added=True,dimension_input=False)
+    bind_artificial_views(new,{'width','height','depth'})
     old = deepcopy(new)
     a = old['clone_state']
     a['profile'] = SKETCH
@@ -79,6 +81,7 @@ def proof(monkeypatch):
     for plane in a['planes']: plane['role'] = roles.get(plane['role'],plane['role'])
     old['solid_body_count'] = 0
     old['native_observations'] = {'document_dimension_namespace':'Контрольная деталь'}
+    bind_artificial_views(old,{'width','height'})
     old['references'] = [r for r in old['references'] if r['kind'] not in ('body','edge','face')
         and (r['kind'],r['role']) not in {('feature','feature:5'),('dimension','dimension:depth'),('annotation','annotation:Размер 3')}]
     for row in old['references']:

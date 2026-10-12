@@ -17,6 +17,25 @@ Dev90 установлен, metadata/stdio79/25 принят; L3 прежнег�
 из сравнения. Чистое view admission/retained-loop18 pure прошло0,13 с,
 native reader/runtime fix ещё не реализован. [Факты](CHECKPOINT_DEV90.md).
 
+Текущий source-fix: passive `cad_rectangle_annotation_views.py` связывает
+каждый driving dimension display с реальным `IAnnotation.AnnotationView`.
+Server observation IDs сохраняют native view incarnations в owning STA;
+это не пользовательские CAD IDs. Полный B1 snapshot содержит sidecar bindings,
+empty→sketch допускает только один новый width/height view, sketch→base —
+один новый depth view. Старые views/lights/bindings и все данные сохраняются.
+Это не исключение display_data из сравнения. Lifecycle first-save oracle
+не расширен; новые данные относятся только к B1 rectangle snapshot.
+Related335 artificial pure passed14,11 с; installed dev90 ещё не менялся.
+
+Четыре коротких interop-пробника (не B1 acceptance) закрыли свои fixture и
+восстановили baseline: width/height действительно связываются с view1,
+depth — с view2; GetAnnotations2(false,false) возвращает empty inventories.
+Geometry inverse оставляет3 views при body_count0. IAnnotationView не имеет
+delete/select API в SDK; direct MultiSelect2 для этих objects выбрал0.
+Поэтому scoped view retirement для N5 остаётся отдельным обязательным остатком,
+новый wheel/native gate ещё не подготовлен. Не считать восстановление принятой
+по одной геометрии или удалить view по похожему имени.
+
 Подключены четыре отдельные инструмента: `sketch_prepare_rectangle`,
 `sketch_create_rectangle`, `part_prepare_rectangle_extrusion`,
 `part_extrude_rectangle`. После full post-release proof реальный FeatureCatalog

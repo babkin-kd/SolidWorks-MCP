@@ -9,6 +9,7 @@ from solidworks_mcp.cad_rectangle_snapshot import CadRectangleSnapshotMixin
 from solidworks_mcp.rectangle_snapshot import validated_rectangle_snapshot
 from solidworks_mcp.jobs import ExecutionFailure, JobError
 from test_part_creation_v2 import IDENTITY
+from rectangle_view_fixtures import view_data
 
 
 class Feature:
@@ -87,7 +88,8 @@ def adapter(monkeypatch):
     monkeypatch.setattr(native, '_annotations', data('annotations', []))
     monkeypatch.setattr(native, '_configuration', data('configuration', {'name': 'Основная'}))
     monkeypatch.setattr(native, '_empty_auxiliary_data', data('auxiliary', {'comments': []}))
-    monkeypatch.setattr(native, '_display_data', data('display', {'lights': []}))
+    monkeypatch.setattr(native, '_display_data', data('display', {'lights': [],'annotation_views':view_data(set())[0]}))
+    monkeypatch.setattr(native,'rectangle_annotation_view_bindings',lambda *args:view_data(set())[1])
     return a
 
 

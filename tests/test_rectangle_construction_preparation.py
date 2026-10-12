@@ -11,6 +11,7 @@ from solidworks_mcp.rectangle_construction_catalog import RectangleConstructionC
 from solidworks_mcp.rectangle_snapshot import SCOPE
 from test_rectangle_snapshot import adapter as empty_adapter
 from test_native_first_save_full_capture import CaptureAdapter
+from rectangle_view_fixtures import bind_artificial_views
 
 
 PLANE_ID = 'feat_' + 'a'*32
@@ -24,6 +25,7 @@ def prepared(empty_adapter, monkeypatch, tmp_path):
     neighbor = deepcopy(base.first_save_part_snapshot(base.model))
     neighbor['scope'] = SCOPE
     neighbor['clone_state']['creation_controls'] = adapter.part_creation_controls(adapter.model)
+    bind_artificial_views(neighbor,{'width','height','depth'})
     cfg = adapter.cfg
     entry = NS(document_id='doc_target', model=adapter.model, identity=id(adapter.model), features={})
     other_model = object()

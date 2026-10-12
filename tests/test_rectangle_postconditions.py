@@ -10,6 +10,7 @@ from solidworks_mcp.rectangle_snapshot import SKETCH
 from solidworks_mcp.sketches import rectangle_profile_parameters
 from test_rectangle_snapshot import adapter as empty_adapter
 from test_native_first_save_full_capture import CaptureAdapter
+from rectangle_view_fixtures import bind_artificial_views
 
 
 @pytest.fixture
@@ -21,7 +22,9 @@ def proof(empty_adapter, monkeypatch):
     raw, _ = native.sketch_snapshot(native.model, sketch_feature)
     a.point.GetID = lambda: tuple(raw['model_origin_point']['native_id'])
     old = a.rectangle_construction_snapshot(a.model)
+    bind_artificial_views(old,set())
     new = deepcopy(old)
+    bind_artificial_views(new,{'width','height'})
     data = new['clone_state']
     data['profile'] = SKETCH
     data['features'].append(dict(native_id=4, feature_type='ProfileFeature', name='Эскиз основания',

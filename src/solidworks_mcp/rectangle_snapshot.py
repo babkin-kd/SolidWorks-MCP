@@ -5,6 +5,7 @@ from .documents import rejected
 from .jobs import _json
 from .native_first_save import SNAPSHOT_KEYS, SNAPSHOT_SCOPE, validated_part_snapshot
 from .rectangle_inventory import feature_relations, empty_feature_external_inventory
+from .rectangle_annotation_views import validated_view_bindings
 
 
 SCOPE = 'native_rectangle_construction_snapshot_v1'
@@ -42,7 +43,10 @@ def validated_rectangle_snapshot(value):
         if data.get('profile') != BASE:
             raise fail('The only supported body is one rectangular blind base.')
         original = {**value, 'scope': SNAPSHOT_SCOPE}
+        original['native_observations']={k:v for k,v in value['native_observations'].items() if k!='annotation_view_bindings'}
         validated_part_snapshot(original)
+        try:validated_view_bindings(data['display_data'],value['native_observations']['annotation_view_bindings'],{'width','height','depth'})
+        except (KeyError,ValueError,TypeError) as exc:raise fail('Complete base annotation-view bindings required.') from exc
         return json.loads(_json(value))
     if set(data) != DATA_KEYS or data['profile'] not in (EMPTY, SKETCH):
         raise fail('Empty and closed-sketch profiles require the complete declared data inventory.')
@@ -99,10 +103,12 @@ def validated_rectangle_snapshot(value):
             if ('feature', f'feature:{i}') not in roles:
                 raise fail('Every plane/origin/sketch must bind its exact feature role.')
     observations = value['native_observations']
-    if (type(observations) is not dict or set(observations) != {'document_dimension_namespace'}
+    if (type(observations) is not dict or set(observations) != {'document_dimension_namespace','annotation_view_bindings'}
             or type(observations['document_dimension_namespace']) is not str
             or not observations['document_dimension_namespace']):
         raise fail('The observed native document namespace is required.')
+    try:validated_view_bindings(data['display_data'],observations['annotation_view_bindings'],{'width','height'} if expected_sketches else set())
+    except (KeyError,ValueError,TypeError) as exc:raise fail('Complete sketch/empty annotation-view bindings required.') from exc
     origin = data['origin']
     if (type(origin) is not dict or set(origin) != {'feature_role', 'point_role', 'native_id',
             'point_type', 'constraint_status', 'coordinates_si'}

@@ -11,6 +11,7 @@ from .documents import rejected
 from .rectangle_snapshot import SCOPE, EMPTY, SKETCH, validated_rectangle_snapshot
 from .sketches import rectangle_profile_parameters
 from .linear_sketch import _identifier, _integer, _coordinates
+from .cad_rectangle_annotation_views import rectangle_annotation_view_bindings
 
 
 class CadRectangleSnapshotMixin:
@@ -44,6 +45,10 @@ class CadRectangleSnapshotMixin:
             result = deepcopy(self.first_save_part_snapshot(model))
             result['scope'] = SCOPE
             result['clone_state']['creation_controls'] = self.part_creation_controls(model)
+            roles={row['full_name']:row['role'].removeprefix('dimension:')
+                for row in result['native_observations']['qualified_dimensions']}
+            result['native_observations']['annotation_view_bindings']=rectangle_annotation_view_bindings(
+                self,model,result['clone_state']['display_data'],roles)
             return result
         features = self.features(model)
         identities = tuple(self.identity(f) for f in features)
@@ -142,7 +147,9 @@ class CadRectangleSnapshotMixin:
         return dict(scope=SCOPE, configuration=cfg, configurations=[cfg], solid_body_count=0,
             selection_count=count, clone_state=data,
             references=sorted(references, key=lambda r: (r['kind'], r['role'])),
-            native_observations=dict(document_dimension_namespace=Path(before['path']).stem if before['path'] else before['title']))
+            native_observations=dict(document_dimension_namespace=Path(before['path']).stem if before['path'] else before['title'],
+                annotation_view_bindings=rectangle_annotation_view_bindings(self,model,data['display_data'],
+                    {name:axis for axis,name in parameters['axes'].items()} if has_sketch else {})))
 
 
 def _json_anchor(anchor):
