@@ -2,6 +2,13 @@
 
 ## Текущий итог
 
+**Текущий установленный кандидат — dev91**, Git301edea, full pure6567 passed /
+323 CAD deselected (138,38 с), offline wheel и installed metadata/stdio79/25
+приняты. Exact-owned view retirement интегрирован; B1 positive native запущен
+одним владельцем, результат ещё не принят. Wheel/helper hashes работающей
+проверки не меняются. [Точная контрольная точка](CHECKPOINT_DEV91.md).
+Dev90 ниже — история первого unknown, не актуальный установленный пакет.
+
 Стадия 1 открыта: L2 принят в ограниченном scope dev87, **L3 принят dev89**;
 остаются пять блоков S1-B1…S1-B5. S1-B5-ACT принят отдельно, saved-file
 интеграция ACT/Save3 подтверждена в L3-P1. Все семь внутренних отчётов L3
