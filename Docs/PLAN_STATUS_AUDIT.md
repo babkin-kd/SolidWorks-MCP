@@ -2,6 +2,13 @@
 
 ## Текущий итог
 
+**Текущий installed кандидат — dev92:** full pure6686/323 CAD deselected,
+offline wheel и metadata/stdio79/25 приняты. Ownership absorbed dimensions
+исправлен; короткий native bridge interop46 rows/own0/full baseline прошёл,
+но не заменяет domain/MCP. Новый positive native запущен, не accepted;
+N4/N5/public ещё не приняты. [Точная сводка](CHECKPOINT_DEV92.md).
+Следующие записи dev91 и паузы сохранены как история.
+
 **Цель возобновлена; прежний dev91 native завершился failed.** Sketch committed /
 replay подтверждены, extrusion unknown из-за singleton enumeration3 размеров.
 Фактический helper отсутствует, CAD-сессия уже пуста; independent original

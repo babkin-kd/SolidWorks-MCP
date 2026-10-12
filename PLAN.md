@@ -133,10 +133,12 @@ gate одного установленного wheel. История dev88 со�
 | S1-B4 | Узнать исход задания, получить поздний результат и безопасно продолжить после ошибки | 6 условий B4: реальные rebuild-исходы, восстановление, timeout/replay, restart/holds, reconciliation и bounded timings | Конечная installed/native приёмка recovery открыта; безопасность обязательна уже в L3/B1/B2 |
 | S1-B5 | Пройти весь цикл пластины через публичный MCP на одном итоговом wheel | 11 шагов цепочки и 4 release gates: покрытие, pure/build/installed, измеренные timings, пакетный PR/CI и native-базовая сессия | Зависит от остальных блоков; **S1-B5-ACT и saved-file интеграция приняты dev89**. Весь B5 итогового wheel остаётся. L2 не расширяется |
 
-Текущий исправленный кандидат B1 — **dev91**: full pure6567/323 CAD deselected,
-wheel/installed metadata79/25 приняты. Positive internal native выполняется;
-N1…N5 и public MCP ещё не закрыты. [Контрольная точка](Docs/CHECKPOINT_DEV91.md).
-Первый unknown dev90 остаётся историей; новая проверка имеет новый request.
+Текущий исправленный кандидат B1 — **dev92**: full pure6686/323 CAD deselected,
+wheel/installed metadata79/25 приняты. Short native bridge/inverses/full baseline
+прошли; новый positive domain native выполняется, не accepted. N1…N5 и public MCP
+ещё не закрыты. [Контрольная точка](Docs/CHECKPOINT_DEV92.md).
+Unknown dev90/dev91 сохранены в истории; dev91 hold reconciled, новый request
+не повторяет старый. Новые инженерные режимы не добавляются.
 
 Точные поддержанные случаи, отказные условия и доказательства каждого блока:
 [матрица](Docs/STAGE_1_REQUIREMENTS_MATRIX.md),

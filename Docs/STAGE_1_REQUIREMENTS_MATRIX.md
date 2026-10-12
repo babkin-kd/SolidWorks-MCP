@@ -110,10 +110,11 @@ part того же наблюдаемого профиля. Гарантия с�
 | B4 | Итоговые installed/native recovery и диагностика | Все 6 условий B4; поздний реальный результат и controlled faults явно различены; полный COM census не нужен |
 | B5 | Автоматическая цепочка одного итогового wheel и release gates | Все 11 шагов и 4 gates; приняты остальные блоки, собственная очистка и baseline, актуальный CI пакета |
 
-Текущий B1 кандидат — dev91: полный source6567 passed/323 CAD deselected,
-installed metadata79/25; positive internal native начат, не accepted.
-[Точная привязка](CHECKPOINT_DEV91.md). Это не закрывает ни одно N-условие
-по running-записи и не заменяет public/fault приёмку.
+Текущий B1 кандидат — dev92: полный source6686 passed/323 CAD deselected,
+installed metadata79/25; short native bridge/inverses прошли, новый domain
+positive начат, не accepted. [Точная привязка](CHECKPOINT_DEV92.md).
+Dev91 extrusion unknown сохранён, hold reconciled по независимой пустой сессии.
+Running/interop не закрывают целое N-условие и не заменяют public/fault приёмку.
 
 **L2 закрыт:** internal13/public11 dev87, exact wheel и baseline. Область и
 manifest открытия не меняются. Новые режимы ведутся как D2-LOADREF.
