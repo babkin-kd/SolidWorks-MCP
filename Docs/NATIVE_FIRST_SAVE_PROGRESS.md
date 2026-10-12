@@ -23,10 +23,21 @@ returned, own cleanup/empty baseline и current helper hashes подтвержд
 SHA256 отчёта: `5a09f2bf47278f70e7e78b0e822005e8ae07711330443a7c8d4cfb94c178d235`.
 `rejection_cases_passed=true`, **accepted=false**: не whole L3.
 
-После terminal I2 и подтверждённой очистки запущена L3-I3 dev89
-в `work/native-first-save-dev89-race-1/`: actual destination race после
-Copy/readback, no-replace publication, exact rollback/retained own stage.
-Единственный CAD-владелец работает на том же wheel; I3 ещё не passed.
+Installed **L3-I3 dev89 прошла за868,76 с**, terminal/exit0:
+`work/native-first-save-dev89-race-1/report.json`. Actual destination race
+после Copy/readback не перезаписала чужой файл; job failed/rolled_back,
+detached actual race predicate и replay подтверждены. Native counts:
+Copy1/open1/close1/publication1; source/neighbor и foreign bytes/identity
+сохранены. 91 captures returned, own cleanup/empty baseline/current hashes
+подтверждены; принадлежащий проверке пустой stage учтён, whole L3 не принят.
+SHA256 отчёта: `3cd463a3ebcf69abe16aacf1af7e7ca59eb1ae4c1ac266ec47c86279cb432e50`.
+
+После terminal I3 и подтверждённой очистки запущен первый L3-I4 dev89
+в `work/native-first-save-dev89-fault-warning-1/`: warning_after_copy.
+Это управляемый ответ моста после настоящего нормально вернувшегося Copy,
+не утверждение о реальном native warning. Единственный CAD-владелец
+проверяет unknown/hold/no retry и независимое own reconciliation;
+I4 ещё не passed. False/throw/incomplete и публичный L3-P1 остаются.
 
 Для публичного L3-P1 обязательны внутренние свидетельства этого же wheel.
 Следующие записи dev88 сохраняют историю, не являются приёмкой dev89.

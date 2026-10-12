@@ -370,5 +370,7 @@ saved-file L3-P1/B5 ещё открыт, L2 не расширен, стадия1
 CI38193016491 завершился success (unit/build/installed metadata), main не объединён.
 Native L3-I1 dev89 принят980,22 с (committed, full readback/mapping41 и baseline);
 L3-I2 dev89 принят685,28 с (existing/stale, Copy0 и baseline); L3-I3
-того же wheel выполняется отдельно и пока не принят. Сквозной L3-P1/B5
+принят868,76 с (actual race/no-overwrite, known rollback и baseline).
+Первый I4 warning_after_copy того же wheel выполняется и пока не принят.
+Сквозной L3-P1/B5
 и шесть блоков стадии1 остаются открыты. [Пакетная сводка](Docs/CHECKPOINT_DEV89_BATCH.md).

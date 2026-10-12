@@ -24,7 +24,10 @@ Native L3-I1 dev89 прошёл980,22 с: committed/full readback/mapping41,
 131 captures returned, own cleanup/baseline и текущие hashes подтверждены.
 L3-I2 dev89 прошёл685,28 с: existing/stale до записи, Copy0,
 foreign file preserved, 16 captures returned и own cleanup/baseline.
-L3-I3 того же wheel запущен отдельно, ещё не принят; общий L3/P1 остаётся открыт.
+L3-I3 dev89 прошёл868,76 с: actual race no-overwrite, failed/rolled_back,
+Copy1 и сохранность source/neighbor/foreign file, 91 captures и own baseline.
+Первый L3-I4 warning_after_copy того же wheel запущен, ещё не принят;
+остальные I4/public L3-P1 и общий L3 остаются открыты.
 [Точные факты L3](NATIVE_FIRST_SAVE_PROGRESS.md).
 
 GitHub-задачи №1–4 синхронизированы напрямую через API с опубликованной
