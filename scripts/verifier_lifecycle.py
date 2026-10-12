@@ -43,6 +43,13 @@ _part_spec.loader.exec_module(_part_evidence)
 released_part_activation_guard = _part_evidence.released_part_activation_guard
 verified_committed_part_activation = _part_evidence.verified_committed_part_activation
 
+_first_save_spec = importlib.util.spec_from_file_location('_native_first_save_evidence',
+    Path(__file__).with_name('verifier_native_first_save.py'))
+_first_save_evidence = importlib.util.module_from_spec(_first_save_spec)
+_first_save_spec.loader.exec_module(_first_save_evidence)
+released_first_save_guard = _first_save_evidence.released_first_save_guard
+verified_committed_first_save = _first_save_evidence.verified_committed_first_save
+
 
 TERMINAL = frozenset({'succeeded', 'failed', 'cancelled', 'unknown'})
 CONTEXT_KEYS = ('document_id', 'configuration', 'expected_observation_revision',
@@ -450,6 +457,7 @@ class VerifierSupervisor:
                 released=(released_open_guard(guard, before) if job['operation']=='document.open_native'
                           else close_release if job['operation']=='document.close_native'
                           else released_part_activation_guard(guard, before) if job['operation']=='document.activate_part_native'
+                          else released_first_save_guard(guard, before) if job['operation']=='document.first_save_native'
                           else released_execution_guard(guard, expected_model_count=expected_model_count))
                 if not released and not untouched_busy:
                     reasons.append('UI release unconfirmed')
@@ -464,6 +472,10 @@ class VerifierSupervisor:
                     # activation still needs its own full receipt predicate;
                     # never infer quiescence/cleanup from a final status alone.
                     reasons.append('native part activation evidence unconfirmed')
+                    safe = False
+                if (job['operation']=='document.first_save_native' and phase in ('committed','rolled_back')
+                        and not verified_committed_first_save(job)):
+                    reasons.append('native first-save evidence unconfirmed')
                     safe = False
         # A coherent terminal job snapshot permits SDK teardown, while unknown
         # effects/transport loss still prohibit native fixture cleanup.

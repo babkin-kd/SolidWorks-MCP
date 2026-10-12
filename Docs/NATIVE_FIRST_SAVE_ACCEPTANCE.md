@@ -127,3 +127,23 @@ Positive/race receipts проверяются своими predicates; fault cas
 readback. Preflight не заменяет CAD/file oracle и сам не снимает holds.
 38 связанных pure-тестов passed (7,02 с); это schema/report evidence,
 публичная native-приёмка остаётся открытой.
+
++
++## Подготовленный публичный драйвер L3-P1 — dev89
++
++`verify_native_first_save_public.py` подготовлен для одного exact installed
++wheel: public initial ACT → first save/replacement/replay → clean close/open →
++explicit ACT → depth12→14 → Save3 → close/read-only reopen и independent native
++clone/volume readback → clean close/own neighbor cleanup/full baseline.
++До первой CAD connection требуются четыре internal ACT отчёта и manifest семи
++internal first-save отчётов того же wheel. Старый dev88 не подставляется вместо
++dev89. Trusted helper inventories читаются из текущих driver definitions;
++metadata count задаётся полным trusted каталогом,75 для dev89, а не клиентом.
++
++Supervisor узнаёт полный first-save publication/replacement/release protocol;
++unknown или неполное свидетельство не разрешает native cleanup.131 связанных
++artificial supervisor/preflight regressions passed (8,79 с); ещё55 связанных
++public argument/dimension selection/admission tests passed (7,01 с).
++CLI/синтаксис нового драйвера проверены. **Native L3-P1 не запускался и не принят**;
++весь L3 открыт. Подробные reports и CAD-файлы остаются в ignored work/.
++

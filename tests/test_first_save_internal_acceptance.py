@@ -82,3 +82,18 @@ def test_missing_foreign_or_unconfirmed_internal_reports_block_public_dispatch(c
     elif fault == 'missing_mapping':r['recovery_reference_mapping'] = []
     with pytest.raises(ValueError):
         verify(reports, wheel, hashes)
+
+
+def test_new_trusted_catalog_count_does_not_reuse_prior_metadata_shape(complete):
+    reports, wheel, hashes = complete
+    for report in reports.values():
+        report['metadata_catalog']['public_tool_count'] = 75
+    with pytest.raises(ValueError):
+        verify(reports, wheel, hashes)
+    assert verify(reports, wheel, hashes, expected_public_tool_count=75) == reports
+
+
+@pytest.mark.parametrize('count', [True, 75., '75', 0, 513, None])
+def test_invalid_trusted_catalog_count_is_refused(complete, count):
+    with pytest.raises(ValueError):
+        verify(*complete, expected_public_tool_count=count)

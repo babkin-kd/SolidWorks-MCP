@@ -20,7 +20,7 @@ FAULT_LABELS = ['controlled_after_copy_unknown_hold_no_retry', 'independent_term
                 'owned_fixture_cleanup_baseline_restored']
 
 
-def _report(report, wheel, hashes, scope, passed_flag):
+def _report(report, wheel, hashes, scope, passed_flag, expected_public_tool_count):
     _json(report)
     if (report.get('scope') != scope or report.get('phase') != 'terminal'
             or report.get(passed_flag) is not True or report.get('accepted') is not False
@@ -29,7 +29,8 @@ def _report(report, wheel, hashes, scope, passed_flag):
             or report.get('owned_documents') != [] or report.get('native_calls_live') is not False
             or report.get('baseline_restored') is not True or report.get('own_cleanup_verified') is not True
             or report.get('package_origin_verified') is not True
-            or report.get('metadata_catalog', {}).get('public_tool_count') != 73
+            or type(report.get('metadata_catalog', {}).get('public_tool_count')) is not int
+            or report['metadata_catalog']['public_tool_count'] != expected_public_tool_count
             or report.get('metadata_catalog', {}).get('output_schemas_verified') is not True):
         raise ValueError('A complete terminal installed case with restored baseline is required.')
     if any(report.get('wheel', {}).get(key) != wheel[key] for key in WHEEL_FIELDS):
@@ -52,7 +53,7 @@ def _cases(report, labels):
     return cases
 
 
-def validate_internal_cases(reports, wheel, trusted_hashes):
+def validate_internal_cases(reports, wheel, trusted_hashes, *, expected_public_tool_count=73):
     """Require I1/I2/I3 and all four controlled I4 modes before public dispatch.
 
     trusted_hashes comes from the current driver, never a prior report inventory.
@@ -62,11 +63,13 @@ def validate_internal_cases(reports, wheel, trusted_hashes):
     _json(reports)
     _json(wheel)
     _json(trusted_hashes)
+    if type(expected_public_tool_count) is not int or not 1 <= expected_public_tool_count <= 512:
+        raise ValueError('Use the complete trusted metadata catalog count for the candidate.')
     expected = set(BASE_SCOPES) | set(COPY_FAULTS)
     if type(reports) is not dict or set(reports) != expected or set(trusted_hashes) != expected:
         raise ValueError('The finite internal case set, including every controlled fault mode, is required.')
     for key, (scope, flag) in BASE_SCOPES.items():
-        _report(reports[key], wheel, trusted_hashes[key], scope, flag)
+        _report(reports[key], wheel, trusted_hashes[key], scope, flag, expected_public_tool_count)
     if not verified_committed_first_save(reports['positive']['job']):
         raise ValueError('Positive first-save native protocol is unconfirmed.')
     rejections = _cases(reports['rejections'], REJECTION_LABELS)
@@ -81,7 +84,7 @@ def validate_internal_cases(reports, wheel, trusted_hashes):
         raise ValueError('Real no-replace collision and single-effect rollback/replay are required.')
     for fault in COPY_FAULTS:
         report = reports[fault]
-        _report(report, wheel, trusted_hashes[fault], 'installed_first_save_controlled_fault_only', 'fault_case_passed')
+        _report(report, wheel, trusted_hashes[fault], 'installed_first_save_controlled_fault_only', 'fault_case_passed', expected_public_tool_count)
         cases = _cases(report, FAULT_LABELS)
         original = report['original_native_copy_receipt']
         if (report.get('fault') != fault or report.get('actual_com_failure_injected') is not False

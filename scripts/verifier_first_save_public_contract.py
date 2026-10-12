@@ -10,6 +10,9 @@ from verifier_lifecycle import ToolSpec
 SPECS = {
     'document_list': ToolSpec('document.list', False),
     'document_get': ToolSpec('document.get', False),
+    'document_prepare_activate_part_native': ToolSpec('document.prepare_activate_part_native', False),
+    'document_activate_part_native': ToolSpec('document.activate_part_native', True,
+        prewrite_failure_codes=frozenset({'stale_revision'})),
     'document_prepare_first_save_native': ToolSpec('document.prepare_first_save_native', False),
     'document_first_save_native': ToolSpec('document.first_save_native', True,
         prewrite_failure_codes=frozenset({'stale_revision', 'first_save_destination_exists'})),

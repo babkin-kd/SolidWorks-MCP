@@ -103,3 +103,12 @@ gate нового wheel. L3-P1, S1-B5-ACT и стадия 1 открыты. Но
 +Whole accepted=false: N1/N2 завершены, N3 stale/foreign выполняется в
 +`work/native-part-activation-dev89-stale-1/`; N4 и public ещё не запускались.
 +
++
++Пока native ACT-N3 выполняется, подготовлен L3-P1 public roundtrip/edit/Save3
++driver с explicit ACT после L2 open и независимым read-only disk reopen.
++131 связанных supervisor/internal preflight tests passed (8,79 с),55 public
++contract/selection/admission tests passed (7,01 с). Это artificial contract
++evidence, не CAD-приёмка. Native L3-P1 требует first-save внутренние отчёты
++самого dev89; dev88 остаётся историческим артефактом. Wheel не пересобирался,
++native helpers текущего ACT-N3 не менялись. Новый push/CI не выполнялся.
++
