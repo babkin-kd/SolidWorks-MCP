@@ -2,6 +2,13 @@
 
 ## Текущий итог
 
+**Разработка на паузе по запросу пользователя.** Кодовый блок dev91 сохранён,
+но уже запущенный positive native verifier оставлен завершаться в фоне; приёмка
+и cleanup/baseline не объявлены пройденными. Sketch/replay прошли, полный B1
+остаётся открытым. Перед возобновлением проверить прежний процесс/report/journal,
+затем очистку или exact unknown reconciliation; не начинать новый CAD-прогон.
+[Контрольная точка паузы](CHECKPOINT_DEV91.md#пауза-разработки-по-запросу-пользователя).
+
 **Текущий установленный кандидат — dev91**, Git301edea, full pure6567 passed /
 323 CAD deselected (138,38 с), offline wheel и installed metadata/stdio79/25
 приняты. Exact-owned view retirement интегрирован; B1 positive native запущен
