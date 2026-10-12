@@ -1,8 +1,23 @@
-# Аудит статусов плана — актуализация 12.10.2026
+# Аудит статусов плана — актуализация 13.10.2026
 
 ## Текущий итог
 
-**Текущий installed кандидат — dev92:** full pure6686/323 CAD deselected,
+**Текущий installed кандидат — dev94:** full pure7157/323 CAD deselected,
+artifact и metadata/stdIO79/25 приняты. Fresh positive native выполняется;
+running не принимается. N4/N5 и public dev94 ещё не запущены. Точные wheel/Git/
+source digest и факты — [CHECKPOINT_DEV94](CHECKPOINT_DEV94.md). B1–B5 открыты;
+разработка продолжается, пауза отменена последующими указаниями пользователя.
+
+Dev93 positive прошёл, но N5 extrusion restoration остановился на прежнем
+global cap32 перед retirement пустого annotation view. Пять предыдущих
+конечных N4/N5 случаев прошли; целый faults gate не принят. Все native steps
+вернулись; после независимого доказательства quiescence собственные две
+контрольные детали закрыты, baseline восстановлен. Unknown сохранён, hold
+reconciled. Dev94 задаёт конечные44/46 только двум exact rectangle operations.
+
+Следующие записи прежних кандидатов и паузы — история, не текущий статус.
+
+**Исторический installed кандидат — dev92:** full pure6686/323 CAD deselected,
 offline wheel и metadata/stdio79/25 приняты. Ownership absorbed dimensions
 исправлен; короткий native bridge interop46 rows/own0/full baseline прошёл,
 но не заменяет domain/MCP. Новый positive native запущен, не accepted;

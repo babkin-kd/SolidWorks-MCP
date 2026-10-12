@@ -87,3 +87,37 @@ sketch, dimensions, annotations и другие ссылки сначала вх
 подтвердить действительное suppression состояние в явной конфигурации,
 полный affected census и exact unsuppress возврат. Пропадание/новая инкарнация
 тела или грани не даёт права присвоить старую ссылку новому объекту.
+
+## Подготовленный receipt gate короткого probe — 13.10.2026
+
+`verifier_b2_suppression_probe.py` проверяет фактические три упорядоченные фазы
+before/suppressed/restored, исходный feature PID и canonical ordinal, normal
+resolver state0, GetID и полную feature membership. Canonical ordinals producer
+назначает по удерживаемым IUnknown equality; имя/GetID не заменяют PID.
+Перед/после нужны полные existing rectangle snapshots и точный BREP/reference
+return; suppressed phase требует actual empty geometry и complete feature tree.
+Допустимый affected set — own base и только наблюдённый absorbed sketch.
+
+Probe ограничен **двумя собственными dirty unsaved деталями**, одной
+конфигурацией без refs; файлы и сохранённые соседи запрещены, не замалчиваются.
+Сосед/window/session/preferences сохраняются, CommandInProgress — строго False
+на фазовых captures вне нормально освобождённого setter/rebuild guard. Четыре
+normal returned actions: SetSuppression2(0/2,1,None), ForceRebuild3(False).
+Receipt validation не разрешает следующий native call/cleanup/process stop и
+не принимает B2. Native producer и фактический probe после B1 ещё нужны.
+
+Отдельные82 pure cases прошли2,65 с; общая интеграция новых B2/B3 файлов с
+reader/journal/manifest — **200 passed /7,79 с**. New fixtures искусственные,
+COM не вызывался; production/wheel текущей B1 приёмки не менялись.
+
+Конкретный read-only producer `verifier_b2_probe_observer.py` формирует phase
+receipt из root-owned retained bindings: canonical ordinal pool, actual raw
+GetObjectByPersistReference3/status и обычный adapter resolver, полный census,
+IsSuppressed2, geometry/full neighbor oracle и coherent session/preferences/
+event watches. Configuration identity уже canonical IUnknown и не оборачивается
+повторно. Producer не создаёт fixtures, не вызывает setter/rebuild, не выбирает
+по имени, не закрывает документы и не разрешает dispatch. Native root-драйвер
+короткого probe ещё требуется; normal creation/action receipts создаёт он.
+Свои30 pure cases прошли0,89 с, три produced artificial phases прошли strict
+receipt gate. Общая последующая интеграция observer/gate/B3 — **230 passed /8,89 с**;
+результат перекрывает предыдущий200, не является дополнительными CAD случаями.

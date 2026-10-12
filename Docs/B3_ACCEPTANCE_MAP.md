@@ -180,3 +180,28 @@ context и error внешней оболочки, затем полный DTO/SQ
 Актуальный offline helper manifest: `work/b3-preflight-dev93-reader-final.json`;
 прежние preflight сохранены как история. Concrete native handlers/B3 acceptance
 gate остаются открытыми.
+
+13.10.2026 подготовлен конкретный finite public handler B3-I02 —
+`verifier_b3_part_geometry.py`: три тела, полный face/edge census,
+пагинация limit2 первого solid, семь representative list→get roundtrips,
+аналитические area/length, foreign/inactive отказы. Все44 listed references
+требуют независимый native owner/membership receipt; before/after требуют
+полного part/neighbor/session proof. Никаких fixture creation, suppression,
+cleanup или COM-вызовов в helper нет; accepted/native_acceptance остаются false.
+Producer должен наблюдать фактическую CAD геометрию, а не повторять tool summaries.
+
+Связанный pure-набор handler/reader/journal/manifest — **82 passed /4,12 с**;
+handler использует искусственные public/native fixtures, остальные связанные
+тесты — настоящий JobStore/SQLite/job_get. Это не native B3. Exact installed
+dev94 offline preflight принят13/27 (`work/b3-preflight-dev94-1.json`), без SDK
+subprocess/CAD; он не разрешает занятую сессию. Нового wheel/full pure/push нет.
+
+`verifier_b3_bounds_oracle.py` готовит независимый B3-I08 analytic support:
+углы заданных прямоугольников/плоскости и support кругового сечения цилиндра,
+без приближённого AABB fallback. Строго проверяются все3 координаты, complete
+distinct body census, explicit frame/query, native method/read postconditions
+и absolute tolerance1e-6 мм. Усечённые vectors, nonfinite/bool и reflection
+отклоняются; planar zero extent поддерживается. Это пассивный oracle, без CAD.
+Свои36 pure cases прошли0,15 с. Общая интеграция новых B2/B3 preparations —
+**200 passed /7,79 с**; этот набор перекрывает указанные выше related-прогоны.
+Concrete native producers/handlers остальных групп и final B3 gate остаются.

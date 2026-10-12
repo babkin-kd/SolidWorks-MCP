@@ -110,13 +110,20 @@ part того же наблюдаемого профиля. Гарантия с�
 
 | Блок | Что ещё требуется | Что снимает блокер |
 | --- | --- | --- |
-| B1 | Dev92 sketch/replay прошёл, extrusion unknown; собственная очистка/baseline/reconciliation доказаны. Source dev93 сохраняет исходный view и учитывает точные native non-thin/borrowed-parent данные. Новый installed positive/N4/N5/public ещё не принят | Исправленный exact wheel: положительная цепочка committed с независимым readback; все 5 условий B1, включая восстановление полного baseline либо ожидаемый unknown/hold в отрицательном случае. Не повторять старый unknown request. [Факты dev93](CHECKPOINT_DEV93.md) |
+| B1 | Dev93 positive прошёл; N5 extrusion restoration остановлен прежним cap32. Own cleanup/baseline/reconciliation доказаны, unknown сохранён. Исправленный dev94 установлен; fresh positive выполняется, N4/N5/public ещё не приняты | Exact dev94: положительная цепочка committed с независимым readback; все 5 условий B1, включая полный inverse44/46, baseline либо ожидаемый unknown/hold. Не повторять старый unknown request. [Факты dev94](CHECKPOINT_DEV94.md), [история dev93](CHECKPOINT_DEV93.md) |
 | B2 | Подавление/возврат, preview/delete собственного leaf и общий gate | Все 6 условий B2; отдельная собственная fixture для разрушительных проверок, без произвольного графа зависимостей |
 | B3 | Конечный набор совместимости уже реализованных чтений текущего wheel | Все 5 условий B3 на заявленных профилях; старые отчёты не подменяют текущие, новые frames/load modes не добавляются |
 | B4 | Итоговые installed/native recovery и диагностика | Все 6 условий B4; поздний реальный результат и controlled faults явно различены; полный COM census не нужен |
 | B5 | Автоматическая цепочка одного итогового wheel и release gates | Все 11 шагов и 4 gates; приняты остальные блоки, собственная очистка и baseline, актуальный CI пакета |
 
-Текущий B1 кандидат — dev92: полный source6686 passed/323 CAD deselected,
+**Текущее продолжение 13.10.2026 — dev94:** full pure7157/323 CAD deselected,
+artifact и installed metadata79/25 приняты. Fresh positive running; далее
+same-wheel N4/N5 и public. Исправляется фактически найденный cap журнала inverse,
+а не расширяется CAD scope. [Точная привязка](CHECKPOINT_DEV94.md).
+Следующие записи кандидатов и прежней паузы сохранены как история; разработка
+возобновлена. Ни очистка unknown, ни pure-подготовка B2/B3/B4 не закрывают блок.
+
+Исторический B1 кандидат — dev92: полный source6686 passed/323 CAD deselected,
 installed metadata79/25; short native bridge/inverses прошли, новый domain
 positive завершился failed: sketch/replay принят, extrusion unknown, целый
 positive не accepted. Две own fixtures закрыты после независимой quiescence,
