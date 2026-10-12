@@ -124,3 +124,12 @@ gate нового wheel. L3-P1, S1-B5-ACT и стадия 1 открыты. Но
 +Whole accepted=false; ACT-N4 controlled_after_call запущен в
 +`work/native-part-activation-dev89-controlled-1/`; public остаётся.
 +
++
++Отдельно проверены late/replay transport envelopes публичных native-tools:
++activate/first-save/open/Save3 ожидают job_get, без повторного CAD dispatch;
++terminal replay сохраняет тот же envelope, unknown остаётся unknown.
++18 связанных artificial transport/supervisor tests passed (3,49 с):
++`work/pytest-public-native-late-1.log`. Это не новая CAD-приёмка.
++ACT-N4 controlled_after_call продолжает полный prepare в том же процессе;
++wheel и executing case helpers неизменны, исход не повторялся.
++
