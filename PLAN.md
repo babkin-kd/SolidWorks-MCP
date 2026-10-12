@@ -149,8 +149,10 @@ dev92 и безопасная очистка проверены, историч�
 плоскость/начало координат заимствованного эскиза в parent links выдавливания.
 Целый B1 ещё открыт; installed/native/public результаты dev93 должны быть
 получены отдельно и не наследуются от dev92. Full pure6824/323 CAD deselected
-и installed metadata79/25 dev93 приняты; новый positive domain native выполняется,
-не accepted. [Контрольная точка dev93](Docs/CHECKPOINT_DEV93.md).
+и installed metadata79/25 dev93 приняты; positive domain native прошёл на exact
+wheel: обе separate операции/replay,8000 мм³, сосед и полный cleanup/baseline,
+3977,95 с. N4/N5 и public gate остаются; весь B1 ещё не принят.
+[Контрольная точка dev93](Docs/CHECKPOINT_DEV93.md).
 
 Точные поддержанные случаи, отказные условия и доказательства каждого блока:
 [матрица](Docs/STAGE_1_REQUIREMENTS_MATRIX.md),

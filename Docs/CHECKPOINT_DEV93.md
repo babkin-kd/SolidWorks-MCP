@@ -96,6 +96,39 @@ Positive domain driver запущен в свежем state
 Wheel/десять positive helpers фиксированы до terminal/quiescence. Running не
 засчитывается как accepted и не разрешает следующий N4/N5/native/public запуск.
 
+Промежуточный фактический результат этого same-wheel прогона: отдельный sketch
+и replay прошли, job succeeded/committed,22 строки/11 пар pending→returned. Строгий detached
+journal gate повторно подтвердил весь job; независимый native snapshot показал
+`closed_rectangular_sketch_v1` и solid_body_count0, сосед сохранён. Драйвер
+перешёл к extrusion preparation. Этот промежуточный статус заменён итоговым
+positive-результатом ниже; N4/N5/public и весь B1 ещё не приняты.
+
+## Фактический positive domain native результат
+
+Exact installed dev93 positive завершён **exit0/terminal/positive_case_passed=true**,
+**3977,95 с**,75 snapshot captures returned. Приняты четыре конечных labels:
+separate sketch/replay, separate extrusion/replay, независимый exact base/dirty
+neighbor и собственная cleanup/baseline. Независимый объём
+**8000,000000000001 мм³**, один native solid40×20×10 мм. Оба committed jobs
+прошли строгие full checkpoint/geometry/guard/ledger gates, русский naming и
+borrowed sketch сохранены. Source/short interop результаты этим не подменялись.
+
+Оба собственных документа закрыты, owned_documents=[], native_calls_live=false;
+полный original baseline/application/non-STL preferences восстановлен. Terminal
+процесс завершился штатно, retained/unknown отсутствует. Независимый passive
+positive gate подтвердил wheel и все десять actual helper hashes.
+Private report SHA256:
+`1645ad860d6394c07a3435a99e4d84802ff585822aaaa2aeb8af3965cbc7085b`;
+`work/dev93-positive-preflight.json` accepted. Сам gate сохраняет
+`native_b1_accepted=false`: finite N4/N5 и public stdio ещё обязательны.
+
+После terminal/exit0 и проверки positive gate запущен единственный N4/N5
+процесс: `work/native-rectangle-dev93-faults-1`, unified session **36515**.
+Его preflight потребовал именно этот positive report/wheel/current helper hashes
+до CoInitialize/fixture creation. Новые собственные fixtures и state/request;
+real COM throw не инжектируется. Helpers этого прогона и wheel фиксированы
+до terminal/quiescence. Running не означает passed; public пока не запускался.
+
 Полный pure-набор → clean-source commit → один wheel dev93/installed metadata →
 positive domain native → N4/N5 с независимыми snapshots/dispatch counts →
 public stdio B1. Всё последовательно в одной CAD-сессии, helpers/wheel frozen

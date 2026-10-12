@@ -135,8 +135,9 @@ native-приёмка сохраняются. Source/short interop не закр
 итоговые gates — [checkpoint dev93](CHECKPOINT_DEV93.md).
 
 Итоговый dev93 собран и установлен из clean source5710f63: full pure6824/323
-CAD deselected, metadata79/25 приняты. Positive domain native выполняется в
-новом state, не accepted; N4/N5/public ещё не запускались. Этот статус не
+CAD deselected, metadata79/25 приняты. Positive domain native прошёл в
+новом state: обе операции/replay, exact8000 мм³, сосед и cleanup/baseline,
+3977,95 с. N4/N5/public ещё не приняты. Этот статус не
 подменяет конечные условия B1 и не снимает release gates стадии1.
 
 **L2 закрыт:** internal13/public11 dev87, exact wheel и baseline. Область и
