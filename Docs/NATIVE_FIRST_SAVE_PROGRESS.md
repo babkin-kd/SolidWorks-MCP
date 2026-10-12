@@ -58,9 +58,21 @@ gate семи отчётов dev89; он не заменяет public L3-P1.
 helpers/exact wheel, original normal Copy, unknown/hold/replay, clone41,
 reconciliation/empty baseline и 42 returned captures подтверждены отдельно.
 SHA256: `180b5ab74f9201622d862d4effae4864b09213000aaeaec3dfceea27c4b97a39`.
-Current case — throw_after_copy, child live; incomplete запустится только
-после проверенного терминального исхода throw. Queue/internal gate ещё не passed;
-отчёты и контроллер остаются private, отдельного push/CI нет.
+**Throw_after_copy dev89 прошёл755,45 с**, 42 captures returned:
+SHA256 `2a14d3f0320ce411fa843c327b1f29e755fde2ff33c854b813ce1303f811c19d`.
+**Incomplete_after_copy dev89 прошёл721,84 с**, 30 captures returned:
+SHA256 `0cfd20137db8683bd29c557c78bb621324efb84e3882a5b903deb72cde762e01`.
+Оба terminal/exit0, original normal Copy, unknown/hold/replay, independent
+clone41 и exact reconciliation/empty baseline подтверждены; historical
+unknown сохранён. Полная очередь terminal/exit0; **общий detached gate всех
+семи dev89-отчётов прошёл** с trusted current helpers/exact wheel/metadata75.
+Root отдельно повторно проверил gate и фактические terminal fault proofs.
+
+После этого запущен **публичный L3-P1** в
+`work/native-first-save-dev89-public-1/` на том же installed dev89, без source
+PYTHONPATH. Один новый CAD-владелец; internal gate и четыре ACT-отчёта
+проверены до CAD. Public-chain acceptance ещё не получен, L3 не закрыт.
+Private модели/контроллер/отчёты остаются вне Git; отдельного push/CI нет.
 
 Для публичного L3-P1 обязательны внутренние свидетельства этого же wheel.
 Следующие записи dev88 сохраняют историю, не являются приёмкой dev89.

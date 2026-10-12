@@ -30,8 +30,10 @@ L3-I4 warning_after_copy dev89 прошёл757,18 с: original normal Copy,
 unknown/hold/replay, independent clone41 и exact reconciliation/empty baseline.
 Исторический исход unknown сохранён. Остальные false/throw/incomplete
 запущены последовательной private очередью; false принят752,30 с, exact native
-unknown/reconciled/clone41/empty baseline подтверждены. Сейчас один throw child live,
-полный internal gate/public L3-P1 и общий L3 остаются открыты.
+unknown/reconciled/clone41/empty baseline подтверждены. Throw принят755,45 с,
+incomplete принят721,84 с; все семь dev89-отчётов прошли общий detached gate,
+queue terminal/exit0. Запущен public L3-P1 того же wheel; пока не принят,
+общий L3 остаётся открыт.
 [Точные факты L3](NATIVE_FIRST_SAVE_PROGRESS.md).
 
 GitHub-задачи №1–4 синхронизированы напрямую через API с опубликованной
@@ -44,6 +46,9 @@ B1: в исходниках добавлены отдельные определ
 искусственный COM; full checkpoint/домен/runtime/MCP/installed/native ещё
 не приняты. Публичный каталог и установленный dev89 не менялись.
 [Ограничения исходного кандидата B1](PART_CREATION.md).
+Добавлен passive full snapshot пустой детали/закрытого прямоугольного эскиза:
+related128 source pure passed/1,38 с; это artificial SDK, не CAD. Полный домен,
+session guard, публичные фасады и installed/native B1 остаются.
 
 ## Хронология приёмки до текущего итога
 

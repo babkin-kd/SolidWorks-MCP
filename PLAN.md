@@ -373,8 +373,9 @@ L3-I2 dev89 принят685,28 с (existing/stale, Copy0 и baseline); L3-I3
 принят868,76 с (actual race/no-overwrite, known rollback и baseline).
 I4 warning_after_copy dev89 принят757,18 с (controlled unknown/hold/replay,
 independent clone41 и reconciliation/baseline, historical unknown сохранён).
-False принят752,30 с (unknown/reconciled, clone41, baseline); throw/incomplete
-того же wheel выполняются последовательной private очередью с одним
-CAD-владельцем; эти два варианта и общий L3 пока не приняты.
+False принят752,30 с, throw755,45 с, incomplete721,84 с (unknown/reconciled,
+clone41, baseline); очередь terminal/exit0, общий gate семи внутренних
+dev89-отчётов принят. Запущен public L3-P1 того же wheel с одним CAD-владельцем;
+public и общий L3 пока не приняты.
 Сквозной L3-P1/B5
 и шесть блоков стадии1 остаются открыты. [Пакетная сводка](Docs/CHECKPOINT_DEV89_BATCH.md).

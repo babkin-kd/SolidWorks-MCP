@@ -121,6 +121,8 @@ class CadRectangleConstructionMixin:
                 raise ExecutionFailure('construction_sketch_close_unconfirmed', 'The owned sketch close is unconfirmed.', uncertain=True)
             receipt.pending_sketch_close = False
             receipt.sketch_closed = True
+            if self._rectangle_native_step(receipt, 'rebuild_sketch', self.rebuild_dimension_document, model) is not True:
+                raise rejected('construction_rebuild_failed', 'The closed sketch rebuild did not finish.')
         if self.bodies(model, 'all') or self.part_creation_controls(model) != receipt.controls:
             raise rejected('construction_sketch_postcondition', 'Sketch-only creation must preserve empty geometry and controls.')
 

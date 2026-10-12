@@ -22,6 +22,20 @@ tests и регрессии прежнего строителя/selection scope;
 dev89, его package/helpers и последовательная L3-приёмка не менялись.
 Исторические bundled-операции ниже не подменяют отдельную цепочку plane/sketch/extrude.
 
+Следующий source-шаг: `rectangle_snapshot.py` / `cad_rectangle_snapshot.py`
+задают полное пассивное наблюдение пустой детали, отдельного закрытого
+прямоугольного эскиза и основания через прежний full body oracle. Сохраняются
+properties/material/units/annotations/auxiliary/display/configuration,
+equations/external/dependencies, native origin/planes, dimensions/relations
+и bijective native anchors. Event/config/model/feature changes во время
+getters и неполные данные отвергаются; Native watch освобождается в finally.
+Отдельный sketch-builder явно перестраивает закрытый эскиз.
+Related128 source pure passed/1,38 с, `work/pytest-rectangle-snapshot-2.log`;
+это искусственный SDK, не installed/native. Первый прогон127/1 failed
+отражал неверный ожидаемый тип отказа NaN в тесте; действующий finite-JSON
+запрет сохранён. Домен/global session guard, runtime/фасады и native B1
+ещё не готовы; новые snapshot/mixin не подключены к runtime-адаптеру.
+
 ## Исторические принятые bundled-сценарии
 
 Установленный dev51 принят для цепочки «новая деталь → пластина 40 × 20 × 10 мм → сквозной угловой вырез 10 × 5 мм»: **2426 pure passed, 323 CAD deselected; fresh same-wheel internal 6 native passed и public MCP stdio 7 native passed, оба accepted=true**. Каталог — **28 инструментов, 7 mutations**. Подтверждены полный L-образный BREP (12 вершин, 18 рёбер, 8 граней), независимые native объём около 7500 мм³ и площадь 2700 мм², internal stale-отказ и scoped restoration после настоящего создания выреза, публичный повтор request_id без второй операции и сохранность исходной детали/выделения/вида. Свои модели закрыты, флаг свободен, non-STL настройки сохранены. Это ограниченная приёмка указанной цепочки; исторические проверки других scope не засчитываются за новые прогоны dev51. Импорт/экспорт отложены, стадия 1 открыта. См. [PART_CUT.md](PART_CUT.md).
