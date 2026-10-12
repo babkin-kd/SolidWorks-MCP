@@ -20,7 +20,10 @@ B5 не приняты. Внутренние L3-I1…I4 приняты на dev8
 Пакет отправлен одним push9489360 в draft PR15. Remote CI38193016491
 завершился success: unit/build/installed metadata прошли; прежний CI failure
 сохранён в истории. Merge/main не выполнен. [Пакетная сводка](CHECKPOINT_DEV89_BATCH.md).
-Native L3-I1 dev89 запущен отдельно; пока выполняется и не принят.
+Native L3-I1 dev89 прошёл980,22 с: committed/full readback/mapping41,
+131 captures returned, own cleanup/baseline и текущие hashes подтверждены.
+L3-I2 этого wheel запущен отдельно, ещё не принят; общий L3/P1 остаётся открыт.
+[Точные факты L3](NATIVE_FIRST_SAVE_PROGRESS.md).
 
 ## Хронология приёмки до текущего итога
 

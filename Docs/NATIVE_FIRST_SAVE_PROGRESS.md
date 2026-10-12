@@ -6,12 +6,18 @@ L3 открыт. Ограниченная явная активация S1-B5-AC
 включая четыре внутренних случая и public MCP/native. Saved-file интеграция
 L3-P1 ещё не принята. [Контракт активации](NATIVE_PART_ACTIVATION.md).
 
-Положительная installed L3-I1 dev89 запущена последовательно в
-`work/native-first-save-dev89-positive-1/`, без source PYTHONPATH.
-Exact wheel Git ea93a0b7d9d0b63408539d7a3f91f889eca38034 и metadata75/23
-проверены до CAD; исходная пустая сессия принята, созданы две собственные
-контрольные детали. Процесс выполняет полный prepare/execute снимок; отчёт
-ещё не terminal и не passed. Новый запрос вместо незавершённого не отправляется.
+Положительная installed **L3-I1 dev89 прошла за980,22 с**, terminal/exit0:
+`work/native-first-save-dev89-positive-1/report.json`, без source PYTHONPATH.
+Exact wheel Git ea93a0b7d9d0b63408539d7a3f91f889eca38034, metadata75/23 и все
+текущие helper hashes подтверждены. Actual job succeeded/committed и detached
+predicate проверены; 131 capture returned, independent full readback/mapping41,
+replay без нового вызова, own cleanup/empty baseline и non-STL preferences приняты.
+SHA256 отчёта: `3c99c999d11ff82037a0281fa76dee0b88fb39c777f66602f13762d7fbcae05a`.
+`positive_case_passed=true`, **accepted=false**: только I1, не весь L3.
+
+После терминального завершения и подтверждённой очистки I1 запущена L3-I2
+в `work/native-first-save-dev89-rejections-1/`: existing destination/stale revision.
+Единственный CAD-владелец работает на том же wheel; I2 пока не accepted/passed.
 
 Для публичного L3-P1 обязательны внутренние свидетельства этого же wheel.
 Следующие записи dev88 сохраняют историю, не являются приёмкой dev89.
