@@ -89,3 +89,36 @@ restoration56 passed/4,49 с. Наборы пересекаются и не су
 hashes; если retained/unknown — согласовать точное состояние по доказательствам,
 сохраняя исторический исход. Wheel/helpers этой проверки не менять до quiescence.
 Только после этого продолжать finite N4/N5 и public B1.
+
+## Результат после возобновления
+
+Прежний driver завершился **failed /positive_case_passed=false**, 3312,68 с:
+sketch committed/replay приняты, extrusion unknown/unresolved. Его12 journal rows
+paired pending/returned,70 snapshots returned, live native=false. Getter dimensions
+одного extrusion вернул3 вместо ожидаемого1; binding отказал до выбора view,
+а независимый effect proof не разрешил inverse. Report preserved retained_process
+как исторический факт; после возобновления actual process отсутствовал.
+
+Пассивное независимое наблюдение подтвердило **GetDocuments пуст, ActiveDoc=None,
+CommandInProgress=false**, полный original baseline/application/non-STL preferences
+и их сохранность при повторном чтении. Fixtures уже отсутствовали; root не
+выполнял CloseDoc и не приписывает их исчезновение accepted cleanup старого driver.
+Quiescence report SHA256:
+`dc6fd4b5a19798428674752f755c408fecda0a4f45eb4710993b3cab1e1b61dd`.
+Private mutation reconciled по accept_current_state, historical job status
+**unknown сохранён**. Старый request не повторяется; B1 не принят.
+
+Короткая interop-проба на собственной box fixture installed dev91 (terminal/exit0,
+baseline restored) подтвердила: singleton extrusion enumeration возвращает depth
+с владельцем Extrusion и width/height с владельцем ProfileFeature, но последние
+без singleton owner_tree proof. Complete-tree enumeration даёт всех3 с точными
+owner identities. Эта проба не является native-приёмкой нового B1.
+
+Source исправлен: complete-tree dimensions, proof владельца каждой записи,
+отбор только actual owned feature; borrowed dimensions требуют старые baseline
+annotation views. Related73 pure/0,27 с. Public supervisor подключён отдельно
+без generic guard fallback: related267/14,63 с и neighbor56/6,94 с, artificial CAD
+с real JobStore. Frozen installed dev91 не менялся; следующий кандидат — dev92.
+
+Итог source dev92 после интеграции: **6686 passed /323 CAD deselected,153,31 с**,
+terminal/exit0; `work/pytest-dev92-full-1.log`. Это не installed/native dev92 gate.

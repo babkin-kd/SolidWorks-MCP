@@ -50,6 +50,18 @@ _first_save_spec.loader.exec_module(_first_save_evidence)
 released_first_save_guard = _first_save_evidence.released_first_save_guard
 verified_committed_first_save = _first_save_evidence.verified_committed_first_save
 
+_rectangle_spec = importlib.util.spec_from_file_location('_native_rectangle_evidence',
+    Path(__file__).with_name('verifier_rectangle_stages.py'))
+_rectangle_evidence = importlib.util.module_from_spec(_rectangle_spec)
+_rectangle_spec.loader.exec_module(_rectangle_evidence)
+verified_rectangle_job = _rectangle_evidence.verified_rectangle_job
+
+_rectangle_restore_spec = importlib.util.spec_from_file_location('_native_rectangle_restoration_evidence',
+    Path(__file__).with_name('verifier_rectangle_restoration.py'))
+_rectangle_restore_evidence = importlib.util.module_from_spec(_rectangle_restore_spec)
+_rectangle_restore_spec.loader.exec_module(_rectangle_restore_evidence)
+verified_rectangle_restoration = _rectangle_restore_evidence.verified_rectangle_restoration
+
 
 TERMINAL = frozenset({'succeeded', 'failed', 'cancelled', 'unknown'})
 CONTEXT_KEYS = ('document_id', 'configuration', 'expected_observation_revision',
@@ -440,6 +452,17 @@ class VerifierSupervisor:
                 safe = False
                 coherent_terminal = False
             before = mutation.get('before_state') or {}
+            if (job['operation'] in ('sketch.create_rectangle', 'part.extrude_rectangle')
+                    and phase in ('committed', 'rolled_back')):
+                # These predicates bind the exact application scope, guard,
+                # target/revision, finite ledger and full geometric/restoration
+                # evidence. A generic released guard cannot substitute them.
+                rectangle_verified = (verified_rectangle_job(job) if phase == 'committed'
+                                      else verified_rectangle_restoration(job))
+                if not rectangle_verified:
+                    reasons.append('native rectangle evidence unconfirmed')
+                    safe = False
+                continue
             if before.get('_mutation_effect_scope') == 'application':
                 guard = (verification.get('evidence') or {}).get('execution_guard') or {}
                 expected_model_count = 1

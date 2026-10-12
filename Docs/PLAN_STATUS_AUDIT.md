@@ -2,6 +2,14 @@
 
 ## Текущий итог
 
+**Цель возобновлена; прежний dev91 native завершился failed.** Sketch committed /
+replay подтверждены, extrusion unknown из-за singleton enumeration3 размеров.
+Фактический helper отсутствует, CAD-сессия уже пуста; independent original
+baseline/application/non-STL подтверждены, private hold reconciled с сохранением
+unknown. Source ownership исправлен и public supervisor подготовлен; dev92
+готовится к full pure/build/installed/native. [Факты](CHECKPOINT_DEV91.md#результат-после-возобновления).
+Следующий раздел о паузе — история, не текущий режим работы.
+
 **Разработка на паузе по запросу пользователя.** Кодовый блок dev91 сохранён,
 но уже запущенный positive native verifier оставлен завершаться в фоне; приёмка
 и cleanup/baseline не объявлены пройденными. Sketch/replay прошли, полный B1

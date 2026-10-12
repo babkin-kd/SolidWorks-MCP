@@ -1,10 +1,18 @@
 """Exact detached owned rollback admission, with no COM/cleanup actions."""
 from copy import deepcopy
 import hashlib
+import importlib.util
+from pathlib import Path
 
 from solidworks_mcp.jobs import _json
 from solidworks_mcp.rectangle_construction import RectangleSketch,BlindRectangleExtrusion
-from verifier_rectangle_stages import released_rectangle_guard
+# Resolve this passive sibling for standalone and path-based loading without
+# changing the process-wide import path or relying on a cached named module.
+_stages_spec = importlib.util.spec_from_file_location('_rectangle_restoration_stages',
+    Path(__file__).with_name('verifier_rectangle_stages.py'))
+_stages = importlib.util.module_from_spec(_stages_spec)
+_stages_spec.loader.exec_module(_stages)
+released_rectangle_guard = _stages.released_rectangle_guard
 
 
 def verified_rectangle_restoration(job):

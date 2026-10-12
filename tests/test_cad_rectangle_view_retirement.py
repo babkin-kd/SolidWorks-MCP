@@ -120,9 +120,49 @@ def test_exact_selected_view_binds_feature_and_inverse_preserves_baseline(native
 
 def test_two_owned_dimensions_must_bind_the_same_new_view(native):
     a = native
-    a.linked.append(a.dimension)
+    a.linked.append(NS(owner=a.owner,owner_tree_identity=id(a.owner),displays=list(a.dimension.displays)))
     retain(a, dimension_count=2)
     assert a.receipt.bound
+
+
+def borrowed_dimensions(a):
+    """Native-shaped extrusion chain: own depth plus absorbed width/height."""
+    sketch=object()
+    baseline_view=View()
+    a.views=[a.views[0],baseline_view]
+    a.receipt=capture_rectangle_views(a,a.model)
+    a.views.append(a.created)
+    a.features=lambda model:[sketch,a.owner]
+    rows=[NS(owner=sketch,owner_tree_identity=id(sketch),
+        displays=[NS(GetAnnotation=lambda:NS(AnnotationView=baseline_view))]) for _ in range(2)]
+    a.linked[:]=[a.dimension,*rows]
+    def dimensions(model,features):
+        assert features==[sketch,a.owner], 'A singleton cannot prove absorbed owners'
+        return a.linked[:]
+    a.dimensions=dimensions
+    return rows
+
+
+def test_extrusion_binds_only_own_depth_and_preserves_absorbed_baseline_views(native):
+    a=native
+    borrowed=borrowed_dimensions(a)
+    retain(a)
+    assert a.receipt.bound
+    a.linked[:]=borrowed  # Geometry inverse retains the borrowed sketch.
+    retire(a)
+    assert a.receipt.retired and len(a.views)==2 and a.deletes==1
+
+
+@pytest.mark.parametrize('fault',['unproved_owner','foreign_owner','own_new_view','missing_annotation'])
+def test_absorbed_dimension_uncertainty_cannot_authorize_owned_view_binding(native,fault):
+    a=native
+    rows=borrowed_dimensions(a)
+    if fault=='unproved_owner':rows[0].owner_tree_identity=None
+    elif fault=='foreign_owner':rows[0].owner=object()
+    elif fault=='own_new_view':rows[0].displays=[NS(GetAnnotation=lambda:NS(AnnotationView=a.created))]
+    else:rows[0].displays=[NS(GetAnnotation=lambda:None)]
+    with pytest.raises(ExecutionFailure):retain(a)
+    assert not a.receipt.bound and a.deletes==a.selects==0
 
 
 @pytest.mark.parametrize('fault', ['foreign_model', 'baseline_changed', 'extra_view',

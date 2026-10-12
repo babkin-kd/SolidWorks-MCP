@@ -118,15 +118,32 @@ def retain_rectangle_view(adapter, model, receipt, owned_feature, *, step, dimen
             or target.data['shown'] or target.data['angle'] != 0.0.hex()):
         _fail('New view is outside the bounded rectangle display effect.')
     feature_token = adapter.identity(owned_feature)
-    if not any(adapter.identity(f) == feature_token for f in adapter.features(model)):
+    features = adapter.features(model)
+    feature_tokens = [adapter.identity(f) for f in features]
+    if not any(token == feature_token for token in feature_tokens):
         _fail('Owned feature must still belong to the exact document.')
-    dimensions = adapter.dimensions(model, [owned_feature])
-    if len(dimensions) != dimension_count:
-        _fail('Complete owned feature dimensions are required.')
+    # SW's extrusion display chain also exposes absorbed sketch dimensions.
+    # A singleton traversal cannot prove their owners. Read the complete tree,
+    # prove each owner, then select only the exact newly created feature's rows.
+    dimensions = adapter.dimensions(model, features)
+    owned_dimensions = []
     for dimension in dimensions:
-        if (dimension.owner_tree_identity != feature_token or dimension.owner is None
-                or adapter.identity(dimension.owner) != feature_token or not dimension.displays):
-            _fail('Every dimension must belong to the retained owned feature.')
+        if (dimension.owner is None or dimension.owner_tree_identity is None
+                or adapter.identity(dimension.owner) != dimension.owner_tree_identity
+                or not any(dimension.owner_tree_identity == token for token in feature_tokens)
+                or not dimension.displays):
+            _fail('Every dimension requires exact current-tree ownership and displays.')
+        if dimension.owner_tree_identity == feature_token:
+            owned_dimensions.append(dimension)
+        else:
+            for display in dimension.displays:
+                annotation = binding.wrap(display.GetAnnotation(), adapter._module.IAnnotation)
+                owner = binding.wrap(annotation.AnnotationView, adapter._module.IAnnotationView) if annotation else None
+                if owner is None or not any(adapter.identity(owner) == row.token for row in receipt.baseline):
+                    _fail('Borrowed dimensions must preserve their baseline annotation views.')
+    if len(owned_dimensions) != dimension_count:
+        _fail('Complete owned feature dimensions are required.')
+    for dimension in owned_dimensions:
         for display in dimension.displays:
             annotation = binding.wrap(display.GetAnnotation(), adapter._module.IAnnotation)
             owner = binding.wrap(annotation.AnnotationView, adapter._module.IAnnotationView) if annotation else None
