@@ -85,3 +85,11 @@ actual raw PID resolver, coherent session/native event watches и full neighbor
 oracle. Свой30 pure /0,89 с; последующая общая related integration —
 **230 passed /8,89 с** (перекрывает предыдущий200). Ни один из этих запусков
 не обращался к SolidWorks. Новые файлы не являются зависимостями frozen B1.
+
+После bounded bounds route (14 new pure) подготовлен finite mass route:
+две prepare→guarded mass цепочки с independent uniform native density,
+no-overrides, hidden/surface census и exact selection return. Реальные
+B3Reader/JobStore/SQLite/job_get проверены с искусственной геометрией.
+Итоговая related integration новых B2/B3 preparations — **309 passed /10,27 с**,
+перекрывает предыдущие230/114/65. Нового full pure/wheel/CI нет; эти внешние
+файлы не подменяют замороженные7157 или native acceptance dev94.

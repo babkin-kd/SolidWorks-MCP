@@ -220,3 +220,22 @@ schema проверка не подменяется выдуманным public 
 native_acceptance/cleanup=false, не полный B3-I08 native gate.
 Свои14 pure /0,18 с; related route/I02/oracle/reader/journal —
 **114 passed /4,18 с**. New geometry fixtures искусственные, CAD не вызывался.
+
+Concrete `verifier_b3_part_mass.py` выполняет две prepare→guarded mass цепочки
+с live I02 IDs: все solid и explicit второй, всего4 sends. Native producer
+независимо подтверждает одинаковые effective densities обоих блоков (1e-12),
+document/body no-overrides, hidden второй solid, исключённую surface и исходное
+выделение первого solid того же part. «Foreign UI selection» здесь означает
+другое тело относительно explicit scope, не документ-сосед. Canonical ordinal
+назначается по удерживаемым IUnknown equality; PID — canonical lowercase hex,
+не имена/адреса указателей. Native whole part/neighbor/session/selection/density
+должны точно сохраниться до/после каждой цепочки и между ними.
+
+Объём2000/1000 мм³, area1400/700 мм², COM30/50,5,2.5 мм и масса проверяются
+по независимым density receipts; единицы/tolerances указаны раздельно. Actual
+B3Reader/JobStore/SQLite/public job_get подтверждают mutates=True/committed
+checkpoint; unknown/missing checkpoint удерживают route без redispatch.
+Свои65 pure cases —1,12 с. После review итоговая related integration новых
+B2/B3 preparations — **309 passed /10,27 с**, с искусственной геометрией и
+реальным durable protocol. Это не CAD-приёмка B3; final native producers/gate
+и остающиеся manifest groups открыты. Installed dev94/B1 helpers не менялись.
