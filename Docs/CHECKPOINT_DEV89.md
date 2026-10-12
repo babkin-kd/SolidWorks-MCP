@@ -53,3 +53,11 @@ Dev88 first-save доказательства сохранены как исто
 metadata verifier для нового каталога меняет его hash; старый отчёт не является
 gate нового wheel. L3-P1, S1-B5-ACT и стадия 1 открыты. Новый push/CI не выполнялся;
 изменения накапливаются локально, рабочая установка v1 сохранена.
+
++
++В ходе положительной native-пробы без изменения package/её helpers подготовлены
++detached activation predicate и три finite negative/no-op сценария.
++27 pure predicate cases passed (4,63 с): `work/pytest-activation-protocol-2.log`.
++Это manufactured journal/guard evidence, не native CAD. Новый driver прошёл
++синтаксис/CLI; его native cases и public gate остаются открытыми.
++

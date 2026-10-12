@@ -56,3 +56,23 @@ hold. Очистка owned guard не превращает неизвестно�
 Искусственная вариация не выдаётся за фактическую ошибку COM. Сохранённые старые
 wheel-отчёты относятся к своему коду; новый кандидат требует своих свидетельств.
 После ACT остаются public L3-P1 и итоговая same-wheel B5 всей стадии.
+
+
+## Подготовленные проверки
+
+`scripts/verifier_native_part_activation.py` проверяет detached committed/no-op
+job: точную цель, конфигурацию, полную ревизию, before/after, типы receipt,
+baseline guard membership и завершённые пары native ledger. Он не является
+CAD oracle и не снимает holds.27 искусственных контрпримеров passed (4,63 с).
+
+`scripts/verify_native_part_activation_cases.py` выбирает один finite case:
+`--case already_active`, `--case stale` либо `--case controlled_after_call`.
+Все используют exact installed wheel и собственные контрольные детали.
+Stale меняет собственное основание после prepare, сохраняя исходный и новый
+снимки отдельно; чужой ID/config также проверяются до activation.
+Controlled fault вводится после normal actual native activation, отдельно
+сохраняет исходный receipt, требует unknown/hold/replay/no inverse и terminal
+независимого readback. Exact owned cleanup/empty baseline предшествуют
+accept-current-state reconciliation; исторический status остаётся unknown.
+CLI/синтаксис проверены; native-прогоны этих трёх случаев ещё не выполнены.
+Их accepted=false не объявляет завершение всего S1-B5-ACT.
