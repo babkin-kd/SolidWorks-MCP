@@ -24,6 +24,13 @@ from .timings_v2 import timed_call
 TERMINAL = frozenset({'succeeded', 'failed', 'cancelled', 'unknown'})
 JOURNAL_SCHEMA_VERSION = 3
 
+# Exact server operation names, including their finite owned restoration path.
+# Other operations retain the original limit; request payloads cannot raise it.
+_RECTANGLE_NATIVE_STEP_BUDGETS = {
+    'sketch.create_rectangle': 44,
+    'part.extrude_rectangle': 46,
+}
+
 
 class JobError(RuntimeError):
     def __init__(self, code: str, message: str):
@@ -271,8 +278,10 @@ class JobStore:
                 if verification.get('outcome') is not None:
                     raise JobError('invalid_transition', 'Native steps cannot follow an already verified outcome.')
                 steps = verification.get('native_steps', [])
-                if len(steps) >= 32:
-                    raise JobError('native_step_budget_exceeded', 'A mutation supports at most 32 native step events.')
+                budget = _RECTANGLE_NATIVE_STEP_BUDGETS.get(job['operation'], 32)
+                if len(steps) >= budget:
+                    raise JobError('native_step_budget_exceeded',
+                                   f'This operation supports at most {budget} native step events.')
                 if phase == 'pending':
                     if (steps and steps[-1]['phase'] == 'pending') or any(step['name'] == name for step in steps):
                         raise JobError('invalid_native_step', 'Never replay or overlap a pending native step.')

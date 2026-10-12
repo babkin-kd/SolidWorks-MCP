@@ -30,11 +30,14 @@ context/external-reference bindings.
    Linked/read-only/unsupported controls отклоняются до записи.
 2. Русский rename/readback того же элемента; прежняя устойчивая ссылка
    продолжает разрешать exact feature без выбора по новому имени.
-3. Own suppress→unsuppress возвращает exact geometry/history. **Блокер resolver:**
-   `CadGeometryMixin.resolve_persistent_id` сейчас отвергает suppressed status;
-   unsuppress нельзя реализовать простым повторным использованием этого reader
-   или поиском по имени. Нужен отдельный ограниченный путь same suppressed PID/
-   canonical incarnation с complete membership и независимо проверенной целью.
+3. Own suppress→unsuppress возвращает exact geometry/history. Текущий generic
+   resolver отвергает nonzero persistent state, а rename явно запрещает
+   suppressed feature. Однако необходимость отдельного feature resolver ещё
+   **не доказана native**: официальное описание Suppressed/Deleted states
+   относится к topology references, не к feature references. Сначала проверить
+   обычный exact feature PID до/после suppression и complete native membership;
+   отдельный ограниченный путь нужен лишь если фактический feature roundtrip
+   не работает. Подмена ссылкой по имени или одному GetID не допускается.
 4. Preview остаётся read-only; execute удаляет лишь подтверждённый собственный
    конечный набор, сохраняет survivors и инвалидирует старый ID. Наличие
    structural candidates само по себе не разрешает удаление.
@@ -67,3 +70,20 @@ sketch, dimensions, annotations и другие ссылки сначала вх
 Обзор выполнялся без редактирования кода, запуска проверок или обращения к CAD.
 Карта фиксирует следующий минимальный шаг, а не native-приёмку или новую оценку
 готовности исторических wheel.
+
+## Уточнение API перед реализацией suppression
+
+Документация SW2023 [GetObjectByPersistReference3](https://help.solidworks.com/2023/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IModelDocExtension~GetObjectByPersistReference3.html)
+ограничивает Suppressed/Deleted state flags топологическими объектами и поясняет
+возврат базового feature object. [GetNextFeature](https://help.solidworks.com/2023/english/api/sldworksapi/SOLIDWORKS.Interop.sldworks~SOLIDWORKS.Interop.sldworks.IFeature~GetNextFeature.html)
+позволяет перечислять suppressed features. Поэтому прежнее утверждение,
+что suppression обязательно делает feature PID недоступным с state2,
+заменено проверяемым предположением. Это уточнение плана, не native support.
+
+[GetID](https://help.solidworks.com/2023/English/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IFeature~GetID.html)
+стабилен для элемента документа и отличается от persistent reference.
+Он остаётся дополнительным census/incarnation признаком, не fallback-адресацией.
+После B1 короткий owned probe должен сохранить feature PID/canonical identity,
+подтвердить действительное suppression состояние в явной конфигурации,
+полный affected census и exact unsuppress возврат. Пропадание/новая инкарнация
+тела или грани не даёт права присвоить старую ссылку новому объекту.

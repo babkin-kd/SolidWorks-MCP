@@ -208,3 +208,39 @@ Native N4/N5 продолжает тот же36515, последняя фаза 
 B1-N5-owned-extrusion-restoration. Четыре N4 prewrite cases и N5 sketch повторно
 прошли passive exact gates; private `work/dev93-five-cases-preflight.json`.
 Полный fault/public B1 пока не принят. Нового native процесса/установки/push нет.
+
+## Итог N4/N5: failed/unknown, безопасная очистка подтверждена
+
+Fault driver завершил сценарий с ошибкой на6787,81 с;175 captures нормально
+вернулись. Пять cases подтверждены: четыре prewrite N4 и owned sketch restoration.
+N5 extrusion не принят: общий JobStore limit32 остановил запись следующего
+native-step event. В реальном журнале32 paired pending/returned rows, последний
+`rectangle_restore_rebuild` returned. Extrusion удалён и rebuild вернулся, но
+следующее удаление пустого annotation view не началось. Historical job
+unknown/unresolved с mutation_rollback_unconfirmed; success не опубликован.
+
+Независимая read-only проверка подтвердила HWND/metadata/full native inventory
+и стабильность обеих собственных моделей, сохранность sketch/neighbor, отсутствие
+блокировок и CommandInProgress=false. Остался ровно один пустой added annotation
+view в target; его полная строка сохранена в private receipt. Это не полное
+восстановление target и не N5 acceptance. Независимые av_UUID namespaces
+сопоставлены по полным view rows/axis partitions, реальные snapshots сохранены.
+
+После подтверждения returned calls, terminal failure/retained Python loop и
+точного CIM process identity остановлен только verifier worker; launcher также
+завершился. Две собственные контрольные детали закрыты без сохранения с
+canonical retirement checks. Пустая исходная session/application/non-STL
+preferences восстановлены и повторно прочитаны; CIP=false. Explicit
+accept_current_state reconciliation снял только hold; historical status unknown
+сохранён, mutation phase reconciled. Старый request не повторялся.
+
+Private evidence в state `work/native-rectangle-dev93-faults-1`:
+`cleanup-quiescence.json`, `process-quiescence.json`, `independent-cleanup.json`,
+`independent-reconciliation.json`; первоначальное расхождение annotation view
+сохранено в `cleanup-state-difference.json`. Failed original report не переписан.
+
+Следующий кандидат dev94 исправляет exact-operation budgets44/46 для rectangle
+sketch/extrusion, оставляя32 для остальных. Related123 pure/4,86 с, включая
+реальные JobStore/coordinator/RectangleConstructionExecution на искусственном
+CAD с максимальным inverse ledger. Установка/native dev94 ещё не выполнены;
+приёмка positive dev93 на новый wheel не переносится. Полный B1/стадия1 открыты.
