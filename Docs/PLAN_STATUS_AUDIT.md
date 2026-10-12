@@ -53,6 +53,9 @@ Whole-session read-only подготовка B1 добавлена: related57 so
 точные FeatureCatalog refs, neighbor-bound revision и span-event watches всех
 baseline parts. Native execution ещё недоступен, mutation executor/recovery
 и public/installed/native gates остаются. Это не новая CAD-приёмка dev89.
+Независимые sketch postconditions добавлены: related75 source pure/0,59 с,
+real rectangle classifier на artificial SDK, full baseline/anchor/data checks;
+native executor и extrusion proof/recovery ещё остаются.
 
 ## Хронология приёмки до текущего итога
 

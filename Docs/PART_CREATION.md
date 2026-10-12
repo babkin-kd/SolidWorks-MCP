@@ -48,6 +48,17 @@ unsupported target states и neighbor edit-and-undo отвергаются. Пр
 исправлен отдельно. Native execution_available=false: executor/checkpoint,
 post-release proof/recovery, фасады и native-приёмка остаются.
 
+В `rectangle_postconditions.py` добавлено независимое admission эскиза:
+проверяется новая fully-defined геометрия реальным rectangle classifier,
+точное имя/два driving размера, созданный native ID, сохранность baseline
+features/anchors/origin/data, соседей/files/UI и наличие всех новых point/line/
+dimension anchors. Parameter marker, объём или stamp не подменяют эту проверку.
+Related75 source pure passed/0,59 с (`work/pytest-rectangle-postconditions-3.log`),
+artificial SDK. Первый прогон73/1 failed относился к D1/D2 в fixture вместо
+обязательных русских имён; fixture/relations исправлены, контракт сохранён.
+Эта функция не разрешает native-запись: durable executor/receipt/guard release
+и полный extrusion proof/recovery ещё должны быть реализованы и приняты.
+
 ## Исторические принятые bundled-сценарии
 
 Установленный dev51 принят для цепочки «новая деталь → пластина 40 × 20 × 10 мм → сквозной угловой вырез 10 × 5 мм»: **2426 pure passed, 323 CAD deselected; fresh same-wheel internal 6 native passed и public MCP stdio 7 native passed, оба accepted=true**. Каталог — **28 инструментов, 7 mutations**. Подтверждены полный L-образный BREP (12 вершин, 18 рёбер, 8 граней), независимые native объём около 7500 мм³ и площадь 2700 мм², internal stale-отказ и scoped restoration после настоящего создания выреза, публичный повтор request_id без второй операции и сохранность исходной детали/выделения/вида. Свои модели закрыты, флаг свободен, non-STL настройки сохранены. Это ограниченная приёмка указанной цепочки; исторические проверки других scope не засчитываются за новые прогоны dev51. Импорт/экспорт отложены, стадия 1 открыта. См. [PART_CUT.md](PART_CUT.md).
