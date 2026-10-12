@@ -40,7 +40,8 @@ Independent clone41/readback и exact own reconciliation/empty baseline прин
 исторический статус остался unknown, phase=reconciled. 42 captures returned,
 current helper hashes и exact dev89 подтверждены. Это не actual native warning.
 SHA256 отчёта: `b3449519da41411a2910cb9c3b7c64c6d7c9990b5fbcf869c751aebcca0a5872`.
-False/throw/incomplete и публичный L3-P1 остаются; весь I4/L3 не принят.
+False/throw/incomplete и публичный L3-P1 оставались на момент этой контрольной
+точки; actual false-прогон описан ниже. Весь I4/L3 не принят.
 
 Оставшиеся false/throw/incomplete подготовлены как private последовательная
 очередь в ignored work/. Контроллер не вызывает COM и не очищает модели:
@@ -53,9 +54,12 @@ gate семи отчётов dev89; он не заменяет public L3-P1.
 Управляющий guard проверен на искусственных данных: допустимый baseline и
 12 unsafe отказов, без COM/дочерних процессов. Это не native-приёмка I4.
 После terminal warning/exit0 и проверки его фактического отчёта очередь
-запущена. Current case — false_after_copy; child live, installed dev89/metadata75
-проверены до CAD. Throw/incomplete будут запускаться только после проверенного
-терминального исхода предыдущего child. Queue/internal gate ещё не passed;
+запущена. **False_after_copy dev89 прошёл752,30 с**, terminal/exit0: current
+helpers/exact wheel, original normal Copy, unknown/hold/replay, clone41,
+reconciliation/empty baseline и 42 returned captures подтверждены отдельно.
+SHA256: `180b5ab74f9201622d862d4effae4864b09213000aaeaec3dfceea27c4b97a39`.
+Current case — throw_after_copy, child live; incomplete запустится только
+после проверенного терминального исхода throw. Queue/internal gate ещё не passed;
 отчёты и контроллер остаются private, отдельного push/CI нет.
 
 Для публичного L3-P1 обязательны внутренние свидетельства этого же wheel.

@@ -29,7 +29,8 @@ Copy1 и сохранность source/neighbor/foreign file, 91 captures и own
 L3-I4 warning_after_copy dev89 прошёл757,18 с: original normal Copy,
 unknown/hold/replay, independent clone41 и exact reconciliation/empty baseline.
 Исторический исход unknown сохранён. Остальные false/throw/incomplete
-запущены последовательной private очередью; сейчас один false child live,
+запущены последовательной private очередью; false принят752,30 с, exact native
+unknown/reconciled/clone41/empty baseline подтверждены. Сейчас один throw child live,
 полный internal gate/public L3-P1 и общий L3 остаются открыты.
 [Точные факты L3](NATIVE_FIRST_SAVE_PROGRESS.md).
 
@@ -37,6 +38,12 @@ GitHub-задачи №1–4 синхронизированы напрямую �
 матрицей: конечные results/scopes/gates, обязательная safety и видимые переносы.
 Повторное чтение API подтвердило все четыре open/milestone1 и ссылки на матрицу.
 История ранних dev2/dev3 сохранена; ни одна задача не закрыта по CI.
+
+B1: в исходниках добавлены отдельные определения/внутренние native-мосты
+эскиза и выдавливания с разным владением. Related117 pure passed/0,66 с,
+искусственный COM; full checkpoint/домен/runtime/MCP/installed/native ещё
+не приняты. Публичный каталог и установленный dev89 не менялись.
+[Ограничения исходного кандидата B1](PART_CREATION.md).
 
 ## Хронология приёмки до текущего итога
 

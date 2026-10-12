@@ -1,5 +1,29 @@
 # Базовый инженерный сценарий детали v2
 
+## Отдельные стадии B1 — исходный кандидат 12.10.2026
+
+Добавлены чистые определения `RectangleSketch` / `BlindRectangleExtrusion`
+и внутренние native-мосты в `cad_rectangle_construction.py`. Создание эскиза
+и выдавливание имеют отдельные receipts: второй шаг заимствует точный baseline
+sketch, а его восстановление удаляет только созданную extrusion с flags0.
+Потерянный ответ, pending close, повтор receipt, foreign/changed sketch,
+неполный dependency inventory и malformed deletion ACK не разрешают
+автоматическое удаление или повтор. Имена по-русски, входные длины/ссылки явные.
+
+Связанные source pure: **117 passed, 0,66 с**, включая artificial native-stage
+tests и регрессии прежнего строителя/selection scope; CAD не вызывался.
+`work/pytest-rectangle-stages-4.log`. Промежуточная команда stages2 не запустила
+тесты из-за неправильного имени файла; успешные stages3/4 выполнены отдельно.
+
+Это **не завершение B1**: full supported session/target checkpoint, классификация
+точного прямоугольного профиля, postconditions, домен, runtime/MCP-фасады,
+самостоятельные sketch IDs и installed/native/public gates ещё требуются.
+Мосты не включены в публичный каталог или native-адаптер runtime. Установленный
+dev89, его package/helpers и последовательная L3-приёмка не менялись.
+Исторические bundled-операции ниже не подменяют отдельную цепочку plane/sketch/extrude.
+
+## Исторические принятые bundled-сценарии
+
 Установленный dev51 принят для цепочки «новая деталь → пластина 40 × 20 × 10 мм → сквозной угловой вырез 10 × 5 мм»: **2426 pure passed, 323 CAD deselected; fresh same-wheel internal 6 native passed и public MCP stdio 7 native passed, оба accepted=true**. Каталог — **28 инструментов, 7 mutations**. Подтверждены полный L-образный BREP (12 вершин, 18 рёбер, 8 граней), независимые native объём около 7500 мм³ и площадь 2700 мм², internal stale-отказ и scoped restoration после настоящего создания выреза, публичный повтор request_id без второй операции и сохранность исходной детали/выделения/вида. Свои модели закрыты, флаг свободен, non-STL настройки сохранены. Это ограниченная приёмка указанной цепочки; исторические проверки других scope не засчитываются за новые прогоны dev51. Импорт/экспорт отложены, стадия 1 открыта. См. [PART_CUT.md](PART_CUT.md).
 
 Историческая приёмка dev49: **2380 pure passed, 323 CAD deselected; fresh same-wheel internal 11 native passed и public MCP stdio 11 native passed, оба accepted=true**. Каталог сохраняет **26 инструментов, 6 mutations**. MCP создаёт документ и пластину 40 × 20 × 10 мм, меняет ширину на 45 мм, высоту на 25 мм и толщину на 12 мм: независимый native объём `13500.000000000004` мм³. Подтверждены stale-отказ до записи, отсутствие повторной записи request_id, сохранность исходной детали/выделения/вида и internal scoped restoration после настоящего setter/rebuild. Свои контрольные модели закрыты, флаг свободен, non-STL настройки сохранены. Импорт/экспорт отложены, стадия 1 открыта.
