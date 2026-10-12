@@ -57,7 +57,20 @@ Related75 source pure passed/0,59 с (`work/pytest-rectangle-postconditions-3.lo
 artificial SDK. Первый прогон73/1 failed относился к D1/D2 в fixture вместо
 обязательных русских имён; fixture/relations исправлены, контракт сохранён.
 Эта функция не разрешает native-запись: durable executor/receipt/guard release
-и полный extrusion proof/recovery ещё должны быть реализованы и приняты.
+и recovery ещё должны быть реализованы и приняты.
+
+Добавлен независимый `verified_rectangle_extrusion` в
+`rectangle_extrusion_postconditions.py`: точный переход sketch→blind base,
+сохранность исходного эскиза/opaque-полей/PID, qualified dimensions,
+явный ownership/dependency delta, русские имена и полный box BREP с native
+blind/no-thin/no-draft controls. Related source pure: **123 passed, 1,49 с**,
+`work/pytest-extrusion-proof-03.log`, искусственный CaptureAdapter и реальные
+classifiers. Дополнительные native dependency links остаются неподдержанными;
+последовательность parent/child и absorbed links сверена с `cad_features.py`.
+Новая annotation проверяется по полной объявленной структуре и anchor,
+body metadata — по имени/visible и типизированной паре material.
+Executor/recovery, публичная регистрация и installed/native B1 не приняты;
+установленный dev89 и выполняющаяся L3-приёмка не изменены.
 
 ## Исторические принятые bundled-сценарии
 

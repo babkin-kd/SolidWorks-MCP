@@ -56,7 +56,11 @@ baseline parts. Native execution ещё недоступен, mutation executor/
 и public/installed/native gates остаются. Это не новая CAD-приёмка dev89.
 Независимые sketch postconditions добавлены: related75 source pure/0,59 с,
 real rectangle classifier на artificial SDK, full baseline/anchor/data checks;
-native executor и extrusion proof/recovery ещё остаются.
+native executor и recovery ещё остаются.
+Независимые extrusion postconditions добавлены: related123 source pure/1,49 с,
+полный artificial BREP/classifier, неизменный baseline sketch/anchors и exact
+dependency delta. Это не installed/native-приёмка B1; executor/recovery и фасады
+остаются открыты. [Ограничения](PART_CREATION.md).
 
 ## Хронология приёмки до текущего итога
 
