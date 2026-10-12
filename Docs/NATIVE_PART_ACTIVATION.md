@@ -82,7 +82,9 @@ CLI/синтаксис проверены; native-прогоны этих трё
 +replay и owned cleanup/full baseline. Это частичный отчёт accepted=false.
 +Already-active dev89 прошёл за1018,36 с: no-op/replay, independent readback и
 cleanup/baseline. Stale/foreign прошёл за675,30 с: real rename/stale, foreign/config refusal,
-readback и cleanup/baseline. Controlled failure выполняется; public не принят.
+readback и cleanup/baseline. Controlled failure прошёл за696,41 с: unknown/hold/replay, independent readback,
+owned cleanup и exact reconciliation. Four-report actual preflight принят;
+public MCP/native-проба выполняется, whole ACT ещё не принят.
 +`verifier_native_part_activation_acceptance.py` требует все четыре terminal
 +internal отчёта exact wheel перед публичным dispatch.49 artificial admission/
 +protocol tests passed (11,23 с); реальный полный preflight пока не принят.

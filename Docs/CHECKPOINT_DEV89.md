@@ -133,3 +133,19 @@ gate нового wheel. L3-P1, S1-B5-ACT и стадия 1 открыты. Но
 +ACT-N4 controlled_after_call продолжает полный prepare в том же процессе;
 +wheel и executing case helpers неизменны, исход не повторялся.
 +
++
++**Installed ACT-N4 controlled_after_call прошёл**,696,41 с, terminal/exit0:
++`work/native-part-activation-dev89-controlled-1/report.json`. Normal actual
++native receipt сохранён до bridge injection; actual_com_failure_injected=false.
++Unknown/unresolved, replay без второго activation, application hold нового
++request, independent full readback и released guards подтверждены. Exact-owned
++cleanup/empty baseline/application предшествуют accept-current-state
++reconciliation; исторический job status остаётся unknown.
++SHA256: `bff055f1c95fcc8419b7cda37f941088e2354ee7aacec7d43c7f1f43e81d0432`.
++
++Все четыре terminal internal отчёта dev89 прошли actual detached preflight:
++`work/native-part-activation-dev89-internal-preflight-1.json`. Exact wheel,
++current trusted helper hashes, finite labels и cleanup/baseline подтверждены.
++Это не public acceptance. Публичная MCP/native-проба запущена в
++`work/native-part-activation-dev89-public-1/`; whole ACT остаётся открытым.
++
