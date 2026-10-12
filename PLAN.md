@@ -371,6 +371,9 @@ CI38193016491 завершился success (unit/build/installed metadata), main
 Native L3-I1 dev89 принят980,22 с (committed, full readback/mapping41 и baseline);
 L3-I2 dev89 принят685,28 с (existing/stale, Copy0 и baseline); L3-I3
 принят868,76 с (actual race/no-overwrite, known rollback и baseline).
-Первый I4 warning_after_copy того же wheel выполняется и пока не принят.
+I4 warning_after_copy dev89 принят757,18 с (controlled unknown/hold/replay,
+independent clone41 и reconciliation/baseline, historical unknown сохранён).
+False/throw/incomplete того же wheel выполняются последовательной private
+очередью с одним CAD-владельцем; эти варианты и общий L3 пока не приняты.
 Сквозной L3-P1/B5
 и шесть блоков стадии1 остаются открыты. [Пакетная сводка](Docs/CHECKPOINT_DEV89_BATCH.md).

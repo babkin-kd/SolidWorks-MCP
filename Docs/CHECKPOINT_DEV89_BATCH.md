@@ -25,7 +25,9 @@ terminal/exit0, actual committed predicate, independent full readback/mapping41,
 131 captures returned, own cleanup/baseline и current helper hashes подтверждены.
 L3-I2 dev89 прошла685,28 с: existing/stale, Copy0 и own baseline.
 L3-I3 dev89 прошла868,76 с: actual race/no-overwrite, known rollback,
-preservation/own baseline. Первый I4 warning_after_copy выполняется;
+preservation/own baseline. I4 warning_after_copy dev89 прошёл757,18 с:
+original normal Copy, controlled unknown/hold/replay, independent clone41,
+reconciliation/empty baseline. False/throw/incomplete идут последовательно;
 весь L3/public не принят. Это результат
 после отправленного head9489360; [факты L3](NATIVE_FIRST_SAVE_PROGRESS.md)
 накапливаются локально для следующего пакета, отдельного push нет.

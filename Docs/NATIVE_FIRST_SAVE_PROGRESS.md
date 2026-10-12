@@ -32,12 +32,15 @@ Copy1/open1/close1/publication1; source/neighbor и foreign bytes/identity
 подтверждены; принадлежащий проверке пустой stage учтён, whole L3 не принят.
 SHA256 отчёта: `3cd463a3ebcf69abe16aacf1af7e7ca59eb1ae4c1ac266ec47c86279cb432e50`.
 
-После terminal I3 и подтверждённой очистки запущен первый L3-I4 dev89
-в `work/native-first-save-dev89-fault-warning-1/`: warning_after_copy.
-Это управляемый ответ моста после настоящего нормально вернувшегося Copy,
-не утверждение о реальном native warning. Единственный CAD-владелец
-проверяет unknown/hold/no retry и независимое own reconciliation;
-I4 ещё не passed. False/throw/incomplete и публичный L3-P1 остаются.
+Installed **L3-I4 warning_after_copy dev89 прошёл за757,18 с**, terminal/exit0:
+`work/native-first-save-dev89-fault-warning-1/report.json`. Original native
+Copy вернулся нормально, success=true/errors0/warnings0; затем управляемый
+ответ моста дал unknown/unresolved, hold/replay без повторного Copy.
+Independent clone41/readback и exact own reconciliation/empty baseline приняты;
+исторический статус остался unknown, phase=reconciled. 42 captures returned,
+current helper hashes и exact dev89 подтверждены. Это не actual native warning.
+SHA256 отчёта: `b3449519da41411a2910cb9c3b7c64c6d7c9990b5fbcf869c751aebcca0a5872`.
+False/throw/incomplete и публичный L3-P1 остаются; весь I4/L3 не принят.
 
 Оставшиеся false/throw/incomplete подготовлены как private последовательная
 очередь в ignored work/. Контроллер не вызывает COM и не очищает модели:
@@ -49,7 +52,11 @@ normal original Copy и доказанным unknown→reconciled без сме�
 gate семи отчётов dev89; он не заменяет public L3-P1.
 Управляющий guard проверен на искусственных данных: допустимый baseline и
 12 unsafe отказов, без COM/дочерних процессов. Это не native-приёмка I4.
-Очередь пока не запущена: warning-прогон остаётся единственным CAD-владельцем.
+После terminal warning/exit0 и проверки его фактического отчёта очередь
+запущена. Current case — false_after_copy; child live, installed dev89/metadata75
+проверены до CAD. Throw/incomplete будут запускаться только после проверенного
+терминального исхода предыдущего child. Queue/internal gate ещё не passed;
+отчёты и контроллер остаются private, отдельного push/CI нет.
 
 Для публичного L3-P1 обязательны внутренние свидетельства этого же wheel.
 Следующие записи dev88 сохраняют историю, не являются приёмкой dev89.
