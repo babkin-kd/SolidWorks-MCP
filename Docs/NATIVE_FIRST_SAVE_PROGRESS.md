@@ -39,6 +39,18 @@ SHA256 отчёта: `3cd463a3ebcf69abe16aacf1af7e7ca59eb1ae4c1ac266ec47c86279cb
 проверяет unknown/hold/no retry и независимое own reconciliation;
 I4 ещё не passed. False/throw/incomplete и публичный L3-P1 остаются.
 
+Оставшиеся false/throw/incomplete подготовлены как private последовательная
+очередь в ignored work/. Контроллер не вызывает COM и не очищает модели:
+каждый отдельный native-owner запускается только после exit0 и terminal
+предыдущего отчёта с current hashes/exact wheel, owned=[], restored baseline,
+normal original Copy и доказанным unknown→reconciled без смены исторического
+исхода на success. Live/pending/retained/несовпадение останавливает переход;
+нет timeout/kill/automatic retry. После всех трёх выполнится общий detached
+gate семи отчётов dev89; он не заменяет public L3-P1.
+Управляющий guard проверен на искусственных данных: допустимый baseline и
+12 unsafe отказов, без COM/дочерних процессов. Это не native-приёмка I4.
+Очередь пока не запущена: warning-прогон остаётся единственным CAD-владельцем.
+
 Для публичного L3-P1 обязательны внутренние свидетельства этого же wheel.
 Следующие записи dev88 сохраняют историю, не являются приёмкой dev89.
 
