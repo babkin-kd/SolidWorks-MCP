@@ -9,6 +9,8 @@ from dataclasses import dataclass
 
 from . import binding
 from .cad_part_creation import NativeBaseReceipt
+from .cad_rectangle_view_retirement import (
+    capture_rectangle_views, retain_rectangle_view, retire_rectangle_view)
 from .constants import SW_FULLY_CONSTRAINED
 from .documents import rejected
 from .jobs import ExecutionFailure
@@ -29,6 +31,7 @@ class NativeRectangleStageReceipt(NativeBaseReceipt):
     pending_native_step: str = None
     native_step_recorder: object = None
     native_step_journal_failed: bool = False
+    annotation_views: object = None
 
 
 class CadRectangleConstructionMixin:
@@ -61,6 +64,7 @@ class CadRectangleConstructionMixin:
         receipt = NativeRectangleStageReceipt(base.model_identity, base.configuration_identity,
             base.baseline_features, dict(base.controls))
         receipt.native_step_recorder = recorder
+        receipt.annotation_views = capture_rectangle_views(self, model)
         if sketch is not None:
             token = self.identity(sketch)
             if not any(token == identity for identity, _ in receipt.baseline_features):
@@ -141,6 +145,9 @@ class CadRectangleConstructionMixin:
             receipt.sketch_closed = True
             if self._rectangle_native_step(receipt, 'rebuild_sketch', self.rebuild_dimension_document, model) is not True:
                 raise rejected('construction_rebuild_failed', 'The closed sketch rebuild did not finish.')
+            retain_rectangle_view(self, model, receipt.annotation_views, feature,
+                step=lambda label, call, *args: self._rectangle_native_step(receipt, label, call, *args),
+                dimension_count=2)
         if self.bodies(model, 'all') or self.part_creation_controls(model) != receipt.controls:
             raise rejected('construction_sketch_postcondition', 'Sketch-only creation must preserve empty geometry and controls.')
 
@@ -182,22 +189,36 @@ class CadRectangleConstructionMixin:
             self._rectangle_native_step(receipt, 'name_body', setattr, bodies[0], 'Name', definition.body_name)
             if bodies[0].Name != definition.body_name:
                 raise rejected('construction_name_mismatch', 'The Russian body name was not retained.')
+            retain_rectangle_view(self, model, receipt.annotation_views, extrusion,
+                step=lambda label, call, *args: self._rectangle_native_step(receipt, label, call, *args),
+                dimension_count=1)
         if self.part_creation_controls(model) != receipt.controls:
             raise rejected('construction_controls_changed', 'Original creation controls were not restored.')
 
     def restore_rectangle_sketch(self, model, receipt):
         if (receipt.pending_creation or receipt.pending_sketch_close or receipt.pending_native_step
                 or receipt.native_step_journal_failed
-                or receipt.selection_uncertain or receipt.restore_attempted or receipt.borrowed_sketch is not None):
+                or receipt.selection_uncertain or receipt.restore_attempted or receipt.borrowed_sketch is not None
+                or receipt.annotation_views is None or not receipt.annotation_views.bound):
             raise ExecutionFailure('construction_restore_unsafe', 'Unknown or borrowed sketch cannot be deleted.', uncertain=True)
         receipt.restore_attempted = True
         # Only this stage's exact newly created sketch is owned by the base restorer.
-        self._rectangle_native_step(receipt, 'restore_owned_sketch', self.restore_base_rectangle, model, receipt)
+        try:
+            self._rectangle_native_step(receipt, 'restore_owned_sketch', self.restore_base_rectangle, model, receipt)
+        finally:
+            # The base inverse proves geometry only. The stage is not restored
+            # until its owned display effect has also returned to baseline.
+            receipt.restored = False
+        with self._base_selection(model, receipt):
+            retire_rectangle_view(self, model, receipt.annotation_views,
+                step=lambda label, call, *args: self._rectangle_native_step(receipt, label, call, *args))
+        receipt.restored = True
 
     def restore_rectangle_extrusion(self, model, receipt):
         if (receipt.pending_creation or receipt.pending_sketch_close or receipt.selection_uncertain
                 or receipt.pending_native_step or receipt.native_step_journal_failed
-                or receipt.restore_attempted or receipt.borrowed_sketch is None):
+                or receipt.restore_attempted or receipt.borrowed_sketch is None
+                or receipt.annotation_views is None or not receipt.annotation_views.bound):
             raise ExecutionFailure('construction_restore_unsafe', 'Unknown effects cannot authorize deletion/retry.', uncertain=True)
         self._base_target(model, receipt)
         features = self.features(model)
@@ -229,4 +250,7 @@ class CadRectangleConstructionMixin:
                 or self.sketch_snapshot(model, receipt.borrowed_sketch)[0] != receipt.borrowed_sketch_snapshot
                 or self.part_creation_controls(model) != receipt.controls):
             raise ExecutionFailure('construction_restore_unconfirmed', 'The full baseline sketch was not restored.', uncertain=True)
+        with self._base_selection(model, receipt):
+            retire_rectangle_view(self, model, receipt.annotation_views,
+                step=lambda label, call, *args: self._rectangle_native_step(receipt, label, call, *args))
         receipt.restored = True

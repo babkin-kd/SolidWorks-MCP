@@ -83,6 +83,14 @@ class Adapter(CadRectangleConstructionMixin, CadPartCreationMixin):
 @pytest.fixture(autouse=True)
 def wrappers(monkeypatch):
     monkeypatch.setattr(binding, 'wrap', lambda value, cls: value)
+    # This suite isolates the geometry bridge. Native-shaped view inventory,
+    # identity/selection and retirement are exercised in their dedicated suite.
+    import solidworks_mcp.cad_rectangle_construction as bridge
+    monkeypatch.setattr(bridge, 'capture_rectangle_views', lambda *args: NS(bound=False, retired=False))
+    def retain(adapter, model, state, feature, **kwargs): state.bound = True
+    def retire(adapter, model, state, **kwargs): state.retired = True
+    monkeypatch.setattr(bridge, 'retain_rectangle_view', retain)
+    monkeypatch.setattr(bridge, 'retire_rectangle_view', retire)
 
 
 def extrusion(**changes):
@@ -121,6 +129,52 @@ def test_extrusion_restore_preserves_baseline_sketch_points_dimensions_and_ident
     a.restore_rectangle_extrusion(a.model, r)
     assert a.deletions == [0] and a.sketch in a.items and not a.solid
     assert a.sketch_snapshot(a.model, a.sketch)[0] == before and r.restored is True
+    assert r.annotation_views.bound and r.annotation_views.retired
+
+
+def test_unbound_view_receipt_prohibits_geometry_deletion():
+    a = Adapter(); r = a.receipt()
+    a.extrude_rectangle_sketch(a.model, extrusion(), r)
+    r.annotation_views.bound = False
+    with pytest.raises(ExecutionFailure) as failure:
+        a.restore_rectangle_extrusion(a.model, r)
+    assert failure.value.uncertain and not a.deletions
+
+
+def test_view_retirement_failure_does_not_claim_full_restoration(monkeypatch):
+    import solidworks_mcp.cad_rectangle_construction as bridge
+    a = Adapter(); r = a.receipt()
+    a.extrude_rectangle_sketch(a.model, extrusion(), r)
+    def fail(*args, **kwargs):
+        assert a.deletions == [0] and a.sketch in a.items and not a.solid
+        raise ExecutionFailure('view_inverse_lost', 'Artificial uncertainty', uncertain=True)
+    monkeypatch.setattr(bridge, 'retire_rectangle_view', fail)
+    with pytest.raises(ExecutionFailure): a.restore_rectangle_extrusion(a.model, r)
+    assert not r.restored and r.restore_attempted
+    with pytest.raises(ExecutionFailure): a.restore_rectangle_extrusion(a.model, r)
+    assert a.deletions == [0]
+
+
+def test_sketch_geometry_inverse_is_not_full_restoration_until_view_inverse(monkeypatch):
+    import solidworks_mcp.cad_rectangle_construction as bridge
+    a = Adapter()
+    a.items.remove(a.sketch)
+    r = a.new_rectangle_stage_receipt(a.model, a.items, a.part_creation_controls(a.model))
+    r.sketch, r.sketch_identity = a.sketch, a.identity(a.sketch)
+    r.annotation_views.bound = True
+    a.items.append(a.sketch)
+    def geometry_inverse(model, owned):
+        assert owned is r and not owned.restored
+        a.items.remove(a.sketch)
+        owned.restored = True
+    a.restore_base_rectangle = geometry_inverse
+    def view_inverse(adapter, model, views, **kwargs):
+        assert a.sketch not in a.items and not r.restored
+        raise ExecutionFailure('view_inverse_lost', 'Artificial uncertainty', uncertain=True)
+    monkeypatch.setattr(bridge, 'retire_rectangle_view', view_inverse)
+    with pytest.raises(ExecutionFailure): a.restore_rectangle_sketch(a.model, r)
+    assert not r.restored and r.restore_attempted
+    with pytest.raises(ExecutionFailure): a.restore_rectangle_sketch(a.model, r)
 
 
 def test_a_consumed_extrusion_receipt_cannot_dispatch_another_native_creation():

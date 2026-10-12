@@ -137,3 +137,46 @@ inverse удалил body, но оставил все3 annotation views. У IAnn
 дал DISP_E_MEMBERNOTFOUND, MultiSelect2 raw views дал0. N5 exact-owned view
 retirement ещё нужен; нельзя пропустить metadata либо удалять по именам/дельте
 списка без native ownership. Установленный wheel dev90 неизменен, нового CI нет.
+
+## Exact-owned view retirement: interop и source-интеграция
+
+Две новые короткие native-пробы завершились terminal/exit0, own=[] и полный
+original/application/non-STL baseline восстановлен. Они использовали installed
+dev90 и собственный box-builder, поэтому **не являются приёмкой новых B1 tools**.
+Выбор actual `AnnotationViewFeat` через `IFeature.Select2` вернул выбранный
+IAnnotationView (`GetSelectedObjectType3=139`); canonical IUnknown совпал с видом
+annotation управляющего размера. Ни имя feature, ни native ID=-1 не использованы
+как доказательство связи. После geometry inverse оба доказанных новых пустых
+вида удалены по exact selection через DeleteSelection2(0); исходный view сохранён.
+
+SHA256 private interop отчётов: binding
+`23bc17b2ffbf477ec594d0dab3c91ab8ffc324e2f00d72f2029cc649271dbcb2`, retirement
+`47d920edfee11cd0160a239b4ca5801d2658c74e16e6a88ef8dd6a1cc8af7685`.
+
+Добавлен внутренний `cad_rectangle_view_retirement.py`: passive baseline
+incarnations/data, membership actual owned dimensions, bounded tree и exact
+selection binding. У каждого selection свой pending/returned label. Только
+единственный связанный новый пустой view можно удалить, после проверки отсутствия
+оставшихся dimension links и сохранности baseline. Delete — одна попытка;
+lost/false ACK, чужая замена, неполный inventory и повтор оставляют uncertain.
+После retirement getters вызываются только на текущих views.
+
+Механизм подключён к отдельным sketch/extrusion receipts. Геометрический inverse
+не выставляет полное restored до возврата view inventory. Borrowed sketch и его
+views остаются baseline выдавливания. Full checkpoint/postcondition/restored gate
+executor сохранены; API tools/list не расширен.
+
+Related rectangle-контур: **415 source pure passed/14,51 с**. После добавления
+отдельной регрессии sketch geometry→view-failure: **68 связанных pure/0,25 с**.
+Это искусственный SDK, не installed/native. Первый combined-прогон:81 passed /
+124 setup errors из-за запрета pytest temp вне sandbox; повтор с разрешённым
+temp storage дал205 passed/10,25 с. Ошибки setup не засчитываются как passed.
+
+Установленный dev90 не менялся. Следующий gate — полный pure/build нового
+кандидата, exact installed metadata, конечные internal/public B1 N1…N5.
+Historical unknown сохранён. Новый push/CI не выполнялся.
+
+Исходный кандидат **2.0.0.dev91**: версии pyproject/package/lock/registry-template
+согласованы; полный pure **6567 passed /323 CAD deselected, 138,38 с**.
+`work/pytest-dev91-full-1.log`, terminal/exit0. Это полный source gate после
+view-retirement integration; build/installed/native dev91 ещё не подтверждены.

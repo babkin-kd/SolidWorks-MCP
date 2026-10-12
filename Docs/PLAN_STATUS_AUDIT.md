@@ -162,6 +162,16 @@ source-fix нельзя объявить полной native-приёмкой и
 
 ## Хронология приёмки до текущего итога
 
+**Последнее source-исправление B1:** exact view retirement реализован и подключён
+к отдельным sketch/extrusion receipts. Native interop подтвердил feature selection
+→ точный AnnotationView и удаление двух своих пустых views с сохранением исходного
+view/полного session baseline. Это не B1 installed/native приёмка: пробы использовали
+старый box-builder dev90. Source rectangle415 pure/14,51 с, дополнительный bridge
+gate68 pure/0,25 с. Restored не объявляется по одной восстановленной геометрии;
+неподтверждённый view inverse удерживает unknown. Новый exact wheel/full pure и
+internal/public N1…N5 остаются; новые инженерные случаи не добавлены.
+[Связь, SHA256 и ограничения](CHECKPOINT_DEV90.md#exact-owned-view-retirement-interop-и-source-интеграция).
+
 Следующие записи сохраняют состояние на момент своих контрольных точек;
 прежний статус «ACT открыт» заменён фактическим итогом dev89 выше.
 
