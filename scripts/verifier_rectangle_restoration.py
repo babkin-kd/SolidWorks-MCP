@@ -50,7 +50,11 @@ def verified_rectangle_restoration(job):
                 row.pop('owner_update_stamp')
         if _json(a)!=_json(b):return False
         steps=verification['native_steps'];names=[]
-        if type(steps) is not list or not 12<=len(steps)<=32 or len(steps)%2:return False
+        # Extrusion owns five construction calls, three view-feature bindings,
+        # two initial guard calls, and seven inverse/release/proof calls: 34
+        # pending/returned rows. Sketch owns at most 32 in its bounded profile.
+        maximum_steps=32 if kind=='sketch' else 34
+        if type(steps) is not list or not 12<=len(steps)<=maximum_steps or len(steps)%2:return False
         for i in range(0,len(steps),2):
             pending,returned=steps[i:i+2]
             if (set(pending)!={'sequence','name','phase','evidence'} or set(returned)!=set(pending)

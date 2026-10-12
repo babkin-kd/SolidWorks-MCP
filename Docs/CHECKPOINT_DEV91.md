@@ -47,3 +47,25 @@ private `work/native-rectangle-dev91-positive-1/report.json`, один CAD-вл�
 Пока `positive_case_passed=false` и `accepted=false`, ни один native gate B1
 не закрыт. Runtime/helper hashes фиксированы; работающий wheel и helpers
 не изменяются. Остальные fault/public условия остаются после этого finite positive.
+
+## Подготовленный следующий блок, не запущен
+
+Для N5 внешний restoration gate учитывает точный ledger двух отдельных stages:
+максимум32 rows sketch и34 extrusion после добавления обязательных view steps.
+Related93 pure/6,04 с проверили actual JobStore/artificial baseline, native-shaped
+step sequence и отказ overflow/duplicate/lost acknowledgement. Это не новая
+native-приёмка восстановления. Этот verifier не используется live positive;
+ни один helper его frozen manifest не изменён.
+
+Добавлены passive `verifier_rectangle_positive_acceptance.py` и отдельный
+`verify_rectangle_stages_faults.py`. Gate связывает exact wheel/helper hashes,
+четыре positive labels, оба committed jobs, borrowed sketch ID, native readback
+и original cleanup baseline; running/partial/foreign reports не допускаются.
+Driver содержит четыре stale/foreign prewrite случая и два controlled observation
+faults после нормально завершившегося native snapshot, с отдельным own restoration
+эскиза/выдавливания и replay. Он не имитирует реальный COM throw. Его native
+приёмка **не запускалась**. Pure preflight/ledger105 passed/6,08 с; driver/preflight/
+restoration56 passed/4,49 с. Наборы пересекаются и не суммируются.
+
+По запросу пользователя следующий native-блок не запускается. После завершения
+текущего прогона, проверки очистки и локальной фиксации разработка ставится на паузу.

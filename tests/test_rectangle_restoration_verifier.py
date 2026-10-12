@@ -51,3 +51,53 @@ def test_unsafe_or_incomplete_rollback_never_releases_native_fixtures(rollback_j
     elif fault=='unverified_final':verification['native_steps'][-1]['evidence']['verified']=False
     else:verification['native_steps'][2]['name']='rectangle_restoration_guard'
     assert not helper.verified_rectangle_restoration(job)
+
+
+def native_shaped_ledger(job):
+    """Expand artificial calls to the actual finite rectangle bridge sequence."""
+    job=deepcopy(job);steps=job['mutation']['verification']['native_steps']
+    sketch=job['operation']=='sketch.create_rectangle'
+    creation=(['open_sketch','name_sketch','draw_rectangle','define_rectangle','close_sketch','rebuild_sketch']
+        if sketch else ['extrude','name_extrusion','name_depth','rebuild','name_body'])
+    binding=[f'bind_annotation_view_feature_{i}' for i in range(2 if sketch else 3)]
+    inverse=(['restore_owned_sketch'] if sketch else ['restore_delete_extrusion','restore_rebuild'])
+    inverse+=['restore_select_annotation_view','restore_delete_annotation_view']
+    expanded=[]
+    for row in steps:
+        labels=creation+binding if row['name']=='rectangle_construct_artificial' else (
+            inverse if row['name']=='rectangle_restore_artificial' else None)
+        if labels:
+            if row['phase']=='pending':
+                for label in labels:
+                    for phase in ('pending','returned'):
+                        expanded.append(dict(name='rectangle_'+label,phase=phase,
+                            evidence={'native_call_returned':phase=='returned'}))
+        else:expanded.append(deepcopy(row))
+    for i,row in enumerate(expanded,1):row['sequence']=i
+    job['mutation']['verification']['native_steps']=expanded
+    return job
+
+
+def test_exact_native_view_binding_and_retirement_ledger_fits_finite_stage_budget(rollback_job):
+    job=native_shaped_ledger(rollback_job)
+    expected=32 if job['operation']=='sketch.create_rectangle' else 34
+    assert len(job['mutation']['verification']['native_steps'])==expected
+    assert helper.verified_rectangle_restoration(job)
+
+
+@pytest.mark.parametrize('fault',['extra_pair','duplicate_binding','lost_delete_ack'])
+def test_view_inverse_ledger_overflow_duplicate_or_lost_ack_retains_fixtures(rollback_job,fault):
+    job=native_shaped_ledger(rollback_job)
+    steps=job['mutation']['verification']['native_steps']
+    if fault=='extra_pair':
+        for phase in ('pending','returned'):
+            steps.insert(-2,dict(name='rectangle_unplanned_inverse',phase=phase,evidence={}))
+    elif fault=='duplicate_binding':
+        for row in steps:
+            if row['name']=='rectangle_bind_annotation_view_feature_1':
+                row['name']='rectangle_bind_annotation_view_feature_0'
+    else:
+        steps[:]=[row for row in steps if not (
+            row['name']=='rectangle_restore_delete_annotation_view' and row['phase']=='returned')]
+    for i,row in enumerate(steps,1):row['sequence']=i
+    assert not helper.verified_rectangle_restoration(job)
