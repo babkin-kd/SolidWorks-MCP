@@ -36,6 +36,13 @@ released_open_guard = _open_evidence.released_open_guard
 untouched_busy_open_guard = _open_evidence.untouched_busy_open_guard
 verified_open_native_steps = _open_evidence.verified_open_native_steps
 
+_part_spec = importlib.util.spec_from_file_location('_native_part_activation_evidence',
+    Path(__file__).with_name('verifier_native_part_activation.py'))
+_part_evidence = importlib.util.module_from_spec(_part_spec)
+_part_spec.loader.exec_module(_part_evidence)
+released_part_activation_guard = _part_evidence.released_part_activation_guard
+verified_committed_part_activation = _part_evidence.verified_committed_part_activation
+
 
 TERMINAL = frozenset({'succeeded', 'failed', 'cancelled', 'unknown'})
 CONTEXT_KEYS = ('document_id', 'configuration', 'expected_observation_revision',
@@ -442,6 +449,7 @@ class VerifierSupervisor:
                 close_release=(job['operation']=='document.close_native' and released_close_guard(guard,before))
                 released=(released_open_guard(guard, before) if job['operation']=='document.open_native'
                           else close_release if job['operation']=='document.close_native'
+                          else released_part_activation_guard(guard, before) if job['operation']=='document.activate_part_native'
                           else released_execution_guard(guard, expected_model_count=expected_model_count))
                 if not released and not untouched_busy:
                     reasons.append('UI release unconfirmed')
@@ -449,6 +457,13 @@ class VerifierSupervisor:
                 if (job['operation']=='document.open_native' and phase in ('committed','rolled_back')
                         and not verified_open_native_steps(verification, before)):
                     reasons.append('native open step acknowledgements unconfirmed')
+                    safe = False
+                if (job['operation']=='document.activate_part_native' and phase in ('committed','rolled_back')
+                        and not verified_committed_part_activation(job)):
+                    # Positive/no-op admission is implemented. A rolled-back
+                    # activation still needs its own full receipt predicate;
+                    # never infer quiescence/cleanup from a final status alone.
+                    reasons.append('native part activation evidence unconfirmed')
                     safe = False
         # A coherent terminal job snapshot permits SDK teardown, while unknown
         # effects/transport loss still prohibit native fixture cleanup.

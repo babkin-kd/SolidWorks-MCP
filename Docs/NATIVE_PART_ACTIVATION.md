@@ -85,3 +85,13 @@ CLI/синтаксис проверены; native-прогоны этих трё
 +internal отчёта exact wheel перед публичным dispatch.49 artificial admission/
 +protocol tests passed (11,23 с); реальный полный preflight пока не принят.
 +
++
++Public driver: `verify_native_part_activation_public.py`. Обязательны
++`--internal-positive`, `--internal-already-active`, `--internal-stale`,
++`--internal-controlled-after-call` и обычные exact wheel/state/opt-in аргументы.
++Same-wheel/current hash gate проверяется до первой native connection.
++Malformed report set реально отказал в installed CLI без CAD; публичный native
++прогон пока не выполнен.165 связанных pure supervisor cases passed (3,49 с).
++Rollback ACT без собственного полного receipt predicate консервативно не даёт
++supervisor cleanup; положительный/no-op proof распознаётся строго.
++

@@ -77,3 +77,18 @@ gate нового wheel. L3-P1, S1-B5-ACT и стадия 1 открыты. Но
 +`work/pytest-activation-admission-1.log`. Полный actual four-report gate ещё не
 +принят: already_active выполняется, stale/controlled_after_call не запускались.
 +
++
++Для public ACT подготовлен `verify_native_part_activation_public.py`: настоящий
++stdio, explicit prepare/activate/replay/no-op, durable job_get и independent
++native readback после supervisor quiescence. До CAD требуется complete four-report
++same-wheel preflight. Пассивный supervisor распознаёт строго проверенный ACT
++guard/ledger; invalid/unknown по-прежнему запрещают native fixture cleanup.
++165 связанных artificial supervisor/guard/drain cases passed (3,49 с):
++`work/pytest-activation-supervisor-1.log`.
++
++Real installed CLI preflight с заведомо неверным набором отчётов отказал до
++native connection/fixture creation: `work/native-part-activation-public-preflight-denied-1/`.
++Это metadata/admission evidence, не публичная CAD-приёмка. Already-active native
++продолжает full post-release capture; stale/fault и public native не запускались.
++Сам wheel и файлы executing case driver/helper inventory не изменены.
++
