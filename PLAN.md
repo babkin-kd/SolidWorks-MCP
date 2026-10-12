@@ -359,3 +359,8 @@ ACT-N1 прошёл (1027,38 с), ACT-N2 already-active прошёл (1018,36 с
 preflight принят; public MCP/native ACT принят (2049,55 с). Сквозной
 saved-file L3-P1/B5 ещё открыт, L2 не расширен, стадия1 не закрыта.
 [Контрольная точка dev89](Docs/CHECKPOINT_DEV89.md).
+
+**Пакетная отправка dev85–dev89:** head9489360 отправлен одним push в draft PR15;
+CI38193016491 завершился success (unit/build/installed metadata), main не объединён.
+Native L3-I1 dev89 выполняется отдельно и пока не принят. Сквозной L3-P1/B5
+и шесть блоков стадии1 остаются открыты. [Пакетная сводка](Docs/CHECKPOINT_DEV89_BATCH.md).

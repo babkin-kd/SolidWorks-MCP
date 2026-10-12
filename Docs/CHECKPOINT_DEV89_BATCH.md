@@ -47,6 +47,8 @@ Native-владелец продолжает свой прогон; отправ
 Прямая API-проверка после push подтвердила draft/open PR15, точный head и
 неизменный base `3ab795ec9d75e8a0055d41554cd439737b8b82f8`. Название и описание
 PR обновлены под окончательный пакет. [CI run38193016491](https://github.com/babkin-kd/SolidWorks-MCP/actions/runs/38193016491)
-реально создан; `unit-and-build` выполняется. Setup/checkout/runtime/lock прошли,
-unit-тесты выполняются; build/installed metadata ещё не завершены.
-Это промежуточный статус, не успешный CI и не завершение стадии 1.
+завершился **success** по прямой API-проверке. `unit-and-build` и все обязательные
+этапы — lock, unit tests, wheel/sdist build, отдельная установка wheel,
+installed metadata/stdio — прошли. Описание PR обновлено по этому результату.
+CI подтверждает именно отправленный head9489360; native-приёмка и завершение
+стадии 1 из этого не следуют. PR остаётся draft/open, main не объединён.
