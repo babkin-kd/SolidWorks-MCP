@@ -79,3 +79,11 @@ CAD. Первый rollback-fixture прогон ошибочно повторн�
 искусственную модель; заменён свежим fixture, production code не менялся.
 Это не native N5. Native positive продолжает тот же процесс/журнал; пока
 sketch.create_rectangle running, итог не принят.
+
+Добавлен `verifier_rectangle_prewrite.py`: exact request/code, failed с
+`requires_reconciliation=false`, без checkpoint. Он не подменяет native
+no-dispatch/full-baseline proof и не принимает not_started/rollback/unknown
+без отдельного gate. Совместные98 artificial pure passed6,00 с.
+Положительный native процесс подтвердил returned open/draw/define/close/rebuild
+sketch steps и guard release; post-release independent проверка ещё running.
+До committed/owned cleanup результат не засчитывается.

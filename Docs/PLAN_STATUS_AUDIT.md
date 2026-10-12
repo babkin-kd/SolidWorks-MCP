@@ -111,6 +111,11 @@ N5 detached restoration gate добавлен отдельно: related78 pure/5
 Native positive остаётся running на том же dev90; native restoration и
 public MCP ещё не выполнены. Executable wheel/helpers active прогона не менялись.
 
+N4 prewrite gate добавлен: exact arguments/whitelisted rejection и отсутствие
+checkpoint; combined98 artificial pure/6,00 с. В live native positive появились
+returned sketch construction/close/rebuild и released guard; job ещё running
+на независимой проверке, ни один gate по этим промежуточным событиям не закрыт.
+
 ## Хронология приёмки до текущего итога
 
 Следующие записи сохраняют состояние на момент своих контрольных точек;
