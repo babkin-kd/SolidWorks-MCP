@@ -112,15 +112,20 @@ part того же наблюдаемого профиля. Гарантия с�
 
 Текущий B1 кандидат — dev92: полный source6686 passed/323 CAD deselected,
 installed metadata79/25; short native bridge/inverses прошли, новый domain
-positive начат, не accepted. [Точная привязка](CHECKPOINT_DEV92.md).
+positive завершился failed: sketch/replay принят, extrusion unknown, целый
+positive не accepted. Две own fixtures закрыты после независимой quiescence,
+пустой baseline подтверждён, hold reconciled с сохранением unknown.
+[Точная привязка](CHECKPOINT_DEV92.md).
 Dev91 extrusion unknown сохранён, hold reconciled по независимой пустой сессии.
 Running/interop не закрывают целое N-условие и не заменяют public/fault приёмку.
 
 12.10.2026 пользователь запросил паузу после фиксации текущего блока.
 Подготовлены общий пассивный gate positive/N4/N5 и независимые доказательства
 fault report; native N4/N5 не запускался, public driver ещё не реализован.
-Запущенный positive dev92 оставлен завершаться в фоне. Сначала проверить его
-фактический исход и cleanup/baseline; никакое условие B1 по этой паузе не закрыто.
+Фактический failed исход positive dev92, quiescence и собственная очистка
+проверены по отдельному запросу пользователя; разработка остаётся на паузе.
+При возобновлении сначала разобрать postcondition-дефект extrusion;
+никакое целое условие B1 по этой очистке не закрыто.
 Точка продолжения: [checkpoint dev92](CHECKPOINT_DEV92.md).
 
 **L2 закрыт:** internal13/public11 dev87, exact wheel и baseline. Область и

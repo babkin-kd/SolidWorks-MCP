@@ -135,15 +135,17 @@ gate одного установленного wheel. История dev88 со�
 
 Текущий исправленный кандидат B1 — **dev92**: full pure6686/323 CAD deselected,
 wheel/installed metadata79/25 приняты. Short native bridge/inverses/full baseline
-прошли; новый positive domain native выполняется, не accepted. N1…N5 и public MCP
-ещё не закрыты. [Контрольная точка](Docs/CHECKPOINT_DEV92.md).
+прошли; positive domain native завершился failed: sketch/replay прошёл,
+extrusion unknown, полная приёмка не принята. Собственные две детали закрыты,
+исходный baseline подтверждён, hold reconciled с сохранением unknown.
+N1…N5 и public MCP ещё не закрыты. [Контрольная точка](Docs/CHECKPOINT_DEV92.md).
 Unknown dev90/dev91 сохранены в истории; dev91 hold reconciled, новый request
 не повторяет старый. Новые инженерные режимы не добавляются.
 
 **Пауза по запросу пользователя 12.10.2026:** текущий блок подготовки
-проверок отчётов фиксируется локально. Уже запущенный positive verifier dev92
-завершается в фоне; SolidWorks занят до подтверждения terminal/quiescence и
-очистки. Новые прогоны и разработка не запускаются. B1 остаётся открытым;
+проверок отчётов зафиксирован локально. Завершение positive verifier dev92 и
+безопасная очистка проверены: процесс остановлен после quiescence, SolidWorks
+свободен, исторический unknown сохранён. Новые прогоны и разработка не запускаются. B1 остаётся открытым;
 точка продолжения и ограничения — [в checkpoint dev92](Docs/CHECKPOINT_DEV92.md#подготовка-отчётов-n4n5-и-пауза-12102026).
 
 Точные поддержанные случаи, отказные условия и доказательства каждого блока:

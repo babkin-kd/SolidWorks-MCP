@@ -53,6 +53,9 @@ Report SHA256: `9ad20f6b5c6d2d4622faa7063903a7a31a33bf1c9cad1939f0e78c61d896a6fb
 unknown не повторяется. Один CAD-владелец; текущий wheel/helpers фиксированы
 до terminal/quiescence. Running не засчитывается как accepted.
 
+Этот промежуточный статус заменён фактическим результатом и независимой
+очисткой ниже. Полная positive-проверка не принята.
+
 После принятого positive нужны finite N4/N5 driver и public MCP на этом wheel;
 затем B2 → B3 → B4 → B5. Imports/export/STL остаются отложенными D-задачами.
 Локальные коммиты накоплены; нового push/CI нет.
@@ -99,3 +102,46 @@ native-приёмка ими не заменяется. Наборы 20 и176 п
 можно продолжить конечные N4/N5 на том же wheel, затем подготовить и выполнить
 public B1. Public driver пока не реализован. B1–B5 и стадия1 открыты;
 L2/L3 и S1-B5-ACT сохраняют прежние принятые границы. Push/CI не запускались.
+
+## Проверка завершения и безопасная очистка 12.10.2026
+
+По запросу пользователя проверен фактический исход оставленного verifier.
+Он завершил сценарий **failed /positive_case_passed=false**, длительность
+**3475,04 с**. Отдельный sketch job/replay прошёл, extrusion остался
+**unknown/unresolved**: native postconditions не подтверждены, а полное
+доказательство собственного эффекта не позволило безопасный inverse.
+Это не успешная приёмка B1; исправление дефекта во время паузы не выполнялось.
+
+Независимая проверка private journal подтвердила 22 строки/11 пар
+pending→returned, 74 завершённых snapshot captures, отсутствие pending
+native-call/creation/sketch-close/selection и освобождение обоих model guards
+и application guard. Процесс находился в retained-цикле ожидания после
+AssertionError, а не выполнял CAD. Его точные launcher/worker PID и родство
+проверены; остановлен только завершённый verifier после доказанной quiescence.
+
+Перед очисткой дважды сопоставлены точные HWND документов, метаданные и
+update stamps, режимы без редактирования/блокировок, полный feature tree и
+его persistent references в области исходного snapshot. Учтено, что snapshot
+исключает PID служебных folder/display features: сами их строки дерева
+сравнивались полностью. Все данные принадлежали двум нормально созданным
+fixtures; пользовательские документы не обнаружены и не закрывались.
+
+**Без сохранения закрыты ровно две собственные контрольные детали.**
+Каждый CloseDoc вернулся и подтверждён исчезновением точного canonical token;
+retired handles больше не читались. Независимый двойной readback подтвердил
+пустой document/window census, ActiveDoc=None, CommandInProgress=False,
+полный исходный baseline/application и non-STL preferences. Собственный
+служебный флаг восстановлен. Private evidence:
+`work/native-rectangle-dev92-positive-1/cleanup-quiescence.json`,
+`independent-cleanup.json`, `independent-reconciliation.json`.
+
+Hold согласован через `accept_current_state` по доказанной пустой сессии:
+mutation phase **reconciled**, исторический job status **unknown сохранён**.
+Старый request не повторялся, результат не объявлялся succeeded, исходный
+failed report сохранён неизменным. Новые native-тесты/wheel/push/CI не запускались.
+
+**Разработка остаётся на паузе. SolidWorks свободен от контрольных документов
+и verifier этой проверки.** При возобновлении сначала разобрать фактический
+postcondition-дефект extrusion dev92 и создать следующий проверяемый кандидат;
+N4/N5 и public B1 не запускать на основании этого failed positive. B1 и стадия1
+остаются открытыми.
