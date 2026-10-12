@@ -353,5 +353,6 @@ Milestones: [три стадии проекта](https://github.com/babkin-kd/So
 Installed metadata/stdio75/23 принят без source PYTHONPATH. Положительный native
 ACT-N1 прошёл (1027,38 с), ACT-N2 already-active прошёл (1018,36 с). Stale/foreign
 прошёл (675,30 с); controlled failure прошёл (696,41 с). Actual four-report
-preflight принят; public MCP/native-проба выполняется, whole ACT открыт, L2 не расширен, стадия1 не закрыта.
+preflight принят; public MCP/native ACT принят (2049,55 с). Сквозной
+saved-file L3-P1/B5 ещё открыт, L2 не расширен, стадия1 не закрыта.
 [Контрольная точка dev89](Docs/CHECKPOINT_DEV89.md).

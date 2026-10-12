@@ -17,7 +17,7 @@ Whole failed internal1/2 и прежний unknown dev86 сохранены от
 
 ## Шесть оставшихся блоков для пользователя
 
-Внутри S1-B5 отдельно виден **S1-B5-ACT** — ещё не принятый public active-part
+Внутри S1-B5 отдельно виден **S1-B5-ACT** — принятый в ограниченном dev89 scope public active-part
 шаг для уже заданной open→edit цепочки. L2 open восстанавливает исходный active
 сосед, dimension edit требует active target. Нужна limited явная активация part
 с full revision/request/one-shot/postconditions/native gate; ручная test-owner
@@ -48,7 +48,7 @@ activation/type/config scope остаётся D2-DOCUMENTS. Точные кри�
 
 | Пользовательский результат | Поддержанные случаи | Конечная приёмка | Статус |
 | --- | --- | --- | --- |
-| После открытия выбрать точную деталь для следующего изменения через MCP | Одна уже открытая самостоятельная writable part поддержанного прямоугольного профиля, одна конфигурация; поддержанные соседи | Явные document/config/revision/request; один native вызов и exact active-after; неизменные data/dirty/selection/view/files соседей; stale/replay/no-effect и unknown/hold без повтора; installed/public native доказательство | Dev89 установлен, metadata75/23 принят; native-проба выполняется, native/public gates открыты. Не меняет active-after политики L2. Arbitrary activation/type/config — D2-DOCUMENTS |
+| После открытия выбрать точную деталь для следующего изменения через MCP | Одна уже открытая самостоятельная writable part поддержанного прямоугольного профиля, одна конфигурация; поддержанные соседи | Явные document/config/revision/request; один native вызов и exact active-after; неизменные data/dirty/selection/view/files соседей; stale/replay/no-effect и unknown/hold без повтора; installed/public native доказательство | Dev89 metadata75/23, четыре internal и public native ACT приняты. Saved-file интеграция L3-P1/B5 остаётся. Не меняет active-after политики L2. Arbitrary activation/type/config — D2-DOCUMENTS |
 
 ## Законченный пользовательский результат
 

@@ -149,3 +149,12 @@ gate нового wheel. L3-P1, S1-B5-ACT и стадия 1 открыты. Но
 +Это не public acceptance. Публичная MCP/native-проба запущена в
 +`work/native-part-activation-dev89-public-1/`; whole ACT остаётся открытым.
 +
++
++**Public ACT dev89 принят**,2049,55 с, terminal/exit0; accepted=true.
++`work/native-part-activation-dev89-public-1/report.json`, SHA256:
++`a0b330562c221d41daaa5524405b4fe3d9d4ed6817a547537df4441bfa6b0f7b`.
++Real stdio activate/replay/no-op, оба strict committed predicates, independent
++native readback и supervisor/owned cleanup/full baseline/CWD/application
++подтверждены. Exact wheel/current helpers checked. Five finite ACT gates закрыты
++в проверенном part scope; whole saved-file L3-P1/B5 остаётся впереди.
++

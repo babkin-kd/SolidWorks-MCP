@@ -1,6 +1,6 @@
 # Ограниченная явная активация детали — S1-B5-ACT
 
-**Исходная реализация подготовлена, native-приёмка не завершена.** Задача
+**Ограниченная installed/native/MCP-приёмка dev89 принята.** Задача
 входит в минимальную цепочку стадии 1: открытие L2 сохраняет исходную активную
 модель; следующий dimension edit требует активного целевого документа.
 Контракт L2 и его manifest не меняются. Широкая активация — D2-DOCUMENTS.
@@ -98,4 +98,23 @@ public MCP/native-проба выполняется, whole ACT ещё не пр�
 +прогон пока не выполнен.165 связанных pure supervisor cases passed (3,49 с).
 +Rollback ACT без собственного полного receipt predicate консервативно не даёт
 +supervisor cleanup; положительный/no-op proof распознаётся строго.
++
++
++## Принятый итог dev89
++
++Четыре internal reports того же exact wheel и actual preflight приняты.
++Public MCP/native: **accepted=true**,2049,55 с, terminal/exit0;
++`work/native-part-activation-dev89-public-1/report.json`.
++Prepare/explicit activation/replay и prepare/already-active no-op прошли
++через настоящий stdio/durable job_get. Оба committed predicates, independent
++full native readback, supervisor quiescence, owned cleanup/empty baseline,
++CWD/application context и non-STL preferences подтверждены.
++Report SHA256: `a0b330562c221d41daaa5524405b4fe3d9d4ed6817a547537df4441bfa6b0f7b`.
++Все current helper hashes проверены отдельно; package source не менялся.
++
++Все пять finite ACT условий приняты на контрольных самостоятельных part,
++одна конфигурация/прямоугольное основание, собственный dirty сосед.
++Это ограниченный ACT scope; arbitrary type/config/reference modes не объявлены.
++Сквозной saved-file open→ACT→edit ещё должен пройти в L3-P1 и итоговом B5,
++а не считается пройденным по этой unsaved-fixture проверке. L3 и стадия 1 открыты.
 +
