@@ -57,6 +57,18 @@ API-shaped tree getters и прежние I01 routes. Dimension/display anchor p
 whole-session owner/namespace bridge и actual installed driver ещё открыты;
 новые CAD-вызовы этим source observer не выполнялись.
 
+Namespace-side prerequisite подготовлен в
+`verifier_b3_registered_references.py`: экспорт только уже существующих actual
+catalog UUID/PID/compound dimension anchors, включая historical refs. Не вызывает
+native getters/resolvers/_register, не создаёт таблицы и не принимает current
+membership. **107 related pure passed /1,77 с** с реальными Geometry/Feature/
+Dimension/Component/Topology registration tables и artificial adapters.
+После финального ограничения topology kinds/явного current-membership=False —
+12 targeted pure passed /0,14 с.
+Подключение к actual SDK child, original document/window bridge и независимый
+current PID→original canonical/owner roundtrip остаются обязательными gates.
+Names/paths/shape не заменяют эти доказательства; private export не новый public tool.
+
 1. До CAD принять exact installed wheel и metadata report. Offline dev96
    preflight уже принят:13 groups/27 tools, `can_start_native=false`.
    Не выполнять новые CAD-сценарии до terminal dev96 faults, root audit и

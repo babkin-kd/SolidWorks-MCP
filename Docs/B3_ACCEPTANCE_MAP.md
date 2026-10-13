@@ -404,3 +404,11 @@ Original complete tree/order/canonical owners, PID/unsupported rows, typed raw
 summary и повторное чтение после ordinals; замена/extra/missing/ABA отвергаются.
 Это independent API-shaped getter tests, не native CAD. Direct dimension/display
 anchor producer и интеграция namespace/whole-session остаются открытыми.
+
+Private `verifier_b3_registered_references.py` даёт namespace-side export
+actual registered UUID/PID/compound anchors всех шести reference families,
+без native calls/registration/adoption. Related107 pure/1,77 с на настоящих
+каталогах с artificial native adapters; historical refs также остаются видимы.
+Финальная правка topology kinds/False membership flag:12 targeted pure/0,14 с.
+Это не current membership proof. Actual SDK child export, original document/
+window bridge и native PID/canonical/owner verification ещё не подключены.
