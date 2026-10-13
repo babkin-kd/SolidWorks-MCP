@@ -209,3 +209,18 @@ durable jobs/replay и terminal fixture cleanup ещё не завершён.
 Текущий dev96 positive перешёл к `owned_cleanup`; leaf wrapper внутри него
 выполняет `leaf_prepare`, error отсутствует. 83 rectangle captures, последний
 normally returned. Живой вызов продолжается; terminal результат пока не принят.
+
+**Итог guarded positive2: принят.** Process завершён нормально; leaf2/2 и parent4/4,
+**4136,97 с**,112 normally returned captures. Read-only root audit actual SQL,
+reports/helper hashes и current native baseline завершён exit0:6 succeeded jobs,
+3 committed mutations,14 парных leaf events, тот же replay job, исходные
+creation receipts/jobs сохранены. Independent target SKETCH/neighbor и own cleanup
+подтверждены; сейчас0 документов/CIPFalse, original application/non-STL preferences.
+Exact wheel96/f80ee6d/9088e018 неизменен. Failed positive1 не переписан.
+
+N5 whole-request batch подготовлен: real JobRunner error schema, original BASE
+preparation, actual durable preview/delete отказ и оба replay, два full session
+captures + watches двух моделей на протяжении всей цепочки. Unknown/pending/
+изменение событий не разрешают after-read/retry/cleanup. **331 related pure
+passed /26,56 с**; source-only, native N5 ещё не запускался. Следом обязательный
+finite native fault-wrapper dev96, затем N5/public; B2–B5/stage1 остаются open.

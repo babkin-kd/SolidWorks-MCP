@@ -41,12 +41,31 @@ def preview_refusal(public_dto, before, after, *, request_id, arguments, expecte
     Both a first dispatch and an exact replay are allowed. The result only proves
     journal/DTO consistency and absence of a checkpoint, not absence of CAD effects.
     """
+    return _refusal(public_dto, before, after, request_id=request_id, arguments=arguments,
+                    expected_code=expected_code, mutates=False)
+
+
+def execution_refusal(public_dto, before, after, *, request_id, arguments, expected_code):
+    """Prove the bypass-preview execution was refused BEFORE a checkpoint.
+
+    Native state/events must be independently checked across this call. A failed
+    job alone cannot prove non-effect, even when no checkpoint was written.
+    """
+    return _refusal(public_dto, before, after, request_id=request_id, arguments=arguments,
+                    expected_code=expected_code, mutates=True)
+
+
+def _refusal(public_dto, before, after, *, request_id, arguments, expected_code, mutates):
     _require(type(request_id) is str and 0 < len(request_id) <= 256 and bool(request_id.strip()),
              'Exact request ID required.')
-    _require(type(arguments) is dict and set(arguments) == {'document_id', 'configuration', 'object_id'}
+    keys = {'document_id', 'configuration', 'object_id'} | ({'expected_revision'} if mutates else set())
+    _require(type(arguments) is dict and set(arguments) == keys
              and all(type(value) is str and bool(value.strip()) for value in arguments.values())
              and re.fullmatch(r'feat_[0-9a-f]{32}', arguments['object_id']) is not None,
              'Exact document/configuration/original feature arguments required.')
+    if mutates:
+        _require(re.fullmatch(r'rev_[0-9a-f]{64}', arguments['expected_revision']) is not None,
+                 'Exact original prepared revision required for execution refusal.')
     _require(type(expected_code) is str and expected_code in ERROR_CODES,
              'Only the finite unsupported preview refusals are covered.')
     _require(type(public_dto) is dict and 'operation_id' in public_dto,
@@ -59,19 +78,21 @@ def preview_refusal(public_dto, before, after, *, request_id, arguments, expecte
              and all(_json(row) == _json(last[key]) for key, row in first.items()),
              'Preview/replay changed prior evidence or added unrelated jobs.')
     row = last[operation_id]
-    payload = dict(arguments=arguments, context=arguments, mutates=False)
-    digest = hashlib.sha256(('feature.prepare_leaf_deletion\n' + _json(payload)).encode('utf8')).hexdigest()
-    _require(row['operation'] == 'feature.prepare_leaf_deletion' and row['request_id'] == request_id
+    operation = 'feature.delete_leaf' if mutates else 'feature.prepare_leaf_deletion'
+    payload = dict(arguments=arguments, context=arguments, mutates=mutates)
+    digest = hashlib.sha256((operation + '\n' + _json(payload)).encode('utf8')).hexdigest()
+    _require(row['operation'] == operation and row['request_id'] == request_id
              and row['digest'] == digest and _json(row['payload']) == _json(payload),
              'SQL operation/payload/request/digest mismatch.')
     _require(row['status'] == 'failed' and row['result'] is None and row['mutation'] is None
-             and type(row['error']) is dict and set(row['error']) == {'code', 'message'}
+             and type(row['error']) is dict and set(row['error']) == {'code', 'message', 'requires_reconciliation'}
+             and row['error']['requires_reconciliation'] is False
              and row['error']['code'] == expected_code and type(row['error']['message']) is str
              and bool(row['error']['message'].strip()),
              'Expected terminal unsupported preview without a checkpoint required.')
     published = {key: value for key, value in row.items() if key not in ('digest', 'mutation')}
     _require(_json(published) == _json(public_dto), 'Every public DTO field must match actual SQL.')
-    return dict(scope=SCOPE, operation_id=operation_id, request_id=request_id,
+    return dict(scope=SCOPE, operation_id=operation_id, request_id=request_id, mutates=mutates,
                 journal_refusal_verified=True, replay=operation_id in first,
                 refused_job=deepcopy(row), accepted=False, native_b2_accepted=False,
                 public_mcp_accepted=False, cleanup_authorized=False,

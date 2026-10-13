@@ -9,7 +9,7 @@ dev95 сохранён отдельно; он не принимается за �
 | N1 | Driving depth10→12 мм, объём8000→9600 мм³ | Публичный dimension ID/revision/request; actual scalar readback, rebuild и полный независимый BASE, включая соседнюю модель | Ещё не принято на dev96 |
 | N2 | Русское имя элемента; прежняя адресная ссылка действует | Public rename/readback, прежний object ID и PID/canonical membership; полные данные отличаются только разрешённым именем | Ещё не принято на dev96 |
 | N3 | Подавить и вернуть собственное основание | Public suppression/return с original ownership, full bodyless/BASE snapshots, исходный sketch/DIMs/PID и имя тела; checkpoint/guards/replay | Dev95 positive принят; dev96 ещё не принят |
-| N4 | Preview точного own leaf, затем удалить только основание | Read-only prepare, full BASE→SKETCH, exact deleted ID, preserved sketch, actual raw old PID1/4+null, удалённый ID отвергается при чтении; SQL/replay | Native delete committed/replay подтверждены; independent neighbor read failed. Отдельная own cleanup/baseline принята; positive gate остаётся failed |
+| N4 | Preview точного own leaf, затем удалить только основание | Read-only prepare, full BASE→SKETCH, exact deleted ID, preserved sketch, actual raw old PID1/4+null, удалённый ID отвергается при чтении; SQL/replay | Fresh guarded internal positive dev96 принят2/2, independent target/neighbor и cleanup/baseline подтверждены; публичная цепочка ещё не принята. Первый failed отчёт сохранён |
 | N5 | Безопасный отказ для stale/foreign/dependent/linked/неполного scope | No-write/known-no-effect evidence реальных refused jobs; полный снимок, отсутствие native dispatch/checkpoint где применимо; unsupported CAD cases видимы отдельно | Pure отказы есть; конечная installed/native приёмка не завершена |
 | N6 | После ошибки получить известный отказ либо unknown с блокировкой | Full no-effect/restored scope либо terminal unknown/application hold; no inverse/retry после delete, поздние результаты/replay/blocked request и безопасная собственная очистка | Pure coordinator/SQLite/guard проверки есть; native fault-wrapper подготовлен, не запускался |
 
@@ -62,6 +62,23 @@ Package, установленный wheel и helpers текущего live posit
 return не является искусственно объявленным COM исключением.
 
 ## Оставшиеся задачи
+
+**Guarded positive dev96 принят.** Fresh прогон завершился за **4136,97 с**:
+leaf2/2, parent4/4, все112 captures normally returned. Root отдельно проверил
+actual report SHA, неизменные11 helpers, exact installed wheel, coherent SQL и
+текущий native baseline. Все6 jobs succeeded,3 mutations committed;14 парных
+leaf events, replay того же job. Independent SKETCH/neighbor подтверждены,
+original creation receipts/jobs сохранены. Own cleanup принята, текущая сессия
+пуста/CIPFalse; application/non-STL preferences совпали с оригиналом. Failed
+positive1 и его отдельная cleanup остаются историей; B2/public/stage1 открыты.
+
+N5 internal batch подготовлен: реальные JobRunner/MutationCoordinator/SQL
+проверяют preview, replay, bypass-preview delete и replay на одной fixture.
+Ошибки требуют реального `requires_reconciliation=False`; прежний тест вручную
+созданной двухполевой ошибки исправлен. Два full session captures и watches обеих
+моделей охватывают все четыре запроса, включая ABA, без второй fixture ради
+replay. **331 related pure passed /26,56 с**, native N5 ещё не запускался.
+Exact-wheel CLI и terminal fixture cleanup продолжают готовиться.
 
 Подготовка N5 выполняется без обращения к занятому SolidWorks. Пассивный
 `verifier_b2_impact_refusal.py` связывает failed read-only preview с точным
@@ -119,9 +136,9 @@ terminal fixture journal и собственная очистка в native driv
 проверки не являются N5/B2 приёмкой; текущий positive manifest не изменён.
 
 1. Независимая инспекция/own cleanup завершены, baseline восстановлен и прежний
-   процесс остановлен. Выполнить guarded positive с новой fixture; прежний failed
-   event envelope сохранить. Причина не установлена; commit/replay и отдельная
-   cleanup не заменяют positive gate.
+   процесс остановлен. Fresh guarded positive принят; прежний failed event
+   envelope сохранён. Его исходная причина не доказана; новый положительный
+   прогон не переписывает старый результат.
 2. Выполнить finite native fault/prewrite блок на exact dev96; dependent/linked
    CAD-случаи остаются обязательными видимыми требованиями N5.
 3. После принятых внутренних gates выполнить подготовленную supervised MCP
