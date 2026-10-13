@@ -187,3 +187,13 @@ fixture полный current oracle пока не готов; N5 не accepted. 
 точный native handle/геометрическая роль/PID и двусторонние зависимости
 проверяются перед признанием fixture подготовленной. Full refusal oracle не
 подменяется и остаётся open; эти helpers не изменяют текущий positive manifest.
+
+Добавлены retained current-target и ancillary collectors N5. Их scope отделён
+от BASE, фактические данные читаются текущими getters; новый/заменённый объект,
+pending receipt, event change, неизвестная annotation/view или неполный native
+массив не получают replacement data. **158 related pure passed /7,61 с**;
+искусственные handles и реальные доменные registry/SQLite, без native запуска.
+Session/neighbor/file before-after, terminal fixture journal и cleanup ещё
+предстоит объединить в N5 driver. Full N5/B2/stage1 остаются open.
+Последнее наблюдение текущего positive: отдельный B1 sketch/replay passed,
+`extrusion_job`, 71 captures, последний running, error отсутствует.

@@ -88,6 +88,19 @@ fixture. N5 остаётся открытым до независимых before
 Совместные fixture/refusal tests: **77 pure passed /4,55 с**. Доменные fixtures
 используют искусственные native handles и реальный SQLite; CAD-приёмка не заявлена.
 
+Следующий слой N5 подготовлен в `verifier_b2_impact_target.py` и
+`verifier_b2_impact_ancillary.py`. Retained target collector создаётся до fixture
+и читает текущие feature/body/dimension incarnations, anchors, BREP, эскиз,
+плоскости, extrusion, controls и dependency/equation context под native watch.
+Ancillary collector повторно использует установленные getters свойств,
+конфигурации, annotations/views, материалов, units и creation controls.
+Недоступные данные отклоняются по конкретному полю; baseline не подставляется.
+Четвёртый dimension плоскости пока не поддержан этими getters и остаётся явным
+отказом collector. Совместные четыре helper-набора: **158 pure passed /7,61 с**.
+Перед native N5 ещё нужны полный session/neighbor/file census, сравнение
+до/после фактического отказа, terminal fixture journal и безопасная очистка.
+Текущий installed dev96 и его работающий positive driver не изменены.
+
 1. Независимая инспекция/own cleanup завершены, baseline восстановлен и прежний
    процесс остановлен. Выполнить guarded positive с новой fixture; прежний failed
    event envelope сохранить. Причина не установлена; commit/replay и отдельная
