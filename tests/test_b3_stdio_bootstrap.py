@@ -46,6 +46,9 @@ def test_actual_ids_and_pid_tables_exported_after_tool_with_exact_result_and_no_
         assert len(records)==2
         current=records[-1]
         assert current['operation']=='geometry.list' and current['arguments']==args
+        assert current['operation_id']==geometry['operation_id'] and current['request_id']=='bodies'
+        assert current['journal_status_at_capture']=='running'
+        assert current['journal_payload_sha256']==hashlib.sha256(_json(geometry['payload']).encode('utf8')).hexdigest()
         assert current['result_sha256']==hashlib.sha256(_json(geometry['result']).encode('utf8')).hexdigest()
         refs=current['registered_references'][0]['rows']
         assert refs and refs[0]['object_id']==geometry['result']['items'][0]['object_id']
@@ -77,9 +80,50 @@ def test_domain_refusal_preserves_code_and_catalog_with_exception_receipt(world)
         assert job['status']=='failed' and job['error']['code']=='document_not_open'
         row=json.loads((trace/'0002.json').read_text(encoding='utf8'))
         assert row['status']=='exception_returned' and row['error']['code']=='document_not_open'
+        assert row['operation_id']==job['operation_id'] and row['request_id']=='missing'
         assert row['registered_references']==[] and row['result_sha256'] is None
         assert runtime._catalog is not None
     asyncio.run(run())
+
+
+def test_optional_window_mode_associates_actual_ids_by_canonical_not_names(world):
+    runtime,trace=world
+    runtime.expected_window_hwnds=(101,102)
+    def catalog_factory():
+        catalog=runtime._original_catalog_factory()
+        catalog.adapter.native_close_windows=lambda:[(model,dict(hwnd=101+i,title='Одинаковое имя'))
+            for i,model in enumerate(catalog.adapter.models)]
+        return catalog
+    runtime._original_catalog_factory=runtime._catalog_factory
+    runtime._catalog_factory=catalog_factory
+    job=asyncio.run(runtime.read('list','document.list',{}))
+    row=json.loads((trace/'0001.json').read_text(encoding='utf8'))
+    assert row['document_window_bindings']==[dict(document_id=item['document_id'],hwnd=101+i)
+        for i,item in enumerate(job['result']['documents'])]
+    assert row['whole_session_native_envelope_verified'] is row['original_birth_ownership_verified'] is False
+
+
+@pytest.mark.parametrize('fault',['foreign_model','extra_window','window_swap','outside_hwnd'])
+def test_window_mismatch_invalidates_trace_and_preserves_original_job(world,fault):
+    runtime,trace=world;runtime.expected_window_hwnds=(101,102)
+    original_factory=runtime._catalog_factory
+    def factory():
+        catalog=original_factory();adapter=catalog.adapter;calls=[]
+        def windows():
+            calls.append(True)
+            pairs=[(model,dict(hwnd=101+i,title='ignored')) for i,model in enumerate(adapter.models)]
+            if fault=='foreign_model':pairs[0]=(object(),pairs[0][1])
+            elif fault=='extra_window':pairs.append(pairs[0])
+            elif fault=='outside_hwnd':pairs[0][1]['hwnd']=999
+            elif len(calls)==2:
+                pairs=[(pairs[0][0],pairs[1][1]),(pairs[1][0],pairs[0][1])]
+            return pairs
+        adapter.native_close_windows=windows
+        return catalog
+    runtime._catalog_factory=factory
+    job=asyncio.run(runtime.read('list','document.list',{}))
+    assert job['status']=='succeeded' and runtime.trace_error is not None
+    assert list(trace.glob('*.json'))==[]
 
 
 def test_unconfirmed_shutdown_cannot_create_terminal_trace(world):
@@ -96,6 +140,16 @@ def test_unconfirmed_shutdown_cannot_create_terminal_trace(world):
     terminal=json.loads((trace/'terminal.json').read_text(encoding='utf8'))
     assert terminal['worker_shutdown_confirmed'] is True and terminal['records']==1
     assert terminal['accepted'] is terminal['cleanup_authorized'] is False
+
+
+def test_ambiguous_running_job_refuses_binding_instead_of_guessing_by_payload(world):
+    runtime,trace=world
+    foreign,_=runtime.store.create('foreign-running','document.list',{}, {})
+    assert runtime.store.start(foreign['operation_id'])
+    job=asyncio.run(runtime.read('list','document.list',{}))
+    assert job['status']=='succeeded' and runtime.trace_error['type']=='ValueError'
+    assert runtime.store.get(foreign['operation_id'])['status']=='running'
+    assert list(trace.glob('*.json'))==[]
 
 
 @pytest.mark.parametrize('budget',['records','bytes'])

@@ -59,6 +59,14 @@ Related52 pure/2,94 с и installed metadata-only bootstrap83 tools/0 trace reco
 приняты; full10220 b842a9c не включает новый helper. Реальный CAD registration
 export/parent HWND mapping/PID-owner/whole-session/13-group gate ещё не принят.
 
+Дальнейшее source-подключение bridge к B3Reader подготовлено: raw native HWND
+режим, exact running SQL operation/request/payload binding, coherent terminal
+trace consumer и неизменный replay; trace fault удерживает supervised route.
+Related102 pure/6,52 с прошли с реальными facade/Runtime/SQLite, искусственными
+CAD getters и supervisor. Installed metadata-only bootstrap83/0 прошёл; actual
+CAD window/PID-owner/envelope и весь B3 gate остаются открытыми. Full10220
+b842a9c не включает эти новые isolated bridge блоки; отдельного push/CI нет.
+
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала
 через383,79 с на read-only подготовке эскиза:1 failed job/0 mutation checkpoint.

@@ -42,6 +42,28 @@ whole-session native envelope и подключение13 групп остаю�
 Предыдущий full10220 checkpoint b842a9c не включает этот новый isolated helper;
 installed package и31 frozen helpers текущего N5 не изменены.
 
+Следующий bridge блок подключает optional native window mode bootstrap и
+`ChildTrace` непосредственно к `B3Reader`. CLI получает original HWND roster
+явно от fixture owner; child читает current model/HWND canonicals дважды вокруг
+экспорта, не связывает документы по имени/пути. Raw окно — наблюдение, не proof
+original birth/ABA/whole-session; эти flags остаются false и требуют parent gate.
+Регистрационный режим по умолчанию по-прежнему не вызывает CAD getters.
+
+Каждая запись теперь связана с единственным actual running SQLite job,
+operation_id/request_id и точным payload SHA. В parent после coherent terminal
+SDK/SQLite observation `ChildTrace` проверяет sequence, result/payload SHA,
+неизменный epoch и полную ID/HWND/export таблицу. Replay повторно использует
+неизменные исходные bytes, без нового trace/native dispatch. Повреждение или
+неполный trace удерживает B3Reader/supervisor и запрещает дальнейший dispatch,
+не переписывая успешно завершённый job и не разрешая cleanup.
+
+Итоговый bridge/reader/journal/namespace/export related набор: **102 pure passed
+/6,52 с**. Public facade→Runtime→SQLite→trace реально связаны в тесте, CAD getters
+искусственные, supervisor также искусственный. Installed metadata-only smoke
+нового bootstrap:83 tools/0 trace records, SDK/worker закрыты; actual CAD/HWND
+capture не выполнялся. Current PID→original canonical/owner roundtrip,
+whole-session envelope и fixture/13-group native driver остаются открытыми.
+
 Первый concrete raw producer подготовлен в
 `scripts/verifier_b3_native_part_reference.py`: прямые CAD getters для normal
 solid/surface body, plane face и line edge конечного I02. Original retained

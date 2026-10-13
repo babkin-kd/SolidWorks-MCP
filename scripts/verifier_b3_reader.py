@@ -35,7 +35,7 @@ def _envelope(raw):
 
 class B3Reader:
     def __init__(self, client, journal_path, *, assert_before_dispatch, persist,
-                 poll_interval=.25, pause=anyio.sleep):
+                 poll_interval=.25, pause=anyio.sleep,child_trace=None):
         if not callable(assert_before_dispatch) or not callable(persist) or not callable(pause):
             raise ValueError('Explicit owner safety, persistence and polling callbacks required.')
         if type(poll_interval) not in (int, float) or not math.isfinite(poll_interval) or not 0 < poll_interval <= 10:
@@ -45,6 +45,7 @@ class B3Reader:
         self.poll_interval, self.pause = poll_interval, pause
         self.receipts, self.index = [], ReceiptIndex()
         self._retained = False
+        self.child_trace=child_trace
 
     async def read(self, tool, arguments, *, expected_error=None):
         if self._retained:
@@ -86,6 +87,8 @@ class B3Reader:
                     raise ValueError('Terminal tool response differs from independent durable result.')
             elif acknowledgement.get('data') is not None or acknowledgement.get('error') is not None:
                 raise ValueError('Unfinished acknowledgement unexpectedly publishes a final result/error.')
+            if self.child_trace is not None:
+                record['child_trace']=self.child_trace.bind(row)
             self.index.add(tool=tool, arguments=args, row=row, expected_error=expected_error)
             record.update(state='journal_bound', journal=row)
             await _call(self.persist, deepcopy(self.receipts))
