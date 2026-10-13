@@ -174,6 +174,46 @@ def test_first_retire_runs_actual_sqlite_commit_replay_once_then_delegates_own_c
     assert a.report['accepted'] is a.report['native_b2_accepted'] is a.report['public_mcp_accepted'] is False
 
 
+def test_independent_full_oracles_run_only_after_owned_guard_reacquisition(artificial):
+    a=artificial
+    adapter=a.original.adapter
+    old_rectangle=adapter.rectangle_construction_snapshot
+    old_neighbor=adapter.first_save_part_snapshot
+    reads=[]
+    def rectangle(model):
+        assert a.sw.CommandInProgress is True and a.report['native_calls_live'] is True
+        reads.append('sketch' if a.deleted else 'base-admission');return old_rectangle(model)
+    def neighbor(model):
+        assert a.sw.CommandInProgress is True
+        if a.deleted:
+            assert a.report['native_calls_live'] is True and 'independent_after' in a.report
+        reads.append('neighbor' if a.deleted else 'neighbor-admission');return old_neighbor(model)
+    adapter.rectangle_construction_snapshot=rectangle
+    adapter.first_save_part_snapshot=neighbor
+    a.call()
+    assert reads==['neighbor-admission','sketch','neighbor'] and a.flag_sets==[False,True]
+
+
+def test_failed_neighbor_read_preserves_completed_target_and_never_repeats_delete_or_cleanup(artificial):
+    a=artificial
+    original=a.original.adapter.first_save_part_snapshot
+    def failed(model):
+        if not a.deleted:return original(model)
+        assert a.sw.CommandInProgress is True and a.report['native_calls_live'] is True
+        raise ExecutionFailure('first_save_snapshot_unsupported','Changed event envelope',uncertain=False)
+    a.original.adapter.first_save_part_snapshot=failed
+    with pytest.raises(ExecutionFailure):a.call()
+    assert a.report['independent_after']['clone_state']['profile']=='SKETCH'
+    assert a.report['delete_job']==a.report['replay_job']
+    assert a.report['native_calls_live'] is False and a.report['parent_retained_sta_required'] is True
+    evidence=a.report['independent_read_exception_returned']
+    assert evidence['code']=='first_save_snapshot_unsupported'
+    assert evidence['quiescence_verified'] is evidence['cleanup_authorized'] is evidence['retry_authorized'] is False
+    assert a.flag_sets==[False,True] and a.deletes==1 and a.delegations==[]
+    with pytest.raises(ValueError):a.call()
+    assert a.deletes==1 and a.flag_sets==[False,True] and a.delegations==[]
+
+
 @pytest.mark.parametrize('fault', ['not_independent', 'wrong_volume', 'partial_capture', 'wrong_phase',
     'foreign_target', 'sqlite_changed', 'busy_not_owned', 'incomplete_original'])
 def test_admission_refuses_before_flag_release_delete_or_cleanup(artificial, fault):

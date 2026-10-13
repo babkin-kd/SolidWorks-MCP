@@ -20,6 +20,25 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def independent_read(read,report,persist,phase):
+    """Track a synchronous oracle return, including a returned read exception.
+
+    This never proves COM quiescence or authorizes cleanup after a failed read.
+    Interrupts retain the live-call marker; ordinary returned exceptions keep
+    their original type/code and propagate without retry or guard reset.
+    """
+    report.update(phase=phase,native_calls_live=True);persist()
+    try:
+        value=read()
+    except Exception as error:
+        report.update(native_calls_live=False,independent_read_exception_returned=dict(
+            phase=phase,type=type(error).__name__,code=getattr(error,'code',None),message=str(error),
+            quiescence_verified=False,cleanup_authorized=False,retry_authorized=False))
+        persist();raise
+    report['native_calls_live']=False;persist()
+    return value
+
+
 def sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -146,7 +165,9 @@ class OwnLeafPositiveHook:
         base = driver.validated_rectangle_snapshot(parent['independent_base'])
         require(base['clone_state']['profile'] == driver.BASE and base['solid_body_count'] == 1,
             'Full independent parent BASE required before deletion.')
-        require(driver.validated_part_snapshot(adapter.first_save_part_snapshot(neighbor)) == parent['independent_neighbor']
+        current_neighbor=independent_read(lambda:driver.validated_part_snapshot(adapter.first_save_part_snapshot(neighbor)),
+            report,persist,'admission_current_neighbor')
+        require(current_neighbor == parent['independent_neighbor']
             and neighbor.GetSaveFlag() is True, 'Independent original dirty neighbor proof required before deletion.')
         original_receipt = binding.receipt
         retained_fields = ('extrusion', 'extrusion_identity', 'borrowed_sketch', 'borrowed_sketch_identity',
@@ -225,18 +246,28 @@ class OwnLeafPositiveHook:
             and sketch_binding.feature_identity == retained['borrowed_sketch_identity']
             and (document_id, object_id) not in original.ownership._bindings,
             'Original borrowed sketch canonical binding survives; deleted opaque ID retires.')
-        actual = driver.validated_rectangle_snapshot(adapter.rectangle_construction_snapshot(target))
+        # The original B1 owner guards its independent reads and cleanup. Take
+        # that same acknowledged flag boundary BEFORE the full readback, rather
+        # than leaving a long oracle capture open to interactive native events.
+        # This does not ignore revision events or accept a changed neighbor.
+        normal_flag_boundary(sw, False, True, report, persist, 'parent_owned_guard_reacquire')
+        actual = independent_read(lambda:driver.validated_rectangle_snapshot(adapter.rectangle_construction_snapshot(target)),
+            report,persist,'independent_surviving_sketch')
         require(actual == after['state']['snapshots'][document_id]
             and actual['clone_state']['profile'] == driver.SKETCH and actual['solid_body_count'] == 0,
             'Independent actual BASE→SKETCH/full surviving native oracle required.')
-        require(driver.validated_part_snapshot(adapter.first_save_part_snapshot(neighbor)) == parent['independent_neighbor'],
+        # Preserve completed target evidence even if the separate neighbor
+        # read later fails. Neither this evidence nor its flag accepts B2.
+        report.update(independent_after=actual);persist()
+        observed_neighbor=independent_read(lambda:driver.validated_part_snapshot(adapter.first_save_part_snapshot(neighbor)),
+            report,persist,'independent_neighbor')
+        require(observed_neighbor == parent['independent_neighbor'],
             'Independent original full neighbor oracle must survive deletion.')
         report.update(independent_after=actual, original_creation_receipt_after=receipt_facts(original_receipt),
             original_creation_jobs_unchanged=True, original_retained_receipt_unchanged=True,
             replay_no_second_native_dispatch=True, application_hold_clear=True,
             callback_seconds=time.perf_counter() - started)
         persist()
-        normal_flag_boundary(sw, False, True, report, persist, 'parent_owned_guard_reacquire')
         self.completed = True
         report.update(callback_passed=True, phase='delegated_owned_cleanup')
         report.setdefault('cases', []).append(dict(label='own-leaf-original-base-to-sketch-commit-replay', passed=True)); persist()

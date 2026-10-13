@@ -113,7 +113,7 @@ part того же наблюдаемого профиля. Гарантия с�
 | Блок | Что ещё требуется | Что снимает блокер |
 | --- | --- | --- |
 | B1 | **Закрыт dev94**, полный native/public/SQLite audit; historical unknown dev93 сохранён | Все5 условий подтверждены, actual inverses32/40 steps, caps44/46 pure; full cleanup/baseline. [Приёмка](B1_DEV94_ACCEPTANCE.md). Новые profiles/planes не добавлять |
-| B2 | Подавление/возврат, preview/delete собственного leaf и общий gate; dev96 commit/replay подтверждены, independent neighbor read failed и controls удержаны | Безопасная инспекция/очистка текущего native-владельца, причина event/revision отказа; все 6 условий B2 на exact wheel, включая prepared public chain. Разрушительные проверки — отдельная own fixture, без произвольного графа зависимостей |
+| B2 | Подавление/возврат, preview/delete собственного leaf и общий gate; dev96 commit/replay подтверждены, independent neighbor read failed. Отдельная cleanup/baseline принята, старый процесс остановлен | Guarded positive на fresh fixture; причина event/revision отказа и все 6 условий B2 на exact wheel, включая prepared public chain. Разрушительные проверки — отдельная own fixture, без произвольного графа зависимостей |
 | B3 | Конечный набор совместимости уже реализованных чтений текущего wheel | Все 5 условий B3 на заявленных профилях; старые отчёты не подменяют текущие, новые frames/load modes не добавляются |
 | B4 | Итоговые installed/native recovery и диагностика | Все 6 условий B4; поздний реальный результат и controlled faults явно различены; полный COM census не нужен |
 | B5 | Автоматическая цепочка одного итогового wheel и release gates | Все 11 шагов и 4 gates; приняты остальные блоки, собственная очистка и baseline, актуальный CI пакета |

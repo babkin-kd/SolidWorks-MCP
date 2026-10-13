@@ -148,10 +148,12 @@ retained ownership, полный suppressed-снимок и domain/runtime/MCP s
 own cleanup/baseline. Negative/public и общий B2 gate остаются.
 Own-leaf preview/delete установлены в dev96 (full pure8427/323, metadata83/27).
 Native delete succeeded/committed и replay подтверждены actual SQL, но отдельная
-проверка соседа завершилась отказом event envelope; cleanup/baseline не приняты,
-владелец удерживает controls. Public driver подготовлен, related694 pure passed;
-его preflight отвергает этот failed positive до CAD. Далее безопасное восстановление
-состояния, установление причины отказа, internal/public и общий same-wheel gate B2.
+проверка соседа завершилась отказом event envelope; positive gate не принят.
+Отдельная точная инспекция/own cleanup восстановила baseline, controls закрыты,
+старый владелец завершён. Public driver подготовлен, related694 pure passed;
+его preflight отвергает этот failed positive до CAD. Восстановление состояния
+уже выполнено; далее установление причины отказа, guarded positive,
+internal/public и общий same-wheel gate B2. Правка оболочки проверена209 pure.
 [Фактический checkpoint](Docs/CHECKPOINT_DEV96.md). B2–B5 и стадия1 открыты.
 
 История кандидата B1 — **dev92**: full pure6686/323 CAD deselected,

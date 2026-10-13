@@ -2,7 +2,8 @@
 
 **Dev96 установлен: final pure8427/323, artifact и metadata83/27 приняты.
 Internal positive native deletion завершился отказом независимой проверки
-соседа после committed deletion; полная приёмка не принята. Владелец удержан.**
+соседа после committed deletion; полная приёмка не принята. Отдельная
+инспекция/очистка восстановила baseline; старый владелец завершён.**
 Historical dev95 имеет принятый positive suppression/return; negative/public
 и общий B2 gate открыты. [Привязка dev95](CHECKPOINT_DEV95.md).
 
@@ -136,3 +137,37 @@ native-владельца и безопасное восстановление �
 интерпретаторе без source PYTHONPATH: **ожидаемый preflight refusal** до metadata
 provider/CAD, без server/metadata-state. Это проверка защиты запуска, не public
 native-приёмка. B2–B5 и стадия1 остаются открыты.
+
+**Восстановление после отказа.** Read-only maintenance, по ранее принятому
+процессу dev95, сверила исходные acknowledged HWND, complete current profiles,
+родные PID/canonical membership и ревизии обоих собственных controls с committed
+SQL. Два полных текущих capture совпали; все диагностические watches закрылись
+со стабильными counters и без новых events. Это подтверждает текущее состояние,
+но не объясняет и не отменяет прежний failed event envelope.
+
+Оба контроля закрыты без сохранения, два CloseDoc normally returned с проверкой
+retirement. Первичная финальная проверка cleanup использовала ошибочное прямое
+сравнение Python tuple и JSON array. Отдельный read-only audit, без повторного
+закрытия, сравнил полный baseline через точный JSON, подтвердил **0 документов,
+CommandInProgress=False**, исходное application/non-STL preferences и неизменный
+SQL. Cleanup/baseline приняты отдельно; positive native отчёт остаётся failed.
+Idle retained Python runtime завершён только после этих доказательств; его
+launcher тоже завершился, session12444 закрыта. Pending COM не отменялся.
+Все11 original helpers сохранены в private архиве перед правкой оболочки.
+
+Guard оригинального B1-владельца теперь reacquired **перед** independent
+SKETCH/neighbor oracle, а не после них. Model/revision events по-прежнему
+отвергаются. Успешный target readback сохраняется до отдельного neighbor read;
+read progress/returned exception явно записываются, interrupt оставляет live
+marker. Ни один такой marker не разрешает cleanup/retry. Добавлен отдельный
+pure diagnostics helper для metadata/model/configuration/watch отказов, включая
+ABA и неполный event trace; он никогда не даёт native/cleanup/retry acceptance.
+Связанные tests positive/fault/preflight/diagnostics: **209 passed /78,03 с**.
+Package/wheel не изменены; полный package-набор повторно не запускался.
+Следующая positive приёмка использует fresh fixtures/journal, не старый запрос.
+
+Guarded positive действительно запущен после отдельного принятого empty baseline
+и завершения прежнего owner. Installed package/wheel тот же exact dev96;
+metadata83 и origin снова подтверждены до CAD. Новый private state/journal и
+новые controls; сейчас sketch_prepare/capture4 без ошибки. Running не считается
+passed; старый failed positive, cleanup и архив helpers сохранены отдельно.
