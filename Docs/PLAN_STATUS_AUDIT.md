@@ -4,9 +4,22 @@
 
 **Текущий installed кандидат — dev96:** full pure8427/323 CAD deselected,
 260,01 с; clean artifact и metadata/stdIO83/27 приняты, без CAD в metadata.
-Own-leaf preview/delete domain/runtime/MCP реализованы; exact-wheel positive
-internal native запущен одним владельцем, running не является accepted.
-Negative/unknown, public и общий B2 gate остаются. [Привязка dev96](CHECKPOINT_DEV96.md).
+Own-leaf preview/delete domain/runtime/MCP реализованы. Guarded positive2
+завершён и принят root audit: leaf2/2, parent4/4,4136,97 с,112 returned captures,
+6 succeeded jobs/3 committed mutations; replay, independent SKETCH/neighbor и
+own cleanup/full baseline подтверждены. Failed positive1 сохранён отдельно.
+Exact dev96/f80ee6d/wheel SHA9088e018 неизменен. Finite negative/unknown wrapper
+работает одним CAD-владельцем: `leaf_stale` running, завершённые fault cases
+пока не подтверждены. После terminal result/audit/cleanup последовательно идут
+три dependent/equation N5 случая, затем public B2. Общий B2 gate остаётся открыт.
+[Привязка dev96](CHECKPOINT_DEV96.md).
+
+Source-подготовка B3 охватывает I01/I02/I03/I07/I08/I09/I10/I11/I13;
+actual native producers и итоговый installed driver ещё не приняты. I12
+готовится отдельно; transitions I04…I06 остаются видимыми открытыми задачами.
+Metadata-only installed timings enabled/disabled/storage-unavailable dev96
+приняты без CAD, но не заменяют native mutation/restore/hold B4-N6.
+B2–B5 и стадия1 остаются открыты; stage2 не расширяется.
 
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала
@@ -31,11 +44,10 @@ B2–B5 открыты. [Own PID/suppression cycle](B2_PID_COMPATIBILITY.md) п�
 в согласованном non-STL scope. Последний API/intrinsics probe завершён штатно:
 exit0,652,52 с, full baseline и собственная очистка подтверждены. В исходниках
 реализованы retained ownership, full suppressed producer и domain/runtime/MCP
-suppression; wheel95 установлен, positive internal gate принят, negative/public
-ещё остаются. Preview/delete реализованы и зарегистрированы в исходниках для
-следующего кандидата, actual CAD deletion ещё не проверена. Это отдельный
-остаток B2. Native dev94 не принимает последующие source
-изменения.
+suppression; wheel95 positive internal gate принят, negative/public остаются.
+Последующий dev96 выполнил actual own-leaf deletion positive2, как указано в
+текущем итоге выше; finite faults/N5/public и общий B2 остаются открыты.
+Native dev94 не принимает последующие source изменения.
 разработка продолжается, пауза отменена последующими указаниями пользователя.
 
 Dev93 positive прошёл, но N5 extrusion restoration остановился на прежнем
