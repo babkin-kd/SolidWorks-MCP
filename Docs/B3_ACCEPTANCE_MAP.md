@@ -379,3 +379,7 @@ scope/ownership, actual producers, installed driver и cleanup остаются 
 фиксирует конечные подключения и оставшиеся gates. Offline exact installed
 dev96 preflight принят:13 groups/27 required tools, metadata report reused,
 без CAD/SDK запуска. `can_start_native=false`, B3 native ещё не принят.
+
+Итоговая [source-контрольная точка](B3_SOURCE_CHECKPOINT_DEV96.md):
+**9952 pure passed /514,75 с**,323 CAD deselected. Это полный current source,
+не native acceptance. Package/wheel96 и22 live fault helpers неизменны.
