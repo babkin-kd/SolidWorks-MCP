@@ -321,3 +321,14 @@ pure passed /19,41 с** через настоящие GeometryCatalog/MassMeasur
 JobRunner/SQLite/B3Reader и искусственные native getters. Actual owner native
 scope/activity producers, installed B3 driver, завершение I01…I12 и terminal
 owned cleanup остаются открыты. Source evidence не даёт native/cleanup acceptance.
+
+I11 source `verifier_b3_aggregate_distance.py`: ровно две durable aggregate pair
+reads существующего профиля — part→subassembly70 мм и repeated subassemblies84 мм
+в explicit frame. Current original targets/leaves, полный solid/surface census,
+все2/4 фактически вычисленные leaf pairs (включая nonwinning) и hidden cylinder
+сверяются с отдельными native receipts; оба witnesses независимо преобразуются
+между local/root/explicit frames. **393 related pure passed /25,53 с** через
+настоящий ComponentAggregateDistanceCatalog/JobRunner/SQLite/B3Reader и
+искусственные native getters. Actual owner census/PID/all-pair/trimmed-boundary
+producers, installed B3 driver и terminal cleanup открыты; native/cleanup
+acceptance остаётся false. I12 и native transitions I04…I06 этим не закрыты.
