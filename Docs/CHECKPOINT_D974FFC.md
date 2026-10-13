@@ -8,9 +8,11 @@ Related194 pure passed /31,73 с. Пробы2–5 и их исходы/own clean
 [B2_PLANE_RETURN_COMPATIBILITY](B2_PLANE_RETURN_COMPATIBILITY.md). Они
 подтверждают совместимость диагностического API, не общий B2 gate.
 
-Один полный pure-набор source d974ffc запущен с basetemp вне work и фильтром
-`not solidworks`. Terminal результат ещё не получен; пропущенные CAD cases
-не принимаются. Перед отправкой пакета требуется этот итоговый результат.
+Один полный pure-набор source d974ffc завершился normal exit0: **10381 passed,
+323 CAD deselected /464,36 с**. Basetemp вне work, source PYTHONPATH и фильтр
+`not solidworks`. Исполняемые source/helpers/tests во время этого прогона
+не менялись; изменялась только документация. Это source-проверка, не
+installed/native acceptance; исключённые CAD cases не принимаются.
 
 Новый N5 child-plane-3 запущен последовательно после коротких проб и
 installed/positive SQL preflight, на неизменном точном wheel. Root остаётся

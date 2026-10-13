@@ -127,10 +127,11 @@ native diagnostic compatibility, не N5/public acceptance. Подготовка
 Installed preflight без CAD подтвердил accepted positive SQL/11 original
 helpers и31 helpers следующего N5. Full нового source-кандидата и конечный
 N5 остаются обязательными. Source-кандидат зафиксирован какd974ffc; full pure
-запущен с external basetemp, результат пока не принят. Новый N5 child-plane-3
+завершился **10381 passed,323 CAD deselected /464,36 с**, normal exit0,
+external basetemp. [Контрольная точка](CHECKPOINT_D974FFC.md). Новый N5 child-plane-3
 запущен на неизменном dev96, current parent phase=fixture_creation; preflight
-accepted positive verified. Оба процесса подтверждены live; source/helpers
-не меняются во время прогонов. Старые failed/unknown SQL не изменены.
+accepted positive verified. N5 подтверждён live; его31 source/helpers
+не меняются во время прогона. Старые failed/unknown SQL не изменены.
 
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала
