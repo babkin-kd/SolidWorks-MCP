@@ -203,6 +203,31 @@ def test_pending_native_or_journal_acknowledgement_never_clears_interrupted_sele
     assert x.write_calls==calls
 
 
+def test_actual_return_is_retained_before_durable_return_receipt_failure(fixture):
+    x=fixture;x.fault='ledger_returned'
+    with pytest.raises(OSError):x.helper.add_child_plane(x.c.baseline)
+    assert x.helper.returned_plane is x.specific
+    assert x.helper.created_plane is None and x.helper.plane_birth_diagnostic=={}
+    assert x.helper.evidence()['returned_plane_retained'] is True
+    assert ledger(x)[-1]['phase']=='pending'
+    assert 'ClearSelection2' not in x.write_calls and 'EditRebuild3' not in x.write_calls
+
+
+def test_failed_birth_comparisons_remain_available_without_adopting_return_or_writing_again(fixture):
+    x=fixture
+    x.helper.query=lambda raw,interface:x.raw_plane
+    with pytest.raises(ValueError,match='Queried feature'):x.helper.add_child_plane(x.c.baseline)
+    assert x.helper.returned_plane is x.specific and x.helper.created_plane is None
+    diagnostic=x.helper.evidence()['plane_birth_diagnostic']
+    assert diagnostic['raw_equals_queried_feature'] is False
+    assert diagnostic['queried_feature_equals_current_feature'] is True
+    assert diagnostic['accepted'] is False
+    diagnostic['phase']='caller_mutation'
+    assert x.helper.plane_birth_diagnostic['phase']=='feature_comparison'
+    assert ledger(x)[-1]['phase']=='returned'
+    assert x.write_calls==['Select4','InsertRefPlane']
+
+
 @pytest.mark.parametrize('fault',['select_false','insert_null','foreign_plane_handle','missing_parent','missing_child','rebuild_false'])
 def test_normally_returned_false_or_unconfirmed_new_handle_graph_refuses_without_undo_or_delete(fixture,fault):
     x=fixture;x.fault=fault

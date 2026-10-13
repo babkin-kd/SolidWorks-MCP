@@ -43,3 +43,20 @@ normally returned object и отдельные результаты canonical co
 снова начинать длительный full N5 на основании предположения об интерфейсе.
 Unused/linked equation, public B2, actual B3/B4/B5 и стадия1 остаются открытыми.
 PR15 draft, remote head274085f/CI failure38451907929 не менялись; нового push нет.
+
+## Последующая подготовка диагностики
+
+Короткий probe1 ошибочно выбрал drawing template10 вместо part8 и отказал
+до InsertRefPlane. Failed отчёт сохранён. Отдельная проверенная собственная
+очистка terminal: own_cleanup_verified/baseline_restored=True, CIPFalse,
+non-STL preferences восстановлены. Этот probe не подтверждает интерфейс
+плоскости и не является N5 acceptance. Исправленная короткая проба подготовлена
+локально, но не запускалась.
+
+Source binder теперь сохраняет отдельные scalar comparisons raw/queried/current
+при отказе; fixture удерживает raw returned handle до journal I/O. Setup driver
+после возврата сохраняет diagnostics без новых CAD reads/изменения unknown SQL.
+Strict identity gate и запрет preview/delete после неуспешного setup сохранены.
+Related411 pure passed /53,98 с, external basetemp, normal exit0; artificial CAD
+и actual SQLite/JobRunner. Это последующий source-блок, не входит в full10307
+на9a98447 и не имеет собственной native-приёмки. Package/wheel не менялись.

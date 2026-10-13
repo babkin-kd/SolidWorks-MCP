@@ -219,6 +219,11 @@ class OwnImpactHook(OwnLeafPositiveHook):
         # InlineSta returned synchronously even if JobRunner preserved an unknown
         # mutation. This records invocation state, never success or reconciliation.
         report['native_calls_live']=False;persist()
+        # Pure scalar evidence from the original callback, including failed
+        # interface binding. No new CAD reads and no alteration of unknown SQL.
+        if self.fixture is not None:
+            report['fixture_preparation_diagnostic']=detached(self.fixture.evidence())
+            persist()
         report['fixture_setup_job']=detached(store.get(setup_job['operation_id']));persist()
         require(setup_job==report['fixture_setup_job'] and setup_job['status']=='succeeded' and setup_job['error'] is None
             and setup_job['mutation']['phase']=='committed' and setup_job['mutation']['verification']['outcome']=='committed'

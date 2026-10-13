@@ -154,8 +154,13 @@ Own-leaf preview/delete установлены в dev96 (full pure8427/323, meta
 его preflight отвергает этот failed positive до CAD. Восстановление состояния
 уже выполнено. Fresh guarded positive dev96 принят2/2 за4136,97 с: actual SQL,
 independent SKETCH/neighbor, original receipts/jobs и current empty baseline
-подтверждены отдельно root audit. Далее finite native faults, dependent/linked
-N5, public и общий same-wheel gate B2; исходная причина первого отказа не доказана.
+подтверждены отдельно root audit. Finite native faults dev96 приняты5/5,
+9137,84 с. Далее dependent/unused/linked N5, public и общий same-wheel gate B2;
+исходная причина первого отказа не доказана. Две попытки child-plane отказали
+на привязке интерфейса до preview/delete; собственная очистка завершена,
+unknown SQL сохранён. Подготовлена source-диагностика отдельных comparisons
+и удержание raw return до journal I/O без CAD-вызовов. Это не native-приёмка:
+сначала короткая проверка интерфейса, затем конечный N5 и публичная цепочка.
 Правка оболочки проверена209 pure, подготовленный N5 batch —331 pure без CAD.
 [Фактический checkpoint](Docs/CHECKPOINT_DEV96.md). B2–B5 и стадия1 открыты.
 

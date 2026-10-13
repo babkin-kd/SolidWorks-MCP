@@ -130,3 +130,45 @@ def test_empty_or_incomplete_original_census_never_invokes_query(birth):
     x = birth
     with pytest.raises(ValueError): run(x, originals=())
     assert x.query_calls == []
+
+
+@pytest.mark.parametrize('comparison', ['raw_only', 'current_only', 'neither', 'null'])
+def test_failed_feature_binding_preserves_each_comparison_without_fallback_or_acceptance(birth, comparison):
+    x = birth
+    returned = NS(canonical=object(), interface='IFeature')
+    canonical = {'raw_only': returned.canonical, 'current_only': x.feature.canonical,
+                 'neither': object(), 'null': None}[comparison]
+    x.interface_override = NS(canonical=canonical) if comparison != 'null' else None
+    if comparison == 'null': x.query_fault = lambda *args: None
+    diagnostic = {}
+    with pytest.raises(ValueError, match='Queried feature'):
+        run(x, returned, diagnostic=diagnostic)
+    assert diagnostic['phase'] == 'feature_comparison'
+    assert diagnostic['raw_equals_current_feature'] is False
+    assert diagnostic['raw_equals_queried_feature'] is (comparison == 'raw_only')
+    assert diagnostic['queried_feature_equals_current_feature'] is (comparison == 'current_only')
+    assert diagnostic['queried_feature_nonnull'] is (comparison != 'null')
+    assert diagnostic['accepted'] is diagnostic['native_acceptance'] is diagnostic['cleanup_authorized'] is False
+    assert [interface for _, interface in x.query_calls] == ['IFeature']
+
+
+def test_diagnostic_uses_same_native_reads_as_binding_without_diagnostic(birth):
+    x = birth; calls = []
+    def identity(raw):
+        calls.append(raw)
+        return raw.canonical
+    run(x, identity=identity)
+    original = list(calls); calls.clear()
+    diagnostic = {}
+    run(x, identity=identity, diagnostic=diagnostic)
+    assert len(calls) == len(original) and all(left is right for left, right in zip(calls, original))
+    assert diagnostic['phase'] == 'bound' and diagnostic['binding_confirmed'] is True
+    assert diagnostic['accepted'] is False
+
+
+def test_query_error_diagnostic_preserves_hresult_and_original_exception(birth):
+    error = QueryFailure(-2147418111); diagnostic = {}
+    def query(*args): raise error
+    with pytest.raises(QueryFailure) as caught: run(birth, query=query, diagnostic=diagnostic)
+    assert caught.value is error and diagnostic['feature_query_hresult'] == error.hresult
+    assert diagnostic['feature_query_returned'] is False and diagnostic['accepted'] is False

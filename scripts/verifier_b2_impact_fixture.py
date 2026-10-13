@@ -99,6 +99,7 @@ no subsequent cleanup/getter/mutation is dispatched by this helper.
         self.query=query
         self.used=False;self.case=None;self.pending_native_step=None;self.journal_failed=False
         self.created_plane=None;self.created_plane_identity=None;self.created_plane_pid=None
+        self.returned_plane=None;self.plane_birth_diagnostic={}
         self.retained_face=None;self.retained_face_identity=None
 
     def _wrap(self,raw,interface):
@@ -140,6 +141,8 @@ no subsequent cleanup/getter/mutation is dispatched by this helper.
     def evidence(self):
         return dict(scope=SCOPE,fixture_case=self.case,one_shot_started=self.used,
             pending_native_step=self.pending_native_step,journal_failed=self.journal_failed,
+            returned_plane_retained=self.returned_plane is not None,
+            plane_birth_diagnostic=deepcopy(self.plane_birth_diagnostic),
             accepted=False,native_b2_accepted=False,public_mcp_accepted=False,
             deletion_authorized=False,full_refusal_context_available=False,
             open_gates=list(FULL_REFUSAL_GATES))
@@ -241,13 +244,19 @@ no subsequent cleanup/getter/mutation is dispatched by this helper.
             and a.identity(selection.GetSelectedObject6(1,-1))==self.retained_face_identity,
             'Actual selected native object differs from the retained exact face.')
         manager=self._wrap(b.model.FeatureManager,'IFeatureManager')
-        plane=self._step('insert_plane',lambda:manager.InsertRefPlane(SW_REF_PLANE_DISTANCE,offset/1000.,0,0.,0,0.),
+        def insert_plane():
+            plane=manager.InsertRefPlane(SW_REF_PLANE_DISTANCE,offset/1000.,0,0.,0,0.)
+            # Retain the actual normally returned handle before journal I/O or
+            # any interface/census checks. Retention grants no adoption/cleanup.
+            self.returned_plane=plane
+            return plane
+        plane=self._step('insert_plane',insert_plane,
             dict(face_pid_hex=pid.hex(),constraint=SW_REF_PLANE_DISTANCE,offset_m=(offset/1000.).hex()),
             lambda value:dict(native_handle_returned=value is not None))
         require(plane is not None,'Normally returned plane handle is required; effects remain unconfirmed.')
         birth=bind_returned_plane(plane,
             [OriginalFeature(obj,canonical) for obj,canonical in zip(original_members,original_identities)],
-            a.features(b.model),self._query,self._wrap,a.identity)
+            a.features(b.model),self._query,self._wrap,a.identity,diagnostic=self.plane_birth_diagnostic)
         created=birth.feature
         self.created_plane=created;self.created_plane_identity=birth.feature_canonical
         # Only a normally returned insertion and durable acknowledgement permit

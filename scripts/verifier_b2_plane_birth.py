@@ -27,7 +27,7 @@ def require(condition, message):
         raise ValueError(message)
 
 
-def bind_returned_plane(returned, originals, current_features, query, wrap, identity):
+def bind_returned_plane(returned, originals, current_features, query, wrap, identity, *, diagnostic=None):
     """Resolve only the normally returned raw object, never a guessed tree row.
 
 query(raw, 'IFeature'|'IRefPlane') explicitly QueryInterfaces. Only an exact
@@ -40,7 +40,19 @@ must occur exactly once in its unchanged relative order. Native complete-census
 capture/owner admission/transition watch and all subsequent graph/PID/readback
 checks remain with the owner. Retain the returned feature immediately; a later
 GetSpecificFeature2 interface may differ after normally returned rebuild.
+diagnostic, if provided, is a caller-owned plain dict of scalar comparisons.
+It preserves partial observations on failure without additional native getters,
+fallbacks, acceptance or cleanup authority. The owner persists it separately.
 """
+    require(diagnostic is None or type(diagnostic) is dict, 'Plain owner diagnostic dict required.')
+    if diagnostic is not None:
+        diagnostic.clear()
+        diagnostic.update(scope='returned_plane_binding_diagnostic_v1', accepted=False,
+                          native_acceptance=False, cleanup_authorized=False, phase='admission')
+
+    def note(**values):
+        if diagnostic is not None: diagnostic.update(values)
+
     require(returned is not None and type(originals) in (tuple, list) and 0 < len(originals) <= 100
             and all(isinstance(original, OriginalFeature) for original in originals)
             and type(current_features) in (tuple, list) and len(current_features) == len(originals)+1
@@ -72,29 +84,44 @@ GetSpecificFeature2 interface may differ after normally returned rebuild.
         return feature, canonical
 
     feature, feature_canonical = census()
+    note(phase='feature_query', raw_equals_current_feature=raw_canonical == feature_canonical)
     try:
         queried = query(returned, 'IFeature')
     except Exception as error:
+        note(feature_query_hresult=getattr(error, 'hresult', None), feature_query_returned=False)
         if getattr(error, 'hresult', None) != E_NOINTERFACE:
             raise
         queried = query(returned, 'IRefPlane')
-        require(queried is not None and identity(queried) == raw_canonical,
+        queried_canonical = identity(queried) if queried is not None else None
+        note(phase='specific_query', specific_query_nonnull=queried is not None,
+             specific_query_equals_raw=queried is not None and queried_canonical == raw_canonical)
+        require(queried is not None and queried_canonical == raw_canonical,
                 'Queried specific-plane interface must preserve raw returned canonical identity.')
         raw_specific = feature.GetSpecificFeature2()
         require(raw_specific is not None, 'New feature must provide its actual normally current specific plane.')
         specific = query(raw_specific, 'IRefPlane')
-        require(specific is not None and identity(specific) == identity(raw_specific)
-                and identity(specific) == raw_canonical,
+        specific_canonical = identity(specific) if specific is not None else None
+        current_raw_canonical = identity(raw_specific)
+        note(phase='specific_comparison', current_specific_nonnull=specific is not None,
+             current_specific_query_preserves_canonical=specific is not None and specific_canonical == current_raw_canonical,
+             current_specific_equals_raw=specific is not None and specific_canonical == raw_canonical)
+        require(specific is not None and specific_canonical == current_raw_canonical
+                and specific_canonical == raw_canonical,
                 'Sole new feature specific-plane canonical must equal the actual returned plane canonical.')
         path = 'returned_specific_plane_v1'
     else:
-        require(queried is not None and identity(queried) == raw_canonical and identity(queried) == feature_canonical,
+        queried_canonical = identity(queried) if queried is not None else None
+        note(phase='feature_comparison', feature_query_returned=True, queried_feature_nonnull=queried is not None,
+             raw_equals_queried_feature=queried is not None and queried_canonical == raw_canonical,
+             queried_feature_equals_current_feature=queried is not None and queried_canonical == feature_canonical)
+        require(queried is not None and queried_canonical == raw_canonical and queried_canonical == feature_canonical,
                 'Queried feature must be the actual returned canonical and the sole new current feature.')
         path = 'returned_feature_v1'
     closing, closing_canonical = census()
     require(closing_canonical == feature_canonical and identity(feature) == feature_canonical
             and identity(closing) == feature_canonical and identity(returned) == raw_canonical,
             'Actual returned/new/original feature canonicals changed during binding.')
+    note(phase='bound', interface_path=path, binding_confirmed=True)
     return RetainedPlaneBirth(feature, feature_canonical, dict(scope='normally_returned_plane_birth_binding_v1',
         interface_path=path, original_feature_count=len(originals), current_feature_count=len(current_features),
         accepted=False, native_acceptance=False, cleanup_authorized=False,

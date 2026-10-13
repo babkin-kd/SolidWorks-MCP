@@ -49,8 +49,8 @@ failure:25 failed,10145 passed,323 deselected; build/install/metadata skipped.
 эту зависимость не выявлял. Исправляются fixtures с сохранением строгих
 production-проверок. Исправленный source HEADb842a9c прошёл **10220 pure passed,
 323 CAD deselected /462,70 с**, normal exit0 с basetemp вне work. Remote CI
-остаётся failure; нового push/CI нет. Fresh N5 child-plane-2 выполняется на
-неизменном installed dev96, все31 frozen helper SHA совпадают.
+остаётся failure; нового push/CI нет. Fresh N5 child-plane-2 проверялся на
+неизменном installed dev96; на момент запуска все31 frozen helper SHA совпадали.
 [Локальная контрольная точка](CHECKPOINT_B842A9C.md).
 
 Следующий isolated B3 блок: actual private stdio bootstrap поверх штатного
@@ -78,7 +78,7 @@ dirty сосед) подготовлен с retained returned handles и paired 
 Fixture47 pure, integrated209 pure/5,01 с прошли; actual CAD setup ещё not_run.
 Отдельный cylinder и same-wheel B1 sketch, whole-session producer и B3 driver
 не подменяются этим source-результатом. N5 child-plane-2 дошёл до original BASE
-preparation после исходного B1 построения; текущий native результат не принят.
+preparation после исходного B1 построения, затем завершился failed, как указано ниже.
 
 Итоговый source HEAD9a98447: **10307 pure passed,323 CAD deselected /459,84 с**,
 external basetemp/normal exit0. Второй N5 child-plane завершился failed: query
@@ -90,6 +90,27 @@ owner, затем sole-owner inspector подтвердил текущие own s
 full baseline/CIPFalse/non-STL восстановлены, unknown SQL неизменён. N5 не принят. Перед третьей
 попыткой обязателен небольшой actual return-interface diagnostic probe.
 [Точная контрольная точка](CHECKPOINT_9A98447.md).
+
+Диагностический probe после второго N5 не дошёл до InsertRefPlane: ошибочно
+выбран код шаблона drawing10 вместо part8, проверка имени drawing отказала.
+Это ошибка вспомогательного probe, не отказ preview/delete. Исходный failed
+отчёт сохранён. Отдельная собственная cleanup завершилась terminal:
+own_cleanup_verified/baseline_restored=True, CIPFalse и non-STL восстановлены.
+Новая native-проверка пока не запускалась.
+
+Подготовка preview/delete продолжается без CAD-вызовов: raw returned plane
+удерживается до returned journal I/O; binder сохраняет отдельные scalar
+comparisons raw/queried/current без дополнительных native getters. После
+нормального возврата setup driver сохраняет частичную диагностику даже при
+unknown/unresolved SQL, не меняя исходный job. Это source-диагностика, не
+смягчение привязки и не native-приёмка. Следующий probe должен использовать
+именованную part-константу8, проверить .prtdot/GetType и сохранить владение
+до проверки названия. Длительный N5 не повторять до результата короткой пробы.
+Связанный source-набор диагностики и N5: **411 pure passed /53,98 с**, normal
+exit0, basetemp вне work. Новые проверки используют artificial CAD, actual
+SQLite/JobRunner; COM не вызывается. Предыдущий full10307 относится к9a98447,
+новую диагностику не включает. Итоговый full нового кандидата/native остаются
+отдельными обязательными gates; wheel dev96 и публичный каталог не изменены.
 
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала

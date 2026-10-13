@@ -178,6 +178,26 @@ def test_neighbor_projection_keeps_all_current_added_data_and_drops_only_declare
     with pytest.raises(ValueError):helper.neighbor_projection(hostile,old)
 
 
+def test_terminal_unknown_setup_persists_partial_comparisons_without_dispatching_preview_delete(native_case):
+    x=native_case
+    x.helper.query=lambda raw,interface:x.raw_plane
+    hook=x.make_hook()
+    with pytest.raises(ValueError,match='setup terminal'):
+        hook.retire(x.sw,None,x.binding.model,[x.binding.model],x.owned,lambda models:None)
+    report=hook.report
+    diagnostic=report['fixture_preparation_diagnostic']
+    assert diagnostic['returned_plane_retained'] is True
+    assert diagnostic['plane_birth_diagnostic']['queried_feature_equals_current_feature'] is True
+    assert diagnostic['plane_birth_diagnostic']['raw_equals_queried_feature'] is False
+    assert diagnostic['accepted'] is diagnostic['deletion_authorized'] is False
+    setup=report['fixture_setup_job']
+    assert setup['status']=='unknown' and setup['mutation']['phase']=='unresolved'
+    assert setup['mutation']['reconciliation'] is None and report['native_calls_live'] is False
+    assert len(setup['mutation']['verification']['native_steps'])==6
+    assert 'refusal_batch' not in report and x.delegations==[]
+    assert x.write_calls==['Select4','InsertRefPlane']
+
+
 def test_equation_file_is_exclusive_private_and_exact_before_any_cad(b2_private_dir):
     facts=helper.prepare_equation_file(b2_private_dir)
     path=Path(facts['path']);assert helper.sha256(path)==facts['sha256']
