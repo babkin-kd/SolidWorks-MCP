@@ -11,13 +11,14 @@ import threading
 from solidworks_mcp.jobs import _json
 from solidworks_mcp.rectangle_snapshot import BASE, validated_rectangle_snapshot
 from verifier_b2_impact_fixture import require
+from verifier_b2_body_binding import bind_current_body
 
 
 SCOPE = 'b2_impact_current_target_v1'
 
 
 class B2ImpactTarget:
-    def __init__(self, fixture, parent_snapshot, *, ancillary=None, extrusion=None, topology=None):
+    def __init__(self, fixture, parent_snapshot, *, ancillary=None, extrusion=None, topology=None, body_bridge=None):
         self.fixture = fixture
         self.binding = fixture.binding
         self.adapter = fixture.adapter
@@ -25,6 +26,7 @@ class B2ImpactTarget:
         self.ancillary = ancillary
         self.extrusion = extrusion
         self.topology = topology
+        self.body_bridge = body_bridge
         require(fixture.used is False, 'Retain the original census before fixture preparation.')
         self.parent = validated_rectangle_snapshot(parent_snapshot)
         require(self.parent['clone_state']['profile'] == BASE, 'Original complete BASE required.')
@@ -78,6 +80,20 @@ class B2ImpactTarget:
                 and a.identity(a.resolve_dimension_id(b.model, anchor)) == a.identity(a.dimension_object(record)),
                 'Original dimension/owner/PID membership changed.')
 
+    def _current_body(self):
+        f,a,b=self.fixture,self.adapter,self.binding
+        if self.body_bridge is None:
+            bodies=a.bodies(b.model,'all')
+            require(type(bodies) in (tuple,list) and len(bodies)==1
+                and a.identity(bodies[0])==self.body_identity
+                and f._pid(bodies[0],'body')==self.body_pid,'Original single body incarnation changed.')
+            return bodies[0]
+        return bind_current_body(original_body=self.body,original_canonical=self.body_identity,
+            original_pid=self.body_pid,owner_feature=f._owner(),owner_canonical=b.feature_identity,
+            identity=a.identity,persistent_id=lambda body:f._pid(body,'body'),
+            resolve_body=lambda pid:a.resolve_persistent_id(b.model,pid,'body'),
+            census=lambda:a.bodies(b.model,'all'),bridge=self.body_bridge)
+
     def capture(self):
         f, a, b = self.fixture, self.adapter, self.binding
         require(f.used is True and f.case in ('child_plane', 'unused_equation', 'linked_equation')
@@ -102,10 +118,8 @@ class B2ImpactTarget:
                 if row['feature_type'] not in FOLDERS | DISPLAY_FEATURES:
                     pid = f._pid(feature, 'feature')
                     references.append(dict(kind='feature', role='native_feature:' + pid.hex(), token=pid.hex()))
-            bodies = a.bodies(b.model, 'all')
-            require(type(bodies) in (tuple, list) and len(bodies) == 1
-                    and a.identity(bodies[0]) == self.body_identity
-                    and f._pid(bodies[0], 'body') == self.body_pid, 'Original single body incarnation changed.')
+            current_body=self._current_body()
+            current_body_identity=a.identity(current_body)
             geometry = a.dimension_geometry_snapshot(b.model)
             require(_json(geometry) == _json(self.parent['clone_state']['geometry']),
                     'Fixture or refused preview changed original complete BREP.')
@@ -114,7 +128,7 @@ class B2ImpactTarget:
             if topology is None:
                 from solidworks_mcp.cad_native_first_save_snapshot import _topology
                 topology = _topology
-            topology(a, b.model, self.body, geometry['bodies'][0], references)
+            topology(a, b.model, current_body, geometry['bodies'][0], references)
             boundary = geometry['bodies'][0]
             require(len([row for row in references if row['kind'] == 'face']) == len(boundary['faces'])
                     and len([row for row in references if row['kind'] == 'edge']) == len(boundary['edges']),
@@ -173,7 +187,7 @@ class B2ImpactTarget:
                 collector = collect_impact_ancillary
             ancillary = collector(a, b.model, configuration=b.configuration, features=features,
                                   summaries=rows, dimensions=records, dimension_roles=current_roles,
-                                  references=references, body=self.body)
+                                  references=references, body=current_body)
             controls = a.dimension_context(b.model)
             require(all(type(value) is dict and bool(value) for value in (sketch, extrusion, ancillary, controls)),
                     'Every current target inventory must be available; no replacement values.')
@@ -181,10 +195,8 @@ class B2ImpactTarget:
                 self._dimension(record, anchor)
             if self.plane_dimension is not None:
                 self._dimension(self.plane_dimension[0], self.plane_dimension[2])
-            closing_bodies = a.bodies(b.model, 'all')
-            require(type(closing_bodies) in (tuple, list) and len(closing_bodies) == 1
-                    and a.identity(closing_bodies[0]) == self.body_identity
-                    and f._pid(closing_bodies[0], 'body') == self.body_pid,
+            closing_body=self._current_body()
+            require(a.identity(closing_body)==current_body_identity,
                     'Body incarnation changed during ancillary collection.')
             closing_features = tuple(a.features(b.model))
             require(tuple(a.identity(obj) for obj in closing_features) == identities

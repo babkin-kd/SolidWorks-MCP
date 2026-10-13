@@ -16,6 +16,27 @@ head/base PR15, draft/open/not merged и созданный Checks run3847928056
 in_progress. Итог CI pending; новая CI-сборка не наследует native dev96.
 Результат текущего N5 остаётся открытым, live COM не прерывался.
 
+Последующий actual N5 child-plane-3 завершился failed через3694,28 с:
+все6 setup native pairs и84 captures нормально вернулись, plane birth
+PID/IsSame binding_confirmed=true, rename выполнен. До preview/delete
+составная проверка original single body census/canonical/PID отказала;
+конкретное нарушенное условие из этого сообщения не выводится. Actual SQL6
+jobs, один unknown/unresolved без reconciliation; исходные creation jobs и
+31 helpers сохранены. Отдельный offline root audit подтвердил отсутствие
+active SQL/pending native. Только точный idle Python owner завершён после
+этих доказательств; текущая independent own inspection выполняется перед
+очисткой. N5 не принят; старые unknown не повторяются.
+
+Последующая independent inspection завершилась: два equal current captures,
+own PID/windows/geometry и закрытые unchanged native watches. Две собственные
+модели закрыты без сохранения, full baseline/CIPFalse/non-STL восстановлены,
+старый SQL неизменён. Короткая body-проба воспроизвела иной current canonical
+при прежнем PID и native IsSame int1; финальный explicit body binder прошёл
+четыре actual фазы за6,19 с с own cleanup/baseline. Это не N5 acceptance.
+[Доказательства и границы](B2_BODY_RETURN_COMPATIBILITY.md). Новый source target
+использует доказанный current body и сохраняет original handle; финальный
+related523 pure/54,38 с принят, full нового source-кандидата ещё предстоит.
+
 **Текущий installed кандидат — dev96:** full pure8427/323 CAD deselected,
 260,01 с; clean artifact и metadata/stdIO83/27 приняты, без CAD в metadata.
 Own-leaf preview/delete domain/runtime/MCP реализованы. Guarded positive2

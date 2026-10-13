@@ -19,6 +19,7 @@ from solidworks_mcp.native_first_save import SNAPSHOT_SCOPE,validated_part_snaps
 from solidworks_mcp.rectangle_snapshot import SCOPE as RECTANGLE_SCOPE,BASE,validated_rectangle_snapshot
 from verifier_b2_impact_fixture import B2ImpactFixtures
 from verifier_b2_impact_target import B2ImpactTarget
+from verifier_b2_body_binding import NativeBodyBridge
 from verifier_b2_impact_session import B2ImpactSession,same_refused_session
 from verifier_b2_impact_internal import run_impact_refusals
 from verifier_b2_public_contract import durable_b2_job,verified_b2_job
@@ -42,7 +43,7 @@ HELPERS=('verify_b2_impact_native.py','verify_owned_leaf_deletion_positive.py','
     'verify_rectangle_stages_positive.py','verifier_rectangle_stages.py','probe_native_first_save_domain.py',
     'verify_installed_metadata.py','verify_wheel_artifact.py','verify_bounds_measurements.py',
     'verify_export_operations.py','verify_native_document_open.py','verify_native_first_save_rejections.py',
-    'verifier_dimension_diagnostics.py','verifier_b2_plane_birth.py')
+    'verifier_dimension_diagnostics.py','verifier_b2_plane_birth.py','verifier_b2_body_binding.py')
 
 
 def setup_pairs(job,kind):
@@ -102,10 +103,14 @@ def terminal_rows(store,binding):
 
 class OwnImpactHook(OwnLeafPositiveHook):
     def __init__(self,*args,fixture_kind,equation_file=None,fixture_factory=B2ImpactFixtures,
-                 target_factory=B2ImpactTarget,session_factory=B2ImpactSession,batch=run_impact_refusals,**kwargs):
+                 target_factory=None,session_factory=B2ImpactSession,batch=run_impact_refusals,**kwargs):
         super().__init__(*args,**kwargs)
         require(fixture_kind in KINDS,'One explicit finite N5 fixture kind required.')
         self.kind=fixture_kind;self.equation_file=equation_file
+        if target_factory is None:
+            def target_factory(fixture,base):
+                return B2ImpactTarget(fixture,base,body_bridge=NativeBodyBridge(
+                    fixture._query,fixture.adapter._sw.IsSame))
         self.fixture_factory,self.target_factory,self.session_factory=fixture_factory,target_factory,session_factory
         self.batch=batch;self.fixture=None;self.leaf=None;self.session=None
 

@@ -13,6 +13,7 @@ sys.path.insert(0, scripts)
 try:
     from verifier_b2_impact_target import B2ImpactTarget
     from verifier_b2_impact_fixture import FixtureGate
+    from verifier_b2_body_binding import NativeBodyBridge
 finally:
     sys.path.remove(scripts)
 
@@ -150,3 +151,34 @@ def test_plane_dimension_cannot_adopt_a_foreign_replaced_or_missing_record(targe
     with pytest.raises((FixtureGate, ExecutionFailure, ValueError)):
         x.collector.capture()
     assert x.write_calls == writes
+
+
+@pytest.mark.parametrize('change_inside_capture',[False,True])
+def test_explicit_native_equivalence_uses_current_body_and_rejects_change_during_capture(target,change_inside_capture):
+    x=target
+    x.helper.add_child_plane(x.c.baseline)
+    original=x.collector.body
+    current=NS(identity=object(),pid=original.pid)
+    x.c.bodies[:]=[current];x.c.raw_by_pid[current.pid]=current
+    faces=[NS(identity=object(),GetBody=lambda:x.c.bodies[0]) for _ in range(6)]
+    x.binding.feature.GetFaces=lambda:faces
+    x.collector.body_bridge=NativeBodyBridge(lambda raw,interface:raw,
+        lambda old,new:1 if old is original and new in x.c.bodies else 0)
+    ordinary=x.collector.ancillary
+    def ancillary(*args,**kwargs):
+        result=ordinary(*args,**kwargs)
+        if change_inside_capture:
+            replacement=NS(identity=object(),pid=original.pid)
+            x.c.bodies[:]=[replacement];x.c.raw_by_pid[replacement.pid]=replacement
+        return result
+    x.collector.ancillary=ancillary
+    writes=list(x.write_calls)
+    if change_inside_capture:
+        with pytest.raises(FixtureGate,match='during ancillary'):
+            x.collector.capture()
+    else:
+        result=x.collector.capture()
+        assert result['geometry']==x.c.baseline['clone_state']['geometry']
+        assert result['accepted'] is False and result['cleanup_authorized'] is False
+        assert x.topology_calls[0][0] is current
+    assert x.collector.body is original and x.write_calls==writes
