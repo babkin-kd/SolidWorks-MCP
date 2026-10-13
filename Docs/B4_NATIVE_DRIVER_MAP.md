@@ -235,3 +235,34 @@ basetemp `work/pytest-b4-exit-agent-*` и source `PYTHONPATH=src` только �
 Остаток P: native owner-issued Q интеграция и реальный own-child exit protocol
 с последующим OS exit receipt. Без них запуск restart всё ещё запрещён;
 pure команды и intent receipts не закрывают Q/P или native B4.
+
+## CAD-free own-child protocol — 14.10.2026
+
+Добавлены `scripts/verifier_b4_owned_child_process.py` и отдельные тесты.
+Фиксированный synthetic entrypoint создаёт реальный JobStore/SQLite,
+FinishBarrierStore и OwnedChildExitGate. Родитель удерживает исходный Popen
+handle, наблюдённое OS-время старта, nonce и helper hashes. Единственная команда
+передаётся исходному процессу через stdin; текущий child вызывает os._exit
+только после gate и durable intent/callback receipts. Родитель сверяет actual
+OS exit code с этими квитанциями. Нормальный callback return/exit0, чужие
+команда/identity, неполные квитанции и failed intent не принимаются как gate exit.
+Timeout сохраняет живой owner и не вызывает остановку или повтор команды.
+
+Ошибка после успешного Popen сохраняет exact handle через
+OwnedChildLaunchError.retained_owner. Одно новое наблюдение original handle/start
+и отдельная recovery receipt позволяют продолжить именно этот synthetic
+протокол; partial original launch receipt и исходная ошибка сохраняются.
+Неудачное повторное наблюдение удерживает owner, без kill/adoption/relaunch.
+
+Windows venv python.exe оказался redirector с отличающимся child PID.
+Для этого source-only эксперимента используется прямой sys._base_executable
+с pure dependencies. Это не запуск exact installed-wheel CAD server.
+Все Q receipts явно synthetic_cad_free; native_q=not_run, native B4/restart/
+dispatch acceptance и cleanup/process-stop authority остаются false.
+
+Root integration: **211 pure passed /11,60 с**, normal exit0, отдельный внешний
+basetemp; тесты запускают и завершают только собственные synthetic Python
+children. COM/CAD и текущий N5 не затронуты. Остаток P теперь состоит в
+интеграции с actual installed server launch/owner, а Q — в действительном
+producer proof полного возврата native callback/guard и закрытого admission.
+Synthetic process protocol не закрывает эти native требования.

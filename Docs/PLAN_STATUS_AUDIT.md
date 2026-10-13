@@ -70,6 +70,13 @@ all13 B3 groups открыты; этот helper не входит в32 frozen N5
 Нет CAD/COM-object подключения, can_start_native=false; actual B3 остаётся
 not_run. Доказательство сохранено в private work и обезличенной probe-сводке.
 
+Независимый B4 own-child process protocol реализован source-only: original
+Popen/start/nonce, реальный OS exit и durable gate intent/callback receipts,
+custody после post-Popen отказов. Root related211 pure/11,60 с прошли,
+все synthetic children завершены, COM/CAD не использовались. Native Q и
+installed-server интеграция остаются not_run; B4 не принят.
+[Точные границы](B4_NATIVE_DRIVER_MAP.md#cad-free-own-child-protocol--14102026).
+
 **Текущий installed кандидат — dev96:** full pure8427/323 CAD deselected,
 260,01 с; clean artifact и metadata/stdIO83/27 приняты, без CAD в metadata.
 Own-leaf preview/delete domain/runtime/MCP реализованы. Guarded positive2
