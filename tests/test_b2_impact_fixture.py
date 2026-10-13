@@ -41,6 +41,11 @@ def b2_outside_dir(tmp_path):
 def fixture(leaf):
     x=leaf;c=x.c;a=c.adapter;b=x.binding
     x.write_calls=[];x.fault=None;x.raw_plane=None
+    x.same_calls=[]
+    def is_same(left,right):
+        x.same_calls.append((left,right))
+        return 1 if (left is x.specific and right is x.specific) else 0
+    a._sw=NS(IsSame=is_same)
     x.ownership.documents.resolve('target','Основная')[0].features={}
     for feature in c.features:
         feature.parents=[];feature.children=[]
@@ -126,7 +131,7 @@ def fixture(leaf):
             assert args==(helper.SW_REF_PLANE_DISTANCE,.005,0,0.,0,0.)
             if x.fault=='insert_pending':raise RuntimeError('Artificial missing InsertRefPlane return')
             if x.fault=='insert_null':return None
-            specific=NS(identity=object())
+            specific=NS(identity=object(),pid=b'own-child-plane')
             row=dict(native_id=100,name='Plane4',feature_type='RefPlane',suppressed=False,
                 owner_native_id=None,error_code=0,is_warning=False)
             plane=NS(identity=object(),pid=b'own-child-plane',row=row,Name='Plane4',parents=[b.feature],children=[])
@@ -136,7 +141,7 @@ def fixture(leaf):
             plane.GetOwnerFeature=lambda:None;plane.IsSuppressed2=lambda *args:[False]
             c.features.append(plane);b.feature.children=[plane];c.raw_by_pid[plane.pid]=plane
             x.raw_plane=plane;x.specific=specific
-            if x.fault=='foreign_plane_handle':return NS(identity=object())
+            if x.fault=='foreign_plane_handle':return NS(identity=object(),pid=b'foreign-plane')
             if x.fault=='missing_parent':plane.parents=[]
             if x.fault=='missing_child':b.feature.children=[]
             return specific
@@ -176,6 +181,8 @@ def test_actual_original_registry_context_graph_and_paired_native_receipts_prepa
     assert result['fixture_prepared'] is True and result['plane_name']=='Контрольная дочерняя плоскость'
     assert result['plane_pid_hex']==x.raw_plane.pid.hex() and result['plane_object_id'].startswith('feat_')
     assert x.helper.created_plane is x.raw_plane and x.helper.retained_face in x.body.faces
+    assert len(x.same_calls)==2 and all(left is x.specific and right is x.specific for left,right in x.same_calls)
+    assert x.helper.plane_birth_diagnostic['interface_path']=='returned_native_plane_pid_v1'
     graph=result['after_deletion_context']['dependency_graph'];parent=next(row for row in graph['nodes'] if row['native_id']==5)
     child=next(row for row in graph['nodes'] if row['native_id']==100)
     edge=[parent['node_index'],child['node_index']]
@@ -215,15 +222,15 @@ def test_actual_return_is_retained_before_durable_return_receipt_failure(fixture
 
 def test_failed_birth_comparisons_remain_available_without_adopting_return_or_writing_again(fixture):
     x=fixture
-    x.helper.query=lambda raw,interface:x.raw_plane
-    with pytest.raises(ValueError,match='Queried feature'):x.helper.add_child_plane(x.c.baseline)
+    x.c.adapter._sw.IsSame=lambda left,right:2
+    with pytest.raises(ValueError,match='swObjectSame=1'):x.helper.add_child_plane(x.c.baseline)
     assert x.helper.returned_plane is x.specific and x.helper.created_plane is None
     diagnostic=x.helper.evidence()['plane_birth_diagnostic']
-    assert diagnostic['raw_equals_queried_feature'] is False
-    assert diagnostic['queried_feature_equals_current_feature'] is True
+    assert diagnostic['returned_pid_equals_feature'] is diagnostic['returned_pid_equals_specific'] is True
+    assert diagnostic['native_same_code']==2 and diagnostic['native_same_type']=='int'
     assert diagnostic['accepted'] is False
     diagnostic['phase']='caller_mutation'
-    assert x.helper.plane_birth_diagnostic['phase']=='feature_comparison'
+    assert x.helper.plane_birth_diagnostic['phase']=='native_equality'
     assert ledger(x)[-1]['phase']=='returned'
     assert x.write_calls==['Select4','InsertRefPlane']
 

@@ -9,7 +9,7 @@ import pytest
 scripts = str(Path(__file__).resolve().parents[1] / 'scripts')
 sys.path.insert(0, scripts)
 try:
-    from verifier_b2_plane_birth import OriginalFeature, bind_returned_plane, E_NOINTERFACE
+    from verifier_b2_plane_birth import OriginalFeature, NativePlaneBridge, bind_returned_plane, E_NOINTERFACE
 finally:
     sys.path.remove(scripts)
 
@@ -172,3 +172,184 @@ def test_query_error_diagnostic_preserves_hresult_and_original_exception(birth):
     with pytest.raises(QueryFailure) as caught: run(birth, query=query, diagnostic=diagnostic)
     assert caught.value is error and diagnostic['feature_query_hresult'] == error.hresult
     assert diagnostic['feature_query_returned'] is False and diagnostic['accepted'] is False
+
+
+@pytest.fixture
+def bridged_birth(birth):
+    x = birth
+    x.returned = NS(canonical=object(), interface='IRefPlane', pid=b'actual-plane-pid')
+    x.feature.pid = x.specific.pid = x.returned.pid
+    x.bridge_calls = []
+    def persistent_id(raw):
+        x.bridge_calls.append(('pid', raw))
+        return raw.pid
+    def resolve_feature(pid):
+        x.bridge_calls.append(('resolve', pid))
+        assert pid == x.feature.pid
+        return x.feature
+    def is_same(left, right):
+        x.bridge_calls.append(('same', left, right))
+        assert left is x.returned and right is x.specific
+        return 1
+    x.bridge = NativePlaneBridge(persistent_id, resolve_feature, is_same)
+    return x
+
+
+def run_bridge(x, **overrides):
+    return run(x, x.returned, native_bridge=overrides.pop('native_bridge', x.bridge), **overrides)
+
+
+def assert_no_feature_query(x):
+    assert all(interface == 'IRefPlane' for _, interface in x.query_calls)
+
+
+def test_explicit_bridge_accepts_distinct_native_wrappers_only_after_both_current_roundtrips(bridged_birth):
+    x = bridged_birth; diagnostic = {}
+    assert len({id(raw.canonical) for raw in (x.returned, x.feature, x.specific)}) == 3
+    result = run_bridge(x, diagnostic=diagnostic)
+    assert result.feature is x.feature and result.feature_canonical is x.feature.canonical
+    assert result.evidence['interface_path'] == 'returned_native_plane_pid_v1'
+    assert result.evidence['native_plane_equality'] == dict(pid_hex=x.returned.pid.hex(),
+        native_is_same=1, exact_current_feature_roundtrip=True)
+    assert [call[0] for call in x.bridge_calls] == ['pid', 'pid', 'pid', 'same', 'resolve', 'pid'] * 2
+    assert [raw for raw, _ in x.query_calls] == [x.returned, x.specific] * 2
+    assert_no_feature_query(x)
+    assert diagnostic['binding_confirmed'] is True and diagnostic['raw_equals_current_feature'] is False
+    assert result.evidence['accepted'] is result.evidence['native_acceptance'] is result.evidence['cleanup_authorized'] is False
+
+
+@pytest.mark.parametrize('raw_name', ['returned', 'feature', 'specific'])
+@pytest.mark.parametrize('bad_pid', [b'', None, bytearray(b'actual-plane-pid'), 'actual-plane-pid', b'foreign'])
+def test_bridge_requires_exact_nonempty_bytes_from_every_actual_wrapper(bridged_birth, raw_name, bad_pid):
+    x = bridged_birth; getattr(x, raw_name).pid = bad_pid; diagnostic = {}
+    with pytest.raises(ValueError, match='same nonempty actual native PID bytes'):
+        run_bridge(x, diagnostic=diagnostic)
+    assert diagnostic['phase'] == 'native_PID_comparison' and diagnostic['accepted'] is False
+    assert [call[0] for call in x.bridge_calls] == ['pid'] * 3
+    assert_no_feature_query(x)
+
+
+@pytest.mark.parametrize('resolved', ['none', 'foreign', 'old', 'wrong_pid', 'empty_pid'])
+def test_bridge_pid_resolver_cannot_adopt_unrelated_or_nonroundtripping_feature(bridged_birth, resolved):
+    x = bridged_birth
+    target = {'none': None, 'foreign': NS(canonical=object(), pid=x.feature.pid), 'old': x.original[0],
+        'wrong_pid': NS(canonical=x.feature.canonical, pid=b'wrong'),
+        'empty_pid': NS(canonical=x.feature.canonical, pid=b'')}[resolved]
+    x.bridge = replace(x.bridge, resolve_feature=lambda pid: target)
+    with pytest.raises(ValueError, match='resolve the exact current new feature'): run_bridge(x)
+    assert_no_feature_query(x)
+
+
+@pytest.mark.parametrize('same', [0, 2, True, False, None, 1.0, '1'])
+def test_bridge_requires_native_integer_swobjectsame_without_truthiness_or_fallback(bridged_birth, same):
+    x = bridged_birth; diagnostic = {}
+    x.bridge = replace(x.bridge, is_same=lambda *args: same)
+    with pytest.raises(ValueError, match='swObjectSame=1'): run_bridge(x, diagnostic=diagnostic)
+    assert diagnostic['native_same_code'] == same and diagnostic['native_same_type'] == type(same).__name__
+    assert not any(call[0] == 'resolve' for call in x.bridge_calls)
+    assert_no_feature_query(x)
+
+
+@pytest.mark.parametrize('malformed', ['object', 'duck', 'persistent_id', 'resolve_feature', 'is_same'])
+def test_malformed_explicit_bridge_refuses_before_any_query_or_native_callback(bridged_birth, malformed):
+    x = bridged_birth
+    bridge = object() if malformed == 'object' else (NS(**vars(x.bridge)) if malformed == 'duck'
+        else replace(x.bridge, **{malformed: None}))
+    with pytest.raises(ValueError, match='Complete native plane bridge'): run_bridge(x, native_bridge=bridge)
+    assert x.query_calls == x.bridge_calls == []
+
+
+@pytest.mark.parametrize('boundary', ['returned', 'specific'])
+@pytest.mark.parametrize('result', ['none', 'foreign'])
+def test_bridge_plane_queries_must_preserve_each_wrapper_canonical_before_pid_reads(bridged_birth, boundary, result):
+    x = bridged_birth
+    def query(raw, interface):
+        if raw is (x.returned if boundary == 'returned' else x.specific):
+            return None if result == 'none' else NS(canonical=object())
+        return raw
+    x.query_fault = query
+    with pytest.raises(ValueError, match='preserve its own canonical identity'): run_bridge(x)
+    assert x.bridge_calls == []
+    assert_no_feature_query(x)
+
+
+def test_bridge_missing_current_specific_interface_refuses_before_pid_reads(bridged_birth):
+    x = bridged_birth; x.feature.specific = None
+    with pytest.raises(ValueError, match='specific interface required'): run_bridge(x)
+    assert x.bridge_calls == []
+    assert_no_feature_query(x)
+
+
+@pytest.mark.parametrize('boundary', ['query', 'specific', 'persistent_id', 'is_same', 'resolve_feature'])
+def test_bridge_callback_exceptions_propagate_exactly_without_any_other_binding_path(bridged_birth, boundary):
+    x = bridged_birth; error = QueryFailure(E_NOINTERFACE)
+    def fail(*args): raise error
+    if boundary == 'query': x.query_fault = fail
+    elif boundary == 'specific': x.feature.GetSpecificFeature2 = fail
+    else: x.bridge = replace(x.bridge, **{boundary: fail})
+    with pytest.raises(QueryFailure) as caught: run_bridge(x)
+    assert caught.value is error
+    assert_no_feature_query(x)
+
+
+@pytest.mark.parametrize('change', ['all_pids', 'same', 'resolved', 'specific_pid', 'raw_canonical',
+    'feature_canonical', 'old_canonical', 'old_order', 'extra_addition'])
+def test_bridge_rechecks_closing_pid_equality_resolution_and_complete_original_census(bridged_birth, change):
+    x = bridged_birth; count = 0; active = x.bridge
+    def persistent_id(raw):
+        nonlocal count
+        count += 1
+        value = active.persistent_id(raw)
+        if count == 4:
+            if change == 'all_pids': x.returned.pid = x.feature.pid = x.specific.pid = b'changed-together'
+            elif change == 'specific_pid': x.specific.pid = b'changed-specific'
+            elif change == 'raw_canonical': x.returned.canonical = object()
+            elif change == 'feature_canonical': x.feature.canonical = object()
+            elif change == 'old_canonical': x.original[0].canonical = object()
+            elif change == 'old_order': x.current[:] = [x.original[1], x.feature, x.original[0]]
+            elif change == 'extra_addition': x.current.append(NS(canonical=object()))
+        return value
+    x.bridge = NativePlaneBridge(persistent_id,
+        lambda pid: None if change == 'resolved' and count >= 4 else active.resolve_feature(pid),
+        lambda left, right: 2 if change == 'same' and count >= 4 else active.is_same(left, right))
+    with pytest.raises(ValueError): run_bridge(x)
+    assert_no_feature_query(x)
+
+
+@pytest.mark.parametrize('boundary', ['second_same', 'second_resolve', 'final_pid'])
+@pytest.mark.parametrize('change', ['old_canonical', 'old_order'])
+def test_bridge_final_census_rejects_original_changes_inside_second_native_read_boundary(bridged_birth, boundary, change):
+    x = bridged_birth; active = x.bridge; counts = {'pid': 0, 'same': 0, 'resolve': 0}
+    def mutate():
+        if change == 'old_canonical': x.original[0].canonical = object()
+        else: x.current[:] = [x.original[1], x.feature, x.original[0]]
+    def persistent_id(raw):
+        counts['pid'] += 1
+        value = active.persistent_id(raw)
+        if boundary == 'final_pid' and counts['pid'] == 8: mutate()
+        return value
+    def is_same(left, right):
+        counts['same'] += 1
+        if boundary == 'second_same' and counts['same'] == 2: mutate()
+        return active.is_same(left, right)
+    def resolve_feature(pid):
+        counts['resolve'] += 1
+        if boundary == 'second_resolve' and counts['resolve'] == 2: mutate()
+        return active.resolve_feature(pid)
+    x.bridge = NativePlaneBridge(persistent_id, resolve_feature, is_same); diagnostic = {}
+    with pytest.raises(ValueError, match='original retained feature|Original complete feature order'):
+        run_bridge(x, diagnostic=diagnostic)
+    assert counts == {'pid': 8, 'same': 2, 'resolve': 2}
+    assert diagnostic['accepted'] is False and 'binding_confirmed' not in diagnostic
+    assert_no_feature_query(x)
+
+
+@pytest.mark.parametrize('fault', ['missing_original', 'duplicate_original', 'old_order', 'wrong_kind'])
+def test_explicit_bridge_does_not_weaken_initial_complete_feature_census(bridged_birth, fault):
+    x = bridged_birth
+    if fault == 'missing_original': x.current.pop()
+    elif fault == 'duplicate_original': x.current[-1] = x.original[0]
+    elif fault == 'old_order': x.current[:] = [x.original[1], x.feature, x.original[0]]
+    else: x.feature.kind = 'Boss'
+    with pytest.raises(ValueError): run_bridge(x)
+    assert x.query_calls == x.bridge_calls == []

@@ -96,7 +96,7 @@ full baseline/CIPFalse/non-STL восстановлены, unknown SQL неиз�
 Это ошибка вспомогательного probe, не отказ preview/delete. Исходный failed
 отчёт сохранён. Отдельная собственная cleanup завершилась terminal:
 own_cleanup_verified/baseline_restored=True, CIPFalse и non-STL восстановлены.
-Новая native-проверка пока не запускалась.
+Последующие короткие native-пробы описаны ниже отдельно.
 
 Подготовка preview/delete продолжается без CAD-вызовов: raw returned plane
 удерживается до returned journal I/O; binder сохраняет отдельные scalar
@@ -111,6 +111,22 @@ exit0, basetemp вне work. Новые проверки используют ar
 SQLite/JobRunner; COM не вызывается. Предыдущий full10307 относится к9a98447,
 новую диагностику не включает. Итоговый full нового кандидата/native остаются
 отдельными обязательными gates; wheel dev96 и публичный каталог не изменены.
+
+Короткие пробы2–5 на точном dev96 выполнены последовательно: QI(IFeature)
+сохраняет raw canonical, но не предоставляет работающий feature dispatch;
+raw/current-specific/new feature canonicals различаются. Probe4 подтвердил
+одинаковые непустые PID трёх объектов и native IsSame=int1. Probe5 подтвердил
+новый explicit native bridge на обеих границах PID/IsSame/current roundtrip;
+full original/current census23→24. Own cleanup/full baseline и non-STL
+подтверждены; исходный probe2 failed сохранён с отдельной cleanup. Это actual
+native diagnostic compatibility, не N5/public acceptance. Подготовка N5
+явно выбирает этот путь; default strict canonical binder сохранён.
+[Факты и точные SHA](B2_PLANE_RETURN_COMPATIBILITY.md).
+Итоговые bridge/fixture/driver tests:194 pure passed /31,73 с; final-census
+проверяет изменение original/current membership внутри closing native reads.
+Installed preflight без CAD подтвердил accepted positive SQL/11 original
+helpers и31 helpers следующего N5. Full нового source-кандидата и конечный
+N5 остаются обязательными; новые native-записи ещё не запускались.
 
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала

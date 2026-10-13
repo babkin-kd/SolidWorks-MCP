@@ -16,7 +16,7 @@ from solidworks_mcp.constants import SW_REF_PLANE_DISTANCE
 from solidworks_mcp.features import russian_name
 from solidworks_mcp.jobs import _json
 from solidworks_mcp.rectangle_snapshot import BASE, validated_rectangle_snapshot
-from verifier_b2_plane_birth import OriginalFeature,bind_returned_plane
+from verifier_b2_plane_birth import OriginalFeature,NativePlaneBridge,bind_returned_plane
 
 
 SCOPE='owned_b2_impact_fixture_preparation_v1'
@@ -256,7 +256,9 @@ no subsequent cleanup/getter/mutation is dispatched by this helper.
         require(plane is not None,'Normally returned plane handle is required; effects remain unconfirmed.')
         birth=bind_returned_plane(plane,
             [OriginalFeature(obj,canonical) for obj,canonical in zip(original_members,original_identities)],
-            a.features(b.model),self._query,self._wrap,a.identity,diagnostic=self.plane_birth_diagnostic)
+            a.features(b.model),self._query,self._wrap,a.identity,diagnostic=self.plane_birth_diagnostic,
+            native_bridge=NativePlaneBridge(lambda obj:a.persistent_id(b.model,obj),
+                lambda pid:a.resolve_persistent_id(b.model,pid,'feature'),a._sw.IsSame))
         created=birth.feature
         self.created_plane=created;self.created_plane_identity=birth.feature_canonical
         # Only a normally returned insertion and durable acknowledgement permit

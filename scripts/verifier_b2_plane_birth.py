@@ -22,12 +22,26 @@ class RetainedPlaneBirth:
     evidence: dict
 
 
+@dataclass(frozen=True)
+class NativePlaneBridge:
+    """Explicit owning-STA native callbacks, not a cached equality assertion.
+
+GetPersistReference3(obj), current feature PID resolver, ISldWorks.IsSame(left,
+right). SW2023 can return distinct IUnknown wrappers for the same native plane.
+Only exact nonempty PID bytes plus native swObjectSame=1 establish this path.
+https://help.solidworks.com/2021/English/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.ISldWorks~IsSame.html
+"""
+    persistent_id: object
+    resolve_feature: object
+    is_same: object
+
+
 def require(condition, message):
     if not condition:
         raise ValueError(message)
 
 
-def bind_returned_plane(returned, originals, current_features, query, wrap, identity, *, diagnostic=None):
+def bind_returned_plane(returned, originals, current_features, query, wrap, identity, *, diagnostic=None, native_bridge=None):
     """Resolve only the normally returned raw object, never a guessed tree row.
 
 query(raw, 'IFeature'|'IRefPlane') explicitly QueryInterfaces. Only an exact
@@ -43,7 +57,13 @@ GetSpecificFeature2 interface may differ after normally returned rebuild.
 diagnostic, if provided, is a caller-owned plain dict of scalar comparisons.
 It preserves partial observations on failure without additional native getters,
 fallbacks, acceptance or cleanup authority. The owner persists it separately.
+native_bridge explicitly chooses a native IRefPlane/PID/IsSame path instead
+of assuming that QI(IFeature) produces a feature dispatch. It never falls back
+after another path fails. All three callbacks must be actual current STA reads.
 """
+    require(native_bridge is None or (isinstance(native_bridge, NativePlaneBridge)
+            and all(callable(callback) for callback in (native_bridge.persistent_id,
+                native_bridge.resolve_feature, native_bridge.is_same))), 'Complete native plane bridge required.')
     require(diagnostic is None or type(diagnostic) is dict, 'Plain owner diagnostic dict required.')
     if diagnostic is not None:
         diagnostic.clear()
@@ -85,6 +105,26 @@ fallbacks, acceptance or cleanup authority. The owner persists it separately.
 
     feature, feature_canonical = census()
     note(phase='feature_query', raw_equals_current_feature=raw_canonical == feature_canonical)
+    if native_bridge is not None:
+        evidence = _bind_native_specific(returned, raw_canonical, feature, feature_canonical,
+                                         query, identity, native_bridge, note)
+        closing, closing_canonical = census()
+        require(closing_canonical == feature_canonical and identity(feature) == feature_canonical
+                and identity(returned) == raw_canonical, 'Original returned/current feature changed during native binding.')
+        closing_evidence = _bind_native_specific(returned, raw_canonical, closing, closing_canonical,
+                                                 query, identity, native_bridge, note)
+        require(evidence == closing_evidence, 'Native plane PID/equality changed across binding boundaries.')
+        ending, ending_canonical = census()
+        require(ending_canonical == feature_canonical and identity(ending) == feature_canonical
+                and identity(returned) == raw_canonical,
+                'Complete original/current membership changed during closing native bridge reads.')
+        note(phase='bound', interface_path='returned_native_plane_pid_v1', binding_confirmed=True)
+        return RetainedPlaneBirth(feature, feature_canonical, dict(scope='normally_returned_plane_birth_binding_v1',
+            interface_path='returned_native_plane_pid_v1', original_feature_count=len(originals),
+            current_feature_count=len(current_features), native_plane_equality=evidence,
+            accepted=False, native_acceptance=False, cleanup_authorized=False,
+            open_gates=['actual_owner_complete_census_admission_and_transition_watch',
+                        'current_PID_parent_child_and_full_fixture_postconditions']))
     try:
         queried = query(returned, 'IFeature')
     except Exception as error:
@@ -127,3 +167,31 @@ fallbacks, acceptance or cleanup authority. The owner persists it separately.
         accepted=False, native_acceptance=False, cleanup_authorized=False,
         open_gates=['actual_owner_complete_census_admission_and_transition_watch',
                     'current_PID_parent_child_and_full_fixture_postconditions']))
+
+
+def _bind_native_specific(returned, raw_canonical, feature, feature_canonical, query, identity, bridge, note):
+    """No naming, geometry, IDs or enumeration-position address adoption."""
+    note(phase='native_specific_query')
+    plane = query(returned, 'IRefPlane')
+    require(plane is not None and identity(plane) == raw_canonical,
+            'Returned IRefPlane query must preserve its own canonical identity.')
+    raw_specific = feature.GetSpecificFeature2()
+    require(raw_specific is not None, 'Current new plane feature specific interface required.')
+    specific_canonical = identity(raw_specific)
+    specific = query(raw_specific, 'IRefPlane')
+    require(specific is not None and identity(specific) == specific_canonical,
+            'Current specific-plane query must preserve its own canonical identity.')
+    pids = [bridge.persistent_id(obj) for obj in (returned, feature, specific)]
+    note(phase='native_PID_comparison', all_pids_nonempty=all(type(pid) is bytes and bool(pid) for pid in pids),
+         returned_pid_equals_feature=pids[0] == pids[1], returned_pid_equals_specific=pids[0] == pids[2])
+    require(all(type(pid) is bytes and bool(pid) for pid in pids) and pids[0] == pids[1] == pids[2],
+            'Returned/new feature/current specific require the same nonempty actual native PID bytes.')
+    same = bridge.is_same(returned, specific)
+    note(phase='native_equality', native_same_code=same, native_same_type=type(same).__name__)
+    require(type(same) is int and same == 1, 'Native swObjectSame=1 required; bool/unsupported/not-same rejected.')
+    resolved = bridge.resolve_feature(pids[0])
+    require(resolved is not None and identity(resolved) == feature_canonical
+            and bridge.persistent_id(resolved) == pids[0], 'Returned plane PID must resolve the exact current new feature.')
+    require(identity(returned) == raw_canonical and identity(feature) == feature_canonical
+            and identity(specific) == specific_canonical, 'Retained native plane/feature changed during bridge reads.')
+    return dict(pid_hex=pids[0].hex(), native_is_same=1, exact_current_feature_roundtrip=True)

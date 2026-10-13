@@ -52,6 +52,7 @@ def native_case(fixture,sketch_proof,b2_private_dir):
     receipt.borrowed_sketch_snapshot=deepcopy(x.binding.baseline_target_snapshot['clone_state']['sketch'])
     class Application:
         identity=object()
+        IsSame=staticmethod(a._sw.IsSame)
         @property
         def CommandInProgress(self):return x.busy
         @CommandInProgress.setter
@@ -180,15 +181,17 @@ def test_neighbor_projection_keeps_all_current_added_data_and_drops_only_declare
 
 def test_terminal_unknown_setup_persists_partial_comparisons_without_dispatching_preview_delete(native_case):
     x=native_case
-    x.helper.query=lambda raw,interface:x.raw_plane
+    x.sw.IsSame=lambda left,right:2
     hook=x.make_hook()
     with pytest.raises(ValueError,match='setup terminal'):
         hook.retire(x.sw,None,x.binding.model,[x.binding.model],x.owned,lambda models:None)
     report=hook.report
     diagnostic=report['fixture_preparation_diagnostic']
     assert diagnostic['returned_plane_retained'] is True
-    assert diagnostic['plane_birth_diagnostic']['queried_feature_equals_current_feature'] is True
-    assert diagnostic['plane_birth_diagnostic']['raw_equals_queried_feature'] is False
+    assert diagnostic['plane_birth_diagnostic']['returned_pid_equals_feature'] is True
+    assert diagnostic['plane_birth_diagnostic']['returned_pid_equals_specific'] is True
+    assert diagnostic['plane_birth_diagnostic']['native_same_code']==2
+    assert diagnostic['plane_birth_diagnostic']['phase']=='native_equality'
     assert diagnostic['accepted'] is diagnostic['deletion_authorized'] is False
     setup=report['fixture_setup_job']
     assert setup['status']=='unknown' and setup['mutation']['phase']=='unresolved'
