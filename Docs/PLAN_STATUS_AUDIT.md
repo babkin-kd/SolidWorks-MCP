@@ -44,15 +44,18 @@ deselected /470,01 с**, normal exit0. Source/tests не менялись в э�
 Fresh N5 child-plane-4 выполняется после own cleanup и короткой native-пробы:
 exact dev96/accepted positive gate подтверждены,32 helper hashes зафиксированы,
 начальная phase fixture_creation. Source full принят; terminal native gate
-ещё pending, текущая phase sketch_job.32 helper files текущего native не
+ещё pending, последняя наблюдавшаяся phase extrusion_job.32 helper files текущего native не
 меняются; нового push нет.
 
 Независимый source-блок B3 probe подготовлен в двух новых файлах:
 standalone original-owner setup/maintenance driver и pure tests. Root combined
-**187 pure/1,20 с** passed, actual source setup с Owner/NativeWatch classes,
+**192 pure/1,12 с** passed после исправления shutdown, actual source setup с Owner/NativeWatch classes,
 artificial CAD getters. ABA через pending journal/recheck/persist запрещает
 CloseDoc/guard restore; normal own close events допускаются на следующей
-границе. [Область и запуск](B3_PART_SETUP_PROBE.md). Actual native not_run,
+границе. После baseline сохраняется maintenance_complete_owner_held; terminal
+публикуется только после normal returns application sink, adapter и STA.
+Отказ shutdown удерживает pending шаг без повтора очистки.
+[Область и запуск](B3_PART_SETUP_PROBE.md). Actual native not_run,
 all13 B3 groups открыты; этот helper не входит в32 frozen N5 files или
 прежний full11104. Root остаётся единственным COM-владельцем.
 

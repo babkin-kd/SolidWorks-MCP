@@ -387,6 +387,8 @@ def test_same_owner_normal_cleanup_checks_baseline_and_never_gets_retired_target
     assert value.report['own_cleanup_verified'] is value.report['baseline_restored'] is True
     assert value.report['accepted'] is value.report['native_acceptance'] is value.report['sdk_ready'] is False
     assert value.report['maintenance_pending'] is None
+    assert value.report['phase'] == 'maintenance_complete_owner_held'
+    assert value.report['retained_process'] is True
     assert [row[2] for row in value.rows] == ['pending','returned']*4
     assert [row[3]['step_index'] for row in value.rows] == [1,1,2,2,3,3,4,4]
     assert [label for label, _ in value.owner.returned_reads if label.startswith('maintenance:')] == [
@@ -554,6 +556,76 @@ def test_event_race_before_guard_restore_keeps_own_guard_held(maintenance_owner)
     assert value.report['native_calls_live'] is False
     assert value.report['own_cleanup_verified'] is False
     assert not any(label == 'maintenance:restore_own_guard' for label, _ in value.owner.returned_reads)
+
+
+def test_terminal_publication_waits_for_original_sink_adapter_and_sta(maintenance_owner):
+    value = maintenance_owner
+    published = []
+    value.persist = lambda: published.append(deepcopy(value.report))
+    maintenance(value)
+    assert all(row.get('phase') != 'terminal' and row.get('retained_process', True) is True for row in published)
+    returned = []
+    def callback(label):
+        def run():
+            assert not any(row.get('phase') == 'terminal' for row in published)
+            assert value.report['retained_process'] is True
+            assert value.report['shutdown_complete'] is False
+            returned.append(label)
+            return 'actual artificial return '+label
+        return run
+    value.owner.watch.sink = NS(close=callback('sink'))
+    value.owner.adapter.close = callback('adapter')
+    probe.shutdown_original_owner(value.owner, callback('STA'), value.report, value.persist)
+    assert returned == ['sink', 'adapter', 'STA']
+    assert published[-1]['phase'] == 'terminal' and published[-1]['retained_process'] is False
+    assert published[-1]['shutdown_complete'] is True
+    assert [row.get('phase') for row in published].count('terminal') == 1
+    assert [row for row in value.owner.returned_reads if row[0].startswith('shutdown:')] == [
+        ('shutdown:application_sink','actual artificial return sink'),
+        ('shutdown:adapter','actual artificial return adapter'),
+        ('shutdown:STA','actual artificial return STA')]
+    assert value.report['accepted'] is value.report['native_acceptance'] is value.report['sdk_ready'] is False
+
+
+@pytest.mark.parametrize('failure', ['sink', 'adapter', 'STA'])
+def test_shutdown_failure_keeps_held_outcome_and_never_repeats_cleanup(maintenance_owner, failure):
+    value = maintenance_owner
+    maintenance(value)
+    close_count = len(value.calls)
+    published, entered = [], []
+    value.persist = lambda: published.append(deepcopy(value.report))
+    def callback(label):
+        def run():
+            entered.append(label)
+            if label == failure: raise RuntimeError('artificial shutdown outcome unknown')
+            return None
+        return run
+    value.owner.watch.sink = NS(close=callback('sink'))
+    value.owner.adapter.close = callback('adapter')
+    sta = callback('STA')
+    with pytest.raises(RuntimeError): probe.shutdown_original_owner(value.owner, sta, value.report, value.persist)
+    order = ['sink','adapter','STA']
+    assert entered == order[:order.index(failure)+1]
+    assert all(row['phase'] != 'terminal' and row['retained_process'] is True for row in published)
+    assert value.report['phase'] == 'shutdown_failed_owner_held'
+    assert value.report['shutdown_complete'] is False and value.report['native_calls_live'] is False
+    assert value.report['shutdown_pending'] == {
+        'sink':'shutdown:application_sink', 'adapter':'shutdown:adapter', 'STA':'shutdown:STA'}[failure]
+    assert len(value.report['shutdown_returns']) == order.index(failure)
+    assert value.report['baseline_restored'] is value.report['own_cleanup_verified'] is True
+    entered_before = entered[:]
+    with pytest.raises(ValueError): probe.shutdown_original_owner(value.owner, sta, value.report, value.persist)
+    with pytest.raises(ValueError, match='One fresh maintenance attempt'): maintenance(value)
+    assert entered == entered_before and len(value.calls) == close_count
+
+
+def test_shutdown_is_not_admitted_before_maintenance_baseline_proof(maintenance_owner):
+    value = maintenance_owner
+    value.report['phase'] = 'probe_complete_guard_held'
+    with pytest.raises(ValueError):
+        probe.shutdown_original_owner(value.owner, lambda: pytest.fail('premature STA release'),
+                                      value.report, lambda: pytest.fail('premature terminal report'))
+    assert value.calls == [] and 'shutdown_attempted' not in value.report
 
 
 def test_original_probe_owner_drives_actual_source_setup_with_normal_birth_events(harness):

@@ -39,12 +39,18 @@ pending journal, current roster, target recheck и последний persist. A
 следующей opening boundary. Raw return сохраняется до ack, survivors проверяются
 после каждого закрытия. Повтор maintenance запрещён даже после отказа.
 
-`terminal` требует пустые original document/window rosters, ActiveDoc=None,
-нормально восстановленный own CIP и исходные application context/non-STL prefs.
+После пустых original document/window rosters, ActiveDoc=None, нормально
+восстановленного own CIP и исходных application context/non-STL prefs остаётся
+`maintenance_complete_owner_held`. Затем в исходном STA последовательно
+возвращаются application sink.close, adapter.close и CoUninitialize. Только
+после всех трёх normal returns публикуются `terminal`, `shutdown_complete=true`
+и `retained_process=false`. Отказ удерживает `shutdown_failed_owner_held` с
+точным pending шагом; повтор shutdown/maintenance запрещён.
 Это maintenance baseline указанной пустой сессии; весь B3 whole-session oracle
 и native-приёмка этим не заменяются. STL по-прежнему отложен.
 
-Проверки source: agent85 pure/0,35 с; root combined **187 pure passed /1,20 с**,
+Проверки source: исходный root combined187/1,20 с; после исправления shutdown
+root combined **192 pure passed /1,12 с**,
 normal exit0, внешний basetemp. Реальная source-оркестрация вызвана с actual
 Owner/NativeWatch classes, API-shaped artificial geometry и original raw births;
 tests на ABA/journal loss/unknown запрещают повтор и CloseDoc. COM/CAD не

@@ -392,8 +392,44 @@ def maintain_original_owner(owner, wrap, preferences, recorder, report, persist)
             and owner.read('maintenance_restored_context', adapter.native_close_application_context) == setup.baseline.context,
             'Normal guard return and complete empty original baseline must be proven.')
     assert_non_stl_preferences(preferences, setup.baseline.preferences, report, 'final_preferences')
-    report.update(phase='terminal', baseline_restored=True, own_cleanup_verified=True,
-                  retained_process=False, deferred_stl_verified=False)
+    report.update(phase='maintenance_complete_owner_held', baseline_restored=True, own_cleanup_verified=True,
+                  retained_process=True, deferred_stl_verified=False)
+    persist()
+
+
+def shutdown_original_owner(owner, co_uninitialize, report, persist):
+    """Publish terminal only after original sink, adapter and STA normally return.
+
+Baseline proof alone does not retire the live owner. A shutdown exception
+retains its pending step and forbids a second shutdown/maintenance attempt.
+"""
+    require(owner.thread_id == threading.get_ident() and owner.process_id == os.getpid()
+            and report['phase'] == 'maintenance_complete_owner_held'
+            and report['baseline_restored'] is True and report['own_cleanup_verified'] is True
+            and report['retained_process'] is True and report.get('shutdown_attempted', False) is False
+            and report.get('maintenance_pending') is None and report.get('maintenance_journal_lost', False) is False
+            and owner.pending_read is None and not owner.halted,
+            'Fresh original owner after completed maintenance proof required for shutdown.')
+    report.update(shutdown_attempted=True, shutdown_complete=False, shutdown_returns=[])
+    calls = (('shutdown:application_sink', owner.watch.sink.close),
+             ('shutdown:adapter', owner.adapter.close),
+             ('shutdown:STA', co_uninitialize))
+    for label, callback in calls:
+        report.update(phase='shutdown_owner_held', shutdown_pending=label,
+                      native_calls_live=True, retained_process=True)
+        persist()
+        try:
+            value = callback()
+            owner.returned_reads.append((label, value))
+        except BaseException as error:
+            report.update(phase='shutdown_failed_owner_held', native_calls_live=False,
+                          shutdown_error_type=type(error).__name__, shutdown_error=str(error))
+            persist()
+            raise
+        report['shutdown_returns'].append(label)
+        report.update(shutdown_pending=None, native_calls_live=False)
+        persist()
+    report.update(phase='terminal', retained_process=False, shutdown_complete=True)
     persist()
 
 
@@ -492,13 +528,13 @@ def run_native(state, template, report):
                         journal.flush(); os.fsync(journal.fileno())
                     maintain_original_owner(owner, wrap, lambda: application_preferences(adapter._sw),
                         maintenance_recorder, report, lambda: write_json(report_path, report))
-                owner.watch.sink.close()
-                adapter.close()
-                pythoncom.CoUninitialize()
+                shutdown_original_owner(owner, pythoncom.CoUninitialize, report,
+                                        lambda: write_json(report_path, report))
                 print(json.dumps(dict(phase='terminal', own_cleanup_verified=True, accepted=False)), flush=True)
                 return
             except BaseException as error:
-                report.update(phase='maintenance_failed_owner_held', maintenance_error_type=type(error).__name__,
+                report.update(phase=('shutdown_failed_owner_held' if report.get('shutdown_attempted')
+                                    else 'maintenance_failed_owner_held'), maintenance_error_type=type(error).__name__,
                               maintenance_error=str(error), retained_process=True)
                 write_json(report_path, report)
         time.sleep(.5)

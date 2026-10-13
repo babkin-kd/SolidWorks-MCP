@@ -19,7 +19,10 @@ sketch ID, оставшиеся width/height и отсутствие тела п
 native-приёмки. В каталоге зарегистрированы `feature_prepare_leaf_deletion`
 и `feature_delete_leaf` (83 tools/27 mutations). Dev95 содержит прежние81/26
 и не принимает эти последующие изменения. Dev96 установлен, metadata83/27
-подтверждены; actual CAD deletion ещё не принята.
+подтверждены. Guarded internal positive2 принят2/2 на exact dev96: actual
+CAD deletion/SQL committed/replay и собственная очистка подтверждены.
+Отказы/unknown faults1 приняты5/5; N5 и публичная MCP-цепочка ещё открыты.
+[Конечная очередь и доказательства](B2_DEV96_REMAINING.md).
 
 Полное постусловие BASE→SKETCH сочетает reverse extrusion proof и forward
 session comparison: обратный proof отдельно не проверял фактический dirty
