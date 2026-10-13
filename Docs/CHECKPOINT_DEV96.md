@@ -261,3 +261,10 @@ jobs0/mutations0, настоящий `job_not_found` и invalid-filter contract 
 SDK закрыт. Native B4/N6 и telemetry isolation при mutation/restore/hold не
 объявлены пройденными. Последнее наблюдение fault96: `extrusion_job`,57 captures,
 последний running, error отсутствует. Live helper manifest не изменён.
+
+Последующее наблюдение живого fault96 owner: original B1 setup завершён,
+полный leaf baseline прочитан, начат `leaf_stale`; completed cases ещё нет,
+error отсутствует. Это running, не passed. Отдельная source-подготовка B3
+добавила I01 document/feature/dimension/sketch routes и I03/I09/I10; related
+результаты и ограничения указаны в B3_ACCEPTANCE_MAP. Installed wheel и22
+fault helpers неизменны; source-preparation не закрывает native B3 или стадию1.

@@ -300,3 +300,13 @@ classification. Полный original part/neighbor/session и native proof со
 SQLite и искусственный native эскиз. Это завершённая source-подготовка чтений
 I01, но actual original native producers, installed B3 driver и cleanup пока
 открыты; B3/I01 native acceptance не объявлена.
+
+I10 `verifier_b3_instance_point_axis.py` подготовлен для трёх durable reads:
+variant point в explicit frame → trimmed corner √425 мм, cylinder axis gap2 мм
+и пересечение осью с нулевым расстоянием. Current instance/body/face census,
+original PID/canonical, raw total transform, local/root witnesses и actual point
+location сверяются независимыми producer callbacks; для zero допустима actual
+inside либо подтверждённая boundary точка, без выдуманной interference
+классификации. **337 related pure passed /23,89 с**, настоящие point/axis catalogs,
+JobRunner/SQLite/B3Reader и искусственные native getters. Actual native producers,
+installed B3 driver и cleanup открыты; accepted/native/cleanup остаются false.
