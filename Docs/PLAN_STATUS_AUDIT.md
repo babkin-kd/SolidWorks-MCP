@@ -37,6 +37,12 @@ own PID/windows/geometry и закрытые unchanged native watches. Две с
 использует доказанный current body и сохраняет original handle; финальный
 related523 pure/54,38 с принят, full нового source-кандидата ещё предстоит.
 
+Кандидат39eeb8d зафиксирован локально; один full pure запущен без CAD.
+Fresh N5 child-plane-4 выполняется после own cleanup и короткой native-пробы:
+exact dev96/accepted positive gate подтверждены,32 helper hashes зафиксированы,
+начальная phase fixture_creation. До terminal результатов source/native gates
+pending. Только документация меняется во время этих проверок; нового push нет.
+
 **Текущий installed кандидат — dev96:** full pure8427/323 CAD deselected,
 260,01 с; clean artifact и metadata/stdIO83/27 приняты, без CAD в metadata.
 Own-leaf preview/delete domain/runtime/MCP реализованы. Guarded positive2

@@ -46,6 +46,14 @@ raw GetBody→QI canonical. Финальный связанный набор: **
 нового source-кандидата и фактический N5/public остаются gates. Независимый
 тестовый агент работал только с pure-файлом, не подключался к SolidWorks.
 
+Source-кандидат зафиксирован как39eeb8d. Запущен один итоговый full pure;
+executable source/tests зафиксированы до его terminal результата. Отдельный
+fresh N5 child-plane-4 запущен на прежнем exact installed dev96 после
+подтверждённой очистки и короткой пробы. Positive SQL/helper preflight прошёл,
+фиксируются32 helpers. Root единственный COM-владелец; текущая phase
+fixture_creation, terminal acceptance пока нет. Это новый собственный fixture,
+не повтор historical unknown. Пакет и установка dev96 не менялись.
+
 SHA256 частных доказательств:
 
 - N5 child-plane-3 report: `95bf4bae37f12a75a42eef59d5f1fd28d2dac639c573513779824d0e00905ae0`.
