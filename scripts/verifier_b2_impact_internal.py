@@ -7,6 +7,7 @@ The native CLI still must prove wheel provenance and terminal own cleanup.
 from solidworks_mcp.jobs import _json
 from verifier_b2_impact_fixture import require
 from verifier_b2_impact_refusal import preview_refusal, execution_refusal
+from verifier_b2_impact_request_envelope import run_observed_refusal
 from verifier_b2_public_contract import durable_b2_job, verified_b2_job
 from verifier_lifecycle import read_journal
 
@@ -16,7 +17,6 @@ SCOPE = 'b2_impact_internal_refusal_batch_v1'
 
 def run_impact_refusals(leaf, runner, session, base_preparation, *, expected_code, progress=None):
     """Use the exact original registry, real runner and already prepared BASE."""
-    from verifier_b2_impact_request_envelope import run_observed_refusal
     target = session.target
     binding = target.binding
     require(leaf.store is runner.store is target.fixture.ownership.store

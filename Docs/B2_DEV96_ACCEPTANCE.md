@@ -80,6 +80,14 @@ N5 internal batch подготовлен: реальные JobRunner/MutationCoo
 replay. **331 related pure passed /26,56 с**, native N5 ещё не запускался.
 Exact-wheel CLI и terminal fixture cleanup продолжают готовиться.
 
+Current target reference census N5 дополнен всеми engineering feature PID,
+body PID и полным набором current face/edge PID через установленный `_topology`
+getter. Количество bindings должно совпадать с фактически захваченным BREP;
+пропущенная topology не заменяется отсутствующим массивом. **80 related pure
+passed /11,31 с** после этой правки, включая target/internal/session. При отдельном
+запуске выявлена зависимость lazy import от pytest collection; helper dependency
+перенесена в явный module import. Live fault helpers/package не менялись.
+
 Подготовка N5 выполняется без обращения к занятому SolidWorks. Пассивный
 `verifier_b2_impact_refusal.py` связывает failed read-only preview с точным
 request/document/configuration/object, public DTO и actual SQL digest. Проверяет

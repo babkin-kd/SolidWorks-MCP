@@ -22,13 +22,21 @@ def target(fixture):
     x = fixture
     x.c.adapter.sketch_snapshot = lambda model, feature: (deepcopy(x.c.getter_values['sketch']), ())
     x.ancillary_calls = []
+    x.topology_calls = []
+    def topology(adapter, model, body, boundary, references):
+        # Artificial current topology getter; actual installed _topology is the
+        # default in native. This boundary fixture has no full native body API.
+        x.topology_calls.append((body, boundary))
+        references.extend(deepcopy(row) for row in x.c.baseline['references']
+                          if row['kind'] in ('face', 'edge'))
     def ancillary(adapter, model, **current):
         x.ancillary_calls.append(current)
         assert model is x.binding.model and current['body'] is x.c.bodies[0]
         assert len(current['dimensions']) == 3
         return dict(scope='artificial_ancillary_for_target_boundary_test', accepted=False)
     x.collector = B2ImpactTarget(x.helper, x.c.baseline, ancillary=ancillary,
-                                 extrusion=lambda adapter, feature: deepcopy(x.c.getter_values['extrusion']))
+                                 extrusion=lambda adapter, feature: deepcopy(x.c.getter_values['extrusion']),
+                                 topology=topology)
     return x
 
 
@@ -43,6 +51,12 @@ def test_capture_uses_current_context_and_does_not_authorize_any_native_result(t
     assert result['deletion_context']['native_context']['equations']['enumerated_count'] == (kind == 'unused_equation')
     assert result['geometry'] == x.c.baseline['clone_state']['geometry']
     assert len(x.ancillary_calls) == 1 and x.write_calls == writes
+    assert len(x.topology_calls) == 1
+    refs = x.ancillary_calls[0]['references']
+    assert len([row for row in refs if row['kind'] == 'face']) == 6
+    assert len([row for row in refs if row['kind'] == 'edge']) == 12
+    assert len([row for row in refs if row['kind'] == 'body']) == 1
+    assert len([row for row in refs if row['kind'] == 'feature']) == (7 if kind == 'child_plane' else 6)
     assert all(result[key] is False for key in ('accepted', 'native_b2_accepted',
         'cleanup_authorized', 'full_refusal_context_available'))
     result['features'].clear()
@@ -52,7 +66,7 @@ def test_capture_uses_current_context_and_does_not_authorize_any_native_result(t
 
 @pytest.mark.parametrize('fault', ['pending', 'journal', 'extra_feature', 'missing_feature',
     'extra_dimension', 'replaced_dimension', 'different_anchor', 'foreign_body',
-    'geometry_changed', 'plane_transform', 'watch_event', 'ancillary_failure'])
+    'geometry_changed', 'plane_transform', 'watch_event', 'ancillary_failure', 'topology_missing'])
 def test_unsupported_changed_or_pending_target_never_receives_replacement_data(target, fault):
     x = target
     x.helper.add_unused_equation()
@@ -75,6 +89,7 @@ def test_unsupported_changed_or_pending_target_never_receives_replacement_data(t
     elif fault == 'ancillary_failure':
         def fail(*args, **kwargs): raise ValueError('Actual unknown ancillary inventory')
         x.collector.ancillary = fail
+    elif fault == 'topology_missing': x.collector.topology = lambda *args: None
     writes = list(x.write_calls)
     with pytest.raises((FixtureGate, ExecutionFailure, ValueError)):
         x.collector.capture()

@@ -17,13 +17,14 @@ SCOPE = 'b2_impact_current_target_v1'
 
 
 class B2ImpactTarget:
-    def __init__(self, fixture, parent_snapshot, *, ancillary=None, extrusion=None):
+    def __init__(self, fixture, parent_snapshot, *, ancillary=None, extrusion=None, topology=None):
         self.fixture = fixture
         self.binding = fixture.binding
         self.adapter = fixture.adapter
         self._thread = threading.get_ident()
         self.ancillary = ancillary
         self.extrusion = extrusion
+        self.topology = topology
         require(fixture.used is False, 'Retain the original census before fixture preparation.')
         self.parent = validated_rectangle_snapshot(parent_snapshot)
         require(self.parent['clone_state']['profile'] == BASE, 'Original complete BASE required.')
@@ -95,9 +96,10 @@ class B2ImpactTarget:
             require(all(row['suppressed'] is False and row['error_code'] == 0 for row in rows),
                     'Current fixture feature states must remain clean and unsuppressed.')
             references = []
+            from solidworks_mcp.cad_native_first_save_snapshot import FOLDERS, DISPLAY_FEATURES
             for feature in features:
-                if (any(a.identity(feature) == token for token in (b.feature_identity, b.receipt.borrowed_sketch_identity))
-                        or a.identity(feature) == f.created_plane_identity):
+                row = a.feature_summary(feature)
+                if row['feature_type'] not in FOLDERS | DISPLAY_FEATURES:
                     pid = f._pid(feature, 'feature')
                     references.append(dict(kind='feature', role='native_feature:' + pid.hex(), token=pid.hex()))
             bodies = a.bodies(b.model, 'all')
@@ -107,6 +109,16 @@ class B2ImpactTarget:
             geometry = a.dimension_geometry_snapshot(b.model)
             require(_json(geometry) == _json(self.parent['clone_state']['geometry']),
                     'Fixture or refused preview changed original complete BREP.')
+            references.append(dict(kind='body', role='body:0', token=self.body_pid.hex()))
+            topology = self.topology
+            if topology is None:
+                from solidworks_mcp.cad_native_first_save_snapshot import _topology
+                topology = _topology
+            topology(a, b.model, self.body, geometry['bodies'][0], references)
+            boundary = geometry['bodies'][0]
+            require(len([row for row in references if row['kind'] == 'face']) == len(boundary['faces'])
+                    and len([row for row in references if row['kind'] == 'edge']) == len(boundary['edges']),
+                    'Every current geometric face/edge requires its actual PID binding.')
             records = tuple(a.dimensions(b.model, features))
             require(len(records) in ((3, 4) if f.case == 'child_plane' else (3,))
                     and all(sum(a.identity(a.dimension_object(d)) == old for d in records) == 1

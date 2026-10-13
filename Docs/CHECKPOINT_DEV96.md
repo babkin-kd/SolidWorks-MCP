@@ -231,3 +231,11 @@ exact installed wheel и metadata83/origin приняты до CAD. Исполь
 private state/journal, sole native owner root; сейчас `fixture_creation`, error
 отсутствует. Running не считается passed. Подготовка N5 CLI продолжается только
 в исходниках;22 live fault helpers и установленный пакет остаются неизменными.
+
+Последующее чтение работающего fault owner подтвердило `sketch_job`,14 captures,
+последний running, error отсутствует. Параллельная N5 подготовка дополнила
+current reference inventory: все engineering features, body и полный current
+edge/face PID census с roundtrip существующего installed getter. Missing topology
+прерывает capture. **80 related pure passed /11,31 с**; отдельный тестовый запуск
+также обнаружил и устранил зависимость helper import от collection order.
+CAD/пакет/22 frozen fault helpers не затронуты, отдельного push/CI нет.
