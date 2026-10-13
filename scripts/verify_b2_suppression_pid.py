@@ -20,7 +20,8 @@ AUDIT_SHA = '4a050518522a883f80605ad1505c8b09b1118c442fb83fa96453f11ac3005790'
 HELPERS = ('verify_b2_suppression_pid.py', 'verifier_b2_suppression_probe.py',
     'verifier_b2_probe_observer.py', 'verify_wheel_artifact.py',
     'verify_installed_metadata.py', 'verify_native_document_open.py',
-    'verify_export_operations.py', 'verifier_dimension_diagnostics.py')
+    'verify_export_operations.py', 'verifier_dimension_diagnostics.py',
+    'verifier_b2_body_name_restore.py')
 
 
 def require(condition, message):
@@ -126,7 +127,7 @@ def exact_action_binding(observer):
     return current
 
 
-def perform_probe(observer, report, persist, *, validate=None):
+def perform_probe(observer, report, persist, *, validate=None, restore_body_name=None):
     """Four one-shot normal calls; any failure prevents every later mutation."""
     if validate is None:
         from verifier_b2_suppression_probe import validate_probe
@@ -135,10 +136,15 @@ def perform_probe(observer, report, persist, *, validate=None):
     receipt = dict(scope='owned_blind_base_suppression_pid_probe_v1', phase='running',
         native_calls_live=False, owner=owner, observations=[], actions=[], affected_native_ids=[])
     report['probe_receipt'] = receipt
-    def observe(phase):
+    def observe(phase, *, replace_restored=False):
         report.update(phase='observe_' + phase, native_calls_live=True); persist()
         row = observer.observe_phase(phase)['observation']
-        receipt['observations'].append(row)
+        if replace_restored:
+            require(len(receipt['observations']) == 3 and phase == 'restored',
+                    'Only independently recaptured restored phase may replace its retained candidate.')
+            receipt['observations'][-1] = row
+        else:
+            receipt['observations'].append(row)
         report['native_calls_live'] = False; persist()
     observe('before')
     for label, method, arguments in (
@@ -166,7 +172,12 @@ def perform_probe(observer, report, persist, *, validate=None):
             observe('suppressed')
         elif label == 'unsuppress_rebuild':
             observe('restored')
-    before, suppressed, _ = receipt['observations']
+    before, suppressed, restored = receipt['observations']
+    if restore_body_name is not None:
+        if restore_body_name(observer, before, restored, report, persist):
+            report['pre_body_name_restore_observation'] = restored
+            persist()
+            observe('restored', replace_restored=True)
     receipt['affected_native_ids'] = [old['native_id'] for old, new in
         zip(before['feature_summaries'], suppressed['feature_summaries'])
         if old['suppressed'] != new['suppressed']]
@@ -192,6 +203,7 @@ def run_native(state, report, persist):
     from verify_native_document_open import retire_owned, snapshot
     from verifier_dimension_diagnostics import assert_non_stl_preferences
     from verifier_b2_probe_observer import CanonicalOrdinalPool, OwnedSuppressionProbeObserver
+    from verifier_b2_body_name_restore import restore_owned_body_name
     owned, document_receipts, base_receipts = [], [], []
     pool = CanonicalOrdinalPool()
     store = None
@@ -288,7 +300,8 @@ def run_native(state, report, persist):
             owned_fixtures={e.document_id: (receipt.model, receipt.identity)
                 for e, receipt in zip(entries, document_receipts)}, identity_pool=pool,
             read_preferences=application_preferences)
-        perform_probe(observer, report, persist)
+        perform_probe(observer, report, persist, restore_body_name=lambda *args:
+            restore_owned_body_name(*args, release_check=normal_release))
         require(report['native_calls_live'] is False and report['native_normal_completion_verified'] is True,
                 'Root requires normal native completion independently of receipt-only validation.')
         report.update(phase='owned_cleanup', native_calls_live=True); persist()

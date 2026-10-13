@@ -183,3 +183,22 @@ null/foreign/duplicate membership, неверный PID и строгие native
 types. Совместно с существующими plane/feature identity и независимыми B4
 helpers — **236 passed /6,87 с**. В установленный dev94 этот код не входит;
 новый wheel будет собран после доменной реализации и MCP-фасада B2.
+
+Третий native probe выполнил все четыре setter/rebuild нормально и собрал
+все три фазы, но exact restoration gate отказал через327,85 с. Полный diff
+before/restored содержит **ровно одно отличие: `clone_state/body/name`**:
+SolidWorks вернул имя операции вместо исходного имени тела. Геометрия,
+ссылки и остальные поля full oracle совпали. Все guards освобождены,
+pending вызовов нет. Root независимо подтвердил quiescence и ownership,
+закрыл только две контрольные детали и проверил пустой исходный baseline.
+Этот опыт подтверждает API cycle, но не exact restoration и не B2 acceptance.
+
+`verifier_b2_body_name_restore.py` допускает коррекцию только после полного
+независимого наблюдения delta, ограниченного own body/name; полный сосед,
+session, feature canonical census и PID сохраняются. Перед единственной
+записью проверяются текущие metadata, explicit document/configuration,
+единственный current body с original PID и неизменённое наблюдённое имя.
+Pending/returned/readback и освобождение guard записываются. Исходная фаза
+с потерянным именем сохраняется отдельно; итоговая restored phase собирается
+заново из CAD. Artificial integration/отказы: **181 passed /5,26 с**.
+Следующий свежий probe проверит это обязательное постусловие; wheel94 неизменён.

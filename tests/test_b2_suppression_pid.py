@@ -193,3 +193,39 @@ def test_gate_failure_does_not_grant_native_completion_or_cleanup(flow, monkeypa
         driver.perform_probe(flow.instance, flow.report, lambda: None, validate=reject)
     assert len(flow.actions) == 4
     assert 'native_normal_completion_verified' not in flow.report
+
+
+def test_name_correction_retains_original_candidate_and_recaptures_real_restored_phase(flow):
+    original_observe = flow.instance.observe_phase
+    phases = []
+    def observe(phase):
+        phases.append(phase)
+        produced = original_observe(phase)
+        if phase == 'restored' and phases.count('restored') == 1:
+            produced['observation']['full_snapshot']['clone_state']['body']['name'] = 'Основание'
+        return produced
+    flow.instance.observe_phase = observe
+    corrections = []
+    def correct(observer, before, restored, report, persist):
+        corrections.append(deepcopy(restored))
+        assert restored['full_snapshot']['clone_state']['body']['name'] == 'Основание'
+        return True
+    driver.perform_probe(flow.instance,flow.report,lambda: None,
+        validate=gate.validate_probe,restore_body_name=correct)
+    assert phases == ['before','suppressed','restored','restored'] and len(corrections) == 1
+    assert flow.report['pre_body_name_restore_observation'] == corrections[0]
+    assert flow.report['probe_receipt']['observations'][-1] != corrections[0]
+    assert flow.report['receipt_gate']['receipt_validated'] is True
+
+
+def test_name_correction_refusal_prevents_recapture_and_completion(flow):
+    calls = []
+    def refuse(*args):
+        calls.append(True)
+        raise ValueError('Observed delta is outside own body/name scope.')
+    with pytest.raises(ValueError):
+        driver.perform_probe(flow.instance,flow.report,lambda: None,
+            validate=gate.validate_probe,restore_body_name=refuse)
+    assert len(calls) == 1 and len(flow.report['probe_receipt']['actions']) == 4
+    assert 'pre_body_name_restore_observation' not in flow.report
+    assert 'native_normal_completion_verified' not in flow.report
