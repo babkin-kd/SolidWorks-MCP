@@ -12,8 +12,10 @@ source/tests не менялись. [Сводка пакета](CHECKPOINT_C229B
 Это не обновляет native acceptance B2/B3.
 
 Пакетная отправка выполнена одним push771befa. Прямой API подтвердил
-head/base PR15, draft/open/not merged и созданный Checks run38479280563
-in_progress. Итог CI pending; новая CI-сборка не наследует native dev96.
+head/base PR15, draft/open/not merged и созданный Checks run38479280563.
+Run/job115577603207 завершились success: lock/unit/build/install/metadata
+passed; manual-only artifact retention штатно skipped. Новая CI-сборка не
+наследует native dev96; локальное исправление39eeb8d ещё не отправлено.
 Результат текущего N5 остаётся открытым, live COM не прерывался.
 
 Последующий actual N5 child-plane-3 завершился failed через3694,28 с:

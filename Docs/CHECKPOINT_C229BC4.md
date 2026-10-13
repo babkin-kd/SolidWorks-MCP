@@ -58,7 +58,10 @@ Main `3ab795ec9d75e8a0055d41554cd439737b8b82f8` входит в локальну
 `771befaa0190f4ff2543d07ff880caa336f1284a`. Прямой GitHub API подтвердил этот
 head, прежний base и PR15 open/draft/not merged. Создан
 [Checks run38479280563](https://github.com/babkin-kd/SolidWorks-MCP/actions/runs/38479280563):
-in_progress, conclusion ещё отсутствует. Итог CI остаётся pending;
-обязательный `Checks/unit-and-build` сохраняется.
+завершился **success**. Прямой API подтвердил job115577603207
+`unit-and-build`: lock, unit tests, wheel/sdist build, separate installation
+и installed metadata/stdIO прошли. Candidate artifact retention штатно skipped,
+поскольку запуск PR, а не workflow_dispatch; это не пропуск CAD-приёмки.
+Обязательный `Checks/unit-and-build` сохранён.
 CI-сборка не получает native-приёмку установленного dev96 автоматически.
 Текущий CAD-вызов ради отправки пакета не прерывается.
