@@ -11,9 +11,12 @@ helper/report hashes и restored baseline. **B1 принят** на exact dev94;
 independent current session documents0/CommandInProgress=False, процессов нет.
 Точные wheel/Git/source digest и факты — [приёмка B1](B1_DEV94_ACCEPTANCE.md).
 B2–B5 открыты. [Own PID/suppression cycle](B2_PID_COMPATIBILITY.md) подтверждён
-в согласованном non-STL scope; internal resolver/ownership source готовы,
-domain/MCP suppression и preview/delete ещё не реализованы. Новый wheel не
-собирался; native-результат dev94 не принимает последующие source изменения.
+в согласованном non-STL scope. Последний API/intrinsics probe завершён штатно:
+exit0,652,52 с, full baseline и собственная очистка подтверждены. В исходниках
+реализованы retained ownership, full suppressed producer и domain/runtime/MCP
+suppression; новый wheel/native/public gate ещё не выполнен. Preview/delete
+остаётся отдельным остатком B2. Native dev94 не принимает последующие source
+изменения.
 разработка продолжается, пауза отменена последующими указаниями пользователя.
 
 Dev93 positive прошёл, но N5 extrusion restoration остановился на прежнем

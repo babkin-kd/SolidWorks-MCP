@@ -141,9 +141,10 @@ CommandInProgress=False, native процессы отсутствуют. Actual 
 steps подтверждает исправление прежнего cap32; caps44/46 проверены pure.
 [Точная приёмка](Docs/B1_DEV94_ACCEPTANCE.md). Historical dev93 unknown сохранён,
 старые запросы не повторяются. Для B2 подтверждена [совместимость own PID/
-suppression cycle](Docs/B2_PID_COMPATIBILITY.md), готов internal resolver и
-ownership source; далее domain/MCP suppression/delete и итоговая same-wheel
-приёмка. B2–B5 и стадия1 остаются открыты.
+suppression cycle](Docs/B2_PID_COMPATIBILITY.md). В исходниках реализованы
+retained ownership, полный suppressed-снимок и domain/runtime/MCP suppression;
+приёмка нового wheel ещё не выполнена. Далее own-leaf preview/delete и общий
+same-wheel gate B2. B2–B5 и стадия1 остаются открыты.
 
 История кандидата B1 — **dev92**: full pure6686/323 CAD deselected,
 wheel/installed metadata79/25 приняты. Short native bridge/inverses/full baseline

@@ -47,6 +47,7 @@ from .native_document_open_tools_v2 import register_native_document_open_tools
 from .native_first_save_tools_v2 import register_native_first_save_tools
 from .native_part_activation_tools_v2 import register_native_part_activation_tools
 from .rectangle_construction_tools_v2 import register_rectangle_construction_tools
+from .feature_suppression_tools_v2 import register_feature_suppression_tools
 from .sketch_tools_v2 import register_sketch_tools
 from .export_tools_v2 import register_export_tools
 from .jobs import JOURNAL_SCHEMA_VERSION, JobError, JobStore
@@ -130,9 +131,9 @@ def create_app(store: JobStore, runtime: Runtime | None = None, *, timings=None)
                              'pdm': False, 'simulation': False},
             'export_output_configured': runtime.export_output_configured,
             'timing_collection_enabled': bool(timings is not None and timings.config.enabled),
-            'implemented_mutations': ['measurement.mass', 'feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters', 'sheet.create_edge_flange', 'sheet.set_flange_flat_state', 'document.save_native', 'document.close_native', 'document.open_native', 'document.first_save_native', 'document.activate_part_native', 'sketch.create_rectangle', 'part.extrude_rectangle'],
+            'implemented_mutations': ['measurement.mass', 'feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters', 'sheet.create_edge_flange', 'sheet.set_flange_flat_state', 'document.save_native', 'document.close_native', 'document.open_native', 'document.first_save_native', 'document.activate_part_native', 'sketch.create_rectangle', 'part.extrude_rectangle', 'feature.set_suppressed'],
             'mutation_revision_scopes': ['part_mass_selection_measurement_v1', 'part_feature_tree_v1', 'part_dimension_values_v1',
-                                         'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1', 'single_base_circular_through_hole_v1', 'single_base_circular_through_hole_dimension_v1', 'single_base_linear_through_hole_pattern_v1', 'single_base_selected_edge_fillet_v1', 'empty_part_sheet_l_profile_v1', 'single_l_sheet_flat_state_v1', 'single_l_sheet_parameters_v1', 'single_l_sheet_edge_flange_v1', 'single_u_sheet_flat_state_v1', 'native_document_current_file_save_v1', 'native_document_close_clean_v1', 'native_document_open_resolved_v1', 'native_first_save_replace_part_v1', 'native_rectangular_part_activation_v1', 'empty_part_rectangle_sketch_v1', 'closed_rectangle_blind_extrusion_v1'],
+                                         'part_solid_brep_export_v1', 'empty_part_base_rectangle_v1', 'new_empty_part_document_v1', 'part_rectangular_sketch_dimension_v1', 'single_base_rectangular_corner_through_cut_v1', 'empty_part_full_turn_cylinder_revolve_v1', 'single_base_circular_through_hole_v1', 'single_base_circular_through_hole_dimension_v1', 'single_base_linear_through_hole_pattern_v1', 'single_base_selected_edge_fillet_v1', 'empty_part_sheet_l_profile_v1', 'single_l_sheet_flat_state_v1', 'single_l_sheet_parameters_v1', 'single_l_sheet_edge_flange_v1', 'single_u_sheet_flat_state_v1', 'native_document_current_file_save_v1', 'native_document_close_clean_v1', 'native_document_open_resolved_v1', 'native_first_save_replace_part_v1', 'native_rectangular_part_activation_v1', 'empty_part_rectangle_sketch_v1', 'closed_rectangle_blind_extrusion_v1', 'owned_rectangular_blind_base_suppression_v1'],
             'journal_schema_version': JOURNAL_SCHEMA_VERSION,
         })
 
@@ -310,6 +311,7 @@ def create_app(store: JobStore, runtime: Runtime | None = None, *, timings=None)
     register_native_first_save_tools(app, runtime, response, failure)
     register_native_part_activation_tools(app, runtime, response, failure)
     register_rectangle_construction_tools(app, runtime, response, failure)
+    register_feature_suppression_tools(app, runtime, response, failure)
     register_sketch_tools(app, runtime, response, failure)
     register_export_tools(app, runtime, response, failure)
     # Explicit output model keeps the same envelope schema as all public tools.

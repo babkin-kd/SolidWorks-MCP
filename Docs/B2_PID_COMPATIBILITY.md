@@ -11,6 +11,7 @@ wheel и без исходников в `PYTHONPATH`. Это собственн�
 | Второй probe,131,26 с | Suppress normally returned True. Generic resolver отверг исходный feature PID со state2; rebuild/unsuppress не вызывались. Независимое чтение подтвердило raw non-null exact canonical feature и unique original PID membership |
 | Третий probe,327,85 с | Четыре setter/rebuild normally returned True. Full before/restored diff: только имя тела, сброшенное SolidWorks с «Тело основания» на «Основание» |
 | Четвёртый probe,460,60 с | Выполнены цикл и однократная адресная коррекция имени тела. Повторный full native snapshot точно равен исходному. Исторический driver отказал по transient `stl_deviation` в фазе без тела; после возврата исходное значение вернулось |
+| Последний API/intrinsics probe,652,52 с | Driver normal exit0, probe_passed/baseline_restored/own_cleanup_verified=True. Семь actual read-only intrinsic inventories прочитаны; разница эскиза — codec имён размеров, конфигурации — одна строка состояния собственного основания. Новые инструменты этим не принимаются |
 | Отдельный root audit | Raw receipt повторно проверен в ранее согласованном `application_preferences_except_stl_v1`. Все остальные настройки, сосед, UI/session и полный итоговый target совпадают. Original driver report остаётся failed/probe_passed=False |
 | Очистка | После каждого normally returned Python отказа root независимо проверил quiescence, original creation/HWND/PID bindings и освобождённые guards; завершён только известный idle test worker. Собственные детали закрыты без сохранения. Пустая исходная сессия/application и non-STL preferences подтверждены |
 
@@ -36,6 +37,11 @@ closed/replaced document bindings освобождаются только пос
 Связанный итоговый pure набор: **388 passed /12,51 с**. Это source/artificial
 проверки, не установленный новый wheel. Дополнительные связанные существующие
 rectangle façade/journal/budget/contract regressions: **64 passed /6,00 с**.
-Далее: полноценные domain/MCP
-suppression и own-leaf preview/delete, final wheel и обязательная native/MCP
+В исходниках реализованы полный retained DIM/annotation producer, собственный
+suppression domain/executor и два MCP инструмента. Missing native fields
+отвергаются, текущие данные не заполняются из baseline. Старый Parameter('D1')
+в probe не разрешился после русского переименования размера в «Толщина»:
+это не доказательство недоступности actual retained IDimension. Его values,
+tolerances, annotations и view bindings ещё требуют проверки нового wheel.
+Далее: domain pure gates, новый wheel, own-leaf preview/delete и обязательная native/MCP
 приёмка всех шести условий [B2](STAGE_1_BLOCK_ACCEPTANCE.md#s1-b2--размер-имя-подавление-и-удаление).

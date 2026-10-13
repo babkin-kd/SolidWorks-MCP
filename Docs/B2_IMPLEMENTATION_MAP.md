@@ -1,5 +1,13 @@
 # Конечный остаток B2: правки и собственный конечный элемент
 
+**Текущий source checkpoint (13.10.2026):** собственный suppression domain,
+full retained DIM/annotation producer, executor, runtime и два MCP инструмента
+реализованы. Связанные pure и полная приёмка wheel проверяются отдельно;
+native/MCP B2 ещё не принят. Последний compatibility/intrinsics probe dev94
+normal exit0,652,52 с, full baseline/own cleanup подтверждены. Точные границы
+и исторические отказы — [сводка](B2_PID_COMPATIBILITY.md). Own-leaf preview/delete
+остаётся отдельной задачей. Прежние записи ниже сохранены как история подготовки.
+
 Исходный обзор выполнен после source/installed dev93; B1 впоследствии принят
 на точном dev94: [сводка](B1_DEV94_ACCEPTANCE.md). Этот документ не расширяет блок и не объявляет новые инструменты
 реализованными. Нормативные шесть условий: [приёмка B2](STAGE_1_BLOCK_ACCEPTANCE.md#s1-b2--размер-имя-подавление-и-удаление),
