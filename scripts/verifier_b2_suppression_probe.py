@@ -251,13 +251,15 @@ def validate_probe(receipt):
                      'Actual IsSuppressed2 singleton and census must agree.')
             resolver = obs['resolver']
             _require(type(resolver) is dict and resolver == {
-                'input_pid_hex': pid, 'state': 0, 'object_returned': True,
+                'input_pid_hex': pid, 'state': resolver['state'], 'object_returned': True,
                 'roundtrip_pid_hex': pid, 'canonical_identity_token': owner['feature_identity_token'],
                 'native_id': owner['feature_native_id'], 'membership_index': position}
-                and type(resolver['state']) is int and type(resolver['object_returned']) is bool
+                and type(resolver['state']) is int
+                and (resolver['state'] == 0 or expected and resolver['state'] == 2)
+                and type(resolver['object_returned']) is bool
                 and type(resolver['canonical_identity_token']) is int
                 and type(resolver['native_id']) is int and type(resolver['membership_index']) is int,
-                'Normal state-0 exact PID/canonical roundtrip required; no fallback.')
+                'Exact raw PID/canonical roundtrip required; state2 only for suppressed owner.')
             sessions.append(_session(obs['session'], target, cfg, owned_ids))
             _require(any(window.get('document_id') == target and
                 window.get('hwnd') == owner['window_hwnd'] and type(window['hwnd']) is int

@@ -106,7 +106,7 @@ def test_observed_absorbed_sketch_suppression_can_be_in_complete_affected_set(re
 
 @pytest.mark.parametrize('fault', [
     'running', 'pending_native', 'extra_top', 'missing_phase', 'phase_order',
-    'configuration', 'document_identity', 'configuration_identity', 'pid_state2',
+    'configuration', 'document_identity', 'configuration_identity', 'pid_state4',
     'pid_state_bool', 'pid_null', 'pid_roundtrip', 'pid_input', 'pid_missing',
     'canonical_alias', 'getid_alias', 'name_fallback', 'membership',
     'census_duplicate', 'census_missing', 'census_identity', 'census_rename',
@@ -141,7 +141,7 @@ def test_partial_identity_alias_geometry_and_session_drift_fail_closed(receipt, 
     elif fault == 'configuration': obs['configuration'] = 'Другая'
     elif fault == 'document_identity': obs['document_identity_token'] += 1
     elif fault == 'configuration_identity': obs['configuration_identity_token'] += 1
-    elif fault == 'pid_state2': resolver['state'] = 2
+    elif fault == 'pid_state4': resolver['state'] = 4
     elif fault == 'pid_state_bool': resolver['state'] = False
     elif fault == 'pid_null': resolver['object_returned'] = False
     elif fault == 'pid_roundtrip': resolver['roundtrip_pid_hex'] = 'ffff'
@@ -254,3 +254,13 @@ def test_actual_part_mode_requires_explicit_null_drawing_state(receipt, fault):
             mode['unexpected'] = None
     with pytest.raises(ValueError, match='Complete owned dirty'):
         helper.validate_probe(receipt)
+
+
+@pytest.mark.parametrize('phase', ['before', 'suppressed', 'restored'])
+def test_raw_state2_is_confined_to_actual_suppressed_owner(receipt, phase):
+    obs = next(row for row in receipt['observations'] if row['phase'] == phase)
+    obs['resolver']['state'] = 2
+    if phase == 'suppressed':
+        assert helper.validate_probe(receipt)['receipt_validated'] is True
+    else:
+        with pytest.raises(ValueError): helper.validate_probe(receipt)

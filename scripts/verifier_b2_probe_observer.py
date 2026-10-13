@@ -52,6 +52,40 @@ def _detach(value):
     return json.loads(_json(value))
 
 
+def resolve_retained_feature_pid(adapter, model, pid, retained_identity):
+    """Test-owner prototype for native state2, never name/GetID addressing.
+
+    Generic production resolution stays unchanged. Admit only the raw feature
+    itself, exact original PID, retained IUnknown, unique complete membership
+    and an actual suppressed Boolean. Null/deleted/combined states fail closed.
+    """
+    _require(retained_identity is not None and type(pid) is bytes and bool(pid),
+             'Retained owner identity and original PID required.')
+    try:
+        feature = adapter.resolve_persistent_id(model, pid, 'feature')
+    except Exception as error:
+        if getattr(error, 'code', None) != 'object_suppressed':
+            raise
+        raw, state = adapter._extension(model).GetObjectByPersistReference3(
+            adapter._persistent_variant(pid))
+        _require(type(state) is int and state == 2 and raw is not None
+                 and adapter.identity(raw) == retained_identity,
+                 'Suppressed PID requires exact raw retained feature; no null fallback.')
+        candidates = [item for item in adapter.features(model)
+                      if adapter.persistent_id(model, item) == pid]
+        _require(len(candidates) == 1 and adapter.identity(candidates[0]) == retained_identity,
+                 'Original suppressed PID must bind one exact current native member.')
+        feature = candidates[0]
+        suppressed = feature.IsSuppressed2(1, None)
+        _require(type(suppressed) in (tuple, list) and len(suppressed) == 1
+                 and suppressed[0] is True,
+                 'State2 must agree with actual current-configuration suppression.')
+    _require(feature is not None and adapter.identity(feature) == retained_identity
+             and adapter.persistent_id(model, feature) == pid,
+             'Exact retained canonical feature and PID roundtrip required.')
+    return feature
+
+
 class OwnedSuppressionProbeObserver:
     """Observe one phase from exact retained native root-owned bindings.
 
@@ -140,6 +174,9 @@ class OwnedSuppressionProbeObserver:
                  'GetID census hint must agree with the original exact PID member.')
         return features, identities, tokens, rows, position
 
+    def resolve_feature(self):
+        return resolve_retained_feature_pid(self.adapter, self.model, self.pid, self.feature_identity)
+
     def observe_phase(self, phase):
         _require(phase in _gate.PHASES, 'Only before/suppressed/restored observations supported.')
         self._command()
@@ -157,11 +194,12 @@ class OwnedSuppressionProbeObserver:
             features, identities, tokens, rows, position = self._census()
             raw, state = self.adapter._extension(self.model).GetObjectByPersistReference3(
                 self.adapter._persistent_variant(self.pid))
-            _require(type(state) is int and state == 0 and raw is not None,
-                     'Ordinary native feature PID resolver must return state zero and a native object.')
+            _require(type(state) is int and (state == 0 or phase == 'suppressed' and state == 2)
+                     and raw is not None,
+                     'Exact raw feature required; state2 is confined to the suppressed phase.')
             _require(self.adapter.identity(raw) == self.feature_identity,
                      'Raw PID resolution returned another canonical object.')
-            resolved = self.adapter.resolve_persistent_id(self.model, self.pid, 'feature')
+            resolved = self.resolve_feature()
             _require(resolved is not None, 'Normal native resolver returned no feature.')
             resolved_identity = self.adapter.identity(resolved)
             resolved_token = self.pool.ordinal(resolved_identity)

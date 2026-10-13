@@ -155,3 +155,22 @@ validation failure, отсутствие setters, точные HWND/PID/metadata
 пустой исходный baseline/application/preferences подтверждены. Исторический
 отказ не превращён в успешный probe. Следующий свежий запуск остаётся
 проверкой совместимости, не приёмкой B2.
+
+Второй probe: первый actual `SetSuppression2(0,1,None)` нормально вернул True;
+перед rebuild generic installed resolver отверг исходный feature PID со state2.
+Отказ131,26 с; rebuild/unsuppress не выполнены. Root независимым read-only
+наблюдением подтвердил **raw state2 возвращает сам feature**, его canonical
+IUnknown совпадает с единственным текущим членом полного census с исходным
+PID; `IsSuppressed2` возвращает True, body census пуст. Pending actions нет,
+guards освобождены. Own controls закрыты; исходный пустой baseline подтверждён.
+Таким образом, необходимость поддержки suppressed feature PID доказана native,
+а прежнее предположение normal state0 для всех фаз опровергнуто на SW2023 SP2.1.
+
+Подготовлен **test-owner prototype**, не новый installed tool: status2 допустим
+только с raw non-null feature, исходным PID, удерживаемой canonical identity,
+уникальной текущей membership и фактическим suppression True. Null, иной raw
+объект, combined/deleted states и выбор по имени/GetID запрещены. Generic
+production resolver не изменён. Gate разрешает state2 только suppressed phase;
+before/restored по-прежнему требуют state0. Связанные проверки prototype:
+**161 passed /4,50 с**. Следующий probe проверит полный suppress/rebuild/
+unsuppress/rebuild cycle; результат не заменяет приёмку инструментов B2.

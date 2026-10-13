@@ -118,7 +118,7 @@ def exact_action_binding(observer):
             and adapter.identity(adapter.active_document()) == observer.document_identity,
             'Explicit active owned document/configuration changed before native action.')
     observer._census()
-    current = adapter.resolve_persistent_id(observer.model, observer.pid, 'feature')
+    current = observer.resolve_feature()
     require(current is not None and adapter.identity(current) == observer.feature_identity
             and adapter.identity(observer.feature) == observer.feature_identity
             and adapter.persistent_id(observer.model, current) == observer.pid,
@@ -331,7 +331,8 @@ def main():
     started = time.perf_counter()
     report = dict(scope='installed_owned_b2_suppression_pid_compatibility_probe_v1',
         accepted=False, native_b2_accepted=False, full_tool_acceptance=False,
-        probe_passed=False, native_calls_live=False, phase='preflight', owned_documents=[], **evidence)
+        probe_passed=False, native_calls_live=False, phase='preflight', owned_documents=[],
+        feature_resolution_scope='test_owner_retained_feature_pid_state2_prototype_v1', **evidence)
     def persist():
         report['elapsed_seconds'] = time.perf_counter() - started
         (state / 'report.json').write_text(json.dumps(report, ensure_ascii=False, allow_nan=False, indent=2), encoding='utf8')

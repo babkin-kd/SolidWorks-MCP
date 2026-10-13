@@ -242,3 +242,47 @@ def test_input_ownership_is_not_adopted_from_equal_names_or_getid(observer):
     observer.instance.feature_identity = Canonical('foreign_feature_same_name_GetID')
     with pytest.raises(ValueError): observer.instance.observe_phase('before')
     assert all(watch.closed for watch in observer.watches)
+
+
+@pytest.mark.parametrize('fault', [None, 'null', 'state0', 'state4', 'state6', 'bool_state',
+    'raw_alias', 'member_alias', 'duplicate', 'wrong_pid', 'unsuppressed', 'numeric_bool'])
+def test_retained_suppressed_pid_prototype_requires_raw_canonical_member(fault):
+    from solidworks_mcp.jobs import ExecutionFailure
+    model = object()
+    feature = NS(canonical=Canonical('owned'), pid=b'\xaa',
+                 IsSuppressed2=lambda option, names: [True])
+    other = NS(canonical=Canonical('foreign'), pid=b'\xaa')
+    raw, state, members = feature, 2, [feature]
+    if fault == 'null': raw = None
+    elif fault == 'state0': state = 0
+    elif fault == 'state4': state = 4
+    elif fault == 'state6': state = 6
+    elif fault == 'bool_state': state = True
+    elif fault == 'raw_alias': raw = other
+    elif fault == 'member_alias': members = [other]
+    elif fault == 'duplicate': members = [feature, feature]
+    elif fault == 'wrong_pid': feature.pid = b'\xbb'
+    elif fault == 'unsuppressed': feature.IsSuppressed2 = lambda *args: [False]
+    elif fault == 'numeric_bool': feature.IsSuppressed2 = lambda *args: [1]
+    def generic(*args):
+        raise ExecutionFailure('object_suppressed', 'Actual generic resolver refuses state2.')
+    adapter = NS(resolve_persistent_id=generic, identity=lambda item: item.canonical,
+        features=lambda current: members, persistent_id=lambda current, item: item.pid,
+        _persistent_variant=lambda pid: pid,
+        _extension=lambda current: NS(GetObjectByPersistReference3=lambda pid: (raw, state)))
+    if fault is None:
+        assert helper.resolve_retained_feature_pid(adapter, model, b'\xaa', feature.canonical) is feature
+    else:
+        with pytest.raises(ValueError):
+            helper.resolve_retained_feature_pid(adapter, model, b'\xaa', feature.canonical)
+
+
+@pytest.mark.parametrize('code', ['object_deleted', 'object_reference_invalid', 'persistent_reference_mismatch'])
+def test_other_generic_resolution_errors_never_enter_suppressed_prototype(code):
+    from solidworks_mcp.jobs import ExecutionFailure
+    def fail(*args): raise ExecutionFailure(code, code)
+    adapter = NS(resolve_persistent_id=fail,
+        _extension=lambda *args: pytest.fail('No secondary native lookup for another error.'))
+    with pytest.raises(ExecutionFailure) as error:
+        helper.resolve_retained_feature_pid(adapter, object(), b'\xaa', Canonical('held'))
+    assert error.value.code == code
