@@ -11,6 +11,12 @@ Source-кандидат c229bc4 прошёл один итоговый pure-на
 source/tests не менялись. [Сводка пакета](CHECKPOINT_C229BC4.md).
 Это не обновляет native acceptance B2/B3.
 
+Повторный верхнеуровневый public preflight exact dev96 прошёл на реальных
+positive/fault reports и SQLite с существующим metadata83/27: новый SDK/COM
+не запускались, historical unknown остался unresolved. В public completion
+устранён допуск пустого captures через all([]); driver/route120 pure/12,07 с
+прошли без CAD. N5/public native остаются открытыми; текущий owner не затронут.
+
 Пакетная отправка выполнена одним push771befa. Прямой API подтвердил
 head/base PR15, draft/open/not merged и созданный Checks run38479280563.
 Run/job115577603207 завершились success: lock/unit/build/install/metadata

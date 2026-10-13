@@ -46,8 +46,10 @@ def complete_public_positive(report,*,state_comparator=None):
         and {row['label'] for row in extension['cases']}==labels
         and all(row['passed'] is True for row in extension['cases']),
             'All five finite public B2 cases must have completed.')
-    require(all(row['status']=='returned' for row in report['captures']),
-            'No pending native capture may survive public completion.')
+    captures=report['captures']
+    require(type(captures) is list and bool(captures)
+        and all(type(row) is dict and row.get('status')=='returned' for row in captures),
+            'Nonempty normally returned native captures are required for public completion.')
     from verifier_b2_public_route import extension_final_state,compare_b2_observed_state
     extension_final_state(extension,report['extrusion_job'],compare_state=
         compare_b2_observed_state if state_comparator is None else state_comparator)

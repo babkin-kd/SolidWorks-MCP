@@ -32,6 +32,17 @@ SQLite, зафиксированные hashes helpers, отсутствие pend
 N5 совпали с manifest. Полные доказательства остаются в игнорируемом `work/`.
 Этот preflight не принимает текущий native-прогон и не разрешает его очистку.
 
+После исправления current-body binder выполнен реальный верхнеуровневый
+public preflight на тех же positive/fault отчётах и SQLite, с повторной
+проверкой installed identity/wheel и повторным использованием metadata83/27.
+Gate прошёл без COM и нового сервера; historical unknown остался unresolved.
+Это пассивная подготовка, не разрешение запуска до завершения очереди N5.
+
+Public completion теперь требует непустой список нормально возвращённых
+native captures: пустой список, неверный тип и неполные rows не принимаются.
+Связанные driver/route проверки: **120 pure passed /12,07 с**, normal exit0,
+без CAD. Исправление не входит в32 frozen helpers live N5 и не изменяет wheel.
+
 Source-кандидат `c229bc4` объединяет четыре подготовительных блока B3.
 Один итоговый pure-набор завершился normal exit0: **11054 passed,323 CAD
 deselected /465,28 с**, CAD-фильтр и внешний basetemp; executable source/tests

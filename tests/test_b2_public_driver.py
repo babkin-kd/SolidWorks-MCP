@@ -80,6 +80,14 @@ def arguments(state):
         '--faults-report','unused-faults.json','--faults-report-sha256','b'*64]
 
 
+@pytest.mark.parametrize('captures',[[],None,({'status':'returned'},),[{}],[None]])
+def test_absent_or_malformed_capture_evidence_cannot_pass_public_completion(completed,captures):
+    completed['captures']=captures
+    with pytest.raises(ValueError,match='Nonempty normally returned native captures'):
+        helper.complete_public_positive(completed,
+            state_comparator=lambda *_:pytest.fail('Missing captures must fail before final state comparison'))
+
+
 def test_missing_opt_in_prevents_even_state_directory_or_native_setup(tmp_path):
     state=tmp_path/'untouched'
     with pytest.raises(ValueError,match='Explicit'):
