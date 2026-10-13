@@ -15,6 +15,7 @@ from .part_creation import validated_plane_transform, _positive_length
 from .rectangle_construction import RectangleSketch, BlindRectangleExtrusion
 from .rectangle_snapshot import BASE, EMPTY, SKETCH, validated_rectangle_snapshot
 from .rectangle_construction_execution import RectangleConstructionExecutionMixin
+from .owned_rectangle_feature import OwnedRectangleFeatureRegistry
 
 
 SKETCH_SCOPE = 'empty_part_rectangle_sketch_v1'
@@ -28,6 +29,7 @@ class RectangleConstructionCatalog(RectangleConstructionExecutionMixin):
         self.sessions = NativeDocumentOpenCatalog(documents, store, connection_epoch)
         self.features = FeatureCatalog(documents, store, connection_epoch)
         self.receipts = {}
+        self.ownership = OwnedRectangleFeatureRegistry(documents, store, connection_epoch)
 
     def _capture(self, target_id, guarded_ids=()):
         entries, semantic = self.sessions._capture_session(guarded_ids)

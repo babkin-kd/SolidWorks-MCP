@@ -42,6 +42,11 @@ def execution(request, sketch_proof, extrusion_proof, tmp_path):
     store = JobStore(tmp_path/'construction.sqlite')
     documents = NS(adapter=adapter, resolve=lambda *args: (entry, {}))
     catalog = RectangleConstructionCatalog(documents, store, 'construction_epoch')
+    # This historical fixture proves the mutation protocol with scalar fake
+    # identities/artificial scope, not the separate native ownership registry.
+    catalog.ownership = NS(retire_absent_documents=lambda: 0,
+                          check_capacity=lambda document_id: None,
+                          register=lambda *args, **kwargs: None)
     catalog.features._resolve = lambda *args: (reference, NS(persistent_id=reference_token))
     original_resolve = catalog.features._resolve
     # Use the real register/resolve implementation against exact artificial PIDs.

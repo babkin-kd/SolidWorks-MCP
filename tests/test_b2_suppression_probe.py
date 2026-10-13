@@ -264,3 +264,20 @@ def test_raw_state2_is_confined_to_actual_suppressed_owner(receipt, phase):
         assert helper.validate_probe(receipt)['receipt_validated'] is True
     else:
         with pytest.raises(ValueError): helper.validate_probe(receipt)
+
+
+@pytest.mark.parametrize('key', sorted(helper._preferences.DEFERRED_STL_FIELDS))
+def test_only_explicit_deferred_stl_fields_are_outside_probe_scope(receipt, key):
+    receipt['observations'][0]['session']['application_preferences'][key] = 0.00045825756949558405
+    receipt['observations'][1]['session']['application_preferences'][key] = 0.005
+    report = helper.validate_probe(receipt)
+    assert report['receipt_validated'] is True and report['stl_preferences_verified'] is False
+    assert key in report['excluded_preference_fields']
+
+
+def test_stl_prefix_does_not_exempt_unknown_preference_or_empty_checked_scope(receipt):
+    receipt['observations'][1]['session']['application_preferences']['stl_unrecognized'] = True
+    with pytest.raises(ValueError): helper.validate_probe(receipt)
+    for obs in receipt['observations']:
+        obs['session']['application_preferences'] = {'stl_deviation': 0.005}
+    with pytest.raises(ValueError, match='Non-STL preference'): helper.validate_probe(receipt)

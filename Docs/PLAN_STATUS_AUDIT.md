@@ -10,7 +10,10 @@ normal exit0; root audit сверил actual SQLite, full independent snapshots,
 helper/report hashes и restored baseline. **B1 принят** на exact dev94;
 independent current session documents0/CommandInProgress=False, процессов нет.
 Точные wheel/Git/source digest и факты — [приёмка B1](B1_DEV94_ACCEPTANCE.md).
-B2–B5 открыты; следующим выполняется короткий own PID/suppression probe.
+B2–B5 открыты. [Own PID/suppression cycle](B2_PID_COMPATIBILITY.md) подтверждён
+в согласованном non-STL scope; internal resolver/ownership source готовы,
+domain/MCP suppression и preview/delete ещё не реализованы. Новый wheel не
+собирался; native-результат dev94 не принимает последующие source изменения.
 разработка продолжается, пауза отменена последующими указаниями пользователя.
 
 Dev93 positive прошёл, но N5 extrusion restoration остановился на прежнем

@@ -56,6 +56,8 @@ class RectangleConstructionExecutionMixin:
                 raise rejected('rectangle_receipt_budget', 'Reconcile retained native receipts before further construction.')
             public = prepare_public(document_id, configuration, **vars(definition))
             entry, _ = self.documents.resolve(document_id, configuration)
+            self.ownership.retire_absent_documents()
+            self.ownership.check_capacity(document_id)
             entries, semantic, snapshots = self._capture(document_id)
             state = dict(semantic=semantic, snapshots=snapshots)
             target = next((e for e in entries if e.document_id == document_id), None)
@@ -262,5 +264,13 @@ class RectangleConstructionExecutionMixin:
         except ExecutionFailure as error:
             if not error.uncertain: self.receipts.pop(operation_id, None)
             raise
+        try:
+            self.ownership.register(operation_id, document_id=document_id,
+                configuration=configuration, result=result, receipt=context['receipt'])
+        except Exception as error:
+            # Domain commit already happened. Never inverse/replay a confirmed
+            # creation because a later ownership getter/checkpoint read failed.
+            raise ExecutionFailure('rectangle_ownership_registration_unconfirmed',
+                str(error), uncertain=True) from error
         self.receipts.pop(operation_id, None)
         return result

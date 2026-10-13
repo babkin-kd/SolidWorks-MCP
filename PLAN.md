@@ -140,8 +140,10 @@ Root audit подтвердил все5 условий, actual durable journals,
 CommandInProgress=False, native процессы отсутствуют. Actual extrusion inverse40
 steps подтверждает исправление прежнего cap32; caps44/46 проверены pure.
 [Точная приёмка](Docs/B1_DEV94_ACCEPTANCE.md). Historical dev93 unknown сохранён,
-старые запросы не повторяются. Далее B2: native PID/suppression probe перед
-реализацией suppression/delete. B2–B5 и стадия1 остаются открыты.
+старые запросы не повторяются. Для B2 подтверждена [совместимость own PID/
+suppression cycle](Docs/B2_PID_COMPATIBILITY.md), готов internal resolver и
+ownership source; далее domain/MCP suppression/delete и итоговая same-wheel
+приёмка. B2–B5 и стадия1 остаются открыты.
 
 История кандидата B1 — **dev92**: full pure6686/323 CAD deselected,
 wheel/installed metadata79/25 приняты. Short native bridge/inverses/full baseline

@@ -32,12 +32,11 @@ context/external-reference bindings.
    продолжает разрешать exact feature без выбора по новому имени.
 3. Own suppress→unsuppress возвращает exact geometry/history. Текущий generic
    resolver отвергает nonzero persistent state, а rename явно запрещает
-   suppressed feature. Однако необходимость отдельного feature resolver ещё
-   **не доказана native**: официальное описание Suppressed/Deleted states
-   относится к topology references, не к feature references. Сначала проверить
-   обычный exact feature PID до/после suppression и complete native membership;
-   отдельный ограниченный путь нужен лишь если фактический feature roundtrip
-   не работает. Подмена ссылкой по имени или одному GetID не допускается.
+   suppressed feature. **Native необходимость отдельного resolver доказана**:
+   own suppressed extrusion возвращает state2 с raw exact canonical feature.
+   Internal bridge реализован с original PID/retained identity/full membership;
+   generic resolver не расширен. [Совместимость API cycle](B2_PID_COMPATIBILITY.md)
+   не заменяет приёмку domain/MCP suppression. Подмена имени/GetID запрещена.
 4. Preview остаётся read-only; execute удаляет лишь подтверждённый собственный
    конечный набор, сохраняет survivors и инвалидирует старый ID. Наличие
    structural candidates само по себе не разрешает удаление.

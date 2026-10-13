@@ -15,12 +15,19 @@ empty files is admissible only with that explicit no-file census. This gate
 does not claim preservation of arbitrary disk files outside the probe.
 """
 from copy import deepcopy
+import importlib.util
 import json
+from pathlib import Path
 
 from solidworks_mcp.jobs import JobError, _json
 from solidworks_mcp.rectangle_snapshot import BASE, validated_rectangle_snapshot
 from solidworks_mcp.rectangle_extrusion_postconditions import _boundary
 from solidworks_mcp.rectangle_inventory import feature_relations, empty_feature_external_inventory
+
+_preferences_spec = importlib.util.spec_from_file_location('_b2_non_stl_scope',
+    Path(__file__).with_name('verifier_dimension_diagnostics.py'))
+_preferences = importlib.util.module_from_spec(_preferences_spec)
+_preferences_spec.loader.exec_module(_preferences)
 
 
 SCOPE = 'owned_blind_base_suppression_pid_probe_v1'
@@ -156,6 +163,11 @@ def _session(value, target, configuration, owned_document_ids):
              and doc.get('file') is None,
              'Probe owns one already-dirty unsaved native target.')
     normalized = deepcopy(value)
+    raw_preferences = _preferences._snapshot(value['application_preferences'])
+    normalized['application_preferences'] = {
+        key: item for key, item in raw_preferences.items()
+        if key not in _preferences.DEFERRED_STL_FIELDS}
+    _require(bool(normalized['application_preferences']), 'Non-STL preference scope must not be empty.')
     changed = next(row for row in normalized['semantic']['documents']
                    if row['document_id'] == target)
     for key in ('update_stamp', 'observation_sequence'):
@@ -329,4 +341,7 @@ def validate_probe(receipt):
     return {'scope': SCOPE, 'receipt_validated': True, 'accepted': False,
             'native_b2_accepted': False, 'process_stop_authorized': False,
             'cad_cleanup_authorized': False, 'can_dispatch_native': False,
-            'affected_native_ids': list(affected)}
+            'affected_native_ids': list(affected),
+            'preference_scope': 'application_preferences_except_stl_v1',
+            'excluded_preference_fields': sorted(_preferences.DEFERRED_STL_FIELDS),
+            'stl_preferences_verified': False}

@@ -305,11 +305,11 @@ def run_native(state, report, persist):
         require(report['native_calls_live'] is False and report['native_normal_completion_verified'] is True,
                 'Root requires normal native completion independently of receipt-only validation.')
         report.update(phase='owned_cleanup', native_calls_live=True); persist()
-        neighbor_before = report['probe_receipt']['observations'][0]['session']['neighbor_snapshots'][entries[1].document_id]
-        retire_owned(sw, module, target, [target], owned, record)
-        require(adapter.rectangle_construction_snapshot(neighbor) == neighbor_before,
-                'Full independent neighbor oracle must survive target cleanup.')
         retire_owned(sw, module, neighbor, [neighbor], owned, record)
+        target_restored = report['probe_receipt']['observations'][-1]['full_snapshot']
+        require(adapter.rectangle_construction_snapshot(target) == target_restored,
+                'Full restored active target oracle must survive inactive owned neighbor cleanup.')
+        retire_owned(sw, module, target, [target], owned, record)
         require_free_session(sw)
         restored = snapshot(sw, module)
         require(restored == original and adapter.native_close_application_context() == app,
