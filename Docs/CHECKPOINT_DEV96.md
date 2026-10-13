@@ -253,3 +253,11 @@ COM: false live marker, owned=[], no creation returns/no jobs.sqlite. Metadata
 SDK читался, CAD не выполнялся. Native N5 остаётся not_run до окончания fault96.
 Сам fault96 продолжает работать: `sketch_job`,34 captures, error отсутствует;
 его helper manifest/wheel не изменены. Следующие N5 случаи идут последовательно.
+
+Пока fault96 выполняется, завершены две независимые installed metadata-only
+проверки timings того же wheel: enabled/disabled и недоступный timing SQLite.
+Обе приняты без CAD; при отказе telemetry mandatory journal schema3 сохранён,
+jobs0/mutations0, настоящий `job_not_found` и invalid-filter contract сохранены,
+SDK закрыт. Native B4/N6 и telemetry isolation при mutation/restore/hold не
+объявлены пройденными. Последнее наблюдение fault96: `extrusion_job`,57 captures,
+последний running, error отсутствует. Live helper manifest не изменён.

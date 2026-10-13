@@ -14,6 +14,18 @@ dev93. Ни одно условие этим документом не объя�
 | N5 | Reconciliation снимает лишь доказанный конкретный hold | Exact-scope reconciliation и независимые snapshot proofs | Независимое полное доказательство текущего поддержанного scope; explicit reconciliation не переписывает historical unknown в success. Проверить wrong scope/stale proof и область блокировки: application hold запрещает другие записи, document hold не разрешает нарушить общие session invariants |
 | N6 | Пользователь получает раздельные timings и bounded приватную диагностику | `verify_timings_v2.py`, timing store/integration, исторический dev69 | Installed enabled/disabled/error gates плюс реальные интервалы из тех же N2/N3/N5 случаев: end-to-end, queue, доступные COM/rebuild/restore. Ошибка telemetry не меняет обязательный journal, исход задания и hold; отсутствующий интервал обозначается, а не выдумывается |
 
+Частичная installed-проверка N6 на exact dev96/f80ee6d выполнена без CAD.
+`verify_timings_v2.py` без `--run-solidworks`: enabled/disabled, по20 metadata
+измерений, доступны22 timing records при включении и0 при выключении;
+SDK обеих сессий закрыт. `verify_timing_storage_fault.py` проверил отдельное
+недоступное timing-хранилище: metadata и `job_not_found` сохранили результат,
+`available=False`, `storage_failures>=1`, sample_count0; invalid filter отклонён.
+Обязательный SQLite journal schema3 доступен, jobs0/mutations0, SDK закрыт.
+Это принятые metadata-only installed gates, **не native N6/B4**. Проверка
+изоляции telemetry при фактической mutation/restore/hold и реальные интервалы
+N2/N3/N5 остаются открыты; искусственные или отсутствующие COM timings
+не засчитываются.
+
 ## Что исторические результаты не закрывают
 
 [Приёмка dev69](DIAGNOSTICS_TIMINGS_ACCEPTANCE.md) подтверждает свой wheel,
