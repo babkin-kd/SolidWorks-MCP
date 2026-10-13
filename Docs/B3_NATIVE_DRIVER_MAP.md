@@ -92,6 +92,25 @@ geometry/mass/bounds/reader **209 pure passed /5,01 с**, искусственн
 same-wheel B1 sketch остаются отдельными fixtures, full session producer и
 actual13-group/public driver остаются открытыми. Installed dev96 неизменён.
 
+Связь completed part fixture с исходными I02 anchors подготовлена в
+`verifier_b3_part_anchors.py`. Externally retained one-shot receipt принимает
+только original Main configuration и3 target bodies либо1 own neighbor body.
+Он читает полный native body/face/edge roster через original returned body
+anchors, проверяет GetBody-владение и exact nonempty bytes PID/canonical
+roundtrip, затем повторяет census и PID в closing envelope. Последний полный
+census также охватывает изменение membership внутри closing PID getters.
+Raw normal returns сохраняются до последующих getters; failures/owner loss
+удерживают receipt и запрещают retry. Имена/форма/индекс/registration не
+создают ownership. Полученный tuple OriginalPartObject предназначен для
+`PartReferenceBridge` до SDK dispatch; cleanup/native acceptance остаются false.
+
+Related anchors/bridge/fixture/native-part-reference: **199 pure passed /0,56 с**,
+normal exit0. API-shaped artificial getters, Main44/neighbor19 anchors,
+strict PID types во всех фазах, raw retention и final-census отказы проверены.
+Это source-only блок после full10381/d974ffc, не входит в тот full-кандидат.
+Actual setup/anchor capture в SolidWorks ещё not_run. Full session producer,
+cylinder/same-wheel B1 sketch, namespace/SDK driver и13-group acceptance открыты.
+
 Первый concrete raw producer подготовлен в
 `scripts/verifier_b3_native_part_reference.py`: прямые CAD getters для normal
 solid/surface body, plane face и line edge конечного I02. Original retained

@@ -133,6 +133,14 @@ external basetemp. [Контрольная точка](CHECKPOINT_D974FFC.md). �
 accepted positive verified. N5 подтверждён live; его31 source/helpers
 не меняются во время прогона. Старые failed/unknown SQL не изменены.
 
+Независимый последующий source-блок B3 подготовил сохранение original static
+topology anchors из completed own fixture:3 Main bodies/1 neighbor,
+full body/face/edge membership, native owner и strict bytes PID roundtrip,
+closing PID/census/events и latching failures. Related199 pure passed /0,56 с,
+искусственные CAD getters; actual fixture/anchor capture не запускался.
+Этот helper не входит в31 frozen N5 files и в full10381/d974ffc. Подключение
+whole-session producer/SDK/13 groups и обязательная native-приёмка B3 остаются.
+
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала
 через383,79 с на read-only подготовке эскиза:1 failed job/0 mutation checkpoint.
