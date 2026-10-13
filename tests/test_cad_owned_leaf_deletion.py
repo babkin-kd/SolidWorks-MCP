@@ -30,14 +30,14 @@ def make():
     receipt.borrowed_sketch=receipt.borrowed_sketch_identity=sketch
     native_view=Handle()
     receipt.annotation_views=RectangleViewReceipt(model,(NativeView(native_view,native_view,{'metadata':[1]}),),
-        owned=[NativeView(native_view,native_view,{'metadata':[2]})],bound=True)
+        owned=[(NativeView(native_view,native_view,{'metadata':[2]}),Handle())],bound=True)
     receipt.model_view=View(native_view,{'scale':1.})
     calls=[]
     def inverse(current,stage):
         calls.append(stage)
         stage.restore_attempted=True
         stage.annotation_views.retirement_attempted=stage.annotation_views.retired=True
-        stage.annotation_views.owned[0].data['metadata'][0]=3
+        stage.annotation_views.owned[0][0].data['metadata'][0]=3
         stage.restored=True
     adapter=NS(identity=lambda obj:obj,active_document=lambda:model,
         features=lambda current:[sketch,feature],application_busy=lambda:True,
@@ -58,12 +58,14 @@ def test_new_receipt_retains_handles_but_separates_all_mutable_metadata():
     assert action.stage.model_view is current_view and original.model_view.baseline=={'scale':1.}
     assert action.stage.annotation_views is not original.annotation_views
     assert action.stage.annotation_views.owned[0] is not original.annotation_views.owned[0]
+    assert action.stage.annotation_views.owned[0][0].view is original.annotation_views.owned[0][0].view
+    assert action.stage.annotation_views.owned[0][1] is original.annotation_views.owned[0][1]
     evidence=action.apply()
     assert evidence['bridge_returned'] and evidence['deletion_bridge_verified']
     assert calls==[action.stage]
     assert original.restored is original.restore_attempted is False
     assert original.annotation_views.retired is original.annotation_views.retirement_attempted is False
-    assert original.annotation_views.owned[0].data=={'metadata':[2]}
+    assert original.annotation_views.owned[0][0].data=={'metadata':[2]}
     with pytest.raises(JobError): action.apply()
     assert len(calls)==1
 

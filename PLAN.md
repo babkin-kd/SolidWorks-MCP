@@ -142,9 +142,13 @@ steps подтверждает исправление прежнего cap32; ca
 [Точная приёмка](Docs/B1_DEV94_ACCEPTANCE.md). Historical dev93 unknown сохранён,
 старые запросы не повторяются. Для B2 подтверждена [совместимость own PID/
 suppression cycle](Docs/B2_PID_COMPATIBILITY.md). В исходниках реализованы
-retained ownership, полный suppressed-снимок и domain/runtime/MCP suppression;
-приёмка нового wheel ещё не выполнена. Далее own-leaf preview/delete и общий
-same-wheel gate B2. B2–B5 и стадия1 остаются открыты.
+retained ownership, полный suppressed-снимок и domain/runtime/MCP suppression.
+На exact dev95 принят positive internal suppression/return2/2 /5594,79 с:
+129 terminal captures,8 succeeded jobs/4 committed mutations, replay и полный
+own cleanup/baseline. Negative/public и общий B2 gate остаются.
+Own-leaf preview/delete реализованы в исходниках для следующего кандидата,
+не входят в wheel95 и ещё не приняты в CAD. Далее их native/internal/public
+приёмка и общий same-wheel gate B2. B2–B5 и стадия1 остаются открыты.
 
 История кандидата B1 — **dev92**: full pure6686/323 CAD deselected,
 wheel/installed metadata79/25 приняты. Short native bridge/inverses/full baseline

@@ -5,8 +5,12 @@
 **Текущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала
 через383,79 с на read-only подготовке эскиза:1 failed job/0 mutation checkpoint.
-Root quiescence/own cleanup/full empty baseline подтверждены отдельно;
-suppression ещё не вызывался и не принят. [Точная привязка](CHECKPOINT_DEV95.md).
+Root quiescence/own cleanup/full empty baseline первой попытки подтверждены
+отдельно. Вторая попытка завершилась exit0: positive suppression/return2/2,
+5594,79 с;129 terminal captures,8 succeeded jobs/4 committed mutations,
+оба replay без новой записи, полная собственная очистка/baseline подтверждены.
+Root audit accepted только positive; общий B2 и public ещё не приняты.
+[Точная привязка](CHECKPOINT_DEV95.md).
 Public/native B2 и preview/delete остаются; стадия1 открыта.
 
 **Принятый B1 — dev94:** full pure7157/323 CAD deselected,
@@ -21,8 +25,10 @@ B2–B5 открыты. [Own PID/suppression cycle](B2_PID_COMPATIBILITY.md) п�
 в согласованном non-STL scope. Последний API/intrinsics probe завершён штатно:
 exit0,652,52 с, full baseline и собственная очистка подтверждены. В исходниках
 реализованы retained ownership, full suppressed producer и domain/runtime/MCP
-suppression; wheel95 установлен, native/public gate ещё не принят. Preview/delete
-остаётся отдельным остатком B2. Native dev94 не принимает последующие source
+suppression; wheel95 установлен, positive internal gate принят, negative/public
+ещё остаются. Preview/delete реализованы и зарегистрированы в исходниках для
+следующего кандидата, actual CAD deletion ещё не проверена. Это отдельный
+остаток B2. Native dev94 не принимает последующие source
 изменения.
 разработка продолжается, пауза отменена последующими указаниями пользователя.
 

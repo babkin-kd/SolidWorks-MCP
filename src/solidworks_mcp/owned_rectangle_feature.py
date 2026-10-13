@@ -300,3 +300,14 @@ class OwnedRectangleFeatureRegistry:
         for key in keys:
             del self._bindings[key]
         return len(keys)
+
+    def forget_feature(self, binding):
+        """Retire one exact held binding after the caller proves native absence.
+
+        Pure in-memory retirement, without querying the now-deleted feature or
+        changing the creation history. Borrowed sketch ownership is preserved.
+        """
+        self._check_thread()
+        key=(binding.document_id,binding.object_id)
+        _require(self._bindings.get(key) is binding,'Only the exact held feature binding may be retired.')
+        del self._bindings[key]

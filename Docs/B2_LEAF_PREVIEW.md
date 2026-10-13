@@ -1,7 +1,7 @@
 # B2: подготовка удаления собственного конечного выдавливания
 
-**Read-only preview и отдельная native receipt готовы в исходниках;
-исполнитель/runtime/MCP и native-приёмка ещё не выполнены.**
+**Read-only preview, отдельная native receipt, durable executor и runtime/MCP
+реализованы в исходниках; installed/native-приёмка ещё не выполнена.**
 Эти файлы появились после сборки dev95 и не входят в его wheel.
 
 Preview допускает только оригинальное B1-выдавливание из реального succeeded
@@ -13,15 +13,18 @@ canonical/PID, actual GetChildren и полный dependency census должны
 остаётся исходным, изменения его геометрии/параметров дают отказ.
 
 Результат содержит текущую revision, удаляемый feature object ID, сохраняемый
-sketch ID, оставшиеся width/height и отсутствие тела после операции. Пока оба
-флага `delete_authorized` и `native_execution_available` — False. Инструмент не
-зарегистрирован в публичном каталоге; preview не разрешает native dispatch.
+sketch ID, оставшиеся width/height и отсутствие тела после операции.
+`delete_authorized=False`: preview сам не выдаёт полномочие на запись.
+`native_execution_available=True`: исполнитель реализован; это не статус
+native-приёмки. В source-каталоге зарегистрированы `feature_prepare_leaf_deletion`
+и `feature_delete_leaf` (83 tools/27 mutations). Установленный dev95 содержит
+прежние81/26 и не принимает эти последующие изменения.
 
 Полное постусловие BASE→SKETCH сочетает reverse extrusion proof и forward
 session comparison: обратный proof отдельно не проверял фактический dirty
 after-state. Все соседние файлы/данные/UI, sketch и ссылки сохраняются.
 
-Для будущей записи `NativeOwnedLeafDeletion` создаёт отдельную структуру receipt:
+Для записи `NativeOwnedLeafDeletion` создаёт отдельную структуру receipt:
 COM handles удерживаются, mutable metadata/annotation-view receipts копируются.
 Original creation receipt не изменяется. Current viewport снимается заново;
 creation-time viewport не навязывается пользователю. Одноразовый bridge использует
@@ -34,8 +37,24 @@ receipt isolation/one-shot boundary cases. После добавления яв�
 удаляемого/сохраняемого набора повторён связанный каталог:102 passed/11,91 с.
 Это source/artificial результаты; actual CAD deletion не выполнялась.
 
-Остатки: доменный executor с durable application checkpoint; full current
-post-deletion census без обращения к уже удалённому feature; original sketch
-canonical/PID и actual raw old-feature PID state; exact removed set/cache
-retirement; native/internal/public gates. После доказанного удаления нет
-автоматического Undo, recreate или retry. При неизвестном исходе сохраняется hold.
+Executor использует durable application checkpoint и полный fresh revision,
+paired guards/native ledger, затем current BASE/SKETCH census без вызовов
+уже удалённого feature. Original sketch canonical/PID, raw old-feature PID
+state1/4 +null, полное отсутствие target canonical и точный BASE→SKETCH набор
+подтверждаются независимо. После commit аннулируются geometry aliases, только
+удалённый feature reference/index и его ownership; sketch ownership сохраняется.
+После доказанного удаления нет автоматического Undo, recreate или retry.
+При неизвестном исходе сохраняется hold; original succeeded creation SQL/receipt
+не переписываются.
+
+Дополнительно прошли32 executor pure/12,17 с,91 facade pure/0,88 с и20
+runtime pure/3,19 с. Они используют actual coordinator/JobRunner/SQLite,
+NativeOwnedLeafDeletion и FastMCP/runtime, но искусственные native-состояния.
+Первый объединённый прогон306 passed/1 failed обнаружил отсутствующие новые
+имена в guide; guide исправлен, повторный связанный набор —349 passed/34,35 с.
+Native/internal,
+отказы/unknown и public MCP gates остаются обязательными отдельными задачами.
+
+Positive-only native wrapper подготовлен:20 pure/0,68 с, без COM. Actual CAD
+delete запускается только после независимой B1 BASE/8000 мм³/neighbor проверки
+на том же wheel; original ownership не реконструируется. [Кандидат dev96](CHECKPOINT_DEV96.md).

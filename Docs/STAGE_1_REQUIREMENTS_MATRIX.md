@@ -118,11 +118,15 @@ part того же наблюдаемого профиля. Гарантия с�
 | B4 | Итоговые installed/native recovery и диагностика | Все 6 условий B4; поздний реальный результат и controlled faults явно различены; полный COM census не нужен |
 | B5 | Автоматическая цепочка одного итогового wheel и release gates | Все 11 шагов и 4 gates; приняты остальные блоки, собственная очистка и baseline, актуальный CI пакета |
 
-**Текущее продолжение 13.10.2026 — dev94:** full pure7157/323 CAD deselected,
+**Принятый B1 13.10.2026 — dev94:** full pure7157/323 CAD deselected,
 artifact и installed metadata79/25 приняты. Same-wheel positive2673,43 с,
 N4/N5 5810,00 с и public3276,21 с прошли; **B1 закрыт**. Root audit actual SQLite
-и independent current empty session подтвердил гарантию. Далее B2 PID/suppression
-probe, затем конкретная реализация и приёмка B2. [Привязка](B1_DEV94_ACCEPTANCE.md).
+и independent current empty session подтвердил гарантию. [Привязка](B1_DEV94_ACCEPTANCE.md).
+Installed dev95:8111 pure/323 CAD deselected, metadata81/26, positive internal
+suppression/return2/2 /5594,79 с принят;129 terminal captures, реальные8
+succeeded jobs/4 committed mutations, replay и полная own cleanup/baseline.
+Negative/public и целый B2 ещё открыты. Source preview/delete следующего
+кандидата реализованы, actual CAD deletion ещё не проверена.
 Следующие записи кандидатов и прежней паузы сохранены как история; разработка
 возобновлена. Ни очистка unknown, ни pure-подготовка B2/B3/B4 не закрывают блок.
 

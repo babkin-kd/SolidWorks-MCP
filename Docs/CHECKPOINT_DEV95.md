@@ -1,6 +1,7 @@
 # Локальная контрольная точка dev95 — 13.10.2026
 
-**Suppression реализован, первая native-попытка отказала до записи. B2 и стадия1 открыты.**
+**Положительный internal suppression/return цикл принят на exact dev95.
+B2 и стадия1 открыты.**
 Публичная приёмка MCP и preview/delete ещё не выполнены; main/PR не приняты.
 
 | Привязка | Значение |
@@ -31,11 +32,29 @@ Artifact gate и installed metadata/stdio **приняты**; `site-packages`, e
 version/Git/digest подтверждены без source `PYTHONPATH`. Metadata не вызывала CAD.
 Wheel установлен только в dev-окружение, отдельная рабочая v1 сохранена.
 
-Internal positive native driver запущен на этом точном wheel. Он использует
+Internal positive native driver завершён на этом точном wheel. Он использует
 существующую B1 fixture/cleanup-цепочку, затем реальный suppression domain с
 повтором request_id. Running не засчитывается как passed. Исходный empty/free
 baseline проверяется до создания контрольных моделей; только root владеет COM.
 Public MCP, отрицательные native gates и общий B2 gate ещё нужны.
+
+Вторая попытка штатно завершилась exit0 через **5594,79 с**. Подавление и
+возврат прошли; оба request_id replay вернули исходные jobs без повторной
+записи. Root read-only audit реального SQLite подтвердил **8 succeeded jobs,
+4 committed mutations**: sketch/extrusion и suppression/return. Native ledger
+содержит соответственно26/28/10/16 событий с точными pending/returned парами;
+129 полных native capture вернулись. Полные suppression/return постусловия
+перепроверены по независимым данным установленного пакета; имя тела при возврате
+восстановлено отдельной доказанной записью. Собственные документы закрыты,
+original empty/free baseline, application context и non-STL preferences совпали.
+
+SHA256 wrapper report:
+`b06f0c22afdbce8de9c1587e6db47729a788e30da7f4a65f3e7707d632f73f15`.
+SHA256 fixture report:
+`c8a2ca09e9031a3ac526aebca4ff174f850426b33608841a37d2eec77d582d39`.
+Exact helpers сохранены отдельно в private evidence перед будущим обновлением
+metadata gate. `positive_accepted=true` не заменяет `native_b2_accepted=false`
+и `public_mcp_accepted=false`. История первого отказа ниже сохранена.
 
 Первая попытка завершила сценарий отказом через **383,79 с** в
 `sketch.prepare_rectangle`: полный снимок соседней детали обнаружил изменение

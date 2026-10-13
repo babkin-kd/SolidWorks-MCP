@@ -126,7 +126,8 @@ def test_read_only_preparation_uses_full_native_census_and_preserves_original_re
     assert result['feature_pid_hex']==state.binding.persistent_id.hex()
     assert result['creation_operation_id']==state.binding.creation_operation_id
     assert result['current_definition']['depth_mm']==10.
-    assert result['delete_authorized'] is result['native_execution_available'] is False
+    assert result['delete_authorized'] is False
+    assert result['native_execution_available'] is True
     assert result['application_command_in_progress'] is False
     assert result['baseline']['semantic']['application']==state.application
     assert result['baseline']['semantic']['files']==[]
@@ -286,7 +287,8 @@ def test_current_full_neighbor_or_view_changes_produce_a_new_preview_revision(le
     second=prepare(state)
     assert first['revision']!=second['revision']
     assert first['baseline']['semantic']['documents']!=second['baseline']['semantic']['documents']
-    assert second['delete_authorized'] is second['native_execution_available'] is False
+    assert second['delete_authorized'] is False
+    assert second['native_execution_available'] is True
     state.corrupt_neighbor=True
     third=prepare(state)
     assert second['revision']!=third['revision']

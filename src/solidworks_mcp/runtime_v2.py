@@ -37,6 +37,7 @@ from .native_first_save import NativeFirstSaveCatalog
 from .native_part_activation import NativePartActivationCatalog
 from .rectangle_construction_catalog import RectangleConstructionCatalog
 from .feature_suppression_catalog import FeatureSuppressionCatalog
+from .owned_leaf_deletion_catalog import OwnLeafDeletionCatalog
 from .sketches import SketchCatalog
 from .exports_v2 import ExportCatalog
 from .jobs import JobError, JobRunner, _json
@@ -45,9 +46,11 @@ from .jobs import JobError, JobRunner, _json
 MUTATING_OPERATIONS = ('document.activate_part_native', 'document.first_save_native', 'document.open_native', 'document.close_native', 'document.save_native', 'measurement.mass', 'feature.rename', 'dimension.set_value', 'export.execute', 'part.create_base_extrusion', 'document.create_part', 'sketch.set_dimension', 'part.create_corner_cut', 'part.create_base_revolve', 'part.create_through_hole', 'part.set_hole_dimension', 'part.create_linear_hole_pattern', 'part.create_edge_fillet', 'sheet.create_l_profile', 'sheet.set_flat_state', 'sheet.set_parameters', 'sheet.create_edge_flange', 'sheet.set_flange_flat_state')
 MUTATING_OPERATIONS += ('sketch.create_rectangle', 'part.extrude_rectangle')
 MUTATING_OPERATIONS += ('feature.set_suppressed',)
+MUTATING_OPERATIONS += ('feature.delete_leaf',)
 READ_OPERATIONS = ('document.prepare_activate_part_native', 'document.prepare_first_save_native', 'document.prepare_open_native', 'document.prepare_close_native', 'document.prepare_save_native', 'measurement.component_aggregate_point_distance', 'measurement.component_aggregate_axis_distance', 'measurement.component_aggregate_distance', 'measurement.component_axis_distance', 'measurement.component_point_distance', 'measurement.component_distance', 'component.topology_list', 'component.topology_get', 'component.list', 'component.get', 'component.bodies', 'measurement.bounds', 'measurement.prepare_mass', 'document.list', 'document.get', 'geometry.list', 'geometry.get', 'feature.list', 'feature.get', 'feature.dependencies', 'feature.deletion_structure', 'feature.deletion_context', 'dimension.list', 'dimension.get', 'export.prepare', 'part.prepare_base_extrusion', 'document.list_templates', 'document.prepare_create_part', 'sketch.get', 'sketch.prepare_dimension_change', 'part.prepare_corner_cut', 'part.prepare_base_revolve', 'part.prepare_through_hole', 'part.prepare_hole_dimension_change', 'part.prepare_linear_hole_pattern', 'part.prepare_edge_fillet', 'sheet.prepare_l_profile', 'sheet.prepare_flat_state', 'sheet.prepare_parameters', 'sheet.prepare_edge_flange', 'sheet.prepare_flange_flat_state')
 READ_OPERATIONS += ('sketch.prepare_rectangle', 'part.prepare_rectangle_extrusion')
 READ_OPERATIONS += ('feature.prepare_suppression',)
+READ_OPERATIONS += ('feature.prepare_leaf_deletion',)
 
 def _worker_factory():
     try:
@@ -107,6 +110,7 @@ class Runtime:
         self._native_part_activations = None
         self._rectangle_construction = None
         self._feature_suppression = None
+        self._owned_leaf_deletion = None
         self._sketches = None
         self._exports = None
         self._approved_output_root = approved_output_root
@@ -120,7 +124,7 @@ class Runtime:
         return self._approved_output_root is not None
 
     def _rectangle_catalog(self):
-        """One owning-STA construction catalog and ownership for both workflows."""
+        """One owning-STA construction catalog and ownership for all own-feature workflows."""
         if self._rectangle_construction is None:
             self._rectangle_construction = RectangleConstructionCatalog(
                 self._catalog, self.store, self._connection_epoch)
@@ -157,6 +161,13 @@ class Runtime:
                 if operation == 'feature.prepare_suppression':
                     return self._feature_suppression.prepare(**arguments)
                 return self._feature_suppression.set_suppressed(operation_id, **arguments)
+            if operation in ('feature.prepare_leaf_deletion', 'feature.delete_leaf'):
+                if self._owned_leaf_deletion is None:
+                    self._owned_leaf_deletion = OwnLeafDeletionCatalog(
+                        self._catalog, self.store, self._connection_epoch, self._rectangle_catalog().ownership)
+                if operation == 'feature.prepare_leaf_deletion':
+                    return self._owned_leaf_deletion.prepare(**arguments)
+                return self._owned_leaf_deletion.delete(operation_id, **arguments)
             if operation in ('document.prepare_activate_part_native', 'document.activate_part_native'):
                 if self._native_part_activations is None:
                     self._native_part_activations = NativePartActivationCatalog(self._catalog, self.store, self._connection_epoch)
@@ -422,6 +433,7 @@ class Runtime:
         self._native_first_saves = None
         self._native_part_activations = None
         self._feature_suppression = None
+        self._owned_leaf_deletion = None
         self._rectangle_construction = None
         self._sketches = None
         self._exports = None
