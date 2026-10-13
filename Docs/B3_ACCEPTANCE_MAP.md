@@ -310,3 +310,14 @@ inside либо подтверждённая boundary точка, без выд�
 классификации. **337 related pure passed /23,89 с**, настоящие point/axis catalogs,
 JobRunner/SQLite/B3Reader и искусственные native getters. Actual native producers,
 installed B3 driver и cleanup открыты; accepted/native/cleanup остаются false.
+
+I13 replay source-подмаршрут `verifier_b3_replay.py` переиспользует две actual
+original receipt records: passive geometry/bounds и committed guarded mass
+того же part/configuration. Каждый replay связывается с полной исходной raw
+SQLite строкой; весь journal до/после, current session и owner epoch сохраняются.
+Два отдельно инструментированных счётчика — selected domain dispatch и mass
+calculation — не растут; они не объявляются полным COM census. **230 related
+pure passed /19,41 с** через настоящие GeometryCatalog/MassMeasurementCatalog/
+JobRunner/SQLite/B3Reader и искусственные native getters. Actual owner native
+scope/activity producers, installed B3 driver, завершение I01…I12 и terminal
+owned cleanup остаются открыты. Source evidence не даёт native/cleanup acceptance.
