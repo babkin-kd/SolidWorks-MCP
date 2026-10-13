@@ -56,6 +56,11 @@ CloseDoc/guard restore; normal own close events допускаются на сл
 all13 B3 groups открыты; этот helper не входит в32 frozen N5 files или
 прежний full11104. Root остаётся единственным COM-владельцем.
 
+Дополнительный офлайн AST-аудит фактического generated typelib31 подтвердил
+наличие required app events и arity шести B3 setup/maintenance методов.
+Нет CAD/COM-object подключения, can_start_native=false; actual B3 остаётся
+not_run. Доказательство сохранено в private work и обезличенной probe-сводке.
+
 **Текущий installed кандидат — dev96:** full pure8427/323 CAD deselected,
 260,01 с; clean artifact и metadata/stdIO83/27 приняты, без CAD в metadata.
 Own-leaf preview/delete domain/runtime/MCP реализованы. Guarded positive2

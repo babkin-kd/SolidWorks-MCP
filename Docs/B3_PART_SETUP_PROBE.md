@@ -51,6 +51,14 @@ tests на ABA/journal loss/unknown запрещают повтор и CloseDoc.
 вызывались. Actual template/API/event registration/setup/maintenance пока
 **not_run**. Full11104 source39eeb8d не включает этот новый driver/test.
 
+Офлайн AST-аудит установленного generated typelib31 подтвердил все четыре
+required DSldWorks app events и сигнатуры шести используемых методов:
+planar surface/sheet/imported surface, configuration, circle, CloseDoc.
+Исходный typelib SHA256
+`0c8551ee5a95082b7a351deb23714c034e0c134e3af84cb73721bac4c40c10cc`.
+COM objects не загружались, CAD не подключался. Это availability/signature
+evidence, не подтверждение фактического результата, event delivery или setup.
+
 Точный native-кандидат для будущего запуска — прежний installed dev96.
 Перед запуском root проверяет final helpers и actual metadata/wheel anew,
 не пересобирая/не устанавливая пакет в занятую сессию. Матрица B3 остаётся
