@@ -10,7 +10,7 @@ dev95 сохранён отдельно; он не принимается за �
 | N2 | Русское имя элемента; прежняя адресная ссылка действует | Public rename/readback, прежний object ID и PID/canonical membership; полные данные отличаются только разрешённым именем | Ещё не принято на dev96 |
 | N3 | Подавить и вернуть собственное основание | Public suppression/return с original ownership, full bodyless/BASE snapshots, исходный sketch/DIMs/PID и имя тела; checkpoint/guards/replay | Dev95 positive принят; dev96 ещё не принят |
 | N4 | Preview точного own leaf, затем удалить только основание | Read-only prepare, full BASE→SKETCH, exact deleted ID, preserved sketch, actual raw old PID1/4+null, удалённый ID отвергается при чтении; SQL/replay | Fresh guarded internal positive dev96 принят2/2, independent target/neighbor и cleanup/baseline подтверждены; публичная цепочка ещё не принята. Первый failed отчёт сохранён |
-| N5 | Безопасный отказ для stale/foreign/dependent/linked/неполного scope | No-write/known-no-effect evidence реальных refused jobs; полный снимок, отсутствие native dispatch/checkpoint где применимо; unsupported CAD cases видимы отдельно | Pure отказы есть; конечная installed/native приёмка не завершена |
+| N5 | Безопасный отказ для stale/foreign/dependent/linked/неполного scope | No-write/known-no-effect evidence реальных refused jobs; полный снимок, отсутствие native dispatch/checkpoint где применимо; unsupported CAD cases видимы отдельно | Stale/foreign actual native приняты в finite faults; `child_plane` выполняется, два equation cases ещё not_run; N5 целиком открыт |
 | N6 | После ошибки получить известный отказ либо unknown с блокировкой | Full no-effect/restored scope либо terminal unknown/application hold; no inverse/retry после delete, поздние результаты/replay/blocked request и безопасная собственная очистка | Finite native fault-wrapper принят5/5,9137,84 с; root audit SQL/current baseline/cleanup принят. Historical unknown/unresolved сохранён; общий late/restart/reconciliation B4 gate остаётся отдельно |
 
 Положительная публичная цепочка объединяет N1–N4 на одной собственной модели.
@@ -94,6 +94,14 @@ baseline подтверждены. Root отдельно проверил SQL9 j
 Единственный historical unknown остаётся unresolved/reconciliation=None;
 проверка не изменяет статус задания. Это конечный internal faults gate,
 не public B2, не весь B4 и не завершение стадии1.
+
+**Installed public prerequisite-only preflight принят** после terminal faults:
+actual positive/fault reports и coherent SQL, текущие fixed helper hashes,
+installed wheel и metadata-only SDK83 tools/27 mutations. Отдельная fresh state
+не содержит CAD jobs.sqlite; native connection/модели не создавались.
+`prerequisite_gate_verified=True`, но `native_b2_accepted=False` и
+`public_mcp_accepted=False`. N5 dependent/linked gate остаётся открыт;
+перед actual public run preflight повторяется на его собственной fresh state.
 
 **Guarded positive dev96 принят.** Fresh прогон завершился за **4136,97 с**:
 leaf2/2, parent4/4, все112 captures normally returned. Root отдельно проверил
