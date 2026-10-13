@@ -239,3 +239,13 @@ checkpoint; unknown/missing checkpoint удерживают route без redispa
 B2/B3 preparations — **309 passed /10,27 с**, с искусственной геометрией и
 реальным durable protocol. Это не CAD-приёмка B3; final native producers/gate
 и остающиеся manifest groups открыты. Installed dev94/B1 helpers не менялись.
+
+Подготовлен `verifier_b3_component_membership.py` для конечной группы I03:
+пять исходных component IDs, повторный файл/две конфигурации/вложенный instance,
+current canonical/PID/16-value total transforms, body rosters3/2/3, body/topology
+roundtrips и пять конечных foreign-reference отказов. Полное состояние сборки,
+referenced parts и соседа проверяется до/после; имена и порядок перечисления
+не дают владение. **233 related pure passed /23,69 с** с реальными catalogs,
+JobRunner/SQLite/B3Reader и искусственными native handles. Actual native
+producers, exact installed B3 driver и terminal cleanup остаются открыты;
+accepted/native_acceptance/cleanup_authorized=false, manifest не расширен.
