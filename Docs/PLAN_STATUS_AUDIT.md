@@ -53,6 +53,12 @@ production-проверок. Исправленный source HEADb842a9c про�
 неизменном installed dev96, все31 frozen helper SHA совпадают.
 [Локальная контрольная точка](CHECKPOINT_B842A9C.md).
 
+Следующий isolated B3 блок: actual private stdio bootstrap поверх штатного
+installed server/runtime подготовлен, без новых public tools и CAD getters.
+Related52 pure/2,94 с и installed metadata-only bootstrap83 tools/0 trace records
+приняты; full10220 b842a9c не включает новый helper. Реальный CAD registration
+export/parent HWND mapping/PID-owner/whole-session/13-group gate ещё не принят.
+
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала
 через383,79 с на read-only подготовке эскиза:1 failed job/0 mutation checkpoint.

@@ -23,6 +23,25 @@ public stdio и terminal cleanup остаются открыты. Граница
 
 ## Последовательность подключения
 
+Подготовлен actual child bootstrap `verifier_b3_stdio_bootstrap.py`. Он запускает
+штатный installed `server_v2.main` с Runtime-наследником, не добавляя tools и
+не меняя package. После normally returned `_execute` на том же STA экспортирует
+существующие catalog ID/PID tables; дополнительных CAD getters не вызывает.
+Приватная запись включает operation/arguments/result SHA/connection epoch.
+Replay, не dispatch-ящий домен, не создаёт дополнительную запись. Ошибка или
+исчерпание bounded sidecar не меняет публичный job/result: parent обязан
+отвергнуть неполное доказательство. Terminal marker пишется только после
+фактически подтверждённого Runtime shutdown, не после тайм-аута ожидания.
+
+Bootstrap/export/namespace/Runtime related **52 pure passed /2,94 с** — реальные
+Runtime/SQLite/catalogs, искусственный CAD-адаптер. Installed dev96 bootstrap
+проверен отдельным metadata-only SDK:83 tools, exact schemas/build,0 runtime
+trace records, штатное закрытие SDK/worker. Это не actual CAD registration export
+и не приёмка B3. Parent original model/HWND mapping, current PID/owner roundtrip,
+whole-session native envelope и подключение13 групп остаются обязательными.
+Предыдущий full10220 checkpoint b842a9c не включает этот новый isolated helper;
+installed package и31 frozen helpers текущего N5 не изменены.
+
 Первый concrete raw producer подготовлен в
 `scripts/verifier_b3_native_part_reference.py`: прямые CAD getters для normal
 solid/surface body, plane face и line edge конечного I02. Original retained
