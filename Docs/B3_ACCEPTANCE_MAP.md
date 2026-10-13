@@ -397,3 +397,10 @@ Concrete direct getters I01 metadata/I03 component подготовлены от
 inactive metadata, state0 PID/current instance census, parent/raw transform и
 closing ABA envelope. Это artificial source checks после full9952 checkpoint;
 native opaque-ID binding, full session и exact-wheel CAD run ещё не выполнены.
+
+I01 native feature inventory source также подготовлен:
+`verifier_b3_native_feature_inventory.py`, **70 related pure passed /1,58 с**.
+Original complete tree/order/canonical owners, PID/unsupported rows, typed raw
+summary и повторное чтение после ordinals; замена/extra/missing/ABA отвергаются.
+Это independent API-shaped getter tests, не native CAD. Direct dimension/display
+anchor producer и интеграция namespace/whole-session остаются открытыми.

@@ -46,6 +46,17 @@ admission предшествует native comparisons; ordinals и closing compa
 whole-session ownership/producers и installed CAD driver остаются открытыми.
 Этот source-блок не входит в прежний full9952 checkpoint.
 
+I01 direct feature inventory подготовлен в
+`verifier_b3_native_feature_inventory.py`: bounded FirstFeature/subfeature
+traversal со всем original retained canonical census/order, raw owner/error/
+suppression/name/type и direct PID state0 roundtrip. Empty original PID явно
+даёт unsupported row; исчезновение ранее поддержанного PID не скрывается.
+После всех ordinal callbacks повторно читаются полный census и все raw facts;
+closing metadata/events закрывают ABA. **70 related pure passed /1,58 с**,
+API-shaped tree getters и прежние I01 routes. Dimension/display anchor producer,
+whole-session owner/namespace bridge и actual installed driver ещё открыты;
+новые CAD-вызовы этим source observer не выполнялись.
+
 1. До CAD принять exact installed wheel и metadata report. Offline dev96
    preflight уже принят:13 groups/27 tools, `can_start_native=false`.
    Не выполнять новые CAD-сценарии до terminal dev96 faults, root audit и
