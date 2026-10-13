@@ -279,3 +279,13 @@ surface подтверждаются отдельными producer callbacks; п
 через реальный ComponentDistanceCatalog/JobRunner/SQLite/B3Reader с искусственным
 BREP. Actual native producers, same-wheel B3 driver и cleanup открыты;
 accepted/native/cleanup остаются false. I10–I12 этим маршрутом не закрыты.
+
+Feature/dimension подмаршрут I01 подготовлен в `verifier_b3_part_objects.py`:
+полный finite census активной part, поддержанные list→get refs и неизменная
+domain revision; неподдержанные native строки имеют только null ID и объявленную
+reference error. Независимые native inventory/current anchors сверяются до/после,
+значения SI переводятся в mm/deg без догадок о единицах документа. Полная part,
+сосед и UI/session сохраняются. **290 related pure passed /20,45 с** с настоящими
+FeatureCatalog/DimensionCatalog/JobRunner/SQLite и искусственными native handles.
+Native producers, installed driver и отдельный sketch_get на same-wheel B1
+пластине остаются открыты. Source маршрут не разрешает acceptance/cleanup.
