@@ -332,3 +332,15 @@ reads существующего профиля — part→subassembly70 мм и
 искусственные native getters. Actual owner census/PID/all-pair/trimmed-boundary
 producers, installed B3 driver и terminal cleanup открыты; native/cleanup
 acceptance остаётся false. I12 и native transitions I04…I06 этим не закрыты.
+
+I12 source `verifier_b3_aggregate_point_axis.py` подготовлен: четыре positive
+aggregate point/axis reads3/6/2/0 мм, explicit shifted/rotated frame в тех же
+outside/gap случаях. Current original full leaf/body/face census, все leaf probes,
+actual point location/axis support и hidden nearest cylinder refs сверяются
+отдельными native producers. **402 related pure passed /25,79 с** через настоящие
+aggregate probe catalogs/JobRunner/SQLite/B3Reader и искусственные native getters.
+Surface-only refusal — отдельная owner-prepared фаза subassembly«Вариант» /
+child«Основная» после явного fixture setup: свежие context/IDs, полный surface+
+empty-cylinder census, один `component_has_no_solid_bodies`, no mutation.
+Helper не выполняет setup/setter. Actual setup ownership/postconditions,
+native producers, installed B3 driver и cleanup открыты; acceptance=false.

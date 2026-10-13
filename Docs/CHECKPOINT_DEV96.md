@@ -268,3 +268,10 @@ error отсутствует. Это running, не passed. Отдельная so
 добавила I01 document/feature/dimension/sketch routes и I03/I09/I10; related
 результаты и ограничения указаны в B3_ACCEPTANCE_MAP. Installed wheel и22
 fault helpers неизменны; source-preparation не закрывает native B3 или стадию1.
+
+Первый finite fault case dev96 полностью прошёл: `leaf_stale` — expected
+`stale_revision`, no checkpoint/native write, exact same-ID replay; полный
+current baseline и original receipt сохранились. Owner перешёл к `leaf_foreign`.
+Whole faults gate пока running, не accepted; новые native N5/public не запускаются.
+I12 source-preparation завершена отдельно,402 related pure/25,79 с; exact wheel
+и22 frozen fault helpers остаются неизменными. Actual native B3 gate открыт.
