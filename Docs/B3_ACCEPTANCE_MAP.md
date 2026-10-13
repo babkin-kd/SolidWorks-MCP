@@ -426,3 +426,10 @@ QueryInterface, opaque-ID/whole-session bridge и installed native run ещё н
 **10149 pure passed,323 CAD deselected /526,73 с**, normal exit0. Предыдущие
 9952 относятся к fd43cc8. Installed96/f80ee6d остаётся отдельным exact candidate;
 B3 actual native не выполнялся. [Полная сводка](B3_SOURCE_CHECKPOINT_DEV96.md).
+
+После source checkpoint10149 подготовлен direct native window/namespace
+collector `verifier_b3_native_namespace.py`:155 related pure/3,77 с на actual
+catalogs и artificial native-window getters. Exact complete model/window
+census, original HWND allowlist, unchanged registrations и closing ABA.
+Parent original canonical/HWND proof, actual SDK integration и used-PID current
+owner verification остаются gates; native ownership/membership не объявлены.

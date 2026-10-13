@@ -87,6 +87,18 @@ exact-wheel CAD driver остаются открытыми. Source-preparation �
 выше относятся к предыдущему fd43cc8. Installed wheel96/f80ee6d и30 helpers
 текущего live N5 не изменены; full source run не является CAD-приёмкой.
 
+Следующий namespace integration block после этого checkpoint:
+`verifier_b3_native_namespace.py` связывает actual existing catalog entries и
+UUID/PID exports с direct native current window/model census. Original explicit
+HWND allowlist, один window на model, полный registry/census, два одинаковых
+window bindings и два unchanged reference exports; closing event envelope
+включает все canonical comparisons/owner callbacks. **155 related pure passed
+/3,77 с**, actual catalogs и искусственные window getters; новый full-набор
+после каждого helper не повторялся. Actual SDK child подключение, parent
+original retained model/HWND proof и native used-PID owner roundtrips остаются
+открыты. Collector не объявляет birth ownership/current object membership,
+не создаёт IDs, не закрывает документы и не подключался к occupied SolidWorks.
+
 1. До CAD принять exact installed wheel и metadata report. Offline dev96
    preflight уже принят:13 groups/27 tools, `can_start_native=false`.
    Не выполнять новые CAD-сценарии до terminal dev96 faults, root audit и
