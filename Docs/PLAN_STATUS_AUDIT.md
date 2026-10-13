@@ -5,9 +5,12 @@
 **Текущий installed кандидат — dev94:** full pure7157/323 CAD deselected,
 artifact и metadata/stdIO79/25 приняты. Fresh positive native прошёл2673,43 с:
 75 returned captures, sketch/extrusion/replay,8000 мм³, neighbor/own cleanup/
-baseline. Strict positive gate принят; N4/N5 dev94 выполняется, public ещё не
-запущен. Running N4/N5 не принимается. Точные wheel/Git/
-source digest и факты — [CHECKPOINT_DEV94](CHECKPOINT_DEV94.md). B1–B5 открыты;
+baseline. N4/N5 завершился7/7 /5810,00 с, public5/5 /3276,21 с. Все три drivers
+normal exit0; root audit сверил actual SQLite, full independent snapshots,
+helper/report hashes и restored baseline. **B1 принят** на exact dev94;
+independent current session documents0/CommandInProgress=False, процессов нет.
+Точные wheel/Git/source digest и факты — [приёмка B1](B1_DEV94_ACCEPTANCE.md).
+B2–B5 открыты; следующим выполняется короткий own PID/suppression probe.
 разработка продолжается, пауза отменена последующими указаниями пользователя.
 
 Dev93 positive прошёл, но N5 extrusion restoration остановился на прежнем

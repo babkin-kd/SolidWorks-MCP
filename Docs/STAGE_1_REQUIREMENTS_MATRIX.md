@@ -16,7 +16,9 @@ Whole failed internal1/2 и прежний unknown dev86 сохранены от
 **L2 закрыт в прежнем scope. L3 принят на dev89:** семь internal-отчётов и
 public4/4, независимый saved-file readback и baseline подтверждены.
 [Точная приёмка L3](NATIVE_FIRST_SAVE_DEV89_ACCEPTANCE.md).
-**Остались пять блоков S1-B1…S1-B5; стадия1 открыта.**
+**B1 принят dev94** по всем5 условиям: positive4/4, finite7/7 и public5/5,
+actual SQLite/full native audit, baseline. [Точная приёмка](B1_DEV94_ACCEPTANCE.md).
+**Остались четыре блока S1-B2…S1-B5; стадия1 открыта.**
 
 Конечные карты остатка: [B2 — изменение и собственный элемент](B2_IMPLEMENTATION_MAP.md),
 [B3 — адресация и измерения](B3_ACCEPTANCE_MAP.md),
@@ -110,17 +112,17 @@ part того же наблюдаемого профиля. Гарантия с�
 
 | Блок | Что ещё требуется | Что снимает блокер |
 | --- | --- | --- |
-| B1 | Dev94 positive прошёл2673,43 с: обе операции/replay,8000 мм³, сосед, cleanup/baseline; strict gate принят. N4/N5 выполняется, public ещё не запущен. Исторический unknown dev93 сохранён | Exact dev94: все 5 условий B1, включая полный inverse44/46, baseline либо ожидаемый unknown/hold; combined internal/public gates. Не повторять старый unknown request. [Факты dev94](CHECKPOINT_DEV94.md), [история dev93](CHECKPOINT_DEV93.md) |
+| B1 | **Закрыт dev94**, полный native/public/SQLite audit; historical unknown dev93 сохранён | Все5 условий подтверждены, actual inverses32/40 steps, caps44/46 pure; full cleanup/baseline. [Приёмка](B1_DEV94_ACCEPTANCE.md). Новые profiles/planes не добавлять |
 | B2 | Подавление/возврат, preview/delete собственного leaf и общий gate | Все 6 условий B2; отдельная собственная fixture для разрушительных проверок, без произвольного графа зависимостей |
 | B3 | Конечный набор совместимости уже реализованных чтений текущего wheel | Все 5 условий B3 на заявленных профилях; старые отчёты не подменяют текущие, новые frames/load modes не добавляются |
 | B4 | Итоговые installed/native recovery и диагностика | Все 6 условий B4; поздний реальный результат и controlled faults явно различены; полный COM census не нужен |
 | B5 | Автоматическая цепочка одного итогового wheel и release gates | Все 11 шагов и 4 gates; приняты остальные блоки, собственная очистка и baseline, актуальный CI пакета |
 
 **Текущее продолжение 13.10.2026 — dev94:** full pure7157/323 CAD deselected,
-artifact и installed metadata79/25 приняты. Fresh positive прошёл2673,43 с и
-strict gate; same-wheel N4/N5 выполняется, public остаётся. Исправляется
-фактически найденный cap журнала inverse,
-а не расширяется CAD scope. [Точная привязка](CHECKPOINT_DEV94.md).
+artifact и installed metadata79/25 приняты. Same-wheel positive2673,43 с,
+N4/N5 5810,00 с и public3276,21 с прошли; **B1 закрыт**. Root audit actual SQLite
+и independent current empty session подтвердил гарантию. Далее B2 PID/suppression
+probe, затем конкретная реализация и приёмка B2. [Привязка](B1_DEV94_ACCEPTANCE.md).
 Следующие записи кандидатов и прежней паузы сохранены как история; разработка
 возобновлена. Ни очистка unknown, ни pure-подготовка B2/B3/B4 не закрывают блок.
 

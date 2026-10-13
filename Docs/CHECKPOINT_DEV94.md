@@ -1,5 +1,12 @@
 # Кандидат dev94: конечный журнал восстановления B1
 
+**Итог 13.10.2026: B1 принят.** Positive4/4 /2673,43 с, finite N4/N5 7/7 /
+5810,00 с, public5/5 /3276,21 с одного exact wheel; все drivers/batch normal
+exit0. Root final audit actual SQLite/full independent snapshots/report hashes
+accepted; independently текущая сессия documents0/CIPFalse, процессов нет.
+Стадия1/B2–B5 остаются открыты. [Конечная приёмка](B1_DEV94_ACCEPTANCE.md).
+Ниже сохранена история подготовки и последовательного запуска кандидата.
+
 Исправляется фактический отказ dev93 N5: global limit32 остановил inverse
 после удаления extrusion и rebuild, перед retirement пустого annotation view.
 [История и безопасная очистка](CHECKPOINT_DEV93.md).
@@ -69,7 +76,7 @@ state/requests. Обязательные positive/internal faults/public дол�
 к exact installed dev94; старые accepted отчёты не подставляются вместо них.
 
 Подготовленные внешние B3/B4 helpers остаются отдельным остатком приёмки:
-[B3](B3_ACCEPTANCE_MAP.md), [B4](B4_ACCEPTANCE_MAP.md). B1–B5 открыты;
+[B3](B3_ACCEPTANCE_MAP.md), [B4](B4_ACCEPTANCE_MAP.md). B2–B5 открыты;
 imports/export/STL отложены, stage2 не расширяется. Push/новый CI не выполнялись.
 
 Пока CAD занят, отдельно подготовлены новые внешние B2/B3 файлы (не зависимости

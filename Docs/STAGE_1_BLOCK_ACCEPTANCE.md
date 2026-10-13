@@ -130,6 +130,10 @@ close/open/следующего Save3. (3) Destination conflict и race не п�
 
 ## S1-B1 — явная плоскость, эскиз и базовое выдавливание
 
+**Принят на exact dev94**: все5 условий ниже, positive4/4, finite7/7,
+public5/5, actual SQLite/full native root audit и baseline. [Приёмка](B1_DEV94_ACCEPTANCE.md).
+Scope заморожен; дальнейшие profiles/planes остаются D2-задачами.
+
 **Результат:** создать русскую деталь «Контрольная деталь», выбрать существующую
 native plane по ID, получить отдельный прямоугольный эскиз «Эскиз основания»
 и blind extrusion «Основание» с доступными размерами.
