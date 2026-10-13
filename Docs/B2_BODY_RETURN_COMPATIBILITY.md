@@ -46,8 +46,9 @@ raw GetBody→QI canonical. Финальный связанный набор: **
 нового source-кандидата и фактический N5/public остаются gates. Независимый
 тестовый агент работал только с pure-файлом, не подключался к SolidWorks.
 
-Source-кандидат зафиксирован как39eeb8d. Запущен один итоговый full pure;
-executable source/tests зафиксированы до его terminal результата. Отдельный
+Source-кандидат39eeb8d прошёл один итоговый full pure: **11104 passed,
+323 CAD deselected /470,01 с**, normal exit0. Executable source/tests не
+менялись во время проверки; последующие коммиты только документальные. Отдельный
 fresh N5 child-plane-4 запущен на прежнем exact installed dev96 после
 подтверждённой очистки и короткой пробы. Positive SQL/helper preflight прошёл,
 фиксируются32 helpers. Root единственный COM-владелец; текущая phase
