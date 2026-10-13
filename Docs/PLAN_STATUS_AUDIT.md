@@ -32,7 +32,7 @@ Actual native transitions I04…I06 остаются
 видимыми открытыми задачами; passive phase probes не принимают саму native mutation.
 Direct native-getter observers I01 metadata/feature/dimension, I02 references,
 I03 component и actual private registration export подготовлены.
-Current source HEAD56fbc39: **10149 pure passed/323 CAD deselected,526,73 с**;
+Предыдущий source checkpoint HEAD56fbc39: **10149 pure passed/323 CAD deselected,526,73 с**;
 actual CAD/namespace/whole-session driver ещё открыт. Полная source-контрольная
 точка отделена от installed wheel — [B3_SOURCE_CHECKPOINT_DEV96](B3_SOURCE_CHECKPOINT_DEV96.md).
 Offline exact installed B3 preflight dev96 принят13/27 без CAD;
@@ -47,7 +47,11 @@ failure:25 failed,10145 passed,323 deselected; build/install/metadata skipped.
 Все25 отказов связаны с тестовыми private-path fixtures, использовавшими
 временный каталог вне `work/`. Локальный full pure с basetemp внутри `work/`
 эту зависимость не выявлял. Исправляются fixtures с сохранением строгих
-production-проверок; повторный push/CI до локальной проверки не выполняется.
+production-проверок. Исправленный source HEADb842a9c прошёл **10220 pure passed,
+323 CAD deselected /462,70 с**, normal exit0 с basetemp вне work. Remote CI
+остаётся failure; нового push/CI нет. Fresh N5 child-plane-2 выполняется на
+неизменном installed dev96, все31 frozen helper SHA совпадают.
+[Локальная контрольная точка](CHECKPOINT_B842A9C.md).
 
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала

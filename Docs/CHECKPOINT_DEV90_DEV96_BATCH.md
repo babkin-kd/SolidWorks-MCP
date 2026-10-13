@@ -99,3 +99,8 @@ maintenance cleanup report сохранена отдельно; CloseDoc не п
 с внешним pytest basetemp. Root связанные binder/baseline/observer/refusal группы:
 **42+48+208 passed**. Это485 связанных pure-проверок, не новый full/CI результат.
 Production private-path guards сохранены; повторный push не выполнен.
+
+После локального исправления полный source-набор на b842a9c принят:
+**10220 passed,323 CAD deselected /462,70 с**, external pytest basetemp,
+normal exit0. [Точная локальная контрольная точка](CHECKPOINT_B842A9C.md).
+Этот результат не заменяет remote CI failure или текущую native-приёмку.
