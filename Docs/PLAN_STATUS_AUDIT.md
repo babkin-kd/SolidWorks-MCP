@@ -2,6 +2,13 @@
 
 ## Текущий итог
 
+Конечная оставшаяся очередь preview/delete зафиксирована отдельно:
+[B2 dev96 — остатки](B2_DEV96_REMAINING.md). Дополнительный пассивный preflight
+подтвердил exact installed wheel, фактические positive/fault SQL, неизменный
+historical unknown и все31 frozen helpers текущего N5; CAD не подключался.
+Source-кандидат c229bc4 направлен на один итоговый pure-набор без CAD;
+результат пока pending. Это не обновляет native acceptance B2/B3.
+
 **Текущий installed кандидат — dev96:** full pure8427/323 CAD deselected,
 260,01 с; clean artifact и metadata/stdIO83/27 приняты, без CAD в metadata.
 Own-leaf preview/delete domain/runtime/MCP реализованы. Guarded positive2
