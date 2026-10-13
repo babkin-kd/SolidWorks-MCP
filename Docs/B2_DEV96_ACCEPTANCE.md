@@ -203,3 +203,29 @@ namespaces сохраняются, server counters/revisions не подстав
 preflight до metadata provider/CAD, без создания server. Это expected refusal,
 не public native-приёмка; её статус **not_run**. Изменение annotation position/text,
 для которого нет полного owner-bound правила, является отказом, а не успехом.
+
+### N5: первая actual попытка и подготовка исправления
+
+Первая `child_plane` попытка dev96 завершилась failed после пяти нормально
+вернувшихся операций: проверка canonical identity новой плоскости отказала.
+Переименование и preview/delete запросы не выполнялись. Setup сохраняется
+unknown/unresolved без reconciliation и повторного исполнения старого запроса.
+Независимая инспекция подтвердила quiescence и собственные модели. Две детали
+закрыты без сохранения; отдельный read-only аудит подтвердил исходный полный
+baseline, пустую сессию/CIPFalse, non-STL настройки и неизменный журнал.
+
+Подготовлен binder normally returned plane: actual QueryInterface/каноническое
+сравнение с единственной новой операцией до clear/rebuild. Переход к IRefPlane
+разрешён только по exact E_NOINTERFACE; чужой IFeature или неизвестный HRESULT
+не допускает fallback. Полный исходный ordered census сохраняется. Исправлена
+проверка terminal baseline: проверяется полный composite snapshot с пустыми
+document/window rosters, а не пустой список доказательств. **42 связанных pure
+теста прошли /0,22 с**; native-причина старого отказа и новая N5 приёмка остаются
+открытыми. Installed dev96/wheel не изменён.
+
+Дополнительно **48 target +208 observer/refusal pure** прошли /4,95 и14,66 с.
+Исправление четырёх CI test-fixture файлов проверено отдельно: **187 passed
+/77,30 с**, pytest basetemp вне `work/`; production private-path guards и
+negative outside-work случаи сохранены. Всего485 связанных pure-тестов;
+общий full pure/CI после этих изменений ещё не выполнялся. Ошибочный локальный
+запуск с ACL-denied basetemp не засчитан и заменён указанными проверками.

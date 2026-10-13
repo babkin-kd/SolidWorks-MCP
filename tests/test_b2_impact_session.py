@@ -7,6 +7,7 @@ import sys
 import pytest
 from solidworks_mcp.jobs import ExecutionFailure
 from test_b2_impact_target import target, fixture, leaf, extrusion_proof, proof, case, domain
+from test_b2_impact_fixture import b2_private_dir,b2_outside_dir
 
 scripts = str(Path(__file__).resolve().parents[1] / 'scripts')
 sys.path.insert(0, scripts)
@@ -85,9 +86,9 @@ def test_session_comparator_rejects_partial_or_authority_claim(observer):
         with pytest.raises(FixtureGate): same_refused_session(value, bad)
 
 
-def test_actual_linked_equation_file_is_fingerprinted_and_never_inferred_empty(target, tmp_path):
+def test_actual_linked_equation_file_is_fingerprinted_and_never_inferred_empty(target, b2_private_dir):
     x = target
-    path = (tmp_path / 'owned-equations.txt').resolve()
+    path = (b2_private_dir / 'owned-equations.txt').resolve()
     path.write_text('"Контрольная независимая величина" = 3', encoding='utf8')
     binding = dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
     x.helper.link_equation_file(path, expected_sha256=binding['sha256'])
@@ -103,8 +104,8 @@ def test_actual_linked_equation_file_is_fingerprinted_and_never_inferred_empty(t
     with pytest.raises(FixtureGate, match='changed'): collector.capture()
 
 
-def test_bound_equation_file_must_match_observed_link_and_original_bytes(observer, tmp_path):
-    path = (tmp_path / 'private.txt').resolve()
+def test_bound_equation_file_must_match_observed_link_and_original_bytes(observer, b2_private_dir):
+    path = (b2_private_dir / 'private.txt').resolve()
     path.write_text('Owned fixture', encoding='utf8')
     binding = dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
     x = observer
@@ -112,3 +113,10 @@ def test_bound_equation_file_must_match_observed_link_and_original_bytes(observe
     with pytest.raises(FixtureGate, match='equation link'): x.session_collector.capture()
     for bad in ({**binding, 'sha256': '0' * 64}, {**binding, 'path': path.name}):
         with pytest.raises(FixtureGate): equation_file_facts(bad)
+
+
+def test_equation_file_fingerprint_rejects_absolute_file_outside_work(b2_outside_dir):
+    path=b2_outside_dir/'outside-equations.txt';path.write_text('Owned fixture',encoding='utf8')
+    binding=dict(path=str(path.resolve()),sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+    with pytest.raises(FixtureGate,match='absolute private'):
+        equation_file_facts(binding)

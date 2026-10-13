@@ -3,6 +3,7 @@ from copy import deepcopy
 import hashlib
 from pathlib import Path
 import sys
+import tempfile
 from types import SimpleNamespace as NS
 
 import pytest
@@ -18,6 +19,22 @@ scripts=Path(__file__).resolve().parents[1]/'scripts'
 sys.path.insert(0,str(scripts))
 try:import verifier_b2_impact_fixture as helper
 finally:sys.path.remove(str(scripts))
+
+
+@pytest.fixture
+def b2_private_dir():
+    # Native verifiers deliberately bind fixture files to repo/work, independently
+    # of pytest's temp root. Keep production guards intact in CI and locally.
+    private=scripts.parent/'work'
+    private.mkdir(exist_ok=True)
+    return Path(tempfile.mkdtemp(prefix='pure-b2-path-',dir=private))
+
+
+@pytest.fixture
+def b2_outside_dir(tmp_path):
+    # Preserve outside-work refusal even when a local run places pytest temp in work.
+    if not tmp_path.resolve().is_relative_to((scripts.parent/'work').resolve()):return tmp_path
+    return Path(tempfile.mkdtemp(prefix='pure-b2-outside-'))
 
 
 @pytest.fixture
@@ -137,7 +154,16 @@ def fixture(leaf):
         if x.fault=='ledger_returned' and name.endswith('insert_plane') and phase=='returned':
             raise OSError('Artificial durable insertion acknowledgement loss')
         x.store.record_mutation_step(x.operation_id,name=name,phase=phase,evidence=evidence)
-    x.helper=helper.B2ImpactFixtures(x.ownership,b,x.catalog,recorder=recorder,wrap=lambda raw,interface:raw)
+    def query(raw,interface):
+        if interface=='IFeature':
+            if any(raw is feature for feature in c.features):return raw
+            error=RuntimeError('Artificial specific/foreign object has no IFeature interface')
+            error.hresult=-2147467262
+            raise error
+        assert interface=='IRefPlane'
+        return raw
+    x.helper=helper.B2ImpactFixtures(x.ownership,b,x.catalog,recorder=recorder,
+        wrap=lambda raw,interface:raw,query=query)
     return x
 
 
@@ -180,9 +206,13 @@ def test_pending_native_or_journal_acknowledgement_never_clears_interrupted_sele
 @pytest.mark.parametrize('fault',['select_false','insert_null','foreign_plane_handle','missing_parent','missing_child','rebuild_false'])
 def test_normally_returned_false_or_unconfirmed_new_handle_graph_refuses_without_undo_or_delete(fixture,fault):
     x=fixture;x.fault=fault
-    with pytest.raises((helper.FixtureGate,ExecutionFailure)):x.helper.add_child_plane(x.c.baseline)
+    with pytest.raises((ValueError,ExecutionFailure)):x.helper.add_child_plane(x.c.baseline)
     assert x.helper.pending_native_step is None and x.helper.journal_failed is False
-    assert x.selection.selected==[] and x.write_calls.count('InsertRefPlane')<=1
+    if fault in ('insert_null','foreign_plane_handle'):
+        assert len(x.selection.selected)==1
+        assert 'ClearSelection2' not in x.write_calls and 'EditRebuild3' not in x.write_calls
+    else:assert x.selection.selected==[]
+    assert x.write_calls.count('InsertRefPlane')<=1
 
 
 @pytest.mark.parametrize('fault',['foreign_role','missing_pid','nonplanar','foreign_face_owner','foreign_pid','stale_epoch',
@@ -209,10 +239,10 @@ def test_unproven_face_pid_geometry_current_canonical_or_owner_refuses_before_na
 
 
 @pytest.mark.parametrize('linked',[False,True])
-def test_unused_global_and_actual_file_link_are_distinct_verified_native_manager_context_fixtures(fixture,linked,tmp_path):
+def test_unused_global_and_actual_file_link_are_distinct_verified_native_manager_context_fixtures(fixture,linked,b2_private_dir):
     x=fixture;original=receipt_evidence(x)
     if linked:
-        path=tmp_path/'owned-equations.txt';path.write_text('"Контрольная независимая величина" = 3',encoding='utf8')
+        path=b2_private_dir/'owned-equations.txt';path.write_text('"Контрольная независимая величина" = 3',encoding='utf8')
         raw=path.read_bytes();result=x.helper.link_equation_file(path,expected_sha256=hashlib.sha256(raw).hexdigest())
         assert path.read_bytes()==raw and x.manager.FilePath==str(path.resolve())
     else:result=x.helper.add_unused_equation()
@@ -227,18 +257,28 @@ def test_unused_global_and_actual_file_link_are_distinct_verified_native_manager
 
 
 @pytest.mark.parametrize('fault',['equation_pending','equation_false','existing_row','linked_already','file_hash','file_content'])
-def test_equation_pending_existing_or_unowned_file_refuses_one_shot_without_row_recovery(fixture,fault,tmp_path):
+def test_equation_pending_existing_or_unowned_file_refuses_one_shot_without_row_recovery(fixture,fault,b2_private_dir):
     x=fixture;x.fault=fault
     if fault=='existing_row':x.manager.rows=['"Чужая величина" = 7']
     if fault=='linked_already':x.manager.LinkToFile=True
     if fault.startswith('file_'):
-        path=tmp_path/'private.txt';path.write_text('"Контрольная независимая величина" = '+('4' if fault=='file_content' else '3'),encoding='utf8')
+        path=b2_private_dir/'private.txt';path.write_text('"Контрольная независимая величина" = '+('4' if fault=='file_content' else '3'),encoding='utf8')
         digest='0'*64 if fault=='file_hash' else hashlib.sha256(path.read_bytes()).hexdigest()
         callback=lambda:x.helper.link_equation_file(path,expected_sha256=digest)
     else:callback=x.helper.add_unused_equation
-    with pytest.raises((helper.FixtureGate,RuntimeError)):callback()
+    with pytest.raises((helper.FixtureGate,RuntimeError)) as failure:callback()
+    if fault.startswith('file_'):assert 'Exact owned unused-equation file bytes/SHA' in str(failure.value)
     assert x.write_calls==(['Add2'] if fault in ('equation_pending','equation_false') else [])
     if fault=='equation_pending':assert ledger(x)[-1]['phase']=='pending'
+
+
+def test_linked_equation_outside_work_refuses_before_any_native_fixture_write(fixture,b2_outside_dir):
+    x=fixture;path=b2_outside_dir/'outside-equations.txt'
+    path.write_text('"Контрольная независимая величина" = 3',encoding='utf8')
+    assert not path.resolve().is_relative_to((scripts.parent/'work').resolve())
+    with pytest.raises(helper.FixtureGate,match='private existing'):
+        x.helper.link_equation_file(path,expected_sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+    assert x.write_calls==[]
 
 
 def test_requirements_never_claim_extra_plane_equations_or_ancillary_complete_scope():

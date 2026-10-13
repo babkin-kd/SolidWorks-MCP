@@ -13,8 +13,16 @@ Exact dev96/f80ee6d/wheel SHA9088e018 неизменен. Finite negative/unknow
 Root audit сверил actual SQL9 jobs, fixed22 helpers, report SHA и current empty
 baseline/CIPFalse/non-STL preferences. Historical unknown/unresolved сохранён,
 не объявлен succeeded и не reconciled; own cleanup подтверждена.
-Теперь выполняется одиночный N5 `child_plane`; `unused_equation` и
-`linked_equation` идут после его terminal acceptance/cleanup, затем public B2.
+Первая N5 `child_plane` завершилась failed: пять native-операций нормально
+вернулись, затем проверка canonical identity новой плоскости отказала до
+переименования и запросов preview/delete. Setup job сохранён unknown/unresolved;
+причина несоответствия интерфейсов ещё не подтверждена native-пробой. Независимая
+read-only инспекция подтвердила quiescence и две собственные контрольные детали.
+Обе закрыты без сохранения; отдельный read-only post-cleanup аудит подтвердил
+исходный полный baseline, пустую сессию/CIPFalse и non-STL настройки. Исходный
+cleanup report сохранён failed из-за сравнения JSON-list с Python-tuple;
+повторного CloseDoc не было. N5 не принят. `unused_equation` и
+`linked_equation` остаются not_run, затем требуется public B2.
 Общий B2 gate остаётся открыт.
 [Привязка dev96](CHECKPOINT_DEV96.md).
 
@@ -33,6 +41,13 @@ Offline exact installed B3 preflight dev96 принят13/27 без CAD;
 Metadata-only installed timings enabled/disabled/storage-unavailable dev96
 приняты без CAD, но не заменяют native mutation/restore/hold B4-N6.
 B2–B5 и стадия1 остаются открыты; stage2 не расширяется.
+
+Пакет отправлен одним push на head `274085f`. CI run38451907929 завершился
+failure:25 failed,10145 passed,323 deselected; build/install/metadata skipped.
+Все25 отказов связаны с тестовыми private-path fixtures, использовавшими
+временный каталог вне `work/`. Локальный full pure с basetemp внутри `work/`
+эту зависимость не выявлял. Исправляются fixtures с сохранением строгих
+production-проверок; повторный push/CI до локальной проверки не выполняется.
 
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала

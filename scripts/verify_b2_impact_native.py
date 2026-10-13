@@ -42,7 +42,7 @@ HELPERS=('verify_b2_impact_native.py','verify_owned_leaf_deletion_positive.py','
     'verify_rectangle_stages_positive.py','verifier_rectangle_stages.py','probe_native_first_save_domain.py',
     'verify_installed_metadata.py','verify_wheel_artifact.py','verify_bounds_measurements.py',
     'verify_export_operations.py','verify_native_document_open.py','verify_native_first_save_rejections.py',
-    'verifier_dimension_diagnostics.py')
+    'verifier_dimension_diagnostics.py','verifier_b2_plane_birth.py')
 
 
 def setup_pairs(job,kind):
@@ -161,6 +161,7 @@ class OwnImpactHook(OwnLeafPositiveHook):
         report.update(phase='n5_original_BASE_preparation',native_calls_live=True);persist()
         prepared=runner.submit('n5-original-BASE-preparation','feature.prepare_leaf_deletion',context,
             lambda:leaf.prepare(**context),context=context)
+        report['native_calls_live']=False;persist()
         report['base_preparation']=detached(store.get(prepared['operation_id']));persist()
         rows={row['operation_id']:row for row in read_journal(store.path)}
         durable=durable_b2_job(prepared,rows[prepared['operation_id']])
@@ -215,6 +216,9 @@ class OwnImpactHook(OwnLeafPositiveHook):
 
         setup_job=runner.submit('n5-'+self.kind+'-fixture-setup',SETUP_OPERATION,setup_args,setup,context=setup_context,
             mutates=True,pass_operation_id=True,verify=lambda value:value['setup_verified'] is True)
+        # InlineSta returned synchronously even if JobRunner preserved an unknown
+        # mutation. This records invocation state, never success or reconciliation.
+        report['native_calls_live']=False;persist()
         report['fixture_setup_job']=detached(store.get(setup_job['operation_id']));persist()
         require(setup_job==report['fixture_setup_job'] and setup_job['status']=='succeeded' and setup_job['error'] is None
             and setup_job['mutation']['phase']=='committed' and setup_job['mutation']['verification']['outcome']=='committed'
@@ -251,6 +255,22 @@ class OwnImpactHook(OwnLeafPositiveHook):
         report.update(callback_passed=True,phase='delegated_owned_cleanup');persist()
 
 
+def empty_native_baseline(value):
+    """Actual composite snapshot format; empty document rosters, not empty proof."""
+    if type(value) not in (list,tuple) or len(value)!=3:return False
+    native,physical,windows=value
+    if type(native) not in (list,tuple) or len(native)!=4:return False
+    if type(physical) not in (list,tuple) or len(physical)!=4:return False
+    revision,visible,active,documents=native
+    rows,physical_active,guard,physical_visible=physical
+    return (type(revision) is str and bool(revision) and type(visible) is bool
+        and type(physical_visible) is bool and visible==physical_visible
+        and active is None and physical_active is None and guard is False
+        and type(documents) in (list,tuple) and len(documents)==0
+        and type(rows) in (list,tuple) and len(rows)==0
+        and type(windows) in (list,tuple) and len(windows)==0)
+
+
 def terminal_case(hook,state,report):
     parent_path=Path(state)/'report.json'
     parent=json.loads(parent_path.read_text(encoding='utf8'))
@@ -258,7 +278,8 @@ def terminal_case(hook,state,report):
         and parent['positive_case_passed'] is True and parent['native_calls_live'] is False
         and parent.get('retained_process',False) is False and parent['baseline_restored'] is True
         and parent['own_cleanup_verified'] is True and parent['owned_documents']==[]
-        and parent['original_baseline']==parent['restored_baseline']==[]
+        and empty_native_baseline(parent['original_baseline'])
+        and _json(parent['original_baseline'])==_json(parent['restored_baseline'])
         and parent['original_application']==parent['restored_application'],
         'Actual terminal parent empty session/original baseline/non-STL preferences proof required.')
     preferences=parent['restored_preferences']

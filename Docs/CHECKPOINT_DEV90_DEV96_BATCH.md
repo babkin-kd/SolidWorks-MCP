@@ -74,3 +74,28 @@ head. Старый success38193016491 относится только к9489360 
 новому пакету. Новая CI-сборка сама по себе не имеет native-приёмки текущего
 installed wheel. PR остаётся draft; main не обновляется до требуемой приёмки.
 CAD-файлы, шаблоны, PDM-данные и полные журналы не публикуются.
+
+## Фактический результат после отправки
+
+Один push выполнен на head `274085fa75cd3d266afe72e55bf0e0175eca8124`.
+PR15 остаётся draft. [CI run38451907929](https://github.com/babkin-kd/SolidWorks-MCP/actions/runs/38451907929)
+завершился failure: **25 failed,10145 passed,323 deselected /1276,02 с**.
+Build/install/metadata этапы skipped. Причина25 отказов — test fixtures во
+внешнем pytest temporary directory вместо требуемого private `work/`; локальный
+basetemp внутри `work/` скрывал ошибку. Production guards сохраняются, исправление
+и проверка с внешним временным каталогом накапливаются локально.
+
+N5 `child_plane` первой попытки завершился failed после пяти нормально
+вернувшихся native-операций: canonical binding новой плоскости не подтверждён.
+Setup unknown/unresolved сохранён, preview/delete ещё не выполнялись. Независимая
+инспекция подтвердила quiescence/собственный scope. Обе собственные детали закрыты;
+отдельный read-only аудит подтвердил исходный composite baseline/CIPFalse,
+non-STL настройки и неизменный unknown журнал. Ошибка сравнения list/tuple в
+maintenance cleanup report сохранена отдельно; CloseDoc не повторялся.
+Ни этот случай, ни общий B2 gate не приняты. Запись о running выше описывает
+момент подготовки пакета.
+
+Локальное исправление CI test fixtures подтверждено **187 pure passed /77,30 с**
+с внешним pytest basetemp. Root связанные binder/baseline/observer/refusal группы:
+**42+48+208 passed**. Это485 связанных pure-проверок, не новый full/CI результат.
+Production private-path guards сохранены; повторный push не выполнен.

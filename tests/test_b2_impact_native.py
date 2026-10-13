@@ -15,7 +15,7 @@ from solidworks_mcp.native_first_save import SNAPSHOT_SCOPE,validated_part_snaps
 from solidworks_mcp.owned_leaf_deletion_catalog import OwnLeafDeletionCatalog
 from solidworks_mcp.rectangle_snapshot import validated_rectangle_snapshot
 from test_feature_suppression_domain import InlineWorker
-from test_b2_impact_fixture import fixture,leaf,extrusion_proof,proof,case,domain
+from test_b2_impact_fixture import fixture,leaf,extrusion_proof,proof,case,domain,b2_private_dir,b2_outside_dir
 from test_b2_public_preflight import rebind_creations,artifacts,faults,execution,sketch_proof,empty_adapter
 
 scripts=Path(__file__).resolve().parents[1]/'scripts'
@@ -35,7 +35,7 @@ def first_save(current):
 
 
 @pytest.fixture
-def native_case(fixture,sketch_proof,tmp_path):
+def native_case(fixture,sketch_proof,b2_private_dir):
     x=fixture;a=x.c.adapter
     # Complete only the unused artificial harness ledger, before fresh real B1
     # coordinator jobs; no native fixture writes have occurred yet.
@@ -81,7 +81,7 @@ def native_case(fixture,sketch_proof,tmp_path):
         cases=[dict(label=label,passed=True) for label in ('B1-N1-separate-sketch-and-replay',
             'B1-N1-separate-extrusion-and-replay','B1-N2-N3-exact-native-base-and-neighbor')],
         sketch_job=creations[0],extrusion_job=creations[1])
-    (tmp_path/'report.json').write_text(json.dumps(parent,ensure_ascii=False),encoding='utf8')
+    (b2_private_dir/'report.json').write_text(json.dumps(parent,ensure_ascii=False),encoding='utf8')
     def retire(sw,module,root,retiring,owned,record):
         assert sw.CommandInProgress is True
         x.delegations.append(root)
@@ -99,14 +99,15 @@ def native_case(fixture,sketch_proof,tmp_path):
                 deepcopy([row for row in x.c.baseline['references'] if row['kind'] in ('face','edge')])))
     def fixtures(*args,**kwargs):
         kwargs['wrap']=lambda raw,interface:raw
+        kwargs['query']=x.helper.query
         return helper.B2ImpactFixtures(*args,**kwargs)
     def hook(kind='child_plane',**kwargs):
         report=dict(scope=helper.SCOPE,fixture_kind=kind,artificial_fixture=True,accepted=False,
             native_b2_accepted=False,public_mcp_accepted=False,native_calls_live=False)
-        current=helper.OwnImpactHook(driver,tmp_path,report,lambda:None,fixture_kind=kind,
+        current=helper.OwnImpactHook(driver,b2_private_dir,report,lambda:None,fixture_kind=kind,
             leaf_factory=OwnLeafDeletionCatalog,runner_factory=JobRunner,fixture_factory=fixtures,target_factory=target_reader,**kwargs)
         current.construction();return current
-    x.make_hook=hook;x.parent=parent;x.driver=driver;x.report_path=tmp_path/'report.json'
+    x.make_hook=hook;x.parent=parent;x.driver=driver;x.report_path=b2_private_dir/'report.json'
     return x
 
 
@@ -177,15 +178,21 @@ def test_neighbor_projection_keeps_all_current_added_data_and_drops_only_declare
     with pytest.raises(ValueError):helper.neighbor_projection(hostile,old)
 
 
-def test_equation_file_is_exclusive_private_and_exact_before_any_cad(tmp_path):
-    facts=helper.prepare_equation_file(tmp_path)
+def test_equation_file_is_exclusive_private_and_exact_before_any_cad(b2_private_dir):
+    facts=helper.prepare_equation_file(b2_private_dir)
     path=Path(facts['path']);assert helper.sha256(path)==facts['sha256']
-    with pytest.raises(FileExistsError):helper.prepare_equation_file(tmp_path)
+    with pytest.raises(FileExistsError):helper.prepare_equation_file(b2_private_dir)
+
+
+def test_equation_file_creation_outside_work_is_rejected(b2_outside_dir):
+    with pytest.raises(ValueError,match='private fixture state'):
+        helper.prepare_equation_file(b2_outside_dir)
+    assert not (b2_outside_dir/'n5-owned-equations.txt').exists()
 
 
 @pytest.mark.parametrize('bad',[False,True])
-def test_cli_positive_preflight_uses_actual_artifact_sha_fixed_helpers_and_sql_before_native_callback(artifacts,tmp_path,bad):
-    x=artifacts;state=tmp_path/'fresh_native_case';cad=[]
+def test_cli_positive_preflight_uses_actual_artifact_sha_fixed_helpers_and_sql_before_native_callback(artifacts,b2_private_dir,bad):
+    x=artifacts;state=b2_private_dir/'fresh_native_case';cad=[]
     class StopBeforeCAD(RuntimeError):pass
     driver=NS(RectangleConstructionCatalog=lambda *args:None,retire_owned=lambda *args:None,
         package_evidence=lambda *args,**kwargs:x.package)
@@ -206,13 +213,25 @@ def test_cli_positive_preflight_uses_actual_artifact_sha_fixed_helpers_and_sql_b
     assert set(report['verifier_hashes'])==set(helper.HELPERS)
 
 
+def test_cli_rejects_outside_repo_work_before_driver_or_cad(artifacts,b2_outside_dir):
+    x=artifacts;state=b2_outside_dir/'outside_native_case';calls=[]
+    driver=NS(RectangleConstructionCatalog=lambda *args:None,retire_owned=lambda *args:None,
+        main=lambda:calls.append('driver'),package_evidence=lambda *args,**kwargs:calls.append('package'))
+    args=['--fixture-kind','linked_equation','--positive-report',str(x.positive_path),
+        '--positive-report-sha256',x.args.positive_report_sha256,'--state-dir',str(state)]
+    with pytest.raises(ValueError,match='Fresh private state'):
+        helper.main(args,driver=driver,leaf_factory=OwnLeafDeletionCatalog)
+    assert calls==[] and not state.exists()
+
+
 def test_terminal_case_accepts_only_n5_scope_after_actual_terminal_sql_and_fixed_nonstl_baseline(native_case):
     x=native_case;hook=x.make_hook()
     hook.retire(x.sw,None,x.binding.model,[x.binding.model],x.owned,lambda models:None)
     neighbor=x.owned[0];hook.retire(x.sw,None,neighbor,[neighbor],x.owned,lambda models:None)
     preferences=dict(ordinary_toggle=False,stl_units=1)
+    baseline=[['31.2.1',True,None,[]],[[],None,False,True],[]]
     parent=dict(phase='terminal',positive_case_passed=True,native_calls_live=False,baseline_restored=True,
-        own_cleanup_verified=True,owned_documents=[],original_baseline=[],restored_baseline=[],
+        own_cleanup_verified=True,owned_documents=[],original_baseline=baseline,restored_baseline=deepcopy(baseline),
         original_application={'artificial':True},restored_application={'artificial':True},original_preferences=preferences,
         restored_preferences=dict(scope='application_preferences_except_stl_v1',excluded_fields=sorted(helper.DEFERRED_STL_FIELDS),
             snapshot_read=True,scope_exactly_equal=True,stl_preferences_verified=False,cause_inferred=False,
@@ -225,5 +244,9 @@ def test_terminal_case_accepts_only_n5_scope_after_actual_terminal_sql_and_fixed
     helper.terminal_case(hook,x.report_path.parent,hook.report)
     assert hook.report['accepted'] is True and hook.report['native_b2_accepted'] is hook.report['public_mcp_accepted'] is False
     parent['restored_preferences']['after']['ordinary_toggle']=True
+    x.report_path.write_text(json.dumps(parent,ensure_ascii=False),encoding='utf8')
+    with pytest.raises(ValueError):helper.terminal_case(hook,x.report_path.parent,hook.report)
+    parent['restored_preferences']['after']['ordinary_toggle']=False
+    parent['original_baseline']=parent['restored_baseline']=[]
     x.report_path.write_text(json.dumps(parent,ensure_ascii=False),encoding='utf8')
     with pytest.raises(ValueError):helper.terminal_case(hook,x.report_path.parent,hook.report)

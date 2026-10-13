@@ -16,6 +16,7 @@ from solidworks_mcp.constants import SW_REF_PLANE_DISTANCE
 from solidworks_mcp.features import russian_name
 from solidworks_mcp.jobs import _json
 from solidworks_mcp.rectangle_snapshot import BASE, validated_rectangle_snapshot
+from verifier_b2_plane_birth import OriginalFeature,bind_returned_plane
 
 
 SCOPE='owned_b2_impact_fixture_preparation_v1'
@@ -87,7 +88,7 @@ recorder(name, phase, evidence) must persist nonempty pending/returned receipts.
 A native exception or returned-ledger loss leaves pending/journal flags intact;
 no subsequent cleanup/getter/mutation is dispatched by this helper.
 """
-    def __init__(self,ownership,binding,feature_catalog,*,recorder,wrap=None):
+    def __init__(self,ownership,binding,feature_catalog,*,recorder,wrap=None,query=None):
         require(callable(recorder),'Explicit owner-issued durable recorder required.')
         require(feature_catalog.documents is ownership.documents and feature_catalog.store is ownership.store
             and feature_catalog.connection_epoch==ownership.connection_epoch==binding.connection_epoch,
@@ -95,6 +96,7 @@ no subsequent cleanup/getter/mutation is dispatched by this helper.
         self.ownership,self.binding,self.catalog=ownership,binding,feature_catalog
         self.adapter=ownership.adapter
         self.recorder,self.wrapper=recorder,wrap
+        self.query=query
         self.used=False;self.case=None;self.pending_native_step=None;self.journal_failed=False
         self.created_plane=None;self.created_plane_identity=None;self.created_plane_pid=None
         self.retained_face=None;self.retained_face_identity=None
@@ -104,6 +106,11 @@ no subsequent cleanup/getter/mutation is dispatched by this helper.
         if self.wrapper is not None:return self.wrapper(raw,interface)
         from solidworks_mcp import binding
         return binding.wrap(raw,getattr(self.adapter._module,interface))
+
+    def _query(self,raw,interface):
+        if self.query is not None:return self.query(raw,interface)
+        from solidworks_mcp import binding
+        return binding.queried(raw,getattr(self.adapter._module,interface))
 
     def _owner(self):
         binding,feature=self.ownership.resolve(self.binding.document_id,self.binding.configuration,
@@ -237,6 +244,12 @@ no subsequent cleanup/getter/mutation is dispatched by this helper.
         plane=self._step('insert_plane',lambda:manager.InsertRefPlane(SW_REF_PLANE_DISTANCE,offset/1000.,0,0.,0,0.),
             dict(face_pid_hex=pid.hex(),constraint=SW_REF_PLANE_DISTANCE,offset_m=(offset/1000.).hex()),
             lambda value:dict(native_handle_returned=value is not None))
+        require(plane is not None,'Normally returned plane handle is required; effects remain unconfirmed.')
+        birth=bind_returned_plane(plane,
+            [OriginalFeature(obj,canonical) for obj,canonical in zip(original_members,original_identities)],
+            a.features(b.model),self._query,self._wrap,a.identity)
+        created=birth.feature
+        self.created_plane=created;self.created_plane_identity=birth.feature_canonical
         # Only a normally returned insertion and durable acknowledgement permit
         # clearing our selection. An exception/pending ledger cannot reach here.
         self._clear_selection(selection)
@@ -248,12 +261,11 @@ no subsequent cleanup/getter/mutation is dispatched by this helper.
         require(len(additions)==1 and len(members)==len(original_members)+1
             and all(sum(a.identity(obj)==old for obj in members)==1 for old in original_identities),
             'One exact new feature with every original canonical member preserved required.')
-        created=additions[0]
+        require(a.identity(additions[0])==self.created_plane_identity,
+                'Retained normally returned feature changed during selection clear/rebuild.')
         require(created.GetTypeName2()=='RefPlane','Only a native reference plane may be created.')
         specific=self._wrap(created.GetSpecificFeature2(),'IRefPlane')
-        require(specific is not None and a.identity(specific)==a.identity(plane),
-                'New feature must bind the normally returned plane canonical identity; no last/name/GetID fallback.')
-        self.created_plane=created;self.created_plane_identity=a.identity(created)
+        require(specific is not None,'Retained feature must still expose its current plane interface.')
         self.created_plane_pid=self._pid(created,'feature')
         self._step('rename_plane',lambda:a.rename_feature(created,name),dict(requested_russian_name=name),
                    lambda value:dict(readback_name=value))
@@ -279,6 +291,7 @@ no subsequent cleanup/getter/mutation is dispatched by this helper.
         require(_json(a.dimension_geometry_snapshot(b.model))==_json(parent_snapshot['clone_state']['geometry']),
                 'Child fixture changed original full native BREP.')
         return dict(**self.evidence(),fixture_prepared=True,face_reference=reference,
+            plane_birth_binding=birth.evidence,
             plane_pid_hex=self.created_plane_pid.hex(),plane_object_id=child_nodes[0]['object_id'],
             plane_name=name,before_deletion_context=before,after_deletion_context=after)
 

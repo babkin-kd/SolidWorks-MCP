@@ -17,6 +17,7 @@ from solidworks_mcp.rectangle_postconditions import verified_rectangle_sketch
 from solidworks_mcp.rectangle_extrusion_postconditions import verified_rectangle_extrusion
 from test_owned_leaf_deletion_execution import execution,leaf,extrusion_proof,proof,case,domain
 from test_rectangle_postconditions import proof as sketch_proof,empty_adapter
+from test_b2_impact_fixture import b2_private_dir,b2_outside_dir
 
 scripts=Path(__file__).resolve().parents[1]/'scripts'
 sys.path.insert(0,str(scripts))
@@ -129,9 +130,9 @@ def parent_report(state,creations,wheel):
         independent_base=creations[1]['result']['after']['state']['snapshots']['target'])
 
 
-def detached_artifacts(data,tmp_path):
-    positive_dir=tmp_path/'positive';positive_dir.mkdir()
-    fault_dir=tmp_path/'faults';fault_dir.mkdir()
+def detached_artifacts(data,private_dir):
+    positive_dir=private_dir/'positive';positive_dir.mkdir()
+    fault_dir=private_dir/'faults';fault_dir.mkdir()
     positive=deepcopy(data['positive']);row=deepcopy(data['row']);package=deepcopy(data['package'])
     (positive_dir/'jobs.sqlite').write_bytes(data['positive_sql'])
     (fault_dir/'jobs.sqlite').write_bytes(data['fault_sql'])
@@ -141,7 +142,7 @@ def detached_artifacts(data,tmp_path):
     proof=driver.positive_preflight(positive_path,positive_hash,package['wheel'],scripts)
     row.update(proof)
     fault_path=fault_dir/'leaf-faults-report.json';fault_hash=write(fault_path,row)
-    args=NS(state_dir=tmp_path/'future_public',wheel=tmp_path/'not-opened.whl',expected_version=helper.VERSION,
+    args=NS(state_dir=private_dir/'future_public',wheel=private_dir/'not-opened.whl',expected_version=helper.VERSION,
         expected_git_sha=package['wheel']['git_sha'],positive_report=positive_path,positive_report_sha256=positive_hash,
         faults_report=fault_path,faults_report_sha256=fault_hash)
     return NS(args=args,package=package,row=row,positive=positive,proof=proof,
@@ -149,15 +150,15 @@ def detached_artifacts(data,tmp_path):
 
 
 @pytest.fixture
-def artifacts(faults,sketch_proof,tmp_path,request):
+def artifacts(faults,sketch_proof,b2_private_dir,request):
     # Build each genuine artificial native mode once. Each hostile scenario
     # receives separate report bytes and SQLite files; no checker is mocked.
     key=request.node.callspec.params['case']
-    if key in _ARTIFACTS:return detached_artifacts(_ARTIFACTS[key],tmp_path)
+    if key in _ARTIFACTS:return detached_artifacts(_ARTIFACTS[key],b2_private_dir)
     state=faults
     wheel=dict(package_version=helper.VERSION,git_sha='a'*40,wheel_sha256='b'*64,source_digest='c'*64)
     creations=rebind_creations(state,sketch_proof)
-    positive_dir=tmp_path/'positive';positive_dir.mkdir()
+    positive_dir=b2_private_dir/'positive';positive_dir.mkdir()
     positive_db=positive_dir/'jobs.sqlite'
     sqlite3.connect(positive_db).close()
     positive_store=state.store
@@ -206,7 +207,7 @@ def artifacts(faults,sketch_proof,tmp_path,request):
     state.report=dict(native_calls_live=False,original_creation_jobs=creations,cases=[],
         original_creation_receipt_before=driver.receipt_facts(state.binding.receipt))
     state.run()
-    fault_dir=tmp_path/'faults';fault_dir.mkdir()
+    fault_dir=b2_private_dir/'faults';fault_dir.mkdir()
     with sqlite3.connect(fault_dir/'jobs.sqlite') as backup: state.store._db.backup(backup)
     fault_parent=parent_report(state,creations,wheel)
     parent_sha=write(fault_dir/'report.json',fault_parent)
@@ -223,7 +224,7 @@ def artifacts(faults,sketch_proof,tmp_path,request):
         positive_sql=positive_db.read_bytes(),fault_sql=(fault_dir/'jobs.sqlite').read_bytes())
     # This first scenario can reuse its own files; following scenarios receive
     # independent detached copies, keeping SQL tampering isolated.
-    args=NS(state_dir=tmp_path/'future_public',wheel=tmp_path/'not-opened.whl',expected_version=helper.VERSION,
+    args=NS(state_dir=b2_private_dir/'future_public',wheel=b2_private_dir/'not-opened.whl',expected_version=helper.VERSION,
         expected_git_sha=wheel['git_sha'],positive_report=positive_path,positive_report_sha256=positive_hash,
         faults_report=fault_path,faults_report_sha256=fault_hash)
     return NS(args=args,package=package,row=report,positive=positive_row,proof=proof,
@@ -241,6 +242,14 @@ def test_passive_actual_positive_and_faults_reports_and_readonly_sql_gate_only_p
     assert helper._sha(journal)==unchanged
     rows=helper.read_journal(journal)
     assert next(job for job in rows if job['operation_id']==x.row['unknown_job_retained']['operation_id'])['status']=='unknown'
+
+
+def test_public_preflight_outside_work_rejects_before_package_or_native(artifacts,b2_outside_dir):
+    x=artifacts;x.args.state_dir=b2_outside_dir/'outside_public';calls=[]
+    def provider(*args,**kwargs):calls.append('package');pytest.fail('Outside work must refuse before package/native imports')
+    with pytest.raises(ValueError,match='Fresh private public state'):
+        helper.preflight(x.args,package_provider=provider)
+    assert calls==[] and not x.args.state_dir.exists()
 
 
 @pytest.mark.parametrize('fault',['hash','wheel','phase','manifest_missing','manifest_extra','cleanup','parent',
