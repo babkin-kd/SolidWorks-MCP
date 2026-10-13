@@ -81,6 +81,11 @@ class CadGeometryMixin:
                'feature': self._module.IFeature, 'component': self._module.IComponent2}[kind]
         return binding.wrap(raw, cls)
 
+    def resolve_retained_feature_pid(self, model, persistent_id, retained_identity):
+        """Internal owned-feature bridge; generic/public topology rules stay strict."""
+        from .retained_feature_resolution import resolve_retained_feature_pid
+        return resolve_retained_feature_pid(self, model, persistent_id, retained_identity)
+
     def bodies(self, model, body_type):
         part = binding.wrap(model, self._module.IPartDoc)
         code = {'all': -1, 'solid': 0, 'surface': 1}[body_type]

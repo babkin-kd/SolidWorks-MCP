@@ -174,3 +174,12 @@ production resolver не изменён. Gate разрешает state2 толь
 before/restored по-прежнему требуют state0. Связанные проверки prototype:
 **161 passed /4,50 с**. Следующий probe проверит полный suppress/rebuild/
 unsuppress/rebuild cycle; результат не заменяет приёмку инструментов B2.
+
+В исходниках добавлен внутренний `resolve_retained_feature_pid`:
+`retained_feature_resolution.py` и bridge в `CadGeometryMixin`. Он требует
+удерживаемую native identity; generic resolver и public reference admission
+остаются прежними. Source-only28 pure проверяют нормальный state0, exact state2,
+null/foreign/duplicate membership, неверный PID и строгие native Boolean/state
+types. Совместно с существующими plane/feature identity и независимыми B4
+helpers — **236 passed /6,87 с**. В установленный dev94 этот код не входит;
+новый wheel будет собран после доменной реализации и MCP-фасада B2.
