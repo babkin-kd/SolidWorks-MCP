@@ -56,12 +56,12 @@ def world(tmp_path):
             ('C:/cylinder.sldprt' if role == 'cylinder' else 'C:/one.sldprt'),
             referenced_configuration=cfg, referenced_document_type='assembly' if assembly else 'part',
             suppression_state='resolved', native_suppression_state=2, hidden=False, transform=transform(origin))
-        if not assembly: native.bodies = [a.body(surface=i == 2) for i in range(3 if role == 'nested' else 1)]
+        if not assembly: native.bodies = [a.body(surface=i == 1) for i in range(2 if role == 'nested' else 1)]
         a.registry[native.persistent_id] = native
         a.instances.append(native)
         return native
     parent = instance('parent', 'Подсборка-1', 'Основная', [100., 0., 0.], assembly=True)
-    nested = instance('nested', 'Подсборка-1/Вложенная деталь-1', 'Основная', [130., 0., 0.], parent=parent)
+    nested = instance('nested', 'Подсборка-1/Вложенная деталь-1', 'Вариант', [130., 0., 0.], parent=parent)
     cylinder = instance('cylinder', 'Цилиндр-1', 'Основная', [150., 0., 0.])
     originals = dict(main=main, variant=variant, nested=nested, parent=parent, cylinder=cylinder)
     # Canonical model/config anchors are actual artificial retained objects.
@@ -195,11 +195,11 @@ def run(x, **overrides):
 
 def test_exact_repeated_native_instances_current_membership_and_sql_roundtrips(world):
     x = world; result = run(x)
-    assert x.full_calls == 2 and x.instance_calls == 5 and x.reference_calls == 29
+    assert x.full_calls == 2 and x.instance_calls == 5 and x.reference_calls == 28
     assert result['before'] == result['after']
     assert result['accepted'] is result['native_acceptance'] is result['cleanup_authorized'] is False
     jobs = x.store.list(limit=100)['items']
-    assert len(jobs) == len(result['rows']) == 34
+    assert len(jobs) == len(result['rows']) == 33
     assert all(job['payload']['mutates'] is False and 'mutation' not in job for job in jobs)
     assert sum(job['status'] == 'failed' for job in jobs) == 5
     assert all(job['error']['requires_reconciliation'] is False for job in jobs if job['status'] == 'failed')

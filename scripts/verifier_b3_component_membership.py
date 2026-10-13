@@ -137,10 +137,10 @@ Ordinals represent held IUnknown equality, never names or pointer serialization.
              and len({x['persistent_id'] for x in native_instances.values()}) == 5, 'Distinct original instances/PIDs required.')
     repeated = [by_role[x] for x in ('main', 'variant', 'nested')]
     _require(len({x['referenced_path'] for x in repeated}) == 1 and repeated[0]['referenced_path']
-             and [x['referenced_configuration'] for x in repeated] == ['Основная', 'Вариант', 'Основная']
+             and [x['referenced_configuration'] for x in repeated] == ['Основная', 'Вариант', 'Вариант']
              and all(x['referenced_document_type'] == 'part' for x in repeated), 'Exact repeated-file/two-config fixture required.')
     _require(len({native_instances[x]['model_identity'] for x in ('main', 'variant', 'nested')}) == 1
-             and native_instances['main']['configuration_identity'] == native_instances['nested']['configuration_identity']
+             and native_instances['variant']['configuration_identity'] == native_instances['nested']['configuration_identity']
              and native_instances['main']['configuration_identity'] != native_instances['variant']['configuration_identity'],
              'Same held native model and distinct exact referenced configs required.')
     parent, nested = by_role['parent'], by_role['nested']
@@ -165,7 +165,7 @@ Ordinals represent held IUnknown equality, never names or pointer serialization.
 
     bodies_by_role, targets = {}, {}
     all_ids = set()
-    for role, count in (('main', 3), ('variant', 2), ('nested', 3)):
+    for role, count in (('main', 3), ('variant', 2), ('nested', 2)):
         component = by_role[role]; component_id = component['component_id']
         result = await read('component_body_list', component_id=component_id)
         bodies = result['items']

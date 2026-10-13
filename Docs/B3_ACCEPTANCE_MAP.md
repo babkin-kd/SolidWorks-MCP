@@ -242,10 +242,30 @@ B2/B3 preparations — **309 passed /10,27 с**, с искусственной �
 
 Подготовлен `verifier_b3_component_membership.py` для конечной группы I03:
 пять исходных component IDs, повторный файл/две конфигурации/вложенный instance,
-current canonical/PID/16-value total transforms, body rosters3/2/3, body/topology
+current canonical/PID/16-value total transforms, body rosters3/2/2, body/topology
 roundtrips и пять конечных foreign-reference отказов. Полное состояние сборки,
 referenced parts и соседа проверяется до/после; имена и порядок перечисления
 не дают владение. **233 related pure passed /23,69 с** с реальными catalogs,
 JobRunner/SQLite/B3Reader и искусственными native handles. Actual native
 producers, exact installed B3 driver и terminal cleanup остаются открыты;
 accepted/native_acceptance/cleanup_authorized=false, manifest не расширен.
+
+Сверка с actual `verifier_component_fixtures.py` исправила исходное ожидание
+вложенного экземпляра: он использует «Вариант», как второй root instance,
+а не «Основная». Поэтому nested roster имеет2 тела, canonical configuration
+совпадает с variant, не main. Это исправление source route, не смена native
+fixture и не результат CAD-приёмки.
+
+После исправления I03 профиль совпадает с существующим native setup:
+**233 related pure passed /25,35 с**. Actual CAD-проверка I03 не запускалась.
+
+Metadata-подмаршрут I01 подготовлен отдельно в
+`verifier_b3_document_metadata.py`: document_list и document_get двух исходных
+held part IDs во всех явно переданных1–2 существующих конфигурациях. Native
+observer обязан независимо читать metadata/current model/configuration anchors;
+inactive metadata не разрешает activation. Exact list/get revision и полный
+before/after session сверяются, результаты связаны с actual SQLite журналом.
+**201 related pure passed /18,06 с** с искусственными native handles и реальными
+DocumentCatalog/JobRunner/B3Reader. Feature/dimension/sketch часть I01, actual
+native producers, installed B3 driver и cleanup остаются открыты. Никаких
+accepted/native/cleanup разрешений этот source-подмаршрут не выдаёт.
