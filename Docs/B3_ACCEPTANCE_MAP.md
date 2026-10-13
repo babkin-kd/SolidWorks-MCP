@@ -344,3 +344,23 @@ child«Основная» после явного fixture setup: свежие co
 empty-cylinder census, один `component_has_no_solid_bodies`, no mutation.
 Helper не выполняет setup/setter. Actual setup ownership/postconditions,
 native producers, installed B3 driver и cleanup открыты; acceptance=false.
+
+I04 source `verifier_b3_rename_references.py` проверяет три original-ref reads
+после отдельно acknowledged own rename: feature_get, component_get и исходная
+face через component_topology_get. Part принадлежит тому же retained referenced
+model, body/face — прежнему component owner. Raw old-PID resolution должен
+вернуть прежний canonical объект; current PID alias и новое enumeration ID
+допустимы без потери старой ссылки. Одинаково выглядящие replacement/foreign
+объекты отвергаются. Native rename receipts и exact allowed-change scope остаются
+отдельным gate; source helper не выполняет setters.
+
+I05 source `verifier_b3_component_retirement.py`: две отдельные passive фазы
+после acknowledged original-owner delete/reinsert. В каждой — три old-ref
+отказа с exact before-dispatch producer code; reinserted добавляет три
+current owned-ref roundtrips новой инкарнации того же файла. Raw PID/canonical,
+отсутствие original в текущем census и critical paired native receipts
+проверяются, но не подменяют whole transition ownership/postconditions.
+**280 related pure passed /20,08 с** для I04/I05 с настоящими catalogs/JobRunner/
+SQLite/B3Reader и искусственными уже подготовленными native phases. Actual
+native producers/transitions, installed B3 driver и cleanup остаются открыты;
+source accepted/native/cleanup=false. I06 ещё не подготовлен.

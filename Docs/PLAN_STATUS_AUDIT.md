@@ -9,15 +9,16 @@ Own-leaf preview/delete domain/runtime/MCP реализованы. Guarded posit
 6 succeeded jobs/3 committed mutations; replay, independent SKETCH/neighbor и
 own cleanup/full baseline подтверждены. Failed positive1 сохранён отдельно.
 Exact dev96/f80ee6d/wheel SHA9088e018 неизменен. Finite negative/unknown wrapper
-работает одним CAD-владельцем: `leaf_stale` passed после полного unchanged
-oracle/receipts, `leaf_foreign` running. Whole fault gate ещё не принят.
+работает одним CAD-владельцем: `leaf_stale` и `leaf_foreign` passed после полного
+unchanged oracle/receipts, остальные случаи выполняются. Whole fault gate ещё не принят.
 После terminal result/audit/cleanup последовательно идут
 три dependent/equation N5 случая, затем public B2. Общий B2 gate остаётся открыт.
 [Привязка dev96](CHECKPOINT_DEV96.md).
 
-Source-подготовка B3 охватывает I01/I02/I03/I07…I13;
+Source-подготовка B3 охватывает I01…I05/I07…I13;
 actual native producers и итоговый installed driver ещё не приняты.
-Transitions I04…I06 остаются видимыми открытыми задачами.
+I06 ещё требует source-подготовки. Actual native transitions I04…I06 остаются
+видимыми открытыми задачами; passive phase probes не принимают саму native mutation.
 Metadata-only installed timings enabled/disabled/storage-unavailable dev96
 приняты без CAD, но не заменяют native mutation/restore/hold B4-N6.
 B2–B5 и стадия1 остаются открыты; stage2 не расширяется.
