@@ -23,6 +23,18 @@ public stdio и terminal cleanup остаются открыты. Граница
 
 ## Последовательность подключения
 
+Первый concrete raw producer подготовлен в
+`scripts/verifier_b3_native_part_reference.py`: прямые CAD getters для normal
+solid/surface body, plane face и line edge конечного I02. Original retained
+model/config/object/body canonicals и PIDs, полный normal-body census, current
+membership, численные свойства и metadata/events проверяются независимо от
+`adapter.geometry_summary`/public DTO. Admission предшествует даже canonical
+equality; ordinals вычисляются внутри event envelope. **107 related pure
+passed /4,20 с** на artificial API-shaped getters с реальным GeometryCatalog.
+Actual namespace bindings/owner handles, whole-session watcher и real CAD run
+остаются gates. Producer не подключается к occupied session и не разрешает
+native acceptance/cleanup. Cylinder/curved-edge observers сюда не добавлены.
+
 1. До CAD принять exact installed wheel и metadata report. Offline dev96
    preflight уже принят:13 groups/27 tools, `can_start_native=false`.
    Не выполнять новые CAD-сценарии до terminal dev96 faults, root audit и

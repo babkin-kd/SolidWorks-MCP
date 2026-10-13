@@ -383,3 +383,10 @@ dev96 preflight принят:13 groups/27 required tools, metadata report reused
 Итоговая [source-контрольная точка](B3_SOURCE_CHECKPOINT_DEV96.md):
 **9952 pure passed /514,75 с**,323 CAD deselected. Это полный current source,
 не native acceptance. Package/wheel96 и22 live fault helpers неизменны.
+
+После этой checkpoint начата concrete producer integration I02:
+`verifier_b3_native_part_reference.py`,107 related pure/4,20 с. Direct raw
+body/plane/line getters, retained canonical/PID/current owner и весь original
+body census; extra body/replacement/unsupported geometry/ABA дают отказ.
+Это следующий source-блок, не часть прежнего9952 результата и не actual CAD
+acceptance. Whole-session/namespace/owner integration остаётся открытой.
