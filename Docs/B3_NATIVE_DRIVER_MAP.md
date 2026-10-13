@@ -69,6 +69,18 @@ Dimension/Component/Topology registration tables и artificial adapters.
 current PID→original canonical/owner roundtrip остаются обязательными gates.
 Names/paths/shape не заменяют эти доказательства; private export не новый public tool.
 
+Direct I01 dimension producer также подготовлен:
+`verifier_b3_native_dimension_inventory.py`. Retained IDimension/IFeature и
+display/slot/PID anchors, полный absorbed feature/display census, named-config
+GetSystemValue3 без activation, независимые SI/mm/deg, tolerance/link/owner
+facts и прямой/compound anchor. Annotation fallback допускает только точный
+E_NOINTERFACE и проверяет обратную связь с display; иной native failure выходит
+без retry. Полное повторное чтение после всех ordinals закрывает изменение
+PID/owner/slot/raw facts. Agent targeted82 pure/0,18 с; root combined I01 getters,
+routes/registration export — **164 pure passed /2,11 с**. Runtime typed BSTR,
+native QueryInterface/slot associations, actual namespace/whole-session и
+exact-wheel CAD driver остаются открытыми. Source-preparation не принимает B3.
+
 1. До CAD принять exact installed wheel и metadata report. Offline dev96
    preflight уже принят:13 groups/27 tools, `can_start_native=false`.
    Не выполнять новые CAD-сценарии до terminal dev96 faults, root audit и

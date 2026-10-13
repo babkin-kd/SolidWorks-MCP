@@ -412,3 +412,12 @@ actual registered UUID/PID/compound anchors всех шести reference famili
 Финальная правка topology kinds/False membership flag:12 targeted pure/0,14 с.
 Это не current membership proof. Actual SDK child export, original document/
 window bridge и native PID/canonical/owner verification ещё не подключены.
+
+Direct I01 dimension producer подготовлен:
+`verifier_b3_native_dimension_inventory.py`,82 targeted pure/0,18 с.
+Root combined I01 metadata/feature/dimension/export и routes:
+**164 pure passed /2,11 с**. Original direct/display/owner PID anchors,
+full display/slot membership, SI/mm/deg/all named configurations без activation,
+annotation E_NOINTERFACE и полное closing reread после ordinals.
+Это API-shaped artificial checks после full9952 checkpoint. Actual runtime BSTR/
+QueryInterface, opaque-ID/whole-session bridge и installed native run ещё не приняты.
