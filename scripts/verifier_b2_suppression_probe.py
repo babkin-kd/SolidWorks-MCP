@@ -117,7 +117,8 @@ def _session(value, target, configuration, owned_document_ids):
                  and row['dependencies'] == [] and row['dependency_files'] == []
                  and row['path'] == '' and row['file'] is None and row['needs_save'] is True
                  and _json(row['mode']) == _json({'blocking_state': 0, 'read_only_state': 0,
-                    'editing_sketch': False, 'editing_component': False, 'view_only': False})
+                    'editing_sketch': False, 'editing_component': False, 'view_only': False,
+                    'drawing_state': None})
                  and type(row['visible']) is bool for row in docs),
              'Complete owned dirty unsaved part/view/mode census required; no saved-file scope.')
     app = semantic['application']

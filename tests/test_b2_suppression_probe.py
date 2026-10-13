@@ -43,7 +43,8 @@ def receipt(proof):
     for i, doc in enumerate(semantic['documents']):
         doc.update(document_type='part', visible=True, dependencies=[], dependency_files=[],
                    path='', file=None, mode=dict(blocking_state=0, read_only_state=0,
-                      editing_sketch=False, editing_component=False, view_only=False))
+                      editing_sketch=False, editing_component=False, view_only=False,
+                      drawing_state=None))
     semantic['windows'] = [dict(document_id=doc['document_id'], hwnd=100+i, title=doc['title'])
                            for i, doc in enumerate(semantic['documents'])]
     session = dict(semantic=semantic, neighbor_snapshots={'neighbor': deepcopy(full)},
@@ -235,4 +236,21 @@ def test_partial_identity_alias_geometry_and_session_drift_fail_closed(receipt, 
     elif fault == 'foreign_owned_ids': receipt['owner']['owned_document_ids'] = ['target', 'foreign']
     else: obs['session']['application_preferences']['raw_native_preference'] = float('nan')
     with pytest.raises(ValueError):
+        helper.validate_probe(receipt)
+
+
+@pytest.mark.parametrize('fault', ['missing', 'empty', 'drawing', 'extra'])
+def test_actual_part_mode_requires_explicit_null_drawing_state(receipt, fault):
+    """NativeDocumentCloseCatalog includes drawing_state even for a part."""
+    for phase in receipt['observations']:
+        mode = phase['session']['semantic']['documents'][0]['mode']
+        if fault == 'missing':
+            mode.pop('drawing_state')
+        elif fault == 'empty':
+            mode['drawing_state'] = {}
+        elif fault == 'drawing':
+            mode['drawing_state'] = {'sheet': 'Лист1'}
+        else:
+            mode['unexpected'] = None
+    with pytest.raises(ValueError, match='Complete owned dirty'):
         helper.validate_probe(receipt)
