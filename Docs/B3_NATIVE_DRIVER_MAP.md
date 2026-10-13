@@ -81,6 +81,12 @@ routes/registration export — **164 pure passed /2,11 с**. Runtime typed BSTR,
 native QueryInterface/slot associations, actual namespace/whole-session и
 exact-wheel CAD driver остаются открытыми. Source-preparation не принимает B3.
 
+После всей интеграции source observers/export на HEAD56fbc39:
+**10149 pure passed,323 CAD deselected /526,73 с**, normal exit0.
+Это [новая source checkpoint](B3_SOURCE_CHECKPOINT_DEV96.md); результаты9952
+выше относятся к предыдущему fd43cc8. Installed wheel96/f80ee6d и30 helpers
+текущего live N5 не изменены; full source run не является CAD-приёмкой.
+
 1. До CAD принять exact installed wheel и metadata report. Offline dev96
    preflight уже принят:13 groups/27 tools, `can_start_native=false`.
    Не выполнять новые CAD-сценарии до terminal dev96 faults, root audit и

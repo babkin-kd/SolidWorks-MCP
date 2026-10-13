@@ -22,8 +22,11 @@ Source-подготовка B3 охватывает все I01…I13;
 actual native producers и итоговый installed driver ещё не приняты.
 Actual native transitions I04…I06 остаются
 видимыми открытыми задачами; passive phase probes не принимают саму native mutation.
-Direct native-getter observers I01 metadata/I03 component подготовлены отдельно:
-113 related pure passed/4,19 с; actual CAD/namespace/whole-session driver ещё открыт.
+Direct native-getter observers I01 metadata/feature/dimension, I02 references,
+I03 component и actual private registration export подготовлены.
+Current source HEAD56fbc39: **10149 pure passed/323 CAD deselected,526,73 с**;
+actual CAD/namespace/whole-session driver ещё открыт. Полная source-контрольная
+точка отделена от installed wheel — [B3_SOURCE_CHECKPOINT_DEV96](B3_SOURCE_CHECKPOINT_DEV96.md).
 Offline exact installed B3 preflight dev96 принят13/27 без CAD;
 `can_start_native=false`. Подключение реальных producers и namespace/ownership
 определено в [B3_NATIVE_DRIVER_MAP](B3_NATIVE_DRIVER_MAP.md).

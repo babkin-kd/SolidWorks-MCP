@@ -1,11 +1,19 @@
 # B3: локальная source-контрольная точка
 
-13.10.2026. Проверенный source HEAD — `fd43cc8`.
+13.10.2026. Текущая source-контрольная точка —
+`56fbc39608556878745ba1b4d81acb18d774424d`.
 Все13 source groups B3 подготовлены; actual native B3 **не выполнен**.
 Три стадии сохраняются, стадия1/B2–B5 остаются открыты.
 
 ## Фактические проверки
 
+- После законченной интеграции direct metadata/feature/dimension/part-reference/
+  component observers и actual private registration export один полный pure-набор:
+  **10149 passed,323 CAD deselected /526,73 с**, normal exit0.
+  `pytest -q --tb=short --maxfail=3 -m 'not solidworks' -p no:cacheprovider`;
+  source `PYTHONPATH=src`, fresh private basetemp. Это current source proof,
+  не actual native acceptance. Код пакета от installed build Git неизменен.
+- Предыдущая контрольная точка source HEAD `fd43cc8`:
 - Один полный pure-набор после интеграции всех source routes:
   **9952 passed,323 CAD deselected /514,75 с**.
   `pytest -q --tb=short --maxfail=3 -m 'not solidworks' -p no:cacheprovider`;
@@ -29,7 +37,8 @@ Source digest:
 `d861172b1437057a913c12ef7937a91eef7569deb7dd8ddae19d0d05a8655d59`.
 Package source diff от build Git пуст: новые scripts/tests/docs не требуют
 пересборки или установки wheel. Все22 frozen live fault helpers повторно
-сверены по SHA, изменений нет. Working v1 не затрагивается.
+сверены по SHA, изменений нет. После завершения faults запущен N5 child_plane;
+все его30 fixed helpers также неизменны. Working v1 не затрагивается.
 
 ## Native-факты и оставшиеся gates
 
@@ -38,11 +47,12 @@ Dev96 positive2 принят отдельно: leaf2/2,parent4/4,112 returned ca
 independent SKETCH/neighbor и own cleanup/full baseline подтверждены root audit.
 Failed positive1 сохранён и не превращён в passed.
 
-Finite fault owner остаётся live: **3/5 cases passed** — stale,foreign,no-effect.
-No-effect имеет actual rolled_back/полное восстановление, первые два отказа
-без checkpoint/native write. Controlled unknown/new-request blocker пока не
-подтверждены; terminal audit/cleanup данного прогона не выполнены. После них —
-три N5 dependent/equation runs и public B2. Whole B2 пока не принят.
+Finite fault owner штатно завершился: **5/5 cases passed /9137,84 с**,
+196 normally returned captures; root audit actual SQL9 jobs/exact hashes/current
+empty baseline/non-STL preferences/own cleanup принят. Controlled unknown
+сохранён как unknown/unresolved; новый request действительно заблокирован.
+Сейчас live только N5 child_plane; два equation cases и public B2 ещё не приняты.
+Whole B2 остаётся открыт. [Точная конечная матрица](B2_DEV96_ACCEPTANCE.md).
 
 B3 требует actual native producers, acknowledged setup/transition scopes,
 private namespace/PID bridge, installed/internal/public13-group reports и

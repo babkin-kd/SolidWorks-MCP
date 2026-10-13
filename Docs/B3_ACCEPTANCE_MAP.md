@@ -421,3 +421,8 @@ full display/slot membership, SI/mm/deg/all named configurations без activati
 annotation E_NOINTERFACE и полное closing reread после ordinals.
 Это API-shaped artificial checks после full9952 checkpoint. Actual runtime BSTR/
 QueryInterface, opaque-ID/whole-session bridge и installed native run ещё не приняты.
+
+Итоговый source checkpoint HEAD56fbc39 после integration всех этих observers:
+**10149 pure passed,323 CAD deselected /526,73 с**, normal exit0. Предыдущие
+9952 относятся к fd43cc8. Installed96/f80ee6d остаётся отдельным exact candidate;
+B3 actual native не выполнялся. [Полная сводка](B3_SOURCE_CHECKPOINT_DEV96.md).
