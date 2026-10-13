@@ -47,6 +47,15 @@ exact dev96/accepted positive gate подтверждены,32 helper hashes з�
 ещё pending, текущая phase sketch_job.32 helper files текущего native не
 меняются; нового push нет.
 
+Независимый source-блок B3 probe подготовлен в двух новых файлах:
+standalone original-owner setup/maintenance driver и pure tests. Root combined
+**187 pure/1,20 с** passed, actual source setup с Owner/NativeWatch classes,
+artificial CAD getters. ABA через pending journal/recheck/persist запрещает
+CloseDoc/guard restore; normal own close events допускаются на следующей
+границе. [Область и запуск](B3_PART_SETUP_PROBE.md). Actual native not_run,
+all13 B3 groups открыты; этот helper не входит в32 frozen N5 files или
+прежний full11104. Root остаётся единственным COM-владельцем.
+
 **Текущий installed кандидат — dev96:** full pure8427/323 CAD deselected,
 260,01 с; clean artifact и metadata/stdIO83/27 приняты, без CAD в metadata.
 Own-leaf preview/delete domain/runtime/MCP реализованы. Guarded positive2
