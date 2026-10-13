@@ -1,0 +1,72 @@
+# Конечная приёмка B2 на dev96
+
+B2 остаётся открытым. Привязка кандидата, full pure8427/323 и installed83/27 —
+[контрольная точка](CHECKPOINT_DEV96.md). Результат positive suppression/return
+dev95 сохранён отдельно; он не принимается за результат dev96.
+
+| Условие B2 | Пользовательский результат | Требуемое доказательство на dev96 | Текущий статус |
+| --- | --- | --- | --- |
+| N1 | Driving depth10→12 мм, объём8000→9600 мм³ | Публичный dimension ID/revision/request; actual scalar readback, rebuild и полный независимый BASE, включая соседнюю модель | Ещё не принято на dev96 |
+| N2 | Русское имя элемента; прежняя адресная ссылка действует | Public rename/readback, прежний object ID и PID/canonical membership; полные данные отличаются только разрешённым именем | Ещё не принято на dev96 |
+| N3 | Подавить и вернуть собственное основание | Public suppression/return с original ownership, full bodyless/BASE snapshots, исходный sketch/DIMs/PID и имя тела; checkpoint/guards/replay | Dev95 positive принят; dev96 ещё не принят |
+| N4 | Preview точного own leaf, затем удалить только основание | Read-only prepare, full BASE→SKETCH, exact deleted ID, preserved sketch, actual raw old PID1/4+null, удалённый ID отвергается при чтении; SQL/replay | Positive native dev96 выполняется; running не passed |
+| N5 | Безопасный отказ для stale/foreign/dependent/linked/неполного scope | No-write/known-no-effect evidence реальных refused jobs; полный снимок, отсутствие native dispatch/checkpoint где применимо; unsupported CAD cases видимы отдельно | Pure отказы есть; конечная installed/native приёмка не завершена |
+| N6 | После ошибки получить известный отказ либо unknown с блокировкой | Full no-effect/restored scope либо terminal unknown/application hold; no inverse/retry после delete, поздние результаты/replay/blocked request и безопасная собственная очистка | Pure coordinator/SQLite/guard проверки есть; native fault-wrapper подготовлен, не запускался |
+
+Положительная публичная цепочка объединяет N1–N4 на одной собственной модели.
+Отрицательные случаи выполняются на отдельной fixture, чтобы ошибка не заменяла
+положительный результат. Для неизвестного удаления original job/status/hold
+сохраняются; закрытие контролей не превращает его в succeeded.
+Сквозной B5 использует свою сохраняемую пластину и не требует удаления её основания.
+
+## Готовая проверочная инфраструктура
+
+`verifier_b2_public_contract.py` связывает exact public DTO с coherent SQLite
+row/private digest. Mutation требует durable preparation того же контекста;
+return дополнительно требует original committed suppression lineage. Digest
+не восстанавливается из угаданных ancestor IDs. Read-only row допускает только
+явный synthetic `mutation=None`, добавленный читателем журнала; остальные поля
+сравниваются полностью. Scalar/rename используют отдельные независимые native
+callbacks, их результат не подменяется suppression/deletion oracle.
+
+`verifier_b2_observation_fault.py` предоставляет два ограниченных Python-fault
+hooks для единственного native-владельца. `LeafNoEffectFault` останавливает
+dispatch до native deletion bridge; actual domain обязан доказать весь исходный
+scope и released guard. `LeafObservationFault` вызывает отказ только после
+нормально завершённого реального bridge и полного surviving SKETCH snapshot;
+pending/неполный native результат не переименовывается в controlled fault.
+Отдельный dispatch counter обнаруживает запрещённую повторную попытку, которую
+сам hook блокирует. Helper не даёт cleanup/reconciliation authority и не вызывает
+COM, пока native-владелец не подключил его к своей actual fixture.
+
+Fault-helper: **12 pure passed /4,43 с** с actual JobRunner/MutationCoordinator/
+SQLite и изменяемыми искусственными native-состояниями. Public contract:
+**152 pure /27,43 с**; B2 native ledger ограничен32 событиями, невозможные34
+согласованные строки отвергаются. Native fault-wrapper: **55 pure /40,37 с**.
+Его passive gate требует точный positive report SHA, fixed helper manifests,
+parent report и actual coherent SQL; следующий native до этого не запускается.
+Unknown остаётся unknown/unresolved после собственной очистки, reconciliation
+не выполняется. Pending/частичные данные запрещают cleanup/flag reset/retry.
+
+Объединённый source helper-набор: **239 passed /78,17 с** — три новых helper
+набора и прежняя positive оболочка. Это не CAD-приёмка и не повтор полного
+package-набора. На этом этапе native fault-wrapper не запускался.
+Package, установленный wheel и helpers текущего live positive не меняются.
+
+Для native fault-case обязательны current-epoch ownership и тот же exact wheel;
+до собственной очистки — terminal job, нормально завершённые CAD-вызовы,
+полный журнал/receipt без pending, два независимых full current состояния,
+точный surviving sketch/PID, old raw PID и сохранность neighbors/UI/files.
+Если хотя бы одно условие не доказано, процесс удерживает STA/evidence и не
+повторяет мутацию или CloseDoc. Известный controlled Python fault после native
+return не является искусственно объявленным COM исключением.
+
+## Оставшиеся задачи
+
+1. Завершить текущий positive native, сверить actual SQL/receipt/helpers и baseline.
+2. Выполнить finite native fault/prewrite блок на exact dev96; dependent/linked
+   CAD-случаи остаются обязательными видимыми требованиями N5.
+3. Подключить public contract к supervised MCP цепочке N1–N4, actual scalar/rename
+   readback и независимому native observer; пройти public/native на том же wheel.
+4. Свести все шесть условий и оставшиеся ограничения. Пока доказательств нет,
+   B2, B3–B5 и стадия1 не закрываются; CI не заменяет эту приёмку.

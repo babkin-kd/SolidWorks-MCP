@@ -61,3 +61,13 @@ Native driver запущен на этом exact wheel одним COM-владе
 
 Осталось: internal native deletion, конечные negative/unknown и
 public MCP gates B2. Стадия1 и PR остаются открыты; пакетный push/CI не выполнен.
+
+Во время live native готовятся отдельные verification helpers без изменения
+package/wheel и hashes текущего драйвера. [Конечная приёмка N1–N6](B2_DEV96_ACCEPTANCE.md)
+отделяет source/artificial evidence от installed/native и сохраняет все остатки.
+Новый helper-набор прошёл239 pure/78,17 с: public contract/durable preparation/
+lineage/ledger32, known-no-effect и terminal unknown fault hooks, passive exact
+positive gate и безопасная own cleanup без reconciliation. Native fault-wrapper
+не запускался. Работающий positive достиг extrusion job/capture53 без ошибки;
+последний capture running, leaf callback ещё не начинался. Это progress,
+не terminal/native acceptance. Установленный digest/wheel остаются прежними.
