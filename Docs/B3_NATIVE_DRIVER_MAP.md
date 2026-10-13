@@ -75,6 +75,23 @@ envelope самого observer. **162 related pure passed /4,96 с** на actual
 registrations и artificial CAD getters. Native fixture/полный session observer,
 запуск SDK→original CAD anchors и итоговая13-group приёмка ещё не выполнены.
 
+Source part setup подготовлен в `verifier_b3_part_fixture.py`: два20×10×5 solid
+при X0/40, sheet15×10 при X80, exact hidden второй solid, Основная/Вариант и dirty
+сосед5×6×7. Только явный configured template, original owner/empty XY-plane
+admission и paired durable callbacks; raw handles сохраняются до returned ack.
+Любой pending/recorder loss/неподтверждённый результат удерживает caller receipt,
+без retry/Undo/cleanup. Imported sheet связывается через normally returned
+feature array [CreateSurfaceFeatureFromBody](https://help.solidworks.com/2020/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IPartDoc~CreateSurfaceFeatureFromBody.html),
+после проверки временного sheet по native extrema; name-difference не используется.
+
+Root review сохранил нормальный main/absorbed canonical traversal, ограничил
+roster до identity callbacks и запретил naming template/sketch feature при
+ложном returned feature. Fixture47 pure и integrated fixture/part bridge/
+geometry/mass/bounds/reader **209 pure passed /5,01 с**, искусственные CAD getters.
+Ни один actual fixture вызов в SolidWorks не выполнялся. CylinderØ12×30 и
+same-wheel B1 sketch остаются отдельными fixtures, full session producer и
+actual13-group/public driver остаются открытыми. Installed dev96 неизменён.
+
 Первый concrete raw producer подготовлен в
 `scripts/verifier_b3_native_part_reference.py`: прямые CAD getters для normal
 solid/surface body, plane face и line edge конечного I02. Original retained

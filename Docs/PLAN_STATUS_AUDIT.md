@@ -73,6 +73,13 @@ Part geometry/mass/bounds/reader related162 pure/4,96 с прошли с иск�
 CAD getters. Root по-прежнему единственный native owner; все31 N5 helpers
 неизменны. Native fixture и whole-session/B3 gates остаются открытыми.
 
+Source controlled part fixture (два solid/sheet/две конфигурации/hidden solid/
+dirty сосед) подготовлен с retained returned handles и paired recorder.
+Fixture47 pure, integrated209 pure/5,01 с прошли; actual CAD setup ещё not_run.
+Отдельный cylinder и same-wheel B1 sketch, whole-session producer и B3 driver
+не подменяются этим source-результатом. N5 child-plane-2 дошёл до original BASE
+preparation после исходного B1 построения; текущий native результат не принят.
+
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала
 через383,79 с на read-only подготовке эскиза:1 failed job/0 mutation checkpoint.
