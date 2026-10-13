@@ -141,6 +141,15 @@ closing PID/census/events и latching failures. Related199 pure passed /0,56 с,
 Этот helper не входит в31 frozen N5 files и в full10381/d974ffc. Подключение
 whole-session producer/SDK/13 groups и обязательная native-приёмка B3 остаются.
 
+Следующий B3 source-блок: empty-template custody/XYZ frame admission и отдельный
+model-Y cylinder Ø12×30 подготовлены; существующий I08 oracle сохранён.
+Root admission→cylinder integration и связанные part/anchors/bridge getters:
+395 pure passed /0,90 с. Это artificial API-shaped source-проверка, не actual
+CAD admission/setup. Application baseline/whole-session/B1 sketch/assembly/
+SDK driver ещё открыты. Последний full10381/d974ffc не включает эти helpers;
+нового full после каждого helper не выполняется. N5 dev96 продолжает работу,
+его31 frozen helper неизменны; stage2 не расширяется.
+
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала
 через383,79 с на read-only подготовке эскиза:1 failed job/0 mutation checkpoint.

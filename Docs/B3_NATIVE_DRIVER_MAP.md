@@ -111,6 +111,34 @@ strict PID types во всех фазах, raw retention и final-census отк�
 Actual setup/anchor capture в SolidWorks ещё not_run. Full session producer,
 cylinder/same-wheel B1 sketch, namespace/SDK driver и13-group acceptance открыты.
 
+Следующий source-блок соединяет empty-template admission с отдельным cylinder
+fixture. `verifier_b3_empty_template.py` сохраняет все original template feature
+anchors и native rigid frames до naming. Полный document roster должен точно
+совпасть с исходными creation receipts; ранее созданные документы отдельного
+builder допускаются только через completed `prior_fixtures`. Проверяются
+единственные HWND, сильные model/configuration/feature canonicals, config ABA,
+clean unsaved writable part, отсутствие тел/эскизов/dependencies и закрытый
+owner/event envelope. XY выбирается по exact native identity transform,
+Y-plane — по origin-centered native normal, не по имени/индексу.
+
+`verifier_b3_cylinder_fixture.py` создаёт отдельный Ø12×30 cylinder вдоль
+model-Y с одной конфигурацией Основная, как требует существующий I08 oracle.
+Знак нормали исходной плоскости задаёт Dir выдавливания; native extrema должны
+подтвердить bounds(-6,6,0,30,-6,6) мм. Original returned sketch/circle/feature,
+три грани и единственное normal solid body сохраняются и проверяются до/после
+rebuild. Raw returns предшествуют durable returned ack; pending/ledger loss
+удерживают owner без retry/Undo/cleanup. Empty GetBodies2=None допускается
+только для нового пустого baseline, не для созданного тела.
+
+Root integrated admission→cylinder callback исполняет реальный source builder
+и paired recorder на artificial API-shaped getters. Связанный admission/
+cylinder/part-fixture/anchors/bridge/native-part-reference набор:
+**395 pure passed /0,90 с**, normal exit0. Actual setup/admission/cylinder в CAD
+ещё not_run; full10381/d974ffc не включает эти последующие helper блоки.
+Initial application admission, whole-session producer, same-wheel B1 sketch,
+assembly fixtures/transitions и actual SDK/13-group driver остаются открытыми.
+Installed package и31 frozen helpers работающего N5 не менялись.
+
 Первый concrete raw producer подготовлен в
 `scripts/verifier_b3_native_part_reference.py`: прямые CAD getters для normal
 solid/surface body, plane face и line edge конечного I02. Original retained
