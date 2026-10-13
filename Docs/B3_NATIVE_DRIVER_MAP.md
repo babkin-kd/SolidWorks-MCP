@@ -165,6 +165,27 @@ Actual application admission/setup ещё not_run. Full10381/d974ffc относ�
 к предыдущему кандидату и не включает эти новые helpers. Whole-session producer,
 same-wheel B1 sketch, assembly/transitions и final SDK/13-group gate открыты.
 
+Единая source-оркестрация part setup подготовлена в `verifier_b3_part_setup.py`:
+external PartSetupReceipt хранится до входа, два request_id заданы явно.
+Initial empty application → paired own guard acquisition → main/neighbor
+fixture → separate model-Y cylinder → original Main44/neighbor19 topology
+anchors исполняются на исходном STA. Startup/empty-template callbacks используют
+реальные admission helpers; birth HWND сохраняется от original returned model
+до naming. Guard acquisition повторно проверяет owner/canonical/idle flag после
+pending journal I/O; guard_returned не объявляет guard_acquired до actual
+readback. Raw receipt предшествует returned ack; любой отказ удерживает owner
+и блокирует retry, cleanup и дальнейший setup.
+
+Related orchestration/application/template/part/cylinder/anchors:
+**720 pure passed /1,41 с**, включая83 new orchestration tests. API-shaped worlds
+переиспользуются, настоящие source builders/callbacks/collectors исполняются
+для обоих знаков native Y-plane normal. Это не actual CAD setup. На выходе
+guard остаётся held, sdk_ready/accepted/native_acceptance/cleanup_authorized=False.
+Whole-session baseline, original guard handoff, same-wheel B1 sketch, assembly
+fixtures/transitions и SDK namespace/13 groups остаются явными обязательными gates.
+Full10381/d974ffc не включает эту последующую source-оркестрацию; новый итоговый
+source-кандидат требует собственного full-набора перед пакетной отправкой.
+
 Первый concrete raw producer подготовлен в
 `scripts/verifier_b3_native_part_reference.py`: прямые CAD getters для normal
 solid/surface body, plane face и line edge конечного I02. Original retained

@@ -158,6 +158,13 @@ boundaries и failure latch. Root baseline→startup→cylinder callback integra
 модельных данных whole-session producer и actual B3 native/SDK приёмка остаются.
 Новый helper не входит в31 frozen N5 files и в full10381/d974ffc; package не менялся.
 
+Single-owner part setup source теперь соединяет application baseline/guard,
+main+neighbor/cylinder builders, actual admission callbacks и original topology
+capture. Related720 pure passed /1,41 с (83 orchestration cases), artificial
+API-shaped world. Actual CAD/SDK setup ещё not_run; output guard held и
+sdk_ready/acceptance/cleanup=False. Whole-session baseline/handoff/B1 sketch/
+assembly и13 groups остаются gates.31 N5 helper/package files не изменены.
+
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала
 через383,79 с на read-only подготовке эскиза:1 failed job/0 mutation checkpoint.
