@@ -15,10 +15,13 @@ unchanged oracle/receipts, остальные случаи выполняютс�
 три dependent/equation N5 случая, затем public B2. Общий B2 gate остаётся открыт.
 [Привязка dev96](CHECKPOINT_DEV96.md).
 
-Source-подготовка B3 охватывает I01…I05/I07…I13;
+Source-подготовка B3 охватывает все I01…I13;
 actual native producers и итоговый installed driver ещё не приняты.
-I06 ещё требует source-подготовки. Actual native transitions I04…I06 остаются
+Actual native transitions I04…I06 остаются
 видимыми открытыми задачами; passive phase probes не принимают саму native mutation.
+Offline exact installed B3 preflight dev96 принят13/27 без CAD;
+`can_start_native=false`. Подключение реальных producers и namespace/ownership
+определено в [B3_NATIVE_DRIVER_MAP](B3_NATIVE_DRIVER_MAP.md).
 Metadata-only installed timings enabled/disabled/storage-unavailable dev96
 приняты без CAD, но не заменяют native mutation/restore/hold B4-N6.
 B2–B5 и стадия1 остаются открыты; stage2 не расширяется.

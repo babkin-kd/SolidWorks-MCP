@@ -364,3 +364,18 @@ current owned-ref roundtrips новой инкарнации того же фа�
 SQLite/B3Reader и искусственными уже подготовленными native phases. Actual
 native producers/transitions, installed B3 driver и cleanup остаются открыты;
 source accepted/native/cleanup=false. I06 ещё не подготовлен.
+
+I06 source `verifier_b3_configuration_references.py` завершён: separate
+referenced-configuration phase9 reads и part-configuration phase2 refusals.
+Same original model/instance/PID, разные old/current configuration anchors,
+полный roster2→3 и новые current owner refs; сохранение body canonical допустимо.
+Old part ref даёт `object_configuration_mismatch`, inactive geometry —
+`configuration_not_active`; inactive metadata остаётся читаемой. **328 related
+pure passed /20,81 с**, реальные catalogs/JobRunner/SQLite/B3Reader с
+искусственными уже подготовленными phases. Native setup/full allowed-change
+scope/ownership, actual producers, installed driver и cleanup остаются открыты.
+
+Все13 named source routes подготовлены; [native driver map](B3_NATIVE_DRIVER_MAP.md)
+фиксирует конечные подключения и оставшиеся gates. Offline exact installed
+dev96 preflight принят:13 groups/27 required tools, metadata report reused,
+без CAD/SDK запуска. `can_start_native=false`, B3 native ещё не принят.
