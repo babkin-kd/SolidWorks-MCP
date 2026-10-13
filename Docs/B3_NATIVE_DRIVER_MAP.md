@@ -35,6 +35,17 @@ Actual namespace bindings/owner handles, whole-session watcher и real CAD run
 остаются gates. Producer не подключается к occupied session и не разрешает
 native acceptance/cleanup. Cylinder/curved-edge observers сюда не добавлены.
 
+Direct producers I01/I03 также подготовлены:
+`verifier_b3_native_document_metadata.py` читает retained model и все original
+configuration anchors прямыми getters, включая inactive metadata без activation;
+`verifier_b3_native_component.py` проверяет original PID/canonical census пяти
+instances, referenced model/config, parent и raw16 total transform. Owner
+admission предшествует native comparisons; ordinals и closing comparisons
+входят в event envelope. **113 related pure passed /4,19 с** на API-shaped
+искусственных getters и соответствующих routes. Actual opaque-ID bridge,
+whole-session ownership/producers и installed CAD driver остаются открытыми.
+Этот source-блок не входит в прежний full9952 checkpoint.
+
 1. До CAD принять exact installed wheel и metadata report. Offline dev96
    preflight уже принят:13 groups/27 tools, `can_start_native=false`.
    Не выполнять новые CAD-сценарии до terminal dev96 faults, root audit и

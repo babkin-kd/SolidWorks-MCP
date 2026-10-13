@@ -390,3 +390,10 @@ body/plane/line getters, retained canonical/PID/current owner и весь origin
 body census; extra body/replacement/unsupported geometry/ABA дают отказ.
 Это следующий source-блок, не часть прежнего9952 результата и не actual CAD
 acceptance. Whole-session/namespace/owner integration остаётся открытой.
+
+Concrete direct getters I01 metadata/I03 component подготовлены отдельно:
+`verifier_b3_native_document_metadata.py`, `verifier_b3_native_component.py`.
+**113 related pure passed /4,19 с**: retained original model/config anchors,
+inactive metadata, state0 PID/current instance census, parent/raw transform и
+closing ABA envelope. Это artificial source checks после full9952 checkpoint;
+native opaque-ID binding, full session и exact-wheel CAD run ещё не выполнены.
