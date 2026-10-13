@@ -63,6 +63,31 @@ return не является искусственно объявленным COM
 
 ## Оставшиеся задачи
 
+Подготовка N5 выполняется без обращения к занятому SolidWorks. Пассивный
+`verifier_b2_impact_refusal.py` связывает failed read-only preview с точным
+request/document/configuration/object, public DTO и actual SQL digest. Проверяет
+сохранность всех прежних jobs, отсутствие mutation checkpoint, точный отказ
+`leaf_deletion_unsupported` либо `first_save_snapshot_unsupported`, а также replay
+того же job без новых строк. **22 pure passed /0,70 с**, реальные SQLite jobs
+искусственного сценария; native не запускался. Этот helper не удостоверяет
+отсутствие CAD-эффекта и не разрешает cleanup.
+
+Дополнительная дочерняя плоскость или непустые уравнения находятся вне текущего
+полного BASE/first-save oracle. Для их native-отказов нужен отдельный полный
+текущий collector; original BASE snapshot не заменяет наблюдение изменённой
+fixture. N5 остаётся открытым до независимых before/after, защиты соседей и
+подтверждённой собственной очистки. Произвольное удаление графа остаётся D2-DELETION.
+
+`verifier_b2_impact_fixture.py` готовит три отдельные одноразовые own fixtures:
+дочернюю плоскость на геометрически выбранной торцевой грани исходного extrusion,
+неиспользуемую глобальную величину и её связь с частным файлом уравнений. Перед
+изменением проверяет исходный registry/epoch/PID/canonical membership; плоскость
+связывается с normally returned native handle и двусторонними parent/child
+отношениями. Возвращённый неполный результат или потеря durable acknowledgement
+не разрешают повтор/восстановление. Этот helper не подключён к текущему native.
+Совместные fixture/refusal tests: **77 pure passed /4,55 с**. Доменные fixtures
+используют искусственные native handles и реальный SQLite; CAD-приёмка не заявлена.
+
 1. Независимая инспекция/own cleanup завершены, baseline восстановлен и прежний
    процесс остановлен. Выполнить guarded positive с новой fixture; прежний failed
    event envelope сохранить. Причина не установлена; commit/replay и отдельная

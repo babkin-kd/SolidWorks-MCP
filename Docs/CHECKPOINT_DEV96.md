@@ -171,3 +171,19 @@ Guarded positive действительно запущен после отдел
 metadata83 и origin снова подтверждены до CAD. Новый private state/journal и
 новые controls; сейчас sketch_prepare/capture4 без ошибки. Running не считается
 passed; старый failed positive, cleanup и архив helpers сохранены отдельно.
+
+Следующее read-only наблюдение живого владельца показывает `extrusion_job`,
+52 captures, последний ещё running, error отсутствует. Это только прогресс;
+cleanup, fault-wrapper и public native до terminal positive не запускаются.
+Во время ожидания подготовлена пассивная привязка отказа preview к actual SQL:
+**22 pure passed /0,70 с** на искусственных заданиях с реальным SQLite. Никаких
+COM-вызовов, изменений live helpers, package или wheel. Для dependent/equation
+fixture полный current oracle пока не готов; N5 не accepted. Изменения локальные,
+дополнительный push/CI не запускался.
+
+Параллельный ограниченный fixture helper плоскости/unused equation/linked file
+завершён и объединён с пассивным refusal validator. **77 related pure passed
+/4,55 с**; original receipt/creation jobs сохранены, pending запрещает повтор,
+точный native handle/геометрическая роль/PID и двусторонние зависимости
+проверяются перед признанием fixture подготовленной. Full refusal oracle не
+подменяется и остаётся open; эти helpers не изменяют текущий positive manifest.
