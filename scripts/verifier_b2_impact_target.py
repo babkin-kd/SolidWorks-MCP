@@ -42,6 +42,7 @@ class B2ImpactTarget:
                  for row in self.parent['native_observations']['qualified_dimensions']}
         require(set(roles.values()) == {'width', 'height', 'depth'}, 'Exact original dimension roles required.')
         self.roles = roles
+        self.plane_dimension = None
         for record, anchor in zip(self.dimensions, self.anchors):
             summary = a.dimension_summary(record, [b.configuration])
             matches = [row for row in self.parent['references'] if row['kind'] == 'dimension'
@@ -107,17 +108,41 @@ class B2ImpactTarget:
             require(_json(geometry) == _json(self.parent['clone_state']['geometry']),
                     'Fixture or refused preview changed original complete BREP.')
             records = tuple(a.dimensions(b.model, features))
-            require(len(records) == 3 and all(sum(a.identity(a.dimension_object(d)) == old for d in records) == 1
+            require(len(records) in ((3, 4) if f.case == 'child_plane' else (3,))
+                    and all(sum(a.identity(a.dimension_object(d)) == old for d in records) == 1
                     for old in self.dimension_identities),
-                    'Extra/missing/replaced dimensions require another ancillary profile.')
+                    'Only three original dimensions and at most one exact own plane dimension are supported.')
+            current_roles = dict(self.roles)
             summaries = []
             for record in records:
-                index = next(i for i, token in enumerate(self.dimension_identities)
-                             if a.identity(a.dimension_object(record)) == token)
-                anchor = self.anchors[index]
+                identity = a.identity(a.dimension_object(record))
+                indexes = [i for i, token in enumerate(self.dimension_identities) if identity == token]
+                if indexes:
+                    anchor = self.anchors[indexes[0]]
+                else:
+                    require(f.case == 'child_plane' and record.owner is not None
+                            and a.identity(record.owner) == record.owner_tree_identity == f.created_plane_identity
+                            and f._pid(record.owner, 'feature') == f.created_plane_pid,
+                            'Extra dimension must belong to the exact normally acknowledged plane.')
+                    anchor = a.dimension_persistent_id(b.model, record)
+                    require(type(anchor) is dict and bool(anchor), 'Own plane dimension needs a real primary anchor.')
+                    if self.plane_dimension is None:
+                        self.plane_dimension = (record, identity, json.loads(_json(anchor)))
+                    require(identity == self.plane_dimension[1] and _json(anchor) == _json(self.plane_dimension[2]),
+                            'Retained own plane dimension incarnation or anchor was replaced.')
                 require(_json(a.dimension_persistent_id(b.model, record)) == _json(anchor), 'Current primary anchor changed.')
                 self._dimension(record, anchor)
-                summaries.append(a.dimension_summary(record, [b.configuration]))
+                summary = a.dimension_summary(record, [b.configuration])
+                if not indexes:
+                    name = summary['full_name']
+                    require(type(name) is str and bool(name) and name not in current_roles,
+                            'Own plane dimension requires a unique current presentation name.')
+                    current_roles[name] = 'plane_offset'
+                summaries.append(summary)
+                references.append(dict(kind='dimension', role='dimension:' + current_roles[summary['full_name']],
+                                       token=_json(anchor)))
+            require(self.plane_dimension is None or len(records) == 4,
+                    'Retained own plane dimension disappeared from the complete current census.')
             context = f._context()
             sketch, _ = a.sketch_snapshot(b.model, b.receipt.borrowed_sketch)
             planes = [dict(native_id=row['native_id'], transform=list(a.reference_plane_transform(obj)))
@@ -135,13 +160,15 @@ class B2ImpactTarget:
                 from verifier_b2_impact_ancillary import collect_impact_ancillary
                 collector = collect_impact_ancillary
             ancillary = collector(a, b.model, configuration=b.configuration, features=features,
-                                  summaries=rows, dimensions=records, dimension_roles=self.roles,
+                                  summaries=rows, dimensions=records, dimension_roles=current_roles,
                                   references=references, body=self.body)
             controls = a.dimension_context(b.model)
             require(all(type(value) is dict and bool(value) for value in (sketch, extrusion, ancillary, controls)),
                     'Every current target inventory must be available; no replacement values.')
             for record, anchor in zip(self.dimensions, self.anchors):
                 self._dimension(record, anchor)
+            if self.plane_dimension is not None:
+                self._dimension(self.plane_dimension[0], self.plane_dimension[2])
             closing_bodies = a.bodies(b.model, 'all')
             require(type(closing_bodies) in (tuple, list) and len(closing_bodies) == 1
                     and a.identity(closing_bodies[0]) == self.body_identity

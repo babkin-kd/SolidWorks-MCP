@@ -90,3 +90,48 @@ def test_cannot_reconstruct_original_capture_after_fixture_change(fixture):
     x.helper.add_unused_equation()
     with pytest.raises(FixtureGate, match='before fixture'):
         B2ImpactTarget(x.helper, x.c.baseline)
+
+
+def own_plane_dimension(x):
+    x.helper.add_child_plane(x.c.baseline)
+    plane = x.raw_plane
+    dimension = NS(identity=object(), owner=plane)
+    record = NS(dimension=dimension, owner=plane, owner_tree_identity=plane.identity,
+                anchor={'strategy': 'direct_dimension_v1', 'dimension_pid_hex': b'own-plane-dim'.hex()},
+                summary=deepcopy(x.c.records[0].summary))
+    record.summary['full_name'] = 'D1@' + plane.Name + '@Контрольная деталь.Part'
+    x.c.records.append(record)
+    x.collector.ancillary = lambda *args, **current: dict(scope='artificial_ancillary_four_dim_boundary',
+        accepted=False, dimensions=len(current['dimensions']), roles=dict(current['dimension_roles']))
+    return record
+
+
+def test_optional_plane_offset_dimension_is_retained_by_exact_native_owner_and_anchor(target):
+    x = target
+    record = own_plane_dimension(x)
+    first = x.collector.capture()
+    assert len(first['dimensions']) == 4
+    assert first['ancillary']['roles'][record.summary['full_name']] == 'plane_offset'
+    assert x.collector.plane_dimension[0] is record
+    assert x.collector.capture() == first
+    assert first['full_refusal_context_available'] is False
+
+
+@pytest.mark.parametrize('fault', ['foreign_owner', 'foreign_owner_tree', 'missing_anchor',
+    'replaced_after_read', 'removed_after_read', 'changed_anchor_after_read', 'fifth_dimension'])
+def test_plane_dimension_cannot_adopt_a_foreign_replaced_or_missing_record(target, fault):
+    x = target
+    record = own_plane_dimension(x)
+    if fault.endswith('after_read'):
+        x.collector.capture()
+    if fault == 'foreign_owner': record.owner = x.binding.feature
+    elif fault == 'foreign_owner_tree': record.owner_tree_identity = object()
+    elif fault == 'missing_anchor': record.anchor = None
+    elif fault == 'replaced_after_read': record.dimension.identity = object()
+    elif fault == 'removed_after_read': x.c.records.remove(record)
+    elif fault == 'changed_anchor_after_read': record.anchor['dimension_pid_hex'] = b'changed-plane-dim'.hex()
+    else: x.c.records.append(record)
+    writes = list(x.write_calls)
+    with pytest.raises((FixtureGate, ExecutionFailure, ValueError)):
+        x.collector.capture()
+    assert x.write_calls == writes

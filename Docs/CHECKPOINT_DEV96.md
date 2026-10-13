@@ -197,3 +197,15 @@ Session/neighbor/file before-after, terminal fixture journal и cleanup ещё
 предстоит объединить в N5 driver. Full N5/B2/stage1 остаются open.
 Последнее наблюдение текущего positive: отдельный B1 sketch/replay passed,
 `extrusion_job`, 71 captures, последний running, error отсутствует.
+
+После этого N5 collector дополнен exact optional plane-offset DIM и полными
+display/annotation/view связями. Current session reader проверяет два исходных
+model incarnations, native metadata/windows/files/UI/reference graph и весь
+neighbor BASE дважды; связанный equation fixture-файл имеет отдельный exact
+fingerprint. **232 related pure passed /12,01 с**, только искусственные native
+handles и реальные source domain/SQLite getters. Source wrappers не разрешают
+native acceptance/cleanup. Native refusal driver с request-wide events,
+durable jobs/replay и terminal fixture cleanup ещё не завершён.
+Текущий dev96 positive перешёл к `owned_cleanup`; leaf wrapper внутри него
+выполняет `leaf_prepare`, error отсутствует. 83 rectangle captures, последний
+normally returned. Живой вызов продолжается; terminal результат пока не принят.

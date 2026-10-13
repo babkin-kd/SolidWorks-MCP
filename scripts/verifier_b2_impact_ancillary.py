@@ -48,9 +48,9 @@ def collect_impact_ancillary(adapter,model,*,configuration,features,summaries,di
                              dimension_roles,references,body):
     """Read current ancillary data using the installed production getters.
 
-dimension_roles: exact qualified native full_name -> width/height/depth. Only the
-three original current dimension records are supported. Fourth plane-offset
-dimension/unknown annotations/nonempty annotation views raise a concrete gate.
+dimension_roles: exact qualified native full_name -> width/height/depth, plus
+one optional plane_offset retained by the native owner. Unknown dimensions,
+annotations and nonempty annotation views raise a concrete gate.
 references: current owner-declared refs BEFORE annotation collection; a detached
 copy gains actual annotation refs. Nothing in the caller's containers is changed.
 body: exact current native solid retained by the caller's complete target census.
@@ -67,10 +67,11 @@ replace the caller's full target/session/identity/watch before-after oracle.
     _require(bool(configuration),'configuration','Explicit current configuration required.')
     _require(type(features) in (tuple,list) and type(summaries) in (tuple,list)
         and 0<len(features)==len(summaries)<=64,'features','Exact complete owner feature rows required.')
-    _require(type(dimensions) in (tuple,list) and len(dimensions)==3,'dimensions',
-             'Three exact original dimensions required; new plane-offset dimensions have no supported view-binding axis.')
-    _require(type(dimension_roles) is dict and len(dimension_roles)==3
-        and set(dimension_roles.values())==AXES,'dimension_roles','Exact qualified width/height/depth role map required.')
+    _require(type(dimensions) in (tuple,list) and len(dimensions) in (3,4),'dimensions',
+             'Three original dimensions and at most one exact own plane-offset dimension required.')
+    expected_axes=AXES|({'plane_offset'} if len(dimensions)==4 else set())
+    _require(type(dimension_roles) is dict and len(dimension_roles)==len(dimensions)
+        and set(dimension_roles.values())==expected_axes,'dimension_roles','Exact qualified current role map required.')
     for name in dimension_roles:_text(name,'dimension_roles')
     _require(type(references) is list and all(type(row) is dict for row in references),
              'references','Detached current owner reference rows required.')
@@ -78,8 +79,8 @@ replace the caller's full target/session/identity/watch before-after oracle.
              'Pass current references before annotations; existing annotation rows cannot be reused as observations.')
     native_summaries=_read('dimensions',lambda:[adapter.dimension_summary(record,[configuration]) for record in dimensions])
     names=_read('dimension_roles',lambda:[_text(summary['full_name'],'dimension_roles') for summary in native_summaries])
-    _require(len(set(names))==3 and set(names)==set(dimension_roles),'dimension_roles',
-             'Owner role map must match all three actual current dimension names.')
+    _require(len(set(names))==len(dimensions) and set(names)==set(dimension_roles),'dimension_roles',
+             'Owner role map must match every actual current dimension name.')
     retained=_read('dimensions',lambda:[adapter.identity(adapter.dimension_object(record)) for record in dimensions])
     _require(all(token is not None for token in retained)
         and all(not any(token==previous for previous in retained[:index]) for index,token in enumerate(retained)),
@@ -91,15 +92,21 @@ replace the caller's full target/session/identity/watch before-after oracle.
     result['auxiliary_data']=_read('auxiliary_data',lambda:_empty_auxiliary_data(adapter,model,features,summaries))
     result['display_data']=_read('display_data',lambda:_display_data(adapter,model,features,summaries))
     result['annotations']=_read('annotations',lambda:_annotations(adapter,model,dimensions,current_refs))
-    result['annotation_view_bindings']=_read('annotation_view_bindings',
-        lambda:rectangle_annotation_view_bindings(adapter,model,result['display_data'],dimension_roles))
+    if len(dimensions)==3:
+        result['annotation_view_bindings']=_read('annotation_view_bindings',
+            lambda:rectangle_annotation_view_bindings(adapter,model,result['display_data'],dimension_roles))
+    else:
+        from verifier_b2_impact_views import impact_annotation_view_bindings
+        result['annotation_view_bindings']=_read('annotation_view_bindings',
+            lambda:impact_annotation_view_bindings(adapter,model,result['display_data'],dimension_roles,
+                configuration=configuration,features=features,dimensions=dimensions))
     _read('annotation_view_bindings',lambda:validated_view_bindings(result['display_data'],
-            result['annotation_view_bindings'],AXES))
+            result['annotation_view_bindings'],expected_axes))
     # The installed view getter independently enumerates current dimensions.
-    # Recheck membership against the caller-retained three; names never adopt a
-    # fourth/replaced dimension whose metadata happens to have the same text.
+    # Recheck the caller-retained records; names never adopt a replaced DIM or
+    # an extra dimension whose metadata happens to have the same text.
     current=_read('dimensions',lambda:adapter.dimensions(model,features))
-    _require(type(current) in (tuple,list) and len(current)==3,'dimensions',
+    _require(type(current) in (tuple,list) and len(current)==len(dimensions),'dimensions',
              'Actual current dimension census contains unsupported or missing records.')
     identities=_read('dimensions',lambda:[adapter.identity(adapter.dimension_object(record)) for record in current])
     _require(all(sum(token==other for other in identities)==1 for token in retained),'dimensions',

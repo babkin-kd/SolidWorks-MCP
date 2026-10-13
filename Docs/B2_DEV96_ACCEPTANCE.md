@@ -95,11 +95,28 @@ fixture. N5 остаётся открытым до независимых before
 Ancillary collector повторно использует установленные getters свойств,
 конфигурации, annotations/views, материалов, units и creation controls.
 Недоступные данные отклоняются по конкретному полю; baseline не подставляется.
-Четвёртый dimension плоскости пока не поддержан этими getters и остаётся явным
-отказом collector. Совместные четыре helper-набора: **158 pure passed /7,61 с**.
+Первая версия collector отклоняла четвёртый dimension плоскости. Совместные
+четыре helper-набора этой версии: **158 pure passed /7,61 с**.
 Перед native N5 ещё нужны полный session/neighbor/file census, сравнение
 до/после фактического отказа, terminal fixture journal и безопасная очистка.
 Текущий installed dev96 и его работающий positive driver не изменены.
+
+Текущая версия дополнительно удерживает optional dimension только исходной
+normally acknowledged дочерней плоскости: canonical owner/PID, первичный anchor
+и текущая размерная запись должны совпадать. Для четырёх размеров отдельный
+`verifier_b2_impact_views.py` связывает все current displays/slots/annotations/views
+с теми же actual native DIM; лишний/заменённый объект не игнорируется. Исходные
+три размера используют прежний installed view getter. Непустые/неизвестные views
+по-прежнему являются explicit collector gate.
+
+`verifier_b2_impact_session.py` объединяет target с полным native session census
+и двумя полными снимками исходного соседнего BASE. Для linked equation отдельно
+проверяет явную связь с частным fixture-файлом, его identity/timestamps/bytes/SHA;
+файл не считается отсутствующим при пропущенном наблюдении. Before/after
+сравниваются целиком. **232 related pure passed /12,01 с**, без CAD. Остаются
+event envelope через сам отказ запроса, actual durable preview/execute/replay,
+terminal fixture journal и собственная очистка в native driver. Эти исходные
+проверки не являются N5/B2 приёмкой; текущий positive manifest не изменён.
 
 1. Независимая инспекция/own cleanup завершены, baseline восстановлен и прежний
    процесс остановлен. Выполнить guarded positive с новой fixture; прежний failed
