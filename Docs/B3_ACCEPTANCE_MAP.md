@@ -269,3 +269,13 @@ before/after session сверяются, результаты связаны с 
 DocumentCatalog/JobRunner/B3Reader. Feature/dimension/sketch часть I01, actual
 native producers, installed B3 driver и cleanup остаются открыты. Никаких
 accepted/native/cleanup разрешений этот source-подмаршрут не выдаёт.
+
+I09 `verifier_b3_instance_distance.py` подготовлен для ровно двух durable pair
+reads существующего assembly-профиля: main→variant15 мм и main→nested70 мм.
+Независимые current canonical/PID/total-transform receipts, полный solid/surface
+census, исходные trimmed-boundary witnesses в local/root frame и более близкая
+surface подтверждаются отдельными producer callbacks; поверхности исключены
+из solid minimum, hidden solid включён. **279 related pure passed /21,89 с**
+через реальный ComponentDistanceCatalog/JobRunner/SQLite/B3Reader с искусственным
+BREP. Actual native producers, same-wheel B3 driver и cleanup открыты;
+accepted/native/cleanup остаются false. I10–I12 этим маршрутом не закрыты.
