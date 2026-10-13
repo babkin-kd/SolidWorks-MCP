@@ -1,7 +1,7 @@
 # B2: подготовка удаления собственного конечного выдавливания
 
 **Read-only preview, отдельная native receipt, durable executor и runtime/MCP
-реализованы в исходниках; installed/native-приёмка ещё не выполнена.**
+реализованы; dev96 artifact/metadata приняты, native-приёмка ещё выполняется.**
 Эти файлы появились после сборки dev95 и не входят в его wheel.
 
 Preview допускает только оригинальное B1-выдавливание из реального succeeded
@@ -16,9 +16,10 @@ canonical/PID, actual GetChildren и полный dependency census должны
 sketch ID, оставшиеся width/height и отсутствие тела после операции.
 `delete_authorized=False`: preview сам не выдаёт полномочие на запись.
 `native_execution_available=True`: исполнитель реализован; это не статус
-native-приёмки. В source-каталоге зарегистрированы `feature_prepare_leaf_deletion`
-и `feature_delete_leaf` (83 tools/27 mutations). Установленный dev95 содержит
-прежние81/26 и не принимает эти последующие изменения.
+native-приёмки. В каталоге зарегистрированы `feature_prepare_leaf_deletion`
+и `feature_delete_leaf` (83 tools/27 mutations). Dev95 содержит прежние81/26
+и не принимает эти последующие изменения. Dev96 установлен, metadata83/27
+подтверждены; actual CAD deletion ещё не принята.
 
 Полное постусловие BASE→SKETCH сочетает reverse extrusion proof и forward
 session comparison: обратный proof отдельно не проверял фактический dirty

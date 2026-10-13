@@ -1,9 +1,23 @@
 # Локальная контрольная точка dev96 — 13.10.2026
 
-**Source preview/delete реализованы; final pure8427/323 принят.
-Wheel96 ещё не собран и не установлен, native deletion не принята.**
-Текущий установленный пакет остаётся dev95 с принятым positive suppression/
-return; negative/public и общий B2 gate открыты. [Привязка dev95](CHECKPOINT_DEV95.md).
+**Dev96 установлен: final pure8427/323, artifact и metadata83/27 приняты.
+Internal positive native deletion запущен; running не означает приёмку.**
+Historical dev95 имеет принятый positive suppression/return; negative/public
+и общий B2 gate открыты. [Привязка dev95](CHECKPOINT_DEV95.md).
+
+| Привязка | Значение |
+| --- | --- |
+| Wheel | `solidworks_mcp-2.0.0.dev96-py3-none-any.whl` |
+| Build Git SHA | `f80ee6d80819140a8122fcf26104b0ce6760bff8` |
+| Wheel SHA256 | `9088e018be898cf94e5c9bbbd1023ee09cb6c9f0a9af24a9ed66f48b3a9380fa` |
+| Source digest | `d861172b1437057a913c12ef7937a91eef7569deb7dd8ddae19d0d05a8655d59` |
+| Каталог | 83 инструмента /27 операций записи |
+
+Clean Git/source identity и архив wheel подтверждены artifact gate.
+Установленный пакет проверен в `site-packages`, без source `PYTHONPATH`:
+настоящий MCP stdio tools/list/system_get_info, schema hash и exact mutation
+catalog совпали. Metadata не вызывала CAD. Установка изменена только в
+dev-окружении; рабочая v1 сохранена.
 
 Два source-инструмента: `feature_prepare_leaf_deletion` и `feature_delete_leaf`.
 Каталог83/27, scope `owned_rectangular_leaf_extrusion_deletion_v1`.
@@ -40,6 +54,10 @@ Application проверяется canonical COM identity, а retained annotatio
 Полный pure-набор: **8427 passed /323 CAD deselected,260,01 с**.
 Пропущенные CAD-случаи не засчитываются как native.
 
-Осталось: clean build identity/wheel artifact, installed
-metadata/stdio83/27, internal native deletion, конечные negative/unknown и
+Native driver запущен на этом exact wheel одним COM-владельцем. До создания
+контролей проверена исходная empty/free session; в первой записи отчёта нет
+ошибок, fixture creation/capture выполняются. Helper/wheel не меняются во время
+прогона. Terminal cleanup/baseline и actual deletion ещё не подтверждены.
+
+Осталось: internal native deletion, конечные negative/unknown и
 public MCP gates B2. Стадия1 и PR остаются открыты; пакетный push/CI не выполнен.

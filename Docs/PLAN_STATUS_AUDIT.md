@@ -2,7 +2,13 @@
 
 ## Текущий итог
 
-**Текущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
+**Текущий installed кандидат — dev96:** full pure8427/323 CAD deselected,
+260,01 с; clean artifact и metadata/stdIO83/27 приняты, без CAD в metadata.
+Own-leaf preview/delete domain/runtime/MCP реализованы; exact-wheel positive
+internal native запущен одним владельцем, running не является accepted.
+Negative/unknown, public и общий B2 gate остаются. [Привязка dev96](CHECKPOINT_DEV96.md).
+
+**Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала
 через383,79 с на read-only подготовке эскиза:1 failed job/0 mutation checkpoint.
 Root quiescence/own cleanup/full empty baseline первой попытки подтверждены

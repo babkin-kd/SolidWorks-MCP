@@ -8,7 +8,7 @@
 Полный снимок, журнал, проверка post-release, сохранение исходного имени тела
 и отказ при неполных DIM/annotation-данных входят в домен. ID геометрии после
 перехода аннулируются; владение не восстанавливается после переподключения.
-Установленный dev95 содержит81/26; его positive internal suppression/return
+Dev95 содержит81/26; его positive internal suppression/return
 принят, negative/public B2 ещё остаются. Это не приёмка следующего wheel.
 
 В исходниках добавлены `feature_prepare_leaf_deletion` / `feature_delete_leaf`,
@@ -18,7 +18,8 @@
 удалённая адресная ссылка и её индекс аннулируются. Original creation receipt
 не используется повторно и не изменяется. Unknown сохраняет application hold,
 без Undo/recreate/retry. Source runtime/MCP и pure-проверки отдельно от
-installed/native: удаление не входит в wheel95 и ещё не принято в CAD.
+installed/native: удаление не входит в wheel95. Новый exact dev96 установлен,
+metadata83/27 приняты; native positive удаления выполняется, в CAD ещё не принят.
 Принятым B1 остаётся точный dev94. Ниже сохранены результаты прежних кандидатов.
 
 **Исходный кандидат dev90, B1:** реализованы отдельные
