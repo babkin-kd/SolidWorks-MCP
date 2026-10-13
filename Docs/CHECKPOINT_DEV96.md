@@ -275,3 +275,10 @@ current baseline и original receipt сохранились. Owner перешё�
 Whole faults gate пока running, не accepted; новые native N5/public не запускаются.
 I12 source-preparation завершена отдельно,402 related pure/25,79 с; exact wheel
 и22 frozen fault helpers остаются неизменными. Actual native B3 gate открыт.
+
+**Последующий terminal результат faults:** normal exit0,5/5 cases passed,
+9137,84 с,196 returned captures. Root audit принял actual SQL9 jobs, неизменные22
+helpers, exact wheel/report SHA, current documents0/CIPFalse и original baseline
+с non-STL preferences. Historical unknown/unresolved сохранён без reconciliation.
+После этого запущен fresh N5 `child_plane`; другие N5/public ещё не приняты.
+Подробный текущий статус — [B2_DEV96_ACCEPTANCE](B2_DEV96_ACCEPTANCE.md).

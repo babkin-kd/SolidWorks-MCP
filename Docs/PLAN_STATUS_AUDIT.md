@@ -9,16 +9,21 @@ Own-leaf preview/delete domain/runtime/MCP реализованы. Guarded posit
 6 succeeded jobs/3 committed mutations; replay, independent SKETCH/neighbor и
 own cleanup/full baseline подтверждены. Failed positive1 сохранён отдельно.
 Exact dev96/f80ee6d/wheel SHA9088e018 неизменен. Finite negative/unknown wrapper
-работает одним CAD-владельцем: `leaf_stale` и `leaf_foreign` passed после полного
-unchanged oracle/receipts, остальные случаи выполняются. Whole fault gate ещё не принят.
-После terminal result/audit/cleanup последовательно идут
-три dependent/equation N5 случая, затем public B2. Общий B2 gate остаётся открыт.
+штатно завершён: все5 cases passed за9137,84 с,196 returned captures.
+Root audit сверил actual SQL9 jobs, fixed22 helpers, report SHA и current empty
+baseline/CIPFalse/non-STL preferences. Historical unknown/unresolved сохранён,
+не объявлен succeeded и не reconciled; own cleanup подтверждена.
+Теперь выполняется одиночный N5 `child_plane`; `unused_equation` и
+`linked_equation` идут после его terminal acceptance/cleanup, затем public B2.
+Общий B2 gate остаётся открыт.
 [Привязка dev96](CHECKPOINT_DEV96.md).
 
 Source-подготовка B3 охватывает все I01…I13;
 actual native producers и итоговый installed driver ещё не приняты.
 Actual native transitions I04…I06 остаются
 видимыми открытыми задачами; passive phase probes не принимают саму native mutation.
+Direct native-getter observers I01 metadata/I03 component подготовлены отдельно:
+113 related pure passed/4,19 с; actual CAD/namespace/whole-session driver ещё открыт.
 Offline exact installed B3 preflight dev96 принят13/27 без CAD;
 `can_start_native=false`. Подключение реальных producers и namespace/ownership
 определено в [B3_NATIVE_DRIVER_MAP](B3_NATIVE_DRIVER_MAP.md).
@@ -51,7 +56,7 @@ exit0,652,52 с, full baseline и собственная очистка подт
 реализованы retained ownership, full suppressed producer и domain/runtime/MCP
 suppression; wheel95 positive internal gate принят, negative/public остаются.
 Последующий dev96 выполнил actual own-leaf deletion positive2, как указано в
-текущем итоге выше; finite faults/N5/public и общий B2 остаются открыты.
+текущем итоге выше; finite faults теперь принят отдельно, N5/public и общий B2 открыты.
 Native dev94 не принимает последующие source изменения.
 разработка продолжается, пауза отменена последующими указаниями пользователя.
 

@@ -11,7 +11,7 @@ dev95 сохранён отдельно; он не принимается за �
 | N3 | Подавить и вернуть собственное основание | Public suppression/return с original ownership, full bodyless/BASE snapshots, исходный sketch/DIMs/PID и имя тела; checkpoint/guards/replay | Dev95 positive принят; dev96 ещё не принят |
 | N4 | Preview точного own leaf, затем удалить только основание | Read-only prepare, full BASE→SKETCH, exact deleted ID, preserved sketch, actual raw old PID1/4+null, удалённый ID отвергается при чтении; SQL/replay | Fresh guarded internal positive dev96 принят2/2, independent target/neighbor и cleanup/baseline подтверждены; публичная цепочка ещё не принята. Первый failed отчёт сохранён |
 | N5 | Безопасный отказ для stale/foreign/dependent/linked/неполного scope | No-write/known-no-effect evidence реальных refused jobs; полный снимок, отсутствие native dispatch/checkpoint где применимо; unsupported CAD cases видимы отдельно | Pure отказы есть; конечная installed/native приёмка не завершена |
-| N6 | После ошибки получить известный отказ либо unknown с блокировкой | Full no-effect/restored scope либо terminal unknown/application hold; no inverse/retry после delete, поздние результаты/replay/blocked request и безопасная собственная очистка | Finite native fault-wrapper dev96 запущен после принятого positive2/current baseline; preflight и metadata83/origin приняты, результата ещё нет |
+| N6 | После ошибки получить известный отказ либо unknown с блокировкой | Full no-effect/restored scope либо terminal unknown/application hold; no inverse/retry после delete, поздние результаты/replay/blocked request и безопасная собственная очистка | Finite native fault-wrapper принят5/5,9137,84 с; root audit SQL/current baseline/cleanup принят. Historical unknown/unresolved сохранён; общий late/restart/reconciliation B4 gate остаётся отдельно |
 
 Положительная публичная цепочка объединяет N1–N4 на одной собственной модели.
 Отрицательные случаи выполняются на отдельной fixture, чтобы ошибка не заменяла
@@ -82,7 +82,18 @@ owned=[], no creation returns/no jobs.sqlite. Metadata-only SDK запускал
 После terminal fault96 и принятой cleanup последовательно выполнить три fresh
 прогона: `child_plane`, `unused_equation`, `linked_equation`. Replay идёт внутри
 одной fixture; ошибка/pending удерживает STA и запрещает следующую case.
-Только принятые три отчёта закрывают dependent/linked часть N5. Сейчас not_run.
+Только принятые три отчёта закрывают dependent/linked часть N5. `child_plane`
+запущен после terminal faults/root audit; остальные два пока not_run.
+
+**Finite faults dev96 принят.** Оба owner/wrapper завершились штатно exit0:
+пять случаев stale, foreign, no-effect, controlled observation unknown и blocked
+new request. Все196 captures normally returned; parent cleanup и original
+baseline подтверждены. Root отдельно проверил SQL9 jobs, точный wheel/22 helpers,
+пустую current CAD-сессию/CIPFalse и non-STL preferences. Report SHA256:
+`b7f53667c2978685c5e1c689a8ba697645433ae30d46402cf0b45bb4415e6d74`.
+Единственный historical unknown остаётся unresolved/reconciliation=None;
+проверка не изменяет статус задания. Это конечный internal faults gate,
+не public B2, не весь B4 и не завершение стадии1.
 
 **Guarded positive dev96 принят.** Fresh прогон завершился за **4136,97 с**:
 leaf2/2, parent4/4, все112 captures normally returned. Root отдельно проверил
