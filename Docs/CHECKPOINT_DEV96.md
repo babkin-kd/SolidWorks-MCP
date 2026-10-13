@@ -239,3 +239,17 @@ edge/face PID census с roundtrip существующего installed getter. M
 прерывает capture. **80 related pure passed /11,31 с**; отдельный тестовый запуск
 также обнаружил и устранил зависимость helper import от collection order.
 CAD/пакет/22 frozen fault helpers не затронуты, отдельного push/CI нет.
+
+N5 exact-wheel CLI и source callback завершены, **367 related pure passed
+/79,97 с**. Один explicit fixture kind на fresh run, original registry/B1 owner,
+actual setup checkpoint/paired ledger, полный current target+neighbor+files,
+preview/delete/replay под whole-request watches и terminal own cleanup gate.
+Neighbor comparison сохраняет current controls/views; проекция к parent
+first-save удаляет только два документированных rectangle-added поля.
+Whole B2/public acceptance не объявлена.
+
+Actual installed negative preflight ожидаемо отклонил failed positive1 перед
+COM: false live marker, owned=[], no creation returns/no jobs.sqlite. Metadata
+SDK читался, CAD не выполнялся. Native N5 остаётся not_run до окончания fault96.
+Сам fault96 продолжает работать: `sketch_job`,34 captures, error отсутствует;
+его helper manifest/wheel не изменены. Следующие N5 случаи идут последовательно.

@@ -63,6 +63,27 @@ return не является искусственно объявленным COM
 
 ## Оставшиеся задачи
 
+**N5 native driver подготовлен.** `scripts/verify_b2_impact_native.py` запускает
+один explicit `--fixture-kind child_plane|unused_equation|linked_equation` на fresh
+private state с exact positive2 report/SHA и wheel96. Оригинальный B1 owner,
+BASE preparation, fixture checkpoint/paired ledger и полный current session
+предшествуют setup commit; preview/delete/replay batch проверяется под watches.
+Terminal acceptance относится только к одному N5 case с own cleanup/исходным
+empty baseline/non-STL preferences, не к whole B2/public.
+
+Current neighbor сохраняет все данные rectangle capture; проекция к parent
+first-save удаляет только два документированных добавленных поля для сравнения.
+Controls/view bindings остаются в отчёте. Missing data не заполняется baseline.
+Совместные девять наборов: **367 pure passed /79,97 с**, без CAD. Actual installed
+negative preflight с failed positive1 дал ожидаемый отказ до COM: live=False,
+owned=[], no creation returns/no jobs.sqlite. Metadata-only SDK запускался,
+модели не создавались. Это проверка gate, не N5 native acceptance.
+
+После terminal fault96 и принятой cleanup последовательно выполнить три fresh
+прогона: `child_plane`, `unused_equation`, `linked_equation`. Replay идёт внутри
+одной fixture; ошибка/pending удерживает STA и запрещает следующую case.
+Только принятые три отчёта закрывают dependent/linked часть N5. Сейчас not_run.
+
 **Guarded positive dev96 принят.** Fresh прогон завершился за **4136,97 с**:
 leaf2/2, parent4/4, все112 captures normally returned. Root отдельно проверил
 actual report SHA, неизменные11 helpers, exact installed wheel, coherent SQL и
