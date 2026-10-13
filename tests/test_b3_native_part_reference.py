@@ -69,6 +69,7 @@ def world():
         return identities.index(value)+1
     def safe(context): x.safe_calls.append(deepcopy(context))
     x.identity, x.ordinal, x.safe = identity, ordinal, safe
+    x.docs=docs
     return x
 
 
@@ -133,3 +134,11 @@ def test_owner_gate_precedes_even_native_canonical_equality(world):
     def unsafe(context): raise RuntimeError('Owner not quiescent')
     with pytest.raises(RuntimeError): run(x, original_body_census=[NativeCanonical()], assert_safe=unsafe)
     assert x.identity_calls == 0
+
+
+def test_closing_owner_admission_is_inside_metadata_and_event_envelope(world):
+    x=world;calls=[]
+    def safe(context):
+        calls.append(True)
+        if len(calls)==2:x.sequence+=2
+    with pytest.raises(ValueError,match='events'):run(x,assert_safe=safe)

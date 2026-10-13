@@ -64,6 +64,17 @@ SDK/SQLite observation `ChildTrace` проверяет sequence, result/payload 
 capture не выполнялся. Current PID→original canonical/owner roundtrip,
 whole-session envelope и fixture/13-group native driver остаются открытыми.
 
+`PartReferenceBridge` теперь соединяет child document ID/HWND/PID с удержанными
+original part/body/face/edge handles, затем вызывает direct native I02 observer.
+Root проверяет весь текущий HWND roster и свою исходную model canonical
+association до/после наблюдения. Для static I02 используется точный original
+PID; rename/alias переход I04 остаётся отдельным маршрутом. Имена/форма/индекс
+не создают владение. Полный owner/window/PID envelope закрывается последним
+native event poll; closing owner admission также включён в metadata/event
+envelope самого observer. **162 related pure passed /4,96 с** на actual catalog
+registrations и artificial CAD getters. Native fixture/полный session observer,
+запуск SDK→original CAD anchors и итоговая13-group приёмка ещё не выполнены.
+
 Первый concrete raw producer подготовлен в
 `scripts/verifier_b3_native_part_reference.py`: прямые CAD getters для normal
 solid/surface body, plane face и line edge конечного I02. Original retained

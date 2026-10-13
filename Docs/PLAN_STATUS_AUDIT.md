@@ -67,6 +67,12 @@ CAD getters и supervisor. Installed metadata-only bootstrap83/0 прошёл; a
 CAD window/PID-owner/envelope и весь B3 gate остаются открытыми. Full10220
 b842a9c не включает эти новые isolated bridge блоки; отдельного push/CI нет.
 
+Part child trace→original native anchors→I02 observer bridge подготовлен;
+closing owner admission теперь включён в финальный metadata/event envelope.
+Part geometry/mass/bounds/reader related162 pure/4,96 с прошли с искусственными
+CAD getters. Root по-прежнему единственный native owner; все31 N5 helpers
+неизменны. Native fixture и whole-session/B3 gates остаются открытыми.
+
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала
 через383,79 с на read-only подготовке эскиза:1 failed job/0 mutation checkpoint.

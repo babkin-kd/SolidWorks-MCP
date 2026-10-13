@@ -119,9 +119,9 @@ No adapter.geometry_summary or public DTO is used as the native oracle.
         if key not in ('object_id', 'kind', 'body_id')}), 'Public facts differ from direct native getters.')
     native_ordinal, body_ordinal = ordinal(binding.canonical), ordinal(owner_body.canonical)
     require(all(type(x) is int and x > 0 for x in (native_ordinal, body_ordinal)), 'Retained canonical equality ordinals required.')
+    assert_safe(context)
     after = metadata()
     require(before == after and watch.poll() == event_before, 'Native model/configuration/events changed during reference observation.')
-    assert_safe(context)
     return dict(scope='raw_native_retained_part_reference_v1', object_id=binding.object_id,
         kind=binding.kind, persistent_id=binding.persistent_id.hex(), native_identity=native_ordinal,
         owner_body_native_identity=body_ordinal, native_summary=summary,
