@@ -1,4 +1,4 @@
-# Аудит статусов плана — актуализация 13.10.2026
+# Аудит статусов плана — актуализация 14.10.2026
 
 ## Текущий итог
 
@@ -79,6 +79,17 @@ Fixture47 pure, integrated209 pure/5,01 с прошли; actual CAD setup ещё
 Отдельный cylinder и same-wheel B1 sketch, whole-session producer и B3 driver
 не подменяются этим source-результатом. N5 child-plane-2 дошёл до original BASE
 preparation после исходного B1 построения; текущий native результат не принят.
+
+Итоговый source HEAD9a98447: **10307 pure passed,323 CAD deselected /459,84 с**,
+external basetemp/normal exit0. Второй N5 child-plane завершился failed: query
+canonical gate не подтвердил соответствие raw/queried/current feature;6 SQL jobs,
+setup unknown/unresolved,3 returned native pairs,84 returned captures. Отказы
+авторевью разрешены безопасной альтернативой — освобождён только quiescent idle
+owner, затем sole-owner inspector подтвердил текущие own scope/geometry/PID и
+пустые selections. Cleanup normal exit0: обе own детали закрыты без сохранения,
+full baseline/CIPFalse/non-STL восстановлены, unknown SQL неизменён. N5 не принят. Перед третьей
+попыткой обязателен небольшой actual return-interface diagnostic probe.
+[Точная контрольная точка](CHECKPOINT_9A98447.md).
 
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала
