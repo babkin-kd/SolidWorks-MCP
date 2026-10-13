@@ -11,6 +11,11 @@ Source-кандидат c229bc4 прошёл один итоговый pure-на
 source/tests не менялись. [Сводка пакета](CHECKPOINT_C229BC4.md).
 Это не обновляет native acceptance B2/B3.
 
+Пакетная отправка выполнена одним push771befa. Прямой API подтвердил
+head/base PR15, draft/open/not merged и созданный Checks run38479280563
+in_progress. Итог CI pending; новая CI-сборка не наследует native dev96.
+Результат текущего N5 остаётся открытым, live COM не прерывался.
+
 **Текущий installed кандидат — dev96:** full pure8427/323 CAD deselected,
 260,01 с; clean artifact и metadata/stdIO83/27 приняты, без CAD в metadata.
 Own-leaf preview/delete domain/runtime/MCP реализованы. Guarded positive2

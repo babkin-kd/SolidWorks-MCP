@@ -54,7 +54,11 @@ unused/linked equation, public B2, actual B3, recovery B4, сквозной B5.
 Перед отправкой актуальные main и рабочая ветка получены напрямую через Git.
 Main `3ab795ec9d75e8a0055d41554cd439737b8b82f8` входит в локальную историю;
 удалённый head `274085fa75cd3d266afe72e55bf0e0175eca8124` — её предок.
-PR15 open/draft, merge не выполняется. Пакет готов к одному push после
-успешного итогового pure-набора; обязательный `Checks/unit-and-build` сохраняется.
+Единственный пакетный push выполнен: head
+`771befaa0190f4ff2543d07ff880caa336f1284a`. Прямой GitHub API подтвердил этот
+head, прежний base и PR15 open/draft/not merged. Создан
+[Checks run38479280563](https://github.com/babkin-kd/SolidWorks-MCP/actions/runs/38479280563):
+in_progress, conclusion ещё отсутствует. Итог CI остаётся pending;
+обязательный `Checks/unit-and-build` сохраняется.
 CI-сборка не получает native-приёмку установленного dev96 автоматически.
 Текущий CAD-вызов ради отправки пакета не прерывается.
