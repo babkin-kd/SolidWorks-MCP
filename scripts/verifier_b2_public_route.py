@@ -53,8 +53,15 @@ def preserved_journal(before,after,operation_id):
     return True
 
 
+def compare_b2_observed_state(actual,expected):
+    """Native path: validate both observation hashes and separate counters."""
+    from verifier_b2_session_mapping import compare_observed_sessions
+    compare_observed_sessions(actual,expected)
+    return True
+
+
 async def run_b2_positive(*, client, gate, journal_path, context, extrusion_job,
-        observe, verify_depth, verify_rename, report, persist):
+        observe, verify_depth, verify_rename, report, persist, compare_state=None):
     """Execute N1–N4 on the original live public B1 feature.
 
     ``observe(stage, expected_state)`` is an independent full native-scope
@@ -70,6 +77,11 @@ async def run_b2_positive(*, client, gate, journal_path, context, extrusion_job,
     target=context['document_id']
     feature=extrusion_job['result']['value']['feature_object_id']
     cfg=context['configuration']
+    comparison=compare_b2_state if compare_state is None else compare_state
+    def compare_scope(actual,expected):
+        if comparison(actual,expected) is not True:
+            raise ValueError('Complete independent session comparison was not proved.')
+        return True
     result=dict(scope='b2_public_positive_extension_v1',accepted=False,
         native_b2_accepted=False,positive_case_passed=False,jobs=[],cases=[])
 
@@ -109,7 +121,7 @@ async def run_b2_positive(*, client, gate, journal_path, context, extrusion_job,
 
     try:
         initial=await observed('initial',extrusion_job['result']['after']['state'])
-        compare_b2_state(initial,extrusion_job['result']['after']['state'])
+        compare_scope(initial,extrusion_job['result']['after']['state'])
         listed,_,_=await invoke('dimension_list','b2-depth-list',**context)
         depth=fixture_depth_dimension(listed,cfg,10.)
         current,_,_=await invoke('dimension_get','b2-depth-get',**context,object_id=depth['object_id'])
@@ -145,37 +157,37 @@ async def run_b2_positive(*, client, gate, journal_path, context, extrusion_job,
             if not verified_b2_job(preparation):
                 raise ValueError('Exact read-only suppression preparation must be proved.')
             prepared_state=await observed(label+'-preview',prepared['baseline'])
-            compare_b2_state(prepared_state,prepared['baseline'])
-            compare_b2_state(prepared_state,previous_state)
+            compare_scope(prepared_state,prepared['baseline'])
+            compare_scope(prepared_state,previous_state)
             args['expected_revision']=prepared['revision']
             _,job,_=await invoke('feature_set_suppressed','b2-'+label,**args)
             if not verified_b2_job(job,preparation_job=preparation,
                     original_suppression_job=original_suppression):
                 raise ValueError('Full committed suppression/return lineage was not proved.')
             state=await observed(label,job['result']['after']['state'])
-            compare_b2_state(state,job['result']['after']['state'])
+            compare_scope(state,job['result']['after']['state'])
             _,replay,_=await invoke('feature_set_suppressed','b2-'+label,**args)
             if _json(replay)!=_json(job):raise ValueError('Suppression replay changed its durable job.')
             previous_state=await observed(label+'-replay',job['result']['after']['state'])
-            compare_b2_state(previous_state,state)
+            compare_scope(previous_state,state)
             if requested:original_suppression=job
             result['cases'].append(dict(label='B2-public-'+label+'-full-state',passed=True));persist()
 
         args=dict(**context,object_id=feature)
         before_preview=await observed('before-leaf-preview',job['result']['after']['state'])
-        compare_b2_state(before_preview,job['result']['after']['state'])
+        compare_scope(before_preview,job['result']['after']['state'])
         prepared,preparation,_=await invoke('feature_prepare_leaf_deletion','b2-leaf-prepare',**args)
         if not verified_b2_job(preparation):
             raise ValueError('Exact read-only leaf preparation must be proved.')
         prepared_state=await observed('leaf-preview',prepared['baseline'])
-        compare_b2_state(prepared_state,prepared['baseline'])
-        compare_b2_state(prepared_state,before_preview)
+        compare_scope(prepared_state,prepared['baseline'])
+        compare_scope(prepared_state,before_preview)
         args['expected_revision']=prepared['revision']
         _,job,_=await invoke('feature_delete_leaf','b2-leaf-delete',**args)
         if not verified_b2_job(job,preparation_job=preparation):
             raise ValueError('Exact committed leaf deletion was not proved.')
         final=await observed('deleted',job['result']['after']['state'])
-        compare_b2_state(final,job['result']['after']['state'])
+        compare_scope(final,job['result']['after']['state'])
         _,replay,_=await invoke('feature_delete_leaf','b2-leaf-delete',**args)
         if _json(replay)!=_json(job):raise ValueError('Deletion replay changed its durable job.')
         # The deleted feature ID is tested through read-only access. No new
@@ -193,12 +205,12 @@ async def run_b2_positive(*, client, gate, journal_path, context, extrusion_job,
                 or refused_job['error']['code']!='object_reference_not_found'):
             raise ValueError('Retired-ID refusal must be a durable read-only exact-object job.')
         after_refusal=await observed('retired-id-refused',job['result']['after']['state'])
-        compare_b2_state(after_refusal,final)
+        compare_scope(after_refusal,final)
         result.update(final_job=job,final_preparation_job=preparation,
             independent_final_state=after_refusal,deleted_id_refused=refused_job)
         result['cases'].append(dict(label='B2-public-leaf-preview-delete-replay-retired-ID',passed=True))
         result['positive_case_passed']=True
-        extension_final_state(result,extrusion_job)
+        extension_final_state(result,extrusion_job,compare_state=compare_scope)
         report['b2_extension']=result;persist()
         return result
     except BaseException:
@@ -206,7 +218,7 @@ async def run_b2_positive(*, client, gate, journal_path, context, extrusion_job,
         raise
 
 
-def extension_final_state(extension, original_extrusion_job):
+def extension_final_state(extension, original_extrusion_job,*,compare_state=None):
     """Bind bootstrap cleanup metadata to an actual final committed leaf job."""
     if (type(extension) is not dict or extension.get('scope') != 'b2_public_positive_extension_v1'
             or extension.get('accepted') is not False or extension.get('native_b2_accepted') is not False
@@ -231,5 +243,6 @@ def extension_final_state(extension, original_extrusion_job):
     if (snapshot['clone_state']['profile'] != SKETCH or snapshot['solid_body_count'] != 0
             or actual['clone_state']['profile'] != SKETCH or actual['solid_body_count'] != 0):
         raise ValueError('Full independent final SKETCH evidence is required.')
-    compare_b2_state(extension['independent_final_state'],state)
+    if (compare_b2_state if compare_state is None else compare_state)(extension['independent_final_state'],state) is not True:
+        raise ValueError('Complete independent final session comparison was not proved.')
     return deepcopy(state)

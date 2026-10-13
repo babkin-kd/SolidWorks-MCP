@@ -1,7 +1,8 @@
 # Локальная контрольная точка dev96 — 13.10.2026
 
 **Dev96 установлен: final pure8427/323, artifact и metadata83/27 приняты.
-Internal positive native deletion запущен; running не означает приёмку.**
+Internal positive native deletion завершился отказом независимой проверки
+соседа после committed deletion; полная приёмка не принята. Владелец удержан.**
 Historical dev95 имеет принятый positive suppression/return; negative/public
 и общий B2 gate открыты. [Привязка dev95](CHECKPOINT_DEV95.md).
 
@@ -97,7 +98,41 @@ annotation view namespaces с сохранением исходных наблю
 Недоказанное изменение annotation position/text после размера не поддержано
 и не исключается из сравнения ради прохода теста.
 
-Последний прочитанный live positive: parent независимый BASE/8000 подтверждён,
+Промежуточный live positive: parent независимый BASE/8000 подтверждён,
 leaf callback начат, **leaf_prepare**, capture83/running, error отсутствует.
 Это промежуточное состояние: actual deletion, terminal cleanup и baseline
 этого dev96 ещё не приняты. Новые CAD-вызовы параллельно не запускались.
+
+Подготовленный public native-owner callback использует исходные B1 HWND/
+canonical/PID связи, независимые полные наблюдения и отдельный comparison operand
+для своих annotation-view namespaces. Original durable jobs не переписываются.
+Mapper проверяет оба actual observation hashes и локальные счётчики отдельно;
+mapped revision выводится из actual metadata/counter, server revision не копируется.
+Все snapshot rows, bindings, окна, файлы, application и соседи сравниваются.
+Default native gate отвергает искусственную metadata из доменных fixtures.
+Full public prerequisite требует actual positive/faults SQL и reports одного wheel;
+historical unknown остаётся unknown/unresolved. Общий B2 gate не подменяется.
+
+Итоговый связанный helper-набор: **694 passed /101,58 с**, без CAD. Последний
+pure-пакет исходников MCP остаётся8427; helpers не потребовали новой установки.
+Рабочая v1 и installed dev96 не изменены, пакетного push/CI ещё нет.
+
+**Фактический отказ первого dev96 positive.** Actual leaf preparation succeeded;
+delete succeeded/committed, replay вернул тот же job, original B1 SQL сохранён.
+Полный committed BASE→SKETCH, surviving sketch/canonical/PID и target absence
+присутствуют в SQL; native ledger содержит **14 парных событий**, все normally
+returned. Всего parent записал112 нормально завершённых rectangle captures.
+После этого `first_save_part_snapshot(neighbor)` отверг независимый full read
+из-за изменения model/configuration/revision event envelope. Конкретный источник
+изменения пока не установлен; отказ не переименован в успешную приёмку.
+Первый отчёт и journal сохранены, read-only root audit подтверждает committed
+job/replay и отсутствие active/unresolved SQL jobs; cleanup authority он не даёт.
+
+Parent остаётся retained STA с собственными controls. Собственная очистка и
+оригинальный baseline этого запуска не подтверждены; новые native-тесты,
+повтор удаления и переустановка не запускались. Требуется инспекция удержанного
+native-владельца и безопасное восстановление состояния по согласованным правилам.
+Подготовленный public драйвер проверен фактическим failed report в установленном
+интерпретаторе без source PYTHONPATH: **ожидаемый preflight refusal** до metadata
+provider/CAD, без server/metadata-state. Это проверка защиты запуска, не public
+native-приёмка. B2–B5 и стадия1 остаются открыты.

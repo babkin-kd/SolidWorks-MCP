@@ -9,7 +9,7 @@ dev95 сохранён отдельно; он не принимается за �
 | N1 | Driving depth10→12 мм, объём8000→9600 мм³ | Публичный dimension ID/revision/request; actual scalar readback, rebuild и полный независимый BASE, включая соседнюю модель | Ещё не принято на dev96 |
 | N2 | Русское имя элемента; прежняя адресная ссылка действует | Public rename/readback, прежний object ID и PID/canonical membership; полные данные отличаются только разрешённым именем | Ещё не принято на dev96 |
 | N3 | Подавить и вернуть собственное основание | Public suppression/return с original ownership, full bodyless/BASE snapshots, исходный sketch/DIMs/PID и имя тела; checkpoint/guards/replay | Dev95 positive принят; dev96 ещё не принят |
-| N4 | Preview точного own leaf, затем удалить только основание | Read-only prepare, full BASE→SKETCH, exact deleted ID, preserved sketch, actual raw old PID1/4+null, удалённый ID отвергается при чтении; SQL/replay | Positive native dev96 выполняется; running не passed |
+| N4 | Preview точного own leaf, затем удалить только основание | Read-only prepare, full BASE→SKETCH, exact deleted ID, preserved sketch, actual raw old PID1/4+null, удалённый ID отвергается при чтении; SQL/replay | Native delete committed/replay подтверждены; independent neighbor read failed, cleanup/baseline и общий positive gate не приняты |
 | N5 | Безопасный отказ для stale/foreign/dependent/linked/неполного scope | No-write/known-no-effect evidence реальных refused jobs; полный снимок, отсутствие native dispatch/checkpoint где применимо; unsupported CAD cases видимы отдельно | Pure отказы есть; конечная installed/native приёмка не завершена |
 | N6 | После ошибки получить известный отказ либо unknown с блокировкой | Full no-effect/restored scope либо terminal unknown/application hold; no inverse/retry после delete, поздние результаты/replay/blocked request и безопасная собственная очистка | Pure coordinator/SQLite/guard проверки есть; native fault-wrapper подготовлен, не запускался |
 
@@ -63,20 +63,22 @@ return не является искусственно объявленным COM
 
 ## Оставшиеся задачи
 
-1. Завершить текущий positive native, сверить actual SQL/receipt/helpers и baseline.
+1. Безопасно проверить удержанного native-владельца и controls после failed
+   independent neighbor observation; установить причину event/revision изменения.
+   Actual SQL commit/replay не заменяет missing cleanup/baseline и positive gate.
 2. Выполнить finite native fault/prewrite блок на exact dev96; dependent/linked
    CAD-случаи остаются обязательными видимыми требованиями N5.
-3. Подключить public contract к supervised MCP цепочке N1–N4, actual scalar/rename
-   readback и независимому native observer; пройти public/native на том же wheel.
+3. После принятых внутренних gates выполнить подготовленную supervised MCP
+   цепочку N1–N4 с actual scalar/rename и независимым observer на том же wheel.
 4. Свести все шесть условий и оставшиеся ограничения. Пока доказательств нет,
    B2, B3–B5 и стадия1 не закрываются; CI не заменяет эту приёмку.
 
-Публичный маршрут подготовлен как отдельный helper поверх live B1 bootstrap.
-Независимый observer и predicates N1/N2 готовы; related source480 passed,
-последние route/bootstrap125 passed. Эти проверки не запускали SolidWorks.
-Перед native запуском нужно подключить удержанный canonical/HWND mapper полного
-scope, сохранить raw evidence обоих namespaces и доказать их view-row/axis
-bijection. Локальные observation counters/revisions нельзя заменять сохранёнными
-значениями из серверного baseline. Пока этой интеграции нет, публичная приёмка
-остаётся **not_run**. Изменение annotation position/text, для которого нет
-полного подтверждённого owner-bound правила, является отказом, а не успехом.
+Публичный driver поверх B1 bootstrap, independent observer, predicates N1/N2,
+canonical/HWND mapper и exact positive/fault SQL preflight подготовлены.
+Итоговый related source-набор **694 passed /101,58 с** не вызывал SolidWorks.
+Mapped observation hashes выводятся из actual metadata/counter; raw обоих
+namespaces сохраняются, server counters/revisions не подставляются.
+В установленном интерпретаторе failed positive был фактически отвергнут
+preflight до metadata provider/CAD, без создания server. Это expected refusal,
+не public native-приёмка; её статус **not_run**. Изменение annotation position/text,
+для которого нет полного owner-bound правила, является отказом, а не успехом.

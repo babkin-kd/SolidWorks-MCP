@@ -272,7 +272,7 @@ async def durable_job(client, gate, path, operation_id):
         raise
 
 
-def _native_run(args, report, persist, *, after_base=None, tool_specs=None):
+def _native_run(args, report, persist, *, after_base=None, tool_specs=None, terminal_acceptance=True):
     import pythoncom
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
@@ -481,7 +481,7 @@ def _native_run(args, report, persist, *, after_base=None, tool_specs=None):
                     # The exact server-owned B1 context and supervisor remain
                     # live. A later workflow must independently validate its
                     # final committed job before changing cleanup expectations.
-                    from verifier_b2_public_route import extension_final_state
+                    from verifier_b2_public_route import extension_final_state,compare_b2_observed_state
                     await require_native_cleanup(client, gate)
                     extension = await after_base(client=client, gate=gate,
                         journal_path=journal_path, context=context, adapter=adapter,
@@ -492,7 +492,8 @@ def _native_run(args, report, persist, *, after_base=None, tool_specs=None):
                         independent_sketch=report['independent_sketch'],
                         independent_base=report['independent_base'],
                         report=report, persist=persist)
-                    final_state = extension_final_state(extension, extrusion_job)
+                    final_state = extension_final_state(extension, extrusion_job,
+                                                        compare_state=compare_b2_observed_state)
                     report['after_base_extension'] = extension
                     final_semantic = final_state['semantic']
                     await require_native_cleanup(client, gate)
@@ -533,7 +534,7 @@ def _native_run(args, report, persist, *, after_base=None, tool_specs=None):
         require(restored == original and adapter.native_close_application_context() == application,
             'Full original session/application baseline was not restored.')
         assert_non_stl_preferences(lambda: application_preferences(sw), preferences, report, 'restored_preferences')
-        report.update(phase='terminal', accepted=True, public_rectangle_passed=True, native_b1_accepted=False,
+        report.update(phase='terminal', accepted=terminal_acceptance, public_rectangle_passed=True, native_b1_accepted=False,
             own_cleanup_verified=True, baseline_restored=True, restored_baseline=restored,
             restored_application=adapter.native_close_application_context(), supervised_cleanup_verified=gate.can_cleanup())
         report['cases'].append(dict(label=PUBLIC_LABELS[4], passed=True))

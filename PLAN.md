@@ -146,9 +146,13 @@ retained ownership, полный suppressed-снимок и domain/runtime/MCP s
 На exact dev95 принят positive internal suppression/return2/2 /5594,79 с:
 129 terminal captures,8 succeeded jobs/4 committed mutations, replay и полный
 own cleanup/baseline. Negative/public и общий B2 gate остаются.
-Own-leaf preview/delete реализованы в исходниках для следующего кандидата,
-не входят в wheel95 и ещё не приняты в CAD. Далее их native/internal/public
-приёмка и общий same-wheel gate B2. B2–B5 и стадия1 остаются открыты.
+Own-leaf preview/delete установлены в dev96 (full pure8427/323, metadata83/27).
+Native delete succeeded/committed и replay подтверждены actual SQL, но отдельная
+проверка соседа завершилась отказом event envelope; cleanup/baseline не приняты,
+владелец удерживает controls. Public driver подготовлен, related694 pure passed;
+его preflight отвергает этот failed positive до CAD. Далее безопасное восстановление
+состояния, установление причины отказа, internal/public и общий same-wheel gate B2.
+[Фактический checkpoint](Docs/CHECKPOINT_DEV96.md). B2–B5 и стадия1 открыты.
 
 История кандидата B1 — **dev92**: full pure6686/323 CAD deselected,
 wheel/installed metadata79/25 приняты. Short native bridge/inverses/full baseline

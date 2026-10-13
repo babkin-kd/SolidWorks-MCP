@@ -116,7 +116,7 @@ def test_dispatch_cannot_rewrite_original_jobs_or_hide_extra_writes(leaf_jobs,fa
     with pytest.raises(ValueError):helper.preserved_journal(before,after,deleted['operation_id'])
 
 
-@pytest.mark.parametrize('step',['depth','rename'])
+@pytest.mark.parametrize('step',['scope','depth','rename'])
 @pytest.mark.parametrize('unproved',[False,None,1])
 def test_public_route_retains_and_stops_dispatch_on_unproved_independent_delta(
         final_evidence,monkeypatch,step,unproved):
@@ -169,11 +169,19 @@ def test_public_route_retains_and_stops_dispatch_on_unproved_independent_delta(
     monkeypatch.setattr(verifier_lifecycle,'read_journal',lambda _:deepcopy(rows))
     monkeypatch.setattr(verify_dimension_mcp,'require_native_cleanup',cleanup)
     monkeypatch.setattr(verify_rectangle_stages_public,'public_invoke',invoke)
-    with pytest.raises(ValueError,match='Independent complete'):
+    with pytest.raises(ValueError,match='not proved'):
         asyncio.run(helper.run_b2_positive(client=Client(),gate=object(),journal_path='synthetic',
             context=context,extrusion_job=creation,observe=lambda *_:deepcopy(state),
             verify_depth=lambda *_:unproved if step=='depth' else True,
-            verify_rename=lambda *_:unproved,report={},persist=lambda:None))
+            verify_rename=lambda *_:unproved,report={},persist=lambda:None,
+            compare_state=(lambda *_:unproved) if step=='scope' else None))
     assert len(held)==1
-    assert calls[-1]==('dimension_set_value' if step=='depth' else 'feature_rename')
+    if step=='scope':assert calls==[]
+    else:assert calls[-1]==('dimension_set_value' if step=='depth' else 'feature_rename')
     assert not set(calls)&{'feature_prepare_suppression','feature_prepare_leaf_deletion','feature_delete_leaf'}
+
+
+@pytest.mark.parametrize('unproved',[False,None,1])
+def test_unproved_scope_comparison_cannot_authorize_final_cleanup_state(final_evidence,unproved):
+    with pytest.raises(ValueError,match='not proved'):
+        helper.extension_final_state(final_evidence,original(final_evidence),compare_state=lambda *_:unproved)
