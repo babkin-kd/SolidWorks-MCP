@@ -224,3 +224,10 @@ captures + watches двух моделей на протяжении всей ц
 изменение событий не разрешают after-read/retry/cleanup. **331 related pure
 passed /26,56 с**; source-only, native N5 ещё не запускался. Следом обязательный
 finite native fault-wrapper dev96, затем N5/public; B2–B5/stage1 остаются open.
+
+Finite fault-wrapper действительно запущен после принятого positive2 и отдельного
+current empty-baseline audit. Positive report SHA/actual SQL/fixed helpers gate,
+exact installed wheel и metadata83/origin приняты до CAD. Используется новый
+private state/journal, sole native owner root; сейчас `fixture_creation`, error
+отсутствует. Running не считается passed. Подготовка N5 CLI продолжается только
+в исходниках;22 live fault helpers и установленный пакет остаются неизменными.

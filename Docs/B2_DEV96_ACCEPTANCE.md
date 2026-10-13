@@ -11,7 +11,7 @@ dev95 сохранён отдельно; он не принимается за �
 | N3 | Подавить и вернуть собственное основание | Public suppression/return с original ownership, full bodyless/BASE snapshots, исходный sketch/DIMs/PID и имя тела; checkpoint/guards/replay | Dev95 positive принят; dev96 ещё не принят |
 | N4 | Preview точного own leaf, затем удалить только основание | Read-only prepare, full BASE→SKETCH, exact deleted ID, preserved sketch, actual raw old PID1/4+null, удалённый ID отвергается при чтении; SQL/replay | Fresh guarded internal positive dev96 принят2/2, independent target/neighbor и cleanup/baseline подтверждены; публичная цепочка ещё не принята. Первый failed отчёт сохранён |
 | N5 | Безопасный отказ для stale/foreign/dependent/linked/неполного scope | No-write/known-no-effect evidence реальных refused jobs; полный снимок, отсутствие native dispatch/checkpoint где применимо; unsupported CAD cases видимы отдельно | Pure отказы есть; конечная installed/native приёмка не завершена |
-| N6 | После ошибки получить известный отказ либо unknown с блокировкой | Full no-effect/restored scope либо terminal unknown/application hold; no inverse/retry после delete, поздние результаты/replay/blocked request и безопасная собственная очистка | Pure coordinator/SQLite/guard проверки есть; native fault-wrapper подготовлен, не запускался |
+| N6 | После ошибки получить известный отказ либо unknown с блокировкой | Full no-effect/restored scope либо terminal unknown/application hold; no inverse/retry после delete, поздние результаты/replay/blocked request и безопасная собственная очистка | Finite native fault-wrapper dev96 запущен после принятого positive2/current baseline; preflight и metadata83/origin приняты, результата ещё нет |
 
 Положительная публичная цепочка объединяет N1–N4 на одной собственной модели.
 Отрицательные случаи выполняются на отдельной fixture, чтобы ошибка не заменяла
@@ -139,7 +139,7 @@ terminal fixture journal и собственная очистка в native driv
    процесс остановлен. Fresh guarded positive принят; прежний failed event
    envelope сохранён. Его исходная причина не доказана; новый положительный
    прогон не переписывает старый результат.
-2. Выполнить finite native fault/prewrite блок на exact dev96; dependent/linked
+2. Завершить запущенный finite native fault/prewrite блок на exact dev96; dependent/linked
    CAD-случаи остаются обязательными видимыми требованиями N5.
 3. После принятых внутренних gates выполнить подготовленную supervised MCP
    цепочку N1–N4 с actual scalar/rename и независимым observer на том же wheel.
