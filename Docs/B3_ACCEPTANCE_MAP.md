@@ -289,3 +289,14 @@ reference error. Независимые native inventory/current anchors све�
 FeatureCatalog/DimensionCatalog/JobRunner/SQLite и искусственными native handles.
 Native producers, installed driver и отдельный sketch_get на same-wheel B1
 пластине остаются открыты. Source маршрут не разрешает acceptance/cleanup.
+
+Последний I01 source-подмаршрут `verifier_b3_rectangle_sketch.py` выполняет один
+`sketch_get` исходной same-wheel B1 пластины с единственной конфигурацией.
+Full current sketch snapshot, sketch/plane/origin/member bindings, исходные
+PID/canonical, размеры и полный constraint graph связываются с отдельными
+native producer receipts; raw dimension semantic используется для rectangle
+classification. Полный original part/neighbor/session и native proof сохраняются
+до/после. **250 related pure passed /20,45 с**, реальный SketchCatalog/JobRunner/
+SQLite и искусственный native эскиз. Это завершённая source-подготовка чтений
+I01, но actual original native producers, installed B3 driver и cleanup пока
+открыты; B3/I01 native acceptance не объявлена.
