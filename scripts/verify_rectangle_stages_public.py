@@ -272,7 +272,7 @@ async def durable_job(client, gate, path, operation_id):
         raise
 
 
-def _native_run(args, report, persist):
+def _native_run(args, report, persist, *, after_base=None, tool_specs=None):
     import pythoncom
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
@@ -368,7 +368,7 @@ def _native_run(args, report, persist):
                     persist()
                     yield raw
         async def exercise():
-            async with open_supervised_session(factory, tool_specs=SPECS,
+            async with open_supervised_session(factory, tool_specs=SPECS if tool_specs is None else tool_specs,
                 journal_path=args.state_dir / 'server/jobs.sqlite',
                 on_hold=lambda decision: (report.update(lifecycle_hold=True), persist())) as client:
                 gate.add(client)
@@ -476,6 +476,26 @@ def _native_run(args, report, persist):
                 require(math.isclose(volume, 8000., rel_tol=1e-8, abs_tol=1e-6), 'Independent 40x20x10 mm volume required.')
                 report['independent_volume_mm3'] = volume
                 report['independent_native_readback_verified'] = True
+                final_semantic = extrusion_job['result']['after']['state']['semantic']
+                if after_base is not None:
+                    # The exact server-owned B1 context and supervisor remain
+                    # live. A later workflow must independently validate its
+                    # final committed job before changing cleanup expectations.
+                    from verifier_b2_public_route import extension_final_state
+                    await require_native_cleanup(client, gate)
+                    extension = await after_base(client=client, gate=gate,
+                        journal_path=journal_path, context=context, adapter=adapter,
+                        target=target, target_identity=target_identity,
+                        neighbor=neighbor, neighbor_identity=neighbor_identity,
+                        neighbor_before=neighbor_before, bridge=bridge,
+                        sketch_job=sketch_job, extrusion_job=extrusion_job,
+                        independent_sketch=report['independent_sketch'],
+                        independent_base=report['independent_base'],
+                        report=report, persist=persist)
+                    final_state = extension_final_state(extension, extrusion_job)
+                    report['after_base_extension'] = extension
+                    final_semantic = final_state['semantic']
+                    await require_native_cleanup(client, gate)
                 # Fresh current metadata plus the original HWND/canonical token
                 # must still authorize the target we will eventually retire.
                 current = succeeded(await invoke('document_get', request_id='target-final', **context))
@@ -483,7 +503,7 @@ def _native_run(args, report, persist):
                 final_view = adapter.document_view_snapshot(target)
                 require(canonical(final_snapshot) == canonical({key: current[key] for key in final_snapshot}),
                     'Final public/native target metadata differs.')
-                after_rows = [row for row in extrusion_job['result']['after']['state']['semantic']['documents']
+                after_rows = [row for row in final_semantic['documents']
                               if row['document_id'] == target_id]
                 require(len(after_rows) == 1
                     and canonical(final_snapshot) == canonical({key: after_rows[0][key] for key in final_snapshot})

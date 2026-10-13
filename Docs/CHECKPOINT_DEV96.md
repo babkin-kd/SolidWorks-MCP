@@ -71,3 +71,33 @@ positive gate и безопасная own cleanup без reconciliation. Native 
 не запускался. Работающий positive достиг extrusion job/capture53 без ошибки;
 последний capture running, leaf callback ещё не начинался. Это progress,
 не terminal/native acceptance. Установленный digest/wheel остаются прежними.
+
+Подготовлена публичная цепочка preview/delete, не обращающаяся к CAD без
+подключения единственного native-владельца. B1 bootstrap допускает ограниченное
+продолжение после независимо подтверждённого BASE; исходный публичный B1 helper
+сохранён отдельно с SHA256 из отчёта dev94. Стандартный B1 маршрут сохранён.
+Новая цепочка требует полное состояние сессии и соседей, read-only preparation,
+независимые доказательства размера/русского имени, suppression/return,
+leaf preview/delete/replay и durable отказ чтения удалённого ID. Перед завершением
+сверяются исходные записи журнала: replay не добавляет новый job и не меняет
+прежние результаты, payload, digest или checkpoint. Неподтверждённое сравнение
+удерживает supervisor; оно не превращается в право собственной очистки.
+
+Связанный source-набор: **480 passed /43,29 с**. После последней защиты журнала
+повторены затронутые route/bootstrap tests: **125 passed /10,97 с**.
+Дополнительные helpers независимого наблюдения и scalar/rename входят в первый
+набор. Это искусственные доменные наблюдения и транспортные проверки, не CAD.
+Установленный package/wheel не изменён; все **11 hashes** live positive manifest
+сверены с диском без расхождений. Публичный native-driver ещё не подключён.
+
+Для public приёмки остаются явные технические gates: отображение document ID
+только через удержанные canonical/HWND связи; доказанное сопоставление adapter-local
+annotation view namespaces с сохранением исходных наблюдений; согласование
+независимых observation counters/revisions без подстановки серверного baseline.
+Недоказанное изменение annotation position/text после размера не поддержано
+и не исключается из сравнения ради прохода теста.
+
+Последний прочитанный live positive: parent независимый BASE/8000 подтверждён,
+leaf callback начат, **leaf_prepare**, capture83/running, error отсутствует.
+Это промежуточное состояние: actual deletion, terminal cleanup и baseline
+этого dev96 ещё не приняты. Новые CAD-вызовы параллельно не запускались.

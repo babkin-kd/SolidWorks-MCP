@@ -70,3 +70,13 @@ return не является искусственно объявленным COM
    readback и независимому native observer; пройти public/native на том же wheel.
 4. Свести все шесть условий и оставшиеся ограничения. Пока доказательств нет,
    B2, B3–B5 и стадия1 не закрываются; CI не заменяет эту приёмку.
+
+Публичный маршрут подготовлен как отдельный helper поверх live B1 bootstrap.
+Независимый observer и predicates N1/N2 готовы; related source480 passed,
+последние route/bootstrap125 passed. Эти проверки не запускали SolidWorks.
+Перед native запуском нужно подключить удержанный canonical/HWND mapper полного
+scope, сохранить raw evidence обоих namespaces и доказать их view-row/axis
+bijection. Локальные observation counters/revisions нельзя заменять сохранёнными
+значениями из серверного baseline. Пока этой интеграции нет, публичная приёмка
+остаётся **not_run**. Изменение annotation position/text, для которого нет
+полного подтверждённого owner-bound правила, является отказом, а не успехом.
