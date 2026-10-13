@@ -14,6 +14,8 @@ try:
         BOUNDS_M, CylinderEmptyBaseline, create_cylinder_fixture, validated_plane_transform)
     from verifier_b3_part_fixture import FixtureAnchor, PartFixtureReceipt
     from verifier_b3_empty_template import EmptyTemplateReceipt,capture_empty_template
+    from verifier_b3_application_admission import ApplicationAdmissionReceipt,capture_empty_application,admit_fixture_application
+    from verify_export_operations import PREFS
 finally:
     sys.path.remove(scripts)
 
@@ -303,6 +305,35 @@ def test_native_shaped_empty_admission_feeds_actual_cylinder_builder_under_its_p
     assert completed.baselines['Цилиндр'].plane is admission.features[1]
     assert completed.baselines['Цилиндр'].transform==frame
     assert completed.accepted is admission.accepted is False
+
+
+def test_original_application_baseline_and_startup_admission_feed_the_cylinder_owner(world):
+    app=world.application
+    app.canonical=object();app.CommandInProgress=False;app.ActiveDoc=None
+    native_new=app.NewDocument
+    def new_document(*args):
+        model=native_new(*args);app.ActiveDoc=model;return model
+    app.NewDocument=new_document
+    context=dict(user_control=True,visible=True,current_directory='private_test',search_folders='')
+    values={'String':'','Toggle':False,'Integer':0,'Double':0.}
+    prefs={name:values[kind] for name,(kind,_) in PREFS.items()}
+    adapter=NS(_sw=app,identity=lambda obj:obj.canonical,documents=lambda:list(world.models),
+        native_close_windows=lambda:[(model,dict(hwnd=101+i)) for i,model in enumerate(world.models)],
+        native_close_application_context=lambda:dict(context))
+    before=ApplicationAdmissionReceipt();startup=ApplicationAdmissionReceipt()
+    baseline=capture_empty_application(receipt=before,adapter=adapter,preference_reader=lambda:dict(prefs),
+        assert_safe=lambda:world.safe,watch_poll=lambda:0)
+    app.CommandInProgress=True # Caller-owned guard acquisition; helpers contain no setter.
+    def admit(application,fixture):
+        assert application is app and fixture.pending_step=='application:admission'
+        return admit_fixture_application(receipt=startup,baseline=baseline,baseline_receipt=before,
+            fixture=fixture,prior_fixtures=(),adapter=adapter,preference_reader=lambda:dict(prefs),
+            assert_safe=lambda:world.safe,watch_poll=lambda:0)
+    completed=world.run(admit_application=admit)
+    assert before.complete and startup.complete and completed.setup_complete
+    assert len(world.models)==1 and app.ActiveDoc is completed.documents['Цилиндр'].handle
+    assert before.accepted is startup.accepted is completed.accepted is False
+    assert startup.preference_evidence['baseline']['scope_exactly_equal'] is True
 
 
 @pytest.mark.parametrize('phase', ['pending', 'returned'])

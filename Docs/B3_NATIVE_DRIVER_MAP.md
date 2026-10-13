@@ -139,6 +139,32 @@ Initial application admission, whole-session producer, same-wheel B1 sketch,
 assembly fixtures/transitions и actual SDK/13-group driver остаются открытыми.
 Installed package и31 frozen helpers работающего N5 не менялись.
 
+Initial application admission теперь подготовлен в
+`verifier_b3_application_admission.py`: externally retained receipt фиксирует
+сильный application canonical, empty model/window census, ActiveDoc=None,
+CommandInProgress=False, typed native UserControl/visible/CWD/search context
+и полный declared PREFS inventory. Две границы проверяют неизменность контекста
+и всех non-STL настроек; восемь согласованных STL полей сохраняются в raw
+evidence и не принимаются как проверенные. Receipt хранит исходный baseline и
+отдельную копию typed данных, чтобы чужой/изменённый baseline не проходил.
+
+Startup callback не устанавливает guard: caller должен отдельно однократно
+записать его приобретение. Admission требует CommandInProgress=True под
+original owner check, свежий fixture до NewDocument и все earlier completed
+same-STA receipts. Каждая original model anchor связывается с единственным
+actual normally returned NewDocument из creation ledger; произвольный typed
+anchor/пустой prior/неизвестный возврат не создают владения. Full model/window/
+ActiveDoc association, две границы context/preferences и event envelope
+проверяются без naming/activation/setters/cleanup. Сохранность earlier model
+data остаётся задачей whole-session producer; window equality её не заменяет.
+
+Root actual source application baseline→startup callback→cylinder builder,
+plus empty-template/part/anchors/bridge/native-reference tests:
+**671 pure passed /1,46 с**, normal exit0, artificial API-shaped getters.
+Actual application admission/setup ещё not_run. Full10381/d974ffc относится
+к предыдущему кандидату и не включает эти новые helpers. Whole-session producer,
+same-wheel B1 sketch, assembly/transitions и final SDK/13-group gate открыты.
+
 Первый concrete raw producer подготовлен в
 `scripts/verifier_b3_native_part_reference.py`: прямые CAD getters для normal
 solid/surface body, plane face и line edge конечного I02. Original retained

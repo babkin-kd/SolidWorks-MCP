@@ -150,6 +150,14 @@ SDK driver ещё открыты. Последний full10381/d974ffc не вк
 нового full после каждого helper не выполняется. N5 dev96 продолжает работу,
 его31 frozen helper неизменны; stage2 не расширяется.
 
+Initial B3 application baseline/startup admission source подготовлен: empty
+idle state, original application/STA/typed context/PREFS, exact original prior
+NewDocument raw receipts, full model/window/ActiveDoc association, non-STL
+boundaries и failure latch. Root baseline→startup→cylinder callback integration
+и related collectors:671 pure passed /1,46 с, artificial CAD/API. Сохранность
+модельных данных whole-session producer и actual B3 native/SDK приёмка остаются.
+Новый helper не входит в31 frozen N5 files и в full10381/d974ffc; package не менялся.
+
 **Предыдущий installed кандидат — dev95:** full pure8111/323 CAD deselected,
 artifact и metadata/stdIO81/26 приняты. Первая internal native попытка отказала
 через383,79 с на read-only подготовке эскиза:1 failed job/0 mutation checkpoint.
