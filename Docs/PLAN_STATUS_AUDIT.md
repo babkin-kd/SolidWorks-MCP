@@ -21,6 +21,11 @@ journal. CAD/job calls=[]; B2 владелец не затронут. Attempt1 i
 и attempt2 module-loader failures сохранены. Native Q/restart/reconciliation
 not_run, B4 открытый. [Доказательства и границы](B4_NATIVE_DRIVER_MAP.md).
 
+Общий source checkpoint7f376c8 завершился normal exit0: **11368 passed,
+323 CAD deselected /482,18 с**, source/tests не менялись во время прогона.
+[Сводка checkpoint](CHECKPOINT_7F376C8.md). Следующий armable finish-store
+seam готовится отдельным offline блоком; текущий native B2 не затронут.
+
 CI-import source-кандидат34ccab5 прошёл один финальный full pure:
 **11274 passed,323 CAD deselected /478,61 с**, normal exit0, без изменения
 source/tests в прогоне. До него root214 related/11,72 с без PYTHONPATH passed.
