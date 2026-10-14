@@ -498,14 +498,16 @@ def test_failed_sibling_import_restores_exact_registry_and_search_path(tmp_path,
         assert name not in sys.modules
 
 
-@pytest.mark.parametrize('profile', ['metadata', 'finish_seam', 'dimension_control'])
+@pytest.mark.parametrize('profile', ['metadata', 'finish_seam', 'dimension_control', 'dimension_commands'])
 def test_profile_binds_fixed_helper_manifest_spec_and_original_identity(harness, tmp_path, profile):
     child = helper.InstalledMetadataChild(tmp_path / ('profile-' + profile), wheel_path='pure',
         expected_version='pure', expected_git_sha='b' * 40, expected_wheel_sha256='a' * 64, profile=profile)
     assert child.profile == child.spec['profile'] == child.identity['profile'] == profile
     extras = {'metadata': (), 'finish_seam': helper.SEAM_HELPERS,
               'dimension_control': helper.SEAM_HELPERS + ('verifier_b4_installed_dimension_control.py',
-                                                        'verifier_b4_dimension_return.py')}
+                                                        'verifier_b4_dimension_return.py'),
+              'dimension_commands': helper.SEAM_HELPERS + ('verifier_b4_installed_dimension_control.py',
+                  'verifier_b4_dimension_return.py', 'verifier_b4_dimension_control_commands.py')}
     assert set(child.helpers) == set(helper.HELPERS) | set(extras[profile])
     with pytest.raises(AttributeError):
         child.profile = 'other'
@@ -633,6 +635,76 @@ def valid_control_receipt(child):
     return dict(scope='b4_installed_unarmed_dimension_control_v1', identity=deepcopy(child.identity),
         journal_path=str((child.path / 'server' / 'jobs.sqlite').resolve()), complete_journal=[],
         controller_receipt=closed, **{key: True for key in helper.CONTROL_CHECKS}, **helper.flags())
+
+
+def valid_inspection_ack(child):
+    lineage = helper.control_lineage(child.identity, child.path)
+    state = dict(scope='b4_installed_dimension_control_state_v1', phase='unarmed', fault=None,
+        lineage=lineage, target=None, persist_attempted={'callback': False, 'finish': False},
+        receipts={'callback': None, 'finish': None}, return_observation=None, barrier_state=None,
+        **helper.CONTROL_AUTHORITY)
+    return dict(scope='b4_dimension_control_command_ack_v1', sequence=1, nonce=child.identity['nonce'],
+        lineage=deepcopy(lineage), command='inspect', arguments={}, result=deepcopy(state),
+        controller_state=deepcopy(state), **helper.CONTROL_AUTHORITY)
+
+
+@pytest.mark.parametrize('change', ['missing', 'extra', 'sequence', 'nonce', 'lineage', 'command',
+    'arguments', 'phase', 'target', 'state_extra', 'persistence', 'authority', 'state_authority'])
+def test_inspection_ack_refuses_foreign_armed_or_authorizing_receipts(harness, change):
+    child = harness[0]
+    value = valid_inspection_ack(child)
+    if change == 'missing': value.pop('result')
+    elif change == 'extra': value['native_verified'] = True
+    elif change == 'sequence': value['sequence'] = True
+    elif change == 'nonce': value['nonce'] = 'foreign'
+    elif change == 'lineage': value['lineage']['owner_pid'] = True
+    elif change == 'command': value['command'] = 'arm'
+    elif change == 'arguments': value['arguments'] = {'request_id': 'foreign'}
+    elif change == 'phase': value['result']['phase'] = 'armed'
+    elif change == 'target': value['controller_state']['target'] = {'request_id': 'foreign'}
+    elif change == 'state_extra': value['result']['extra'] = True
+    elif change == 'persistence': value['result']['persist_attempted']['callback'] = 0
+    elif change == 'authority': value['accepted'] = 1
+    else: value['controller_state']['cad_cleanup_authorized'] = True
+    with pytest.raises(helper.InstalledChildError):
+        helper.validate_inspection_ack(value, identity=child.identity, path=child.path)
+
+
+@pytest.mark.parametrize('ack_valid', [True, False, 'missing'])
+def test_parent_command_gate_is_separate_from_metadata_and_control(harness, tmp_path, monkeypatch, ack_valid):
+    _, process, _, _ = harness
+    child = helper.InstalledMetadataChild(tmp_path / 'commands-profile-exit', wheel_path='pure',
+        expected_version='pure', expected_git_sha='b' * 40, expected_wheel_sha256='a' * 64,
+        profile='dimension_commands')
+    ready(child)
+    child.catalog, child.sdk_closed, child.eof_sent = {'pure_catalog': True}, True, True
+    process.code = 0
+    helper.owned._write(child.path / 'child-normal-return.json', dict(identity=child.identity,
+                                                                  normal_server_return=True, **helper.flags()))
+    control = valid_control_receipt(child)
+    helper.owned._write(child.path / 'dimension-control-wiring.json', control)
+    helper.owned._write(child.path / 'dimension-control-closed.json', control['controller_receipt'])
+    ack = valid_inspection_ack(child)
+    if ack_valid is False: ack['controller_state']['phase'] = 'armed'
+    if ack_valid != 'missing': helper.owned._write(child.path / 'dimension-command-ack-0001.json', ack)
+    monkeypatch.setattr(helper, 'sibling', lambda *args: SimpleNamespace(read_journal=lambda path: []))
+    result = child.observe_exit(0)
+    assert result['metadata_process_passed'] is result['dimension_control_wiring_passed'] is True
+    assert result['dimension_command_inspection_passed'] == result['profile_passed'] == (ack_valid is True)
+    false_native(result)
+
+
+def test_command_persistence_failure_retains_original_owner_and_clears_sdk_live(harness, tmp_path, monkeypatch):
+    child = helper.InstalledMetadataChild(tmp_path / 'commands-write-fault', wheel_path='pure',
+        expected_version='pure', expected_git_sha='b' * 40, expected_wheel_sha256='a' * 64,
+        profile='dimension_commands')
+    def fail_write(*args):
+        raise OSError('command storage unavailable')
+    monkeypatch.setattr(helper.owned, '_write', fail_write)
+    with pytest.raises(helper.InstalledChildError) as raised:
+        anyio.run(child.metadata_probe)
+    assert raised.value.retained_owner is child
+    assert child.probe_attempted and not child.sdk_live and not child.eof_sent
 
 
 @pytest.mark.parametrize('change', ['missing', 'extra', 'foreign_lineage', 'target', 'journal',

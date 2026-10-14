@@ -2,6 +2,15 @@
 
 ## Текущий итог
 
+Пассивная подготовка preview/delete дополнена [конечным чек-листом
+dispatch](B2_DEV97_DISPATCH_CHECKLIST.md): команды трёх N5 и public, actual
+terminal/cleanup/SQL gates, отдельные ограничения автоматического preflight.
+Все32 N5 helpers сохранили хеши; новые CAD-вызовы не запускались. Faults1
+dev97 ещё выполняется; его промежуточный running не является приёмкой.
+Независимый inspect-only metadata блок завершён:196 related pure и actual
+attempt9 SDK83/exit0/journal=[], без CAD/job вызовов; B4 native остаётся открыт.
+[Фактические результаты и сохранённые отказы](B4_INSPECT_COMMAND_ACCEPTANCE.md).
+
 Один пакет25df8a6 отправлен в stage-1-fixes нашего форка; actual head PR15
 подтверждён прямым API. Обязательный Checks38510604543/job115677980955 для
 этого head завершился success: actual11501 unit passed/323 CAD deselected

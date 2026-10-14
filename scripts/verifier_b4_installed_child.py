@@ -57,10 +57,11 @@ def sibling(filename, name):
 owned = sibling('verifier_b4_owned_child_process.py', '_b4_installed_owned_primitives')
 HELPERS = ('verifier_b4_installed_child.py', 'verifier_b4_owned_child_process.py',
            'verify_installed_metadata.py', 'verify_wheel_artifact.py', 'verifier_lifecycle.py')
-PROFILES = frozenset(('metadata', 'finish_seam', 'dimension_control'))
+PROFILES = frozenset(('metadata', 'finish_seam', 'dimension_control', 'dimension_commands'))
 SEAM_HELPERS = ('verifier_b4_installed_finish.py', 'verifier_b4_finish_barrier.py')
 CONTROL_HELPERS = SEAM_HELPERS + ('verifier_b4_installed_dimension_control.py',
                                  'verifier_b4_dimension_return.py')
+COMMAND_HELPERS = CONTROL_HELPERS + ('verifier_b4_dimension_control_commands.py',)
 
 
 def flags():
@@ -73,7 +74,8 @@ def flags():
 
 def helper_names(profile):
     require(type(profile) is str and profile in PROFILES, 'Fixed metadata/finish_seam/dimension_control profile required.')
-    return HELPERS + (CONTROL_HELPERS if profile == 'dimension_control' else
+    return HELPERS + (COMMAND_HELPERS if profile == 'dimension_commands' else
+                      CONTROL_HELPERS if profile == 'dimension_control' else
                       SEAM_HELPERS if profile == 'finish_seam' else ())
 
 
@@ -177,10 +179,11 @@ def validate_control_receipt(value, *, identity, path):
 
 class MetadataDimensionControlOwner:
     """Actual integrated owner installed before main, never armed in this profile."""
-    def __init__(self, module, path, identity):
+    def __init__(self, module, path, identity, *, inspect_command=False):
         self.module, self.path, self.identity = module, path, deepcopy(identity)
         self.original_factories = (module.JobStore, module.Runtime)
         control = sibling('verifier_b4_installed_dimension_control.py', '_b4_installed_metadata_dimension_control')
+        self.control_module, self.inspect_command = control, inspect_command
         self.owner = control.InstalledDimensionControl(module, state_root=path,
             lineage=control_lineage(identity, path)).install()
 
@@ -197,6 +200,19 @@ class MetadataDimensionControlOwner:
                 'Original integrated runtime/store must close normally.')
         require(not any((self.path / name).exists() for name in ('callback-return.json', 'finish-barrier.json')),
                 'Metadata control must not persist native callback/finish receipts.')
+        if self.inspect_command:
+            commands = sibling('verifier_b4_dimension_control_commands.py', '_b4_installed_metadata_control_commands')
+            receiver = commands.DimensionControlCommands(self.owner, controller_module=self.control_module,
+                command_limit=1, allowed_commands=frozenset(('inspect',)))
+            ack = receiver.handle_command()
+            validate_inspection_ack(ack, identity=self.identity, path=self.path)
+            require(owned._json(owned._read(self.path / 'dimension-command-ack-0001.json')) == owned._json(ack),
+                    'Original durable inspection acknowledgement differs.')
+            observed = receiver.inspect_state()
+            require(observed['closed'] is True and observed['fault'] is None
+                    and observed['attempted'] == observed['action_completed'] == observed['acknowledged'] == 1
+                    and observed['next_sequence'] is None and observed['allowed_commands'] == ['inspect'],
+                    'Original single inspect-only receiver completion required.')
         closed = self.owner.complete_normal()
         require(self.module.JobStore is self.original_factories[0] and self.module.Runtime is self.original_factories[1]
                 and proxy._owner._installed is False,
@@ -217,6 +233,33 @@ class MetadataDimensionControlOwner:
         validate_control_receipt(receipt, identity=self.identity, path=self.path)
         owned._write(self.path / 'dimension-control-wiring.json', receipt)
         return receipt
+
+
+def validate_inspection_ack(value, *, identity, path):
+    require(type(value) is dict and set(value) == {'scope', 'sequence', 'nonce', 'lineage', 'command',
+            'arguments', 'result', 'controller_state'} | set(CONTROL_AUTHORITY),
+            'Exact original inspection acknowledgement required.')
+    lineage = control_lineage(identity, path)
+    require(value['scope'] == 'b4_dimension_control_command_ack_v1' and type(value['sequence']) is int
+            and value['sequence'] == 1 and value['nonce'] == identity['nonce']
+            and owned._json(value['lineage']) == owned._json(lineage)
+            and value['command'] == 'inspect' and value['arguments'] == {},
+            'Original inspect-only command/identity binding differs.')
+    require(all(type(value[key]) is type(expected) and value[key] == expected
+                for key, expected in CONTROL_AUTHORITY.items()), 'Inspection cannot authorize native actions.')
+    for state in (value['result'], value['controller_state']):
+        require(type(state) is dict and set(state) == {'scope', 'phase', 'fault', 'lineage', 'target',
+                'persist_attempted', 'receipts', 'return_observation', 'barrier_state'} | set(CONTROL_AUTHORITY)
+                and state['scope'] == 'b4_installed_dimension_control_state_v1'
+                and owned._json(state['lineage']) == owned._json(lineage)
+                and state['phase'] == 'unarmed' and state['fault'] is None and state['target'] is None
+                and owned._json(state['persist_attempted']) == owned._json({'callback': False, 'finish': False})
+                and state['receipts'] == {'callback': None, 'finish': None}
+                and state['return_observation'] is None and state['barrier_state'] is None
+                and all(type(state[key]) is type(expected) and state[key] == expected
+                        for key, expected in CONTROL_AUTHORITY.items()),
+                'Original cold unarmed control inspection required.')
+    return deepcopy(value)
 
 
 def private_root():
@@ -299,7 +342,8 @@ def run_verified_entrypoint(path, package, expected, identity, *, profile='metad
             'Actual installed server entrypoint required.')
     verify_loaded_windows_dependencies(expected)
     finish_owner = (MetadataFinishOwner(module, path, identity) if profile == 'finish_seam' else
-                    MetadataDimensionControlOwner(module, path, identity) if profile == 'dimension_control' else None)
+                    MetadataDimensionControlOwner(module, path, identity, inspect_command=profile == 'dimension_commands')
+                    if profile in ('dimension_control', 'dimension_commands') else None)
     owned._write(path / 'child-ready.json', dict(scope='b4_installed_child_ready_v1', identity=identity, **flags()))
     sys.argv = [expected['console_entrypoint'], '--state-dir', str(path / 'server')]
     module.main()
@@ -497,6 +541,10 @@ class InstalledMetadataChild:
         self.probe_attempted = self.sdk_live = True
         with anyio.CancelScope(shield=True):
             try:
+                if self.profile == 'dimension_commands':
+                    owned._write(self.path / 'dimension-command-0001.json',
+                        dict(scope='b4_dimension_control_command_v1', sequence=1, nonce=self.identity['nonce'],
+                             lineage=control_lineage(self.identity, self.path), command='inspect', arguments={}))
                 async with self.transport() as (read, write):
                     async with ClientSession(read, write) as client:
                         self.catalog = await consume_metadata(client, self.candidate['wheel'])
@@ -518,7 +566,8 @@ class InstalledMetadataChild:
         receipt = dict(scope='b4_installed_metadata_process_observation_v1', phase='terminal',
             identity=deepcopy(self.identity), exit_code=code, process_exit_observed=True,
             metadata_process_passed=False, finish_seam_wiring_passed=False,
-            dimension_control_wiring_passed=False, profile_passed=False, **flags())
+            dimension_control_wiring_passed=False, dimension_command_inspection_passed=False,
+            profile_passed=False, **flags())
         try:
             returned = owned._read(self.path / 'child-normal-return.json')
             require(code == 0 and self.launch_failed is None and self.ready is not None,
@@ -543,7 +592,7 @@ class InstalledMetadataChild:
                 receipt.update(finish_seam_wiring_passed=True, finish_seam_wiring=seam_receipt)
             except (OSError, ValueError, KeyError, TypeError, InstalledChildError) as exc:
                 receipt['finish_seam_wiring_error'] = str(exc)
-        if self.profile == 'dimension_control' and receipt['metadata_process_passed']:
+        if self.profile in ('dimension_control', 'dimension_commands') and receipt['metadata_process_passed']:
             try:
                 control_receipt = validate_control_receipt(owned._read(self.path / 'dimension-control-wiring.json'),
                     identity=self.identity, path=self.path)
@@ -555,9 +604,17 @@ class InstalledMetadataChild:
                 receipt.update(dimension_control_wiring_passed=True, dimension_control_wiring=control_receipt)
             except (OSError, ValueError, KeyError, TypeError, InstalledChildError) as exc:
                 receipt['dimension_control_wiring_error'] = str(exc)
+        if self.profile == 'dimension_commands' and receipt['dimension_control_wiring_passed']:
+            try:
+                ack = validate_inspection_ack(owned._read(self.path / 'dimension-command-ack-0001.json'),
+                                              identity=self.identity, path=self.path)
+                receipt.update(dimension_command_inspection_passed=True, dimension_command_inspection=ack)
+            except (OSError, ValueError, KeyError, TypeError, InstalledChildError) as exc:
+                receipt['dimension_command_inspection_error'] = str(exc)
         receipt['profile_passed'] = receipt['metadata_process_passed'] and (
             self.profile == 'metadata' or self.profile == 'finish_seam' and receipt['finish_seam_wiring_passed']
-            or self.profile == 'dimension_control' and receipt['dimension_control_wiring_passed'])
+            or self.profile == 'dimension_control' and receipt['dimension_control_wiring_passed']
+            or self.profile == 'dimension_commands' and receipt['dimension_command_inspection_passed'])
         owned._write(self.path / 'parent-exit.json', receipt)
         self.receipt = receipt
         return deepcopy(receipt)
