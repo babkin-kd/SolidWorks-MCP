@@ -33,3 +33,9 @@ head25df8a6 и стабильный main3ab795e. Прежний CI38510604543 su
 к25df, не к новым блокам. Новый CI обязателен после отправки; его свежий wheel
 не заменяет exact native wheel49b при совпадающей версии. Merge/release нет.
 Частные CAD, шаблоны, PDM, журналы и полные отчёты остаются вне Git.
+
+После checkpoint выполнен один push0ea40eb5b3a25fe9de5f6be234da3f4bc168f149.
+Direct API подтвердил actual PR head и Checks38516793679/job115697298532:
+lock success, unit in_progress, build/install/metadata pending. PR draft/open,
+main3ab795e сохранён. Native faults1 дошёл до leaf_stale и не прерывался;
+результат ещё pending. Эта фиксация отправки локальная, без второго push.

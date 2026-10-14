@@ -2,6 +2,13 @@
 
 ## Текущий итог
 
+Пакет0ea40eb отправлен одним push в draft/open PR15. Direct API подтвердил
+exact remote head0ea40eb5b3a25fe9de5f6be234da3f4bc168f149 и неизменный
+main3ab795e. Новый Checks38516793679/job115697298532 in_progress:
+lock passed, unit running, build/install/metadata pending. CI ещё не принят.
+Native faults1 продолжает исходный процесс и дошёл до leaf_stale; итог pending.
+Эта запись остаётся локально для следующего пакета, второго push ради статуса нет.
+
 Новая [пакетная source-контрольная точка9be9c7a](CHECKPOINT_9BE9C7A.md)
 принята:11688 pure passed/323 CAD deselected /544,68 с, normal exit0;
 HEAD и executable source/tests неизменны. Три связанных source-подготовительных
