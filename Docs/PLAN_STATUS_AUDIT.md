@@ -2,6 +2,12 @@
 
 ## Текущий итог
 
+Новая [пакетная source-контрольная точка9be9c7a](CHECKPOINT_9BE9C7A.md)
+принята:11688 pure passed/323 CAD deselected /544,68 с, normal exit0;
+HEAD и executable source/tests неизменны. Три связанных source-подготовительных
+блока накоплены для одной отправки в draft PR15; exact installed wheel49b/dev97
+не менялся. Native faults1 остаётся live, N5/public/B2–B5 не приняты.
+
 Следующее локальное B2-продолжение: executable passive terminal prerequisite
 audit,70 related pure/44,96 с, actual live faults refusal до candidate checks.
 Оригинальные validators/SQLite readers не подменены; report/parent/journal

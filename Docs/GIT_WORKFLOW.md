@@ -1,5 +1,11 @@
 # Разработка нашего форка
 
+Подготовлена следующая пакетная отправка после трёх связанных source-блоков:
+[checkpoint9be9c7a](CHECKPOINT_9BE9C7A.md),11688 pure passed/323 CAD deselected
+/544,68 с, normal exit0, замороженные source/tests/HEAD. Exact wheel49b/dev97
+сохранён; native faults1 не прерывается. Direct API подтвердил draft/open PR15,
+remote25df и main3ab795e. Новый CI ожидается после одной отправки.
+
 Последняя пакетная отправка — 14.10.2026, head25df8a6. После локального
 full source8544742 (11501 passed/323 CAD deselected /485,88 с), exact installed
 dev97 metadata и native positive2/2/6023,32 с выполнен один push в draft PR15.
