@@ -272,3 +272,18 @@ Synthetic process protocol не закрывает эти native требова�
 своего source окружения, не переносимым результатом CI. Проверяется запуск
 child при editable-install без PYTHONPATH; strict handle/start/nonce gates
 не ослабляются. До воспроизведения и исправления переносимость стенда открыта.
+
+Launcher теперь передаёт первым корень фактически импортированного parent
+package (resolved __file__) и связывает его с child identity. Direct-base
+Python запускается с -S, зависимости передаются явно; наследуемые base/user
+.pth не выполняются. Отдельный normally returned import control доказал,
+что PYTHONPATH с empty editable site не обрабатывает находящийся там .pth;
+исправленный own-child прошёл в том же окружении и с foreign cwd.
+Historical CI причина без child stderr остаётся гипотезой, а не доказанным фактом.
+
+После actual terminal poll ошибка before-ready включает exit code и не более
+4096 байт stderr tail. Timeout по-прежнему не доказывает exit и ничего не
+останавливает. Root gates/process/recovery integration без PYTHONPATH:
+**214 pure passed /11,72 с**, normal exit0, все synthetic children terminal,
+без CAD. Exact handle/start/nonce и native_false gates сохранены. Итоговый
+source/CI-кандидат этого исправления ещё должен пройти общий checkpoint.

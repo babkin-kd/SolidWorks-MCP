@@ -55,6 +55,20 @@ def _file_sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def _package_import_root():
+    """Root of the package already imported by this source-only parent.
+
+    Forwarding a venv site directory through PYTHONPATH does not execute its
+    editable-install .pth files in the direct-base child. Bind to the actual
+    resolved package instead of assuming the working directory contains src.
+    """
+    import solidworks_mcp
+    package_file = Path(solidworks_mcp.__file__).resolve()
+    _require(package_file.name == '__init__.py' and package_file.parent.name == 'solidworks_mcp',
+             'Actual regular imported package root required.')
+    return package_file.parent.parent
+
+
 def _write(path, value):
     """Single original durable receipt; no replacement/retry on partial writes."""
     with Path(path).open('x', encoding='utf8') as stream:
@@ -109,11 +123,14 @@ class OwnedSyntheticChild:
         self.helper_hashes = {name: _file_sha(self.entrypoint.with_name(name)) for name in
             ('verifier_b4_owned_child_process.py', 'verifier_b4_process_exit.py',
              'verifier_b4_finish_barrier.py', 'verifier_b4_recovery.py', 'verifier_lifecycle.py')}
+        self.package_import_root = str(_package_import_root())
         # Windows venv python.exe may be a redirector that creates another
         # Python process: its Popen handle would not own the gate's process.
         # This source-only synthetic experiment uses the direct base runtime.
         # Installed-wheel/native ownership needs its own exact launch receipt.
-        self.argv = [str(Path(sys._base_executable).resolve()), str(self.entrypoint), '--synthetic-owned-child',
+        # Disable implicit base/user site .pth processing: dependencies and the
+        # actual parent's imported package are forwarded explicitly below.
+        self.argv = [str(Path(sys._base_executable).resolve()), '-S', str(self.entrypoint), '--synthetic-owned-child',
                      str(self.path), self.nonce, str(os.getpid()), profile]
         self.start = self.identity = None
         self._sent = False
@@ -126,7 +143,7 @@ class OwnedSyntheticChild:
         # venv redirector. This is explicitly source synthetic, never installed
         # wheel acceptance. No caller-supplied environment/command is accepted.
         environment['PYTHONPATH'] = os.pathsep.join(filter(None,
-            [environment.get('PYTHONPATH', ''), *site.getsitepackages()]))
+            [self.package_import_root, environment.get('PYTHONPATH', ''), *site.getsitepackages()]))
         with (self.path / 'child-stderr.log').open('xb') as error_stream:
             self.process = subprocess.Popen(self.argv, stdin=subprocess.PIPE,
                 stdout=subprocess.DEVNULL, stderr=error_stream, text=True, encoding='utf8', env=environment)
@@ -141,7 +158,8 @@ class OwnedSyntheticChild:
 
     def _identity(self, start):
         return dict(pid=self.process.pid, parent_pid=os.getpid(), start=deepcopy(start),
-                    session_nonce=self.nonce, helper_hashes=deepcopy(self.helper_hashes))
+                    session_nonce=self.nonce, helper_hashes=deepcopy(self.helper_hashes),
+                    package_import_root=self.package_import_root)
 
     def observe_retained_launch(self):
         """One new proof on the original handle, never retry the failed write.
@@ -194,8 +212,22 @@ class OwnedSyntheticChild:
                              'Gate does not belong to retained child handle.')
                     self._ready = deepcopy(ready)
                     return deepcopy(ready)
-            if self.process.poll() is not None:
-                raise OwnedChildProtocolError('Own child exited before a complete ready receipt.')
+            exit_code = self.process.poll()
+            if exit_code is not None:
+                # Read bounded diagnostics only after this actual own handle is
+                # terminal. Observation timeout never authorizes this inference.
+                try:
+                    with (self.path / 'child-stderr.log').open('rb') as stream:
+                        stream.seek(0, os.SEEK_END)
+                        stream.seek(max(0, stream.tell() - 4096))
+                        stderr_tail = stream.read(4096).decode('utf8', errors='replace')
+                except OSError as exc:
+                    stderr_tail = f'Own stderr unavailable: {exc}'
+                error = OwnedChildProtocolError(
+                    f'Own child exited before a complete ready receipt; exit_code={exit_code}; '
+                    f'stderr_tail={stderr_tail!r}')
+                error.exit_code, error.stderr_tail = exit_code, stderr_tail
+                raise error
             if time.monotonic() >= deadline:
                 return None
             time.sleep(min(.01, max(0, deadline - time.monotonic())))
@@ -301,7 +333,8 @@ def _child(path, nonce, parent_pid, profile):
     _require(profile in PROFILES and len(nonce) == 64 and parent_pid == os.getppid(),
              'Original parent nonce/profile required.')
     identity = dict(pid=os.getpid(), parent_pid=parent_pid, start=_process_start(os.getpid()),
-        session_nonce=nonce, helper_hashes={name: _file_sha(Path(__file__).with_name(name)) for name in
+        session_nonce=nonce, package_import_root=str(_package_import_root()),
+        helper_hashes={name: _file_sha(Path(__file__).with_name(name)) for name in
             ('verifier_b4_owned_child_process.py', 'verifier_b4_process_exit.py',
              'verifier_b4_finish_barrier.py', 'verifier_b4_recovery.py', 'verifier_lifecycle.py')})
     context = dict(document_id='synthetic_own_part', configuration='Основная', expected_revision='synthetic_before')

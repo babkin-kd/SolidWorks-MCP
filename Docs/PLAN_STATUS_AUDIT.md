@@ -15,6 +15,13 @@ unit11250 passed/21 failed/4 errors, build/install/metadata skipped. Все
 отказы в B4 synthetic child readiness; проверяется editable-install/PYTHONPATH
 различие, исправление ещё не принято. Native-gates открыты.
 
+Source B4 launcher исправлен: actual parent package import root первым в
+PYTHONPATH, child -S и явные dependency dirs, bound import-root identity,
+bounded stderr/exit code только после terminal poll. Isolated .pth import
+mechanism воспроизведён; historical CI cause без stderr ещё не доказана.
+Root214 related pure/11,72 с без PYTHONPATH прошли; общий новый checkpoint
+и повторный CI ещё предстоят. Native66780 и его32 helpers не затронуты.
+
 Финальный source-кандидат0ec9ab9 прошёл один full pure:
 **11237 passed,323 CAD deselected /475,02 с**, normal exit0, без изменения
 source/tests в прогоне. [Контрольная точка](CHECKPOINT_0EC9AB9.md).

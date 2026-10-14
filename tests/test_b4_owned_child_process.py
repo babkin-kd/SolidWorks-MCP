@@ -2,7 +2,11 @@
 from copy import deepcopy
 import importlib.util
 import json
+import os
 from pathlib import Path
+import site
+import subprocess
+import sys
 
 import pytest
 
@@ -320,3 +324,67 @@ def test_post_popen_failure_retains_exact_original_owner_and_handle(child_factor
     assert_native_false(result)
     if failure == 'launch_persistence':
         assert (child.path / 'parent-launch.json').read_text(encoding='utf8') == 'partial-launch-receipt'
+
+
+def test_editable_pth_parent_package_is_forwarded_without_pythonpath(child_factory, tmp_path, monkeypatch):
+    import solidworks_mcp
+    actual_root = Path(solidworks_mcp.__file__).resolve().parent.parent
+    editable_site = tmp_path / 'empty-editable-site'
+    editable_site.mkdir()
+    (editable_site / 'solidworks_mcp_editable.pth').write_text(str(actual_root) + '\n', encoding='utf8')
+    # Parent .pth processing retains its actual imported package; the base child
+    # gets that site directory via PYTHONPATH, which does not process its .pth.
+    # Real dependency sites remain available for anyio, without forwarding src.
+    dependency_sites = site.getsitepackages()
+    monkeypatch.setattr(sys, 'path', list(sys.path))  # Restore additions after this test.
+    site.addsitedir(str(editable_site))
+    monkeypatch.delenv('PYTHONPATH', raising=False)
+    monkeypatch.setattr(helper.site, 'getsitepackages', lambda: [str(editable_site), *dependency_sites])
+    monkeypatch.chdir(tmp_path)  # Source root cannot be inferred from cwd.
+    assert sys.modules['solidworks_mcp'] is solidworks_mcp
+    # Reproduce the previous exact mechanism independently with a finite,
+    # normally exiting Python observation. Every retained subprocess is waited.
+    legacy_env = os.environ.copy()
+    # Isolate this editable site: the developer's dependency venv may also have
+    # a wheel installed, unlike CI's editable-only package environment.
+    legacy_env['PYTHONPATH'] = str(editable_site)
+    control = subprocess.Popen([sys._base_executable, '-S', '-c', 'import solidworks_mcp'],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=legacy_env)
+    stdout, stderr = control.communicate(timeout=15)
+    assert control.returncode != 0 and b'ModuleNotFoundError' in stderr
+    assert not stdout
+    child = child_factory()
+    ready, result = finish(child)
+    assert ready['identity']['package_import_root'] == str(actual_root)
+    assert result['process_protocol_passed'] is True
+    assert_native_false(result)
+
+
+def test_terminal_before_ready_reports_actual_exit_and_import_root_cause(child_factory, tmp_path, monkeypatch):
+    monkeypatch.delenv('PYTHONPATH', raising=False)
+    monkeypatch.setattr(helper.site, 'getsitepackages', lambda: [])
+    monkeypatch.setattr(helper, '_package_import_root', lambda: tmp_path / 'empty-package-root')
+    child = child_factory()
+    assert child.process.wait(15) != 0
+    with pytest.raises(helper.OwnedChildProtocolError, match='exit_code=') as caught:
+        child.await_ready(0)
+    assert caught.value.exit_code == child.process.returncode
+    assert 'ModuleNotFoundError' in caught.value.stderr_tail
+    assert 'solidworks_mcp' in caught.value.stderr_tail
+    assert not child._sent and not (child.path / 'exit-intent.json').exists()
+
+
+def test_terminal_before_ready_stderr_read_is_bounded(child_factory, tmp_path, monkeypatch):
+    monkeypatch.delenv('PYTHONPATH', raising=False)
+    monkeypatch.setattr(helper.site, 'getsitepackages', lambda: [])
+    monkeypatch.setattr(helper, '_package_import_root', lambda: tmp_path / 'empty-package-root')
+    child = child_factory()
+    assert child.process.wait(15) != 0
+    # Only the own terminal synthetic stderr artifact is expanded; no live
+    # child/COM is affected, no error is used as permission to kill or restart.
+    (child.path / 'child-stderr.log').write_bytes(b'prefix-not-read' + b'x' * 8000 + b'final-cause')
+    with pytest.raises(helper.OwnedChildProtocolError) as caught:
+        child.await_ready(0)
+    assert len(caught.value.stderr_tail.encode('utf8')) == 4096
+    assert caught.value.stderr_tail.endswith('final-cause')
+    assert 'prefix-not-read' not in caught.value.stderr_tail
