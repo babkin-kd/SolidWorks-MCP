@@ -5,8 +5,11 @@
 Последняя общая source-контрольная точка — [21c04e5](CHECKPOINT_21C04E5.md):
 11463 pure passed,323 CAD deselected /483,88 с, normal exit0; source/tests
 заморожены на время прогона. Installed unarmed seam/metadata diagnostics
-приняты в своём без-CAD scope; B2 positive продолжается, подготовка удаления
-succeeded, итог delete/cleanup/baseline pending. Стадия1 остаётся открытой.
+приняты в своём без-CAD scope. B2 positive1 завершился normal exit0:
+2/2,6023,32 с, actual SQL6/3committed, own cleanup/baseline подтверждены,
+пассивный exact gate passed. Fresh faults1 того же wheel начат последовательно;
+итог pending, N5/public и стадия1 открыты.
+[Точная positive-приёмка](NATIVE_OWNED_LEAF_DEV97_ACCEPTANCE.md).
 
 **Текущая dev-установка — dev97**, build49b899c, wheel SHA
 702b7e18c9cafaafb14f8ca800ff4c3c361d44ed87abeb8d87e01df6992c382b.
@@ -15,8 +18,8 @@ linked-equation setup сохраняет identity/timestamps/bytes/SHA файл�
 Full11313 passed/323 CAD deselected /479,47 с, normal exit0. Wheel и installed
 metadata83 приняты без CAD/source PYTHONPATH. Короткий native owner/prefix
 probe normal247,71 с:59 returned steps,15 current anchors и retained anchors,
-четыре фазы, own cleanup/baseline. Начат fresh B2 positive на exact dev97;
-итог pending, B2/new-wheel gates не приняты. Dev96 остаётся историческим
+четыре фазы, own cleanup/baseline. Fresh B2 positive на exact dev97 принят
+в ограниченном scope, faults/N5/public и общий B2 пока не приняты. Dev96 остаётся историческим
 доказательством, unknown не повторялся; рабочая v1 сохранена.
 [Точная подготовка и очередь dev97](CANDIDATE_DEV97_PREPARATION.md).
 

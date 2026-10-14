@@ -27,8 +27,8 @@ Lock check --offline passed. Предыдущие failed/stopped прогоны 
 | Wheel SHA256 | 702b7e18c9cafaafb14f8ca800ff4c3c361d44ed87abeb8d87e01df6992c382b |
 | Installed console/metadata | Accepted,83 tools; без source PYTHONPATH, cad_tools_called=[] |
 | Короткий native owner/prefix probe | Normal exit0,247,71 с,59 returned steps;15 current anchors/четыре фазы и retained anchors разрешились; own cleanup/baseline; не приёмка B2 |
-| B2 positive prerequisite | Запущен fresh native-owned-leaf-dev97-positive-1; итог pending |
-| B2 faults/N5/public gates | Не приняты на dev97; старые dev96 receipts не подставляются |
+| B2 positive prerequisite | Positive1 terminal/normal exit0,2/2,6023,32 с; actual SQL6/3committed, own cleanup/baseline и пассивный exact gate подтверждены |
+| B2 faults/N5/public gates | Fresh faults1 запущен после positive/cleanup; итог pending. N5/public не приняты; dev96 receipts не подставляются |
 | GitHub | Локальные коммиты, нового push/CI нет; PR15 draft |
 
 ## Законченный блок исправления

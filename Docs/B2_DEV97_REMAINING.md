@@ -31,15 +31,15 @@ SHA отклонены для requested dev97 до package provider/COM. Фай�
 
 | Очередь | Пользовательский результат | Конечная проверка | Статус / условие допуска |
 | --- | --- | --- | --- |
-| Positive | Preview и удаление собственного leaf, повтор запроса без второй записи | BASE→SKETCH, retired PID, actual SQL committed, сохранный эскиз/сосед, terminal cleanup и полный baseline | Native выполняется; первый родительский сценарий принят, итог удаления pending |
-| Faults | Объяснимые отказы stale/foreign/no-effect и безопасное поведение при потере наблюдения | Все пять конечных случаев, actual SQLite, unknown остаётся unresolved, повтор не пишет, hold блокирует новый запрос, cleanup/baseline | not_run на dev97; нужен terminal accepted positive того же wheel и exact report/helper hashes |
+| Positive | Preview и удаление собственного leaf, повтор запроса без второй записи | BASE→SKETCH, retired PID, actual SQL committed, сохранный эскиз/сосед, terminal cleanup и полный baseline | Принят positive1:2/2,6023,32 с, normal exit0, actual SQL6/3committed, own cleanup/baseline; exact пассивный gate passed |
+| Faults | Объяснимые отказы stale/foreign/no-effect и безопасное поведение при потере наблюдения | Все пять конечных случаев, actual SQLite, unknown остаётся unresolved, повтор не пишет, hold блокирует новый запрос, cleanup/baseline | Fresh faults1 на dev97 запущен после terminal positive и exact report/helper gate; итог pending |
 | N5 child_plane | Отказ удалить leaf с дочерней плоскостью | Setup succeeded/committed; preview/execute `leaf_deletion_unsupported`, оба replay без dispatch; полный before/after, PID, сосед, event envelope, cleanup/baseline | not_run на dev97; setup failure запрещает preview/delete; прежний owner mismatch остаётся непринятым |
 | N5 unused_equation | Сохранить неподдерживаемые уравнения при отказе | `first_save_snapshot_unsupported`, четыре запроса с replay, paired native setup, неизменный журнал/состояние вне новых отказов, cleanup/baseline | not_run; отдельный свежий последовательный прогон |
 | N5 linked_equation | Сохранить связь и исходный файл уравнений при отказе | Предыдущие условия плюс identity/timestamps/bytes/SHA частного файла до/после | not_run; отдельный свежий последовательный прогон |
 | Public MCP | Размер 12 мм / объём 9600 мм³, русское имя, подавить/вернуть и удалить собственный leaf | Все пять finite public cases, opaque ID/native mapping, actual SQL/replay, independent full observer и baseline | not_run; exact positive/fault preflight, внутренние N5 gates выполняются первыми |
 | Общий B2 | Законченный блок редактирования простой детали | Сводка всех шести условий B2, один wheel, реальные постусловия и обязательный пакетный CI | Открыт; отдельный passed сценарий не закрывает блок |
 
-Native-владелец только один. Пока positive выполняется, допустимы чтение
+Native-владелец только один. Пока очередной native-прогон выполняется, допустимы чтение
 отчётов и подготовка helpers/контрактов без COM. Следующий прогон запускается
 только после terminal отчёта, проверки actual SQL, отсутствия pending calls
 и подтверждённого восстановления исходной сессии. Между снимками
