@@ -1,5 +1,12 @@
 # Конечная карта native-драйвера B4
 
+14.10.2026 подготовлен [finite live command host](B4_LIVE_COMMAND_HOST_ACCEPTANCE.md):
+265 related pure/15,13 с, original host/controller/worker/SQLite artificial-CAD
+arm→held finish→release→normal close. Actual installed metadata attempt11:
+SDK83/exit0/journal=[], inspect при открытом Runtime, normal host thread return.
+CAD/job calls=[], native Q/stop/recovery не приняты. Профиль metadata-only;
+новый локальный блок не покрывается remote CI0ea40eb, отдельного push нет.
+
 Срез интерфейсов на 13.10.2026. Основание — шесть условий
 [S1-B4](STAGE_1_BLOCK_ACCEPTANCE.md#s1-b4--диагностика-и-восстановление) и
 [карта приёмки](B4_ACCEPTANCE_MAP.md). Это план недостающего драйвера, а не

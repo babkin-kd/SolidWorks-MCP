@@ -498,7 +498,7 @@ def test_failed_sibling_import_restores_exact_registry_and_search_path(tmp_path,
         assert name not in sys.modules
 
 
-@pytest.mark.parametrize('profile', ['metadata', 'finish_seam', 'dimension_control', 'dimension_commands'])
+@pytest.mark.parametrize('profile', ['metadata', 'finish_seam', 'dimension_control', 'dimension_commands', 'dimension_commands_live'])
 def test_profile_binds_fixed_helper_manifest_spec_and_original_identity(harness, tmp_path, profile):
     child = helper.InstalledMetadataChild(tmp_path / ('profile-' + profile), wheel_path='pure',
         expected_version='pure', expected_git_sha='b' * 40, expected_wheel_sha256='a' * 64, profile=profile)
@@ -507,7 +507,8 @@ def test_profile_binds_fixed_helper_manifest_spec_and_original_identity(harness,
               'dimension_control': helper.SEAM_HELPERS + ('verifier_b4_installed_dimension_control.py',
                                                         'verifier_b4_dimension_return.py'),
               'dimension_commands': helper.SEAM_HELPERS + ('verifier_b4_installed_dimension_control.py',
-                  'verifier_b4_dimension_return.py', 'verifier_b4_dimension_control_commands.py')}
+                  'verifier_b4_dimension_return.py', 'verifier_b4_dimension_control_commands.py'),
+              'dimension_commands_live': helper.LIVE_COMMAND_HELPERS}
     assert set(child.helpers) == set(helper.HELPERS) | set(extras[profile])
     with pytest.raises(AttributeError):
         child.profile = 'other'
@@ -646,6 +647,96 @@ def valid_inspection_ack(child):
     return dict(scope='b4_dimension_control_command_ack_v1', sequence=1, nonce=child.identity['nonce'],
         lineage=deepcopy(lineage), command='inspect', arguments={}, result=deepcopy(state),
         controller_state=deepcopy(state), **helper.CONTROL_AUTHORITY)
+
+
+def valid_live_host(child):
+    ack = valid_inspection_ack(child)
+    state = dict(scope='b4_dimension_control_command_receiver_state_v1', closed=True, fault=None,
+        lineage=deepcopy(ack['lineage']), command_limit=1, allowed_commands=['inspect'], next_sequence=None,
+        attempted=1, action_completed=1, acknowledged=1, last_controller_state=deepcopy(ack['controller_state']),
+        last_ack=ack, **helper.CONTROL_AUTHORITY)
+    return dict(scope='b4_dimension_command_host_state_v1', phase='completed', fault=None, action_live=False,
+        completed_commands=1, lineage=deepcopy(ack['lineage']), receiver_state=state,
+        runtime_open_at_last_action=True, thread_return_observed=True, **helper.CONTROL_AUTHORITY)
+
+
+@pytest.mark.parametrize('change', ['live', 'closed_runtime', 'thread_live', 'bool_count', 'lineage',
+    'extra', 'authority', 'budget', 'allowlist', 'receiver_fault', 'ack', 'ack_count'])
+def test_live_host_receipt_refuses_unfinished_foreign_or_authorizing_state(harness, change):
+    child = harness[0]
+    value = valid_live_host(child)
+    helper.owned._write(child.path / 'dimension-command-ack-0001.json', valid_inspection_ack(child))
+    if change == 'live': value['action_live'] = True
+    elif change == 'closed_runtime': value['runtime_open_at_last_action'] = False
+    elif change == 'thread_live': value['thread_return_observed'] = False
+    elif change == 'bool_count': value['completed_commands'] = True
+    elif change == 'lineage': value['lineage']['nonce'] = 'foreign'
+    elif change == 'extra': value['q'] = True
+    elif change == 'authority': value['cad_cleanup_authorized'] = True
+    elif change == 'budget': value['receiver_state']['command_limit'] = 2
+    elif change == 'allowlist': value['receiver_state']['allowed_commands'].append('arm')
+    elif change == 'receiver_fault': value['receiver_state']['fault'] = 'unknown'
+    elif change == 'ack': value['receiver_state']['last_ack']['nonce'] = 'foreign'
+    else: value['receiver_state']['acknowledged'] = True
+    with pytest.raises(helper.InstalledChildError):
+        helper.validate_live_host(value, identity=child.identity, path=child.path)
+
+
+@pytest.mark.parametrize('host_valid', [True, False, 'missing'])
+def test_parent_live_host_gate_is_separate_from_metadata_control_and_ack(harness, tmp_path, monkeypatch, host_valid):
+    _, process, _, _ = harness
+    child = helper.InstalledMetadataChild(tmp_path / 'live-host-exit', wheel_path='pure',
+        expected_version='pure', expected_git_sha='b' * 40, expected_wheel_sha256='a' * 64,
+        profile='dimension_commands_live')
+    ready(child)
+    child.catalog, child.sdk_closed, child.eof_sent = {'pure_catalog': True}, True, True
+    process.code = 0
+    helper.owned._write(child.path / 'child-normal-return.json', dict(identity=child.identity,
+                                                                  normal_server_return=True, **helper.flags()))
+    control = valid_control_receipt(child)
+    helper.owned._write(child.path / 'dimension-control-wiring.json', control)
+    helper.owned._write(child.path / 'dimension-control-closed.json', control['controller_receipt'])
+    helper.owned._write(child.path / 'dimension-command-ack-0001.json', valid_inspection_ack(child))
+    value = valid_live_host(child)
+    if host_valid is False: value['thread_return_observed'] = False
+    if host_valid != 'missing': helper.owned._write(child.path / 'dimension-command-host.json', value)
+    monkeypatch.setattr(helper, 'sibling', lambda *args: SimpleNamespace(read_journal=lambda path: []))
+    result = child.observe_exit(0)
+    assert result['metadata_process_passed'] is result['dimension_control_wiring_passed'] is True
+    assert result['dimension_command_inspection_passed'] is True
+    assert result['dimension_command_host_passed'] == result['profile_passed'] == (host_valid is True)
+    false_native(result)
+
+
+@pytest.mark.parametrize('observation_fails', [False, True])
+def test_live_main_failure_ends_only_owned_wait_and_preserves_original_exception(tmp_path, monkeypatch, observation_fails):
+    package = tmp_path / 'site-packages' / 'solidworks_mcp'
+    package.mkdir(parents=True)
+    path = tmp_path / 'own-live-child'
+    path.mkdir()
+    events = []
+    original = RuntimeError('original server main failure')
+    def fail_main():
+        events.append('main')
+        raise original
+    def observe(timeout):
+        events.append(('observe_wait', timeout))
+        if observation_fails:
+            raise RuntimeError('wait observation unavailable')
+    host = SimpleNamespace(stop_waiting=lambda: events.append('stop_waiting'), wait=observe)
+    module = SimpleNamespace(__file__=str(package / 'server_v2.py'), main=fail_main)
+    owner = SimpleNamespace(host=host, complete_normal=lambda: pytest.fail('Failure cannot become normal completion'))
+    monkeypatch.setattr(helper.importlib, 'import_module', lambda name: module)
+    monkeypatch.setattr(helper, 'MetadataDimensionControlOwner', lambda *args, **kwargs: owner)
+    monkeypatch.setattr(sys, 'argv', list(sys.argv))
+    expected = dict(console_entrypoint='pure-v2', windows_dependencies={'windows': False})
+    with pytest.raises(RuntimeError) as raised:
+        helper.run_verified_entrypoint(path, package, expected, {}, profile='dimension_commands_live')
+    assert raised.value is original
+    assert events == ['main', 'stop_waiting', ('observe_wait', 1)]
+    if observation_fails:
+        assert 'wait observation unavailable' in original.__notes__[0]
+    assert not (path / 'child-normal-return.json').exists()
 
 
 @pytest.mark.parametrize('change', ['missing', 'extra', 'sequence', 'nonce', 'lineage', 'command',

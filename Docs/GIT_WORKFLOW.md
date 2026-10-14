@@ -4,8 +4,9 @@
 [checkpoint9be9c7a](CHECKPOINT_9BE9C7A.md),11688 pure passed/323 CAD deselected
 /544,68 с, normal exit0, замороженные source/tests/HEAD. Exact wheel49b/dev97
 сохранён; native faults1 не прерывается. Direct API подтвердил draft/open PR15,
-remote0ea40eb и main3ab795e. Checks38516793679/job115697298532 in_progress:
-lock passed, unit running, build/install/metadata pending. CI ещё не принят;
+remote0ea40eb и main3ab795e. Checks38516793679/job115697298532 completed/success:
+actual11688 unit passed/323 CAD deselected /1616,89 с; lock/build/wheel+sdist,
+isolated install и metadata83 passed. Это CI только head0ea40eb;
 дальнейшая запись этого статуса локальная, второго push ради неё нет.
 
 Предыдущая пакетная отправка — 14.10.2026, head25df8a6. После локального

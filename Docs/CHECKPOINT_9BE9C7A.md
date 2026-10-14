@@ -39,3 +39,9 @@ Direct API подтвердил actual PR head и Checks38516793679/job115697298
 lock success, unit in_progress, build/install/metadata pending. PR draft/open,
 main3ab795e сохранён. Native faults1 дошёл до leaf_stale и не прерывался;
 результат ещё pending. Эта фиксация отправки локальная, без второго push.
+
+Итог CI38516793679/job115697298532 для exact head0ea40eb — success:
+actual11688 passed/323 CAD deselected /1616,89 с, lock/build/wheel+sdist,
+isolated install/metadata83 passed. Сохранение artifacts предназначено для
+manual run и не объявляется выполненным этим PR-прогоном. Native B2 продолжает
+свой отдельный процесс; новая локальная подготовка B4 не входит в этот CI.

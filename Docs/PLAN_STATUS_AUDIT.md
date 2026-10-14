@@ -2,6 +2,18 @@
 
 ## Текущий итог
 
+Последующее локальное B4-продолжение: [live command host](B4_LIVE_COMMAND_HOST_ACCEPTANCE.md),
+265 related pure/15,13 с и actual metadata attempt11 SDK83/exit0/journal=[];
+inspect при открытом Runtime, original host thread return и manifests проверены.
+Native Q/arm/recovery not_run. Frozen native B2 helpers не менялись:
+leaf_stale и leaf_foreign passed, текущий faults1 ещё live; общий gate pending.
+
+CI отправленного0ea40eb принят: Checks38516793679/job115697298532 success,
+actual11688 unit passed/323 CAD deselected /1616,89 с; lock/build/wheel+sdist,
+isolated install/metadata83 passed. Его native_acceptance=false, CAD calls=[].
+Последующие локальные изменения этим CI не покрываются; PR остаётся draft.
+Native faults1 дошёл до leaf_foreign, leaf_stale passed; весь faults gate pending.
+
 Пакет0ea40eb отправлен одним push в draft/open PR15. Direct API подтвердил
 exact remote head0ea40eb5b3a25fe9de5f6be234da3f4bc168f149 и неизменный
 main3ab795e. Новый Checks38516793679/job115697298532 in_progress:
