@@ -356,3 +356,21 @@ SDK83 tools, CAD/job calls=[]; SolidWorks не подключался.
 но не native prepare/dispatch/Q, controlled unfinished exit, restart/hold/
 reconciliation/own cleanup. Эти gates остаются not_run. Код wheel,
 production API и frozen B2 helpers этим блоком не изменены.
+
+## Конечный допуск dimension-запросов — source, 14.10.2026
+
+Отдельный verifier_b4_native_admission.py связывает конечную последовательность
+optional dimension_get → один dimension_set_value с exact typed arguments и
+durable target operation/payload до физической записи. Проверка, byte write
+и flush выполняются под одним lock; attempted/emitted/in-flight различаются.
+Close необратим, повторные и параллельные CAD-запросы отвергаются. Partial write
+или потеря flush acknowledgement оставляют unknown transport без повторения.
+После close допустимы только заранее заданные metadata/known job_get наблюдения.
+
+37 related pure passed /0,47 с: реальные MCP types и signatures текущего facade,
+искусственные pipes, без процессов/CAD. Receipt не доказывает native Q,
+процессный stop/restart/cleanup: соответствующие authority flags false/not_run.
+Installed native transport этим ещё не реализован. Следующий конечный
+integration gate — one-shot привязка target operation_id из проверенного
+actual structured response, затем observation polling и original finish seam.
+Будущий job ID не придумывается; неизвестные операции не допускаются.

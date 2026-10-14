@@ -24,6 +24,11 @@ dev97-отчётом отклонено до installed provider; неподде�
 также отклоняются. Это искусственные доменные/SQLite сценарии, не actual public
 приёмка dev97: её positive/fault gates ещё ожидаются.
 
+Дополнительно actual historical positive/fault отчёты dev96 с их действительными
+SHA отклонены для requested dev97 до package provider/COM. Файлы отчётов
+сохранили SHA, новый state не создан; CAD/provider calls=[]. Это реальная
+пассивная проверка несовместимых свидетельств, не приёмка CAD нового кандидата.
+
 | Очередь | Пользовательский результат | Конечная проверка | Статус / условие допуска |
 | --- | --- | --- | --- |
 | Positive | Preview и удаление собственного leaf, повтор запроса без второй записи | BASE→SKETCH, retired PID, actual SQL committed, сохранный эскиз/сосед, terminal cleanup и полный baseline | Native выполняется; первый родительский сценарий принят, итог удаления pending |
