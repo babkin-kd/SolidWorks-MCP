@@ -2,6 +2,16 @@
 
 ## Текущий итог
 
+Финальный source-кандидат0ec9ab9 прошёл один full pure:
+**11237 passed,323 CAD deselected /475,02 с**, normal exit0, без изменения
+source/tests в прогоне. [Контрольная точка](CHECKPOINT_0EC9AB9.md).
+Последующий N5 child-plane-4 failed до preview/delete: normal returned
+read exception persistent_reference_mismatch у dimension owner; setup
+unknown/unresolved,6 native pairs/84 captures и actual SQL6 jobs без active
+подтверждены offline audit. Только точный idle original Python owner завершён;
+read-only own inspection перед maintenance выполняется. Unknown не повторяется,
+N5 не принят. Installed dev96 и production source не менялись.
+
 Конечная оставшаяся очередь preview/delete зафиксирована отдельно:
 [B2 dev96 — остатки](B2_DEV96_REMAINING.md). Дополнительный пассивный preflight
 подтвердил exact installed wheel, фактические positive/fault SQL, неизменный
