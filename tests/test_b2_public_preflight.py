@@ -292,11 +292,13 @@ def test_fault_report_sha_schema_parent_full_effect_and_actual_sql_must_all_matc
     with pytest.raises(ValueError): helper.preflight(x.args,package_provider=forbidden_provider)
 
 
-@pytest.mark.parametrize('fault',['version','count','boolean_count','schemas','origin','wheel','git','previous_journal',
+@pytest.mark.parametrize('fault',['version','historical_version','boolean_version','count','boolean_count','schemas','origin','wheel','git','previous_journal',
                                 'previous_metadata','positive_sha','positive_helpers'])
 def test_exact_installed_metadata_and_fresh_private_session_are_required(artifacts,fault):
     x=artifacts;calls=[]
     if fault=='version':x.args.expected_version='2.0.0.dev95'
+    elif fault=='historical_version':x.args.expected_version='2.0.0.dev96'
+    elif fault=='boolean_version':x.args.expected_version=True
     elif fault=='count':x.package['metadata_catalog']['public_tool_count']=82
     elif fault=='boolean_count':x.package['metadata_catalog']['public_tool_count']=True
     elif fault=='schemas':x.package['metadata_catalog']['output_schemas_verified']=False

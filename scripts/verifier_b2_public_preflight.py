@@ -1,4 +1,4 @@
-"""Passive exact-dev96 prerequisites for future public B2; no CAD/reconciliation."""
+"""Passive exact-candidate prerequisites for future public B2; no CAD/reconciliation."""
 from copy import deepcopy
 import hashlib
 import json
@@ -12,7 +12,8 @@ from verifier_lifecycle import read_journal
 
 
 SCOPE='b2_public_prerequisite_preflight_v1'
-VERSION='2.0.0.dev96'
+VERSION='2.0.0.dev97'
+SUPPORTED_VERSIONS=frozenset(('2.0.0.dev96',VERSION))
 POSITIVE_HELPERS=('verify_owned_leaf_deletion_positive.py','verify_rectangle_stages_positive.py',
     'verifier_rectangle_stages.py','probe_native_first_save_domain.py','verify_installed_metadata.py',
     'verify_wheel_artifact.py','verify_bounds_measurements.py','verify_export_operations.py',
@@ -314,7 +315,8 @@ hold. Verified physical own cleanup does not reconcile its historical job.
 
 def preflight(args,*,package_provider=None):
     """Metadata83/27/exact wheel + actual positive/finite faults before native setup."""
-    _require(args.expected_version==VERSION,'Public B2 prerequisite is bound to exact dev96.')
+    _require(type(args.expected_version) is str and args.expected_version in SUPPORTED_VERSIONS,
+             'Public B2 prerequisite requires an explicitly supported candidate version.')
     positive_path,positive_row=_report(args.positive_report,args.positive_report_sha256)
     faults_path,_=_report(args.faults_report,args.faults_report_sha256)
     state=Path(args.state_dir).resolve()
@@ -322,8 +324,8 @@ def preflight(args,*,package_provider=None):
         and not (state/'jobs.sqlite').exists() and not (state/'metadata-state').exists(),
         'Fresh private public state without a previous journal/metadata session required.')
     wheel=positive_row['wheel']
-    _require(wheel['package_version']==VERSION and wheel['git_sha']==args.expected_git_sha,
-             'Prerequisite reports must bind the requested exact dev96 build.')
+    _require(wheel['package_version']==args.expected_version and wheel['git_sha']==args.expected_git_sha,
+             'Prerequisite reports must bind the requested exact candidate version/build.')
     scripts=Path(__file__).resolve().parent
     positive=_driver().positive_preflight(positive_path,args.positive_report_sha256,wheel,scripts)
     _require(positive['positive_report_gate_verified'] is True,'Actual positive preflight failed.')
@@ -337,7 +339,7 @@ def preflight(args,*,package_provider=None):
         and catalog['public_tool_count']==83
         and type(catalog['public_tool_count']) is int and catalog['output_schemas_verified'] is True
         and catalog['build_matches_installed_wheel'] is True,
-        'Exact installed dev96 metadata83/current-wheel evidence required.')
+        'Exact installed candidate metadata83/current-wheel evidence required.')
     # Existing installed metadata verifier checks the exact 27 implemented
     # mutation names; its returned catalog has no invented mutation_count key.
     return dict(**package,scope=SCOPE,positive_preflight=positive,faults_preflight=faults,

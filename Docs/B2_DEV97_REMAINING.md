@@ -16,6 +16,14 @@
 Изначальный запуск чтения wheel получил ACL-denied и не засчитан; повторное
 разрешённое чтение завершилось normal exit0.
 
+Исправлена жёсткая привязка public preflight к dev96: поддержаны явно выбранные
+dev96/dev97, при этом package_version отчёта обязана совпасть с requested
+version, а полные wheel/build/installed metadata/SQL/helper проверки сохранены.
+121 связанных pure-тестов прошли /55,61 с. Смешивание requested dev96 с
+dev97-отчётом отклонено до installed provider; неподдержанные и boolean версии
+также отклоняются. Это искусственные доменные/SQLite сценарии, не actual public
+приёмка dev97: её positive/fault gates ещё ожидаются.
+
 | Очередь | Пользовательский результат | Конечная проверка | Статус / условие допуска |
 | --- | --- | --- | --- |
 | Positive | Preview и удаление собственного leaf, повтор запроса без второй записи | BASE→SKETCH, retired PID, actual SQL committed, сохранный эскиз/сосед, terminal cleanup и полный baseline | Native выполняется; первый родительский сценарий принят, итог удаления pending |
