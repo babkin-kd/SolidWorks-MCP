@@ -126,3 +126,15 @@ owner membership остаются обязательными. Это production 
 нужен новый exact wheel и native-проверка; dev96 этим не объявляется исправленным.
 Source133 related pure passed/3,29 с; [кандидат dev97](CANDIDATE_DEV97_PREPARATION.md)
 не принят до полного source/installed/native gate.
+
+## Первый installed dev97 probe
+
+После source49b899c full11313/323 CAD deselected и accepted wheel/metadata83
+выполнен exact installed probe без source PYTHONPATH. Normal exit0,247,71 с:
+два fully-defined controls, BREP/PID/topology prefix в четырёх фазах,
+15 current anchors и retained anchors разрешились;59 native steps returned.
+Сосед сохранился, две собственные модели закрыты без сохранения,
+baseline/CIPFalse/non-STL восстановлены. Это совместимость исправленного
+resolver, не N5 acceptance или доказательство причины исторического отказа.
+Начат отдельный положительный B2 prerequisite на exact dev97; старые receipts
+не подставляются в его gate.

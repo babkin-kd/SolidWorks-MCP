@@ -1,8 +1,9 @@
 # Подготовка кандидата dev97 — 14.10.2026
 
-Статус: source готовится к финальной полной проверке; wheel/metadata/native
-ещё не приняты. Стадия1 открыта. Dev96 остаётся отдельной исторической установкой
-и доказательствами; номер версии не переносит результаты между wheel.
+Статус: full source, wheel и installed metadata приняты в своих областях;
+native-приёмка остаётся открытой. Стадия1 открыта. Dev97 установлен только в
+dev-окружение; wheel и доказательства dev96 сохранены отдельно, рабочая v1
+не менялась. Номер версии не переносит результаты между wheel.
 
 Первый full source7a43c4b остановлен до завершения: project/lock были dev97,
 package __version__ ещё dev96. Прогон не засчитан; изменяется только версия
@@ -12,6 +13,23 @@ Full00b8f0d завершился normal exit1:11312 passed/1 failed/323 CAD dese
 477,79 с. Единственный отказ — packaging registry template оставался dev96.
 Кодовые проверки прошли, но full checkpoint не принят. Исправляется версия
 непубликуемого template; packaging subset выполняется до нового full.
+
+После исправления registry template packaging5 passed/0,10 с. Итоговый
+full source49b899c завершился normal exit0: **11313 passed,323 CAD deselected
+/479,47 с**. Source/tests во время итогового прогона не менялись.
+Lock check --offline passed. Предыдущие failed/stopped прогоны не засчитаны.
+
+| Установленный кандидат | Значение |
+| --- | --- |
+| Версия | 2.0.0.dev97 |
+| Build Git | 49b899c9c6048c89be81e20c9c5c29f0e4ee50d4 |
+| Source digest | ad83dc638a5df73c6511bf2d3d18600f82e2c299a235b86d8009ad3b0c513b36 |
+| Wheel SHA256 | 702b7e18c9cafaafb14f8ca800ff4c3c361d44ed87abeb8d87e01df6992c382b |
+| Installed console/metadata | Accepted,83 tools; без source PYTHONPATH, cad_tools_called=[] |
+| Короткий native owner/prefix probe | Normal exit0,247,71 с,59 returned steps;15 current anchors/четыре фазы и retained anchors разрешились; own cleanup/baseline; не приёмка B2 |
+| B2 positive prerequisite | Запущен fresh native-owned-leaf-dev97-positive-1; итог pending |
+| B2 faults/N5/public gates | Не приняты на dev97; старые dev96 receipts не подставляются |
+| GitHub | Локальные коммиты, нового push/CI нет; PR15 draft |
 
 ## Законченный блок исправления
 

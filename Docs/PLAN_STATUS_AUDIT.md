@@ -2,6 +2,18 @@
 
 ## Текущий итог
 
+**Текущая dev-установка — dev97**, build49b899c, wheel SHA
+702b7e18c9cafaafb14f8ca800ff4c3c361d44ed87abeb8d87e01df6992c382b.
+Owner dimension anchor использует существующий строгий feature resolver;
+linked-equation setup сохраняет identity/timestamps/bytes/SHA файла до/после.
+Full11313 passed/323 CAD deselected /479,47 с, normal exit0. Wheel и installed
+metadata83 приняты без CAD/source PYTHONPATH. Короткий native owner/prefix
+probe normal247,71 с:59 returned steps,15 current anchors и retained anchors,
+четыре фазы, own cleanup/baseline. Начат fresh B2 positive на exact dev97;
+итог pending, B2/new-wheel gates не приняты. Dev96 остаётся историческим
+доказательством, unknown не повторялся; рабочая v1 сохранена.
+[Точная подготовка и очередь dev97](CANDIDATE_DEV97_PREPARATION.md).
+
 CI-import source-кандидат34ccab5 прошёл один финальный full pure:
 **11274 passed,323 CAD deselected /478,61 с**, normal exit0, без изменения
 source/tests в прогоне. До него root214 related/11,72 с без PYTHONPATH passed.
