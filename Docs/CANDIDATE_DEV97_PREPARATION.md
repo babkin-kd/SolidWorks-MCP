@@ -56,6 +56,10 @@ Linked-equation fixture удерживает exact file identity/timestamps/byte
 
 ## Следующие конечные действия
 
+Конечные случаи, критерии и ограничения preview/delete сведены в
+[очередь B2 dev97](B2_DEV97_REMAINING.md). Пока native positive выполняется,
+подготовка идёт без COM; historical dev96 receipts не подставляются.
+
 1. Зафиксировать source/version/lock и выполнить один full pure с CAD exclusion
    и fresh внешним basetemp. Во время проверки source/tests не менять.
 2. После normal full собрать и установить dev97 только в dev-окружение;

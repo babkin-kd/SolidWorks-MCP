@@ -178,6 +178,8 @@ def test_real_receipt_checks_normal_return_sdk_close_and_complete_empty_journal(
     result = child.observe_exit(0)
     assert result['process_exit_observed'] is True
     assert result['metadata_process_passed'] == (exit_code == 0 and journal == [] and sdk_closed is True)
+    assert result['profile_passed'] == result['metadata_process_passed']
+    assert result['finish_seam_wiring_passed'] is False
     false_native(result)
     assert child.observe_exit(0) == result
 
@@ -493,3 +495,128 @@ def test_failed_sibling_import_restores_exact_registry_and_search_path(tmp_path,
         assert sys.modules[name] is old
     else:
         assert name not in sys.modules
+
+
+@pytest.mark.parametrize('profile', ['metadata', 'finish_seam'])
+def test_profile_binds_fixed_helper_manifest_spec_and_original_identity(harness, tmp_path, profile):
+    child = helper.InstalledMetadataChild(tmp_path / ('profile-' + profile), wheel_path='pure',
+        expected_version='pure', expected_git_sha='b' * 40, expected_wheel_sha256='a' * 64, profile=profile)
+    assert child.profile == child.spec['profile'] == child.identity['profile'] == profile
+    assert set(child.helpers) == set(helper.HELPERS) | (set(helper.SEAM_HELPERS) if profile == 'finish_seam' else set())
+    with pytest.raises(AttributeError):
+        child.profile = 'other'
+
+
+@pytest.mark.parametrize('profile', ['arm', 'cad', 'restart', True, ['finish_seam']])
+def test_unsupported_profile_refused_before_preflight_or_launch(tmp_path, monkeypatch, profile):
+    monkeypatch.setattr(helper, 'validate_candidate', lambda *args: pytest.fail('No preflight for foreign profile'))
+    with pytest.raises(helper.InstalledChildError, match='Fixed metadata/finish_seam'):
+        helper.InstalledMetadataChild(tmp_path / 'not-created', wheel_path='pure', expected_version='pure',
+            expected_git_sha='b' * 40, expected_wheel_sha256='a' * 64, profile=profile)
+    assert not (tmp_path / 'not-created').exists()
+
+
+def test_finish_profile_installs_actual_store_runtime_seam_before_main_and_restores(tmp_path, monkeypatch):
+    from solidworks_mcp.jobs import JobStore
+    from solidworks_mcp.runtime_v2 import Runtime
+    path, package = tmp_path / 'state', tmp_path / 'solidworks_mcp'
+    path.mkdir()
+    package.mkdir()
+    module = SimpleNamespace(__file__=str(package / 'server_v2.py'), JobStore=JobStore, Runtime=Runtime)
+    observations = []
+
+    def main():
+        # Actual JobStore/Runtime construction through the real new seam; no
+        # worker is ever created, no dispatch/job/native call takes place.
+        assert module.JobStore is not JobStore and module.Runtime is not Runtime
+        assert (path / 'child-ready.json').exists()
+        store = module.JobStore(path / 'server' / 'jobs.sqlite')
+        runtime = module.Runtime(store)
+        observations.append((store, runtime))
+        assert runtime.store is store and runtime._runner is None
+        assert store.barrier is None and store.state == 'unarmed'
+        assert runtime.shutdown() is True
+
+    module.main = main
+    monkeypatch.setattr(helper.importlib, 'import_module', lambda name: module)
+    monkeypatch.setattr(sys, 'argv', list(sys.argv))
+    identity = {'profile': 'finish_seam', 'pure': 'original-binding'}
+    expected = {'console_entrypoint': 'pure-v2', 'windows_dependencies': {'windows': False}}
+    assert helper.run_verified_entrypoint(path, package, expected, identity, profile='finish_seam') == 0
+    assert len(observations) == 1 and module.JobStore is JobStore and module.Runtime is Runtime
+    receipt = helper.owned._read(path / 'finish-seam-wiring.json')
+    assert helper.validate_seam_receipt(receipt, identity=identity,
+        journal_path=path / 'server' / 'jobs.sqlite') == receipt
+    assert receipt['complete_journal'] == []
+    assert all(receipt[key] is True for key in helper.SEAM_CHECKS)
+    assert not (path / 'finish-barrier.json').exists()
+    false_native(receipt)
+
+
+def test_barrier_persistence_callback_is_one_shot_even_after_failed_write(tmp_path, monkeypatch):
+    from solidworks_mcp.jobs import JobStore
+    from solidworks_mcp.runtime_v2 import Runtime
+    module = SimpleNamespace(JobStore=JobStore, Runtime=Runtime, main=lambda: None)
+    owner = helper.MetadataFinishOwner(module, tmp_path, {'profile': 'finish_seam'})
+    original_write = helper.owned._write
+
+    def failed_write(path, value):
+        raise OSError('pure-durable-write-failure')
+
+    monkeypatch.setattr(helper.owned, '_write', failed_write)
+    with pytest.raises(OSError, match='pure-durable-write-failure'):
+        owner.persist_barrier({'pure': 'barrier-receipt'})
+    monkeypatch.setattr(helper.owned, '_write', original_write)
+    with pytest.raises(helper.InstalledChildError, match='one-shot'):
+        owner.persist_barrier({'pure': 'barrier-receipt'})
+    assert owner.persist_attempted and not (tmp_path / 'finish-barrier.json').exists()
+    owner.seam.uninstall()
+
+
+def valid_seam_receipt(child):
+    return dict(scope='b4_installed_unarmed_finish_seam_v1', identity=deepcopy(child.identity),
+        journal_path=str((child.path / 'server' / 'jobs.sqlite').resolve()), complete_journal=[],
+        **{key: True for key in helper.SEAM_CHECKS}, **helper.flags())
+
+
+@pytest.mark.parametrize('change', ['missing', 'extra', 'foreign_identity', 'journal', 'bool_as_int',
+                                   'native_q', 'native_admission', 'process_stop', 'authority_int', 'armed', 'none'])
+def test_frozen_seam_receipt_refuses_incomplete_foreign_or_native_claim(harness, change):
+    child = harness[0]
+    value = valid_seam_receipt(child)
+    if change == 'missing': value.pop('original_store_retained')
+    elif change == 'extra': value['target_id'] = 'unsupported'
+    elif change == 'foreign_identity': value['identity']['nonce'] = 'foreign'
+    elif change == 'journal': value['complete_journal'] = [{'unknown': 'job'}]
+    elif change == 'bool_as_int': value['runner_absent'] = 1
+    elif change == 'native_q': value['native_q'] = 'proven'
+    elif change == 'native_admission': value['native_admission'] = 'proven'
+    elif change == 'process_stop': value['process_stop_authorized'] = True
+    elif change == 'authority_int': value['accepted'] = 0
+    elif change == 'armed': value['proxy_unarmed'] = False
+    else: value = None
+    with pytest.raises(helper.InstalledChildError):
+        helper.validate_seam_receipt(value, identity=child.identity,
+                                    journal_path=child.path / 'server' / 'jobs.sqlite')
+
+
+@pytest.mark.parametrize('seam_valid', [False, True, 'missing', 'unexpected_barrier'])
+def test_parent_seam_wiring_is_separate_from_metadata_success(harness, tmp_path, monkeypatch, seam_valid):
+    _, process, _, _ = harness
+    child = helper.InstalledMetadataChild(tmp_path / 'finish-profile-exit', wheel_path='pure', expected_version='pure',
+        expected_git_sha='b' * 40, expected_wheel_sha256='a' * 64, profile='finish_seam')
+    ready(child)
+    child.catalog, child.sdk_closed, child.eof_sent = {'pure_catalog': True}, True, True
+    process.code = 0
+    helper.owned._write(child.path / 'child-normal-return.json', dict(identity=child.identity,
+                                                                  normal_server_return=True, **helper.flags()))
+    value = valid_seam_receipt(child)
+    if seam_valid is False: value['runner_absent'] = False
+    if seam_valid != 'missing': helper.owned._write(child.path / 'finish-seam-wiring.json', value)
+    if seam_valid == 'unexpected_barrier':
+        helper.owned._write(child.path / 'finish-barrier.json', {'pure': 'unexpected-barrier'})
+    monkeypatch.setattr(helper, 'sibling', lambda *args: SimpleNamespace(read_journal=lambda path: []))
+    result = child.observe_exit(0)
+    assert result['metadata_process_passed'] is True
+    assert result['finish_seam_wiring_passed'] == result['profile_passed'] == (seam_valid is True)
+    false_native(result)

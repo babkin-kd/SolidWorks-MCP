@@ -28,9 +28,12 @@ seam готовится отдельным offline блоком; текущий 
 
 Armable finish-store/factory source блок завершён:58 related pure/1,97 с,
 реальные Runtime/JobRunner/PythonWorker/SQLite, искусственные callbacks,
-exact prepare→arm→held finish→explicit release. Installed injection/native Q/
-stop/restart/reconciliation этим не приняты. Следующая integration готовится
-metadata-only; wheel и текущие B2 frozen helpers не менялись.
+exact prepare→arm→held finish→explicit release. После 109 related pure/1,75 с
+fresh installed metadata attempts4/5 завершились normal exit0; attempt5
+подтвердил original store/proxy/runtime wiring, unarmed/runner absent,
+normal close, пустой journal и восстановление factories. metadata/profile/
+wiring gates passed; SDK83, CAD/job calls=[]. Native Q/stop/restart/
+reconciliation остаются not_run; wheel и B2 frozen helpers не менялись.
 
 CI-import source-кандидат34ccab5 прошёл один финальный full pure:
 **11274 passed,323 CAD deselected /478,61 с**, normal exit0, без изменения

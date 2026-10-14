@@ -57,13 +57,83 @@ def sibling(filename, name):
 owned = sibling('verifier_b4_owned_child_process.py', '_b4_installed_owned_primitives')
 HELPERS = ('verifier_b4_installed_child.py', 'verifier_b4_owned_child_process.py',
            'verify_installed_metadata.py', 'verify_wheel_artifact.py', 'verifier_lifecycle.py')
+PROFILES = frozenset(('metadata', 'finish_seam'))
+SEAM_HELPERS = ('verifier_b4_installed_finish.py', 'verifier_b4_finish_barrier.py')
 
 
 def flags():
     return dict(accepted=False, native_acceptance=False, native_q='not_run',
+        native_admission='not_run', process_stop_authorized=False, restart_authorized=False,
         native_b4_accepted=False, server_recovery='not_run', restart='not_run',
         reconciliation='not_run', cad_cleanup_authorized=False,
         cad_tools_called=[], job_tools_called=[])
+
+
+def helper_names(profile):
+    require(type(profile) is str and profile in PROFILES, 'Fixed metadata/finish_seam profile required.')
+    return HELPERS + (SEAM_HELPERS if profile == 'finish_seam' else ())
+
+
+SEAM_CHECKS = frozenset(('original_store_retained', 'runtime_store_is_original_proxy', 'runner_absent',
+    'proxy_unarmed', 'barrier_absent', 'arm_not_attempted', 'barrier_persistence_not_invoked',
+    'store_closed_normally', 'runtime_closed_normally', 'original_factories_restored', 'seam_uninstalled'))
+
+
+def validate_seam_receipt(value, *, identity, journal_path):
+    require(type(value) is dict and set(value) == {'scope', 'identity', 'journal_path', 'complete_journal'}
+            | SEAM_CHECKS | set(flags()), 'Exact finite finish-seam wiring receipt required.')
+    require(value['scope'] == 'b4_installed_unarmed_finish_seam_v1'
+            and owned._json(value['identity']) == owned._json(identity)
+            and value['journal_path'] == str(Path(journal_path).resolve()) and value['complete_journal'] == [],
+            'Original finish-seam identity/journal binding differs.')
+    require(all(value[key] is True for key in SEAM_CHECKS)
+            and all(type(value[key]) is type(expected) and value[key] == expected
+                    for key, expected in flags().items()),
+            'Finish-seam wiring must stay complete/unarmed with false native authority.')
+    return deepcopy(value)
+
+
+class MetadataFinishOwner:
+    """Own finite seam lifecycle. This profile never arms or dispatches jobs."""
+    def __init__(self, module, path, identity):
+        self.path, self.identity = path, deepcopy(identity)
+        self.module = module
+        self.original_factories = (module.JobStore, module.Runtime)
+        self.persist_attempted = False
+        seam_module = sibling('verifier_b4_installed_finish.py', '_b4_installed_metadata_finish_seam')
+        self.seam = seam_module.InstalledFinishSeam(module,
+            journal_path=path / 'server' / 'jobs.sqlite', persist=self.persist_barrier)
+        self.seam.install()
+
+    def persist_barrier(self, value):
+        require(not self.persist_attempted, 'Original durable barrier persistence is one-shot; no retry.')
+        self.persist_attempted = True
+        owned._write(self.path / 'finish-barrier.json', value)
+
+    def complete_normal(self):
+        seam = self.seam
+        proxy, runtime = seam.proxy, seam.runtime
+        seam.assert_wired(runtime)
+        require(proxy is not None and runtime is not None and runtime.store is proxy
+                and proxy._store is seam._original_owned_store and runtime._runner is None,
+                'Original actual seam proxy/runtime/store and absent runner required.')
+        require(proxy.state == 'unarmed' and proxy.barrier is None and proxy._arm_attempted is False
+                and self.persist_attempted is False and not (self.path / 'finish-barrier.json').exists(),
+                'Metadata finish-seam must stay unarmed; no barrier persistence or target dispatch.')
+        require(proxy._closed is True and proxy._store._db is None and runtime._closed is True,
+                'Original metadata store/runtime must close normally.')
+        lifecycle = sibling('verifier_lifecycle.py', '_b4_installed_seam_journal')
+        journal = lifecycle.read_journal(seam.path)
+        require(journal == [], 'Complete actual finish-seam journal must stay empty.')
+        seam.uninstall()
+        require(self.module.JobStore is self.original_factories[0]
+                and self.module.Runtime is self.original_factories[1] and seam._installed is False,
+                'Original server factories must be restored after normal metadata return.')
+        receipt = dict(scope='b4_installed_unarmed_finish_seam_v1', identity=deepcopy(self.identity),
+            journal_path=str(seam.path), complete_journal=journal, **{key: True for key in SEAM_CHECKS}, **flags())
+        validate_seam_receipt(receipt, identity=self.identity, journal_path=seam.path)
+        owned._write(self.path / 'finish-seam-wiring.json', receipt)
+        return receipt
 
 
 def private_root():
@@ -138,15 +208,19 @@ def verify_loaded_windows_dependencies(candidate):
                 'Actual loaded Windows dependency must match its anchored original file/hash.')
 
 
-def run_verified_entrypoint(path, package, expected, identity):
+def run_verified_entrypoint(path, package, expected, identity, *, profile='metadata'):
     """Ready means the real installed server module imported successfully."""
+    helper_names(profile)
     module = importlib.import_module('solidworks_mcp.server_v2')
     require(Path(module.__file__).resolve() == package / 'server_v2.py' and callable(module.main),
             'Actual installed server entrypoint required.')
     verify_loaded_windows_dependencies(expected)
+    finish_owner = MetadataFinishOwner(module, path, identity) if profile == 'finish_seam' else None
     owned._write(path / 'child-ready.json', dict(scope='b4_installed_child_ready_v1', identity=identity, **flags()))
     sys.argv = [expected['console_entrypoint'], '--state-dir', str(path / 'server')]
     module.main()
+    if finish_owner is not None:
+        finish_owner.complete_normal()
     owned._write(path / 'child-normal-return.json', dict(identity=identity, normal_server_return=True, **flags()))
     return 0
 
@@ -204,16 +278,19 @@ class InstalledMetadataChild:
     a metadata-only control path, not a native crash/unknown cleanup permit.
     """
 
-    def __init__(self, state_dir, *, wheel_path, expected_version, expected_git_sha, expected_wheel_sha256):
+    def __init__(self, state_dir, *, wheel_path, expected_version, expected_git_sha, expected_wheel_sha256,
+                 profile='metadata'):
+        self._profile = profile
+        profile_helpers = helper_names(profile)
         self.path = Path(state_dir).resolve()
         require(self.path.is_relative_to(private_root().resolve()), 'State must stay in private work/.')
         require(not self.path.exists(), 'Fresh own child state required; no adoption.')
         self.candidate = validate_candidate(wheel_path, expected_version, expected_git_sha, expected_wheel_sha256)
         self.path.mkdir(parents=False)
         self.nonce = secrets.token_hex(32)
-        self.helpers = {name: owned._file_sha(Path(__file__).with_name(name)) for name in HELPERS}
+        self.helpers = {name: owned._file_sha(Path(__file__).with_name(name)) for name in profile_helpers}
         self.spec = dict(scope='b4_installed_metadata_launch_v1', nonce=self.nonce, parent_pid=os.getpid(),
-            candidate=self.candidate, helpers=self.helpers, state_dir=str(self.path))
+            candidate=self.candidate, helpers=self.helpers, state_dir=str(self.path), profile=self.profile)
         owned._write(self.path / 'launch-spec.json', self.spec)
         self.process = None
         self.start = self.identity = self.ready = self.catalog = self.receipt = None
@@ -242,7 +319,11 @@ class InstalledMetadataChild:
 
     def _identity(self, start):
         return dict(pid=self.process.pid, parent_pid=os.getpid(), start=deepcopy(start), nonce=self.nonce,
-                    candidate=deepcopy(self.candidate), helpers=deepcopy(self.helpers))
+                    candidate=deepcopy(self.candidate), helpers=deepcopy(self.helpers), profile=self.profile)
+
+    @property
+    def profile(self):
+        return self._profile
 
     def await_ready(self, timeout=5):
         require(type(timeout) in (int, float) and 0 <= timeout <= 60, 'Bounded observation required.')
@@ -352,7 +433,7 @@ class InstalledMetadataChild:
             return dict(phase='owner_retained', process_exit_observed=False, metadata_process_passed=False, **flags())
         receipt = dict(scope='b4_installed_metadata_process_observation_v1', phase='terminal',
             identity=deepcopy(self.identity), exit_code=code, process_exit_observed=True,
-            metadata_process_passed=False, **flags())
+            metadata_process_passed=False, finish_seam_wiring_passed=False, profile_passed=False, **flags())
         try:
             returned = owned._read(self.path / 'child-normal-return.json')
             require(code == 0 and self.launch_failed is None and self.ready is not None,
@@ -369,6 +450,16 @@ class InstalledMetadataChild:
             receipt.update(metadata_process_passed=True, complete_journal=journal, catalog=deepcopy(self.catalog))
         except (OSError, ValueError, KeyError, TypeError, InstalledChildError) as exc:
             receipt['reason'] = str(exc)
+        if self.profile == 'finish_seam' and receipt['metadata_process_passed']:
+            try:
+                seam_receipt = validate_seam_receipt(owned._read(self.path / 'finish-seam-wiring.json'),
+                    identity=self.identity, journal_path=self.path / 'server' / 'jobs.sqlite')
+                require(not (self.path / 'finish-barrier.json').exists(), 'Metadata profile unexpectedly persisted a barrier.')
+                receipt.update(finish_seam_wiring_passed=True, finish_seam_wiring=seam_receipt)
+            except (OSError, ValueError, KeyError, TypeError, InstalledChildError) as exc:
+                receipt['finish_seam_wiring_error'] = str(exc)
+        receipt['profile_passed'] = receipt['metadata_process_passed'] and (
+            self.profile == 'metadata' or receipt['finish_seam_wiring_passed'])
         owned._write(self.path / 'parent-exit.json', receipt)
         self.receipt = receipt
         return deepcopy(receipt)
@@ -377,14 +468,15 @@ class InstalledMetadataChild:
 def child_main(spec_path):
     spec_path = Path(spec_path).resolve()
     spec = owned._read(spec_path)
-    require(type(spec) is dict and set(spec) == {'scope', 'nonce', 'parent_pid', 'candidate', 'helpers', 'state_dir'}
+    require(type(spec) is dict and set(spec) == {'scope', 'nonce', 'parent_pid', 'candidate', 'helpers', 'state_dir', 'profile'}
         and spec['scope'] == 'b4_installed_metadata_launch_v1' and spec['parent_pid'] == os.getppid()
         and type(spec['nonce']) is str and len(spec['nonce']) == 64, 'Original finite launch spec required.')
     path = Path(spec['state_dir']).resolve()
     require(path == spec_path.parent and path.is_relative_to(private_root().resolve()), 'Own private spec required.')
     require(not os.environ.get('PYTHONPATH') and os.environ.get('PYTHONNOUSERSITE') == '1',
             'Installed child excludes source/user PYTHONPATH.')
-    require(set(spec['helpers']) == set(HELPERS) and all(owned._file_sha(Path(__file__).with_name(name)) == value
+    profile = spec['profile']
+    require(set(spec['helpers']) == set(helper_names(profile)) and all(owned._file_sha(Path(__file__).with_name(name)) == value
         for name, value in spec['helpers'].items()), 'Exact original helper manifest required.')
     expected = spec['candidate']
     package = Path(expected['package_root']).resolve()
@@ -406,9 +498,9 @@ def child_main(spec_path):
         and source_digest(package) == build['source_digest'] == wheel['source_digest']
         and metadata.version('mcp') == expected['sdk_version'], 'Actual installed child identity mismatch.')
     identity = dict(pid=os.getpid(), parent_pid=os.getppid(), start=owned._process_start(os.getpid()),
-                    nonce=spec['nonce'], candidate=expected, helpers=spec['helpers'])
+                    nonce=spec['nonce'], candidate=expected, helpers=spec['helpers'], profile=profile)
     try:
-        return run_verified_entrypoint(path, package, expected, identity)
+        return run_verified_entrypoint(path, package, expected, identity, profile=profile)
     finally:
         for handle in dll_handles:
             handle.close()

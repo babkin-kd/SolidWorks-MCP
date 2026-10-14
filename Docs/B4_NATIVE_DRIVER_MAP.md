@@ -344,8 +344,15 @@ JobRunner/PythonWorker и SQLite подтвердили prepare→arm→running/
 Исходный finish вызывается один раз; waiting нельзя автоматически release,
 close или принять за Q. Test callbacks искусственные, CAD не вызывался.
 
-Actual installed injection пока not_run. Следующий ограниченный шаг —
-metadata-only профиль установленного launcher с доказанным original proxy/
-runtime wiring. Actual native prepare/dispatch/Q, controlled unfinished exit,
-restart/hold/reconciliation/own cleanup остаются отдельными gates. Код wheel,
-production API и frozen B2 helpers этим source блоком не изменены.
+Actual installed injection принят в ограниченном metadata-only профиле:
+после 109 related pure /1,75 с fresh attempts4/5 на exact dev97 завершились
+normal exit0. В attempt5 metadata_process_passed, finish_seam_wiring_passed
+и profile_passed равны true. Проверены исходный store, proxy/runtime wiring,
+runner absent, proxy unarmed, отсутствие arm/barrier persistence, normal
+store/runtime close, восстановление factories и uninstall. Actual journal=[];
+SDK83 tools, CAD/job calls=[]; SolidWorks не подключался.
+
+Это подтверждает подключение seam к реальному установленному entrypoint,
+но не native prepare/dispatch/Q, controlled unfinished exit, restart/hold/
+reconciliation/own cleanup. Эти gates остаются not_run. Код wheel,
+production API и frozen B2 helpers этим блоком не изменены.
