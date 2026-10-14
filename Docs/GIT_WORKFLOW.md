@@ -110,3 +110,10 @@ build/install/metadata pending. Native child-plane-5 выполняется от
 unknown предыдущего прогона сохранён, own cleanup/baseline подтверждены.
 Этот журнал отправки сохраняется локально для следующего пакета; отдельный
 push документации не нужен. Новый CI пока не объявляется успешным.
+
+Последующий actual итог38491234891 — failure: unit11250/21 failed/4 errors,
+1025,14 с; build/install/metadata skipped. Отказы локализованы в B4 own-child
+readiness; локальный source PYTHONPATH и чистый CI editable-install проверяются
+отдельно. Failed log сохранён в private work/, PR body обновлён direct API.
+Повтор CI не запускать без проверенного исправления; новый push накапливается
+по прежнему пакетному правилу. Native66780 не прерывался.

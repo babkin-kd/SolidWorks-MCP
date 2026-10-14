@@ -266,3 +266,9 @@ children. COM/CAD и текущий N5 не затронуты. Остаток P
 интеграции с actual installed server launch/owner, а Q — в действительном
 producer proof полного возврата native callback/guard и закрытого admission.
 Synthetic process protocol не закрывает эти native требования.
+
+В чистом CI745502e own-child readiness завершилась отказом (21 failures,
+4 teardown errors). Локальные211 related/full11271 остаются доказательством
+своего source окружения, не переносимым результатом CI. Проверяется запуск
+child при editable-install без PYTHONPATH; strict handle/start/nonce gates
+не ослабляются. До воспроизведения и исправления переносимость стенда открыта.

@@ -10,8 +10,10 @@ Fresh child-plane-5 выполняется на exact installed dev96 после
 dimension-read context сохраняется без дополнительных getters после отказа.
 Native pending; предыдущие unknown остаются unresolved. Пакет отправлен одним
 push745502e с сохранением draft/open PR15. Прямой API подтвердил новый
-Checks38491234891/job115616648083: lock passed, unit tests in_progress,
-build/install/metadata pending. CI result ещё не принят; native-gates открыты.
+Checks38491234891/job115616648083 завершились failure: lock passed,
+unit11250 passed/21 failed/4 errors, build/install/metadata skipped. Все
+отказы в B4 synthetic child readiness; проверяется editable-install/PYTHONPATH
+различие, исправление ещё не принято. Native-gates открыты.
 
 Финальный source-кандидат0ec9ab9 прошёл один full pure:
 **11237 passed,323 CAD deselected /475,02 с**, normal exit0, без изменения

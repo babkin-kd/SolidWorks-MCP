@@ -26,8 +26,11 @@ Fresh child-plane-5 начат с новой диагностикой, отде�
 
 Пакет отправлен одним push с head745502e2e89ae248c12bb47a623fff35810044b0.
 Прямой API подтвердил draft/open PR15 с этим head и base main3ab795e.
-Checks run38491234891/job115616648083 созданы: lock passed, unit tests выполняются,
-build/install/installed metadata ещё pending. Это не успешный итог CI.
+Checks run38491234891/job115616648083 завершились failure. Lock прошёл;
+unit11250 passed/21 failed/4 errors (1025,14 с), build/install/metadata skipped.
+Все отказы относятся к B4 synthetic child, завершившемуся до ready receipt.
+Проверяется различие source PYTHONPATH и CI editable-install; причина пока
+не доказана. Локальный full11271 не заменяет этот failed CI.
 PR15 остаётся draft:
 B2/public/N5, B3 actual SDK/13 groups, B4 native и B5 остаются открытыми.
 Новый CI проверяется по фактическому pushed head; старый green771befa
