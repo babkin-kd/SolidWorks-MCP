@@ -2,8 +2,8 @@
 
 ## Текущий итог
 
-Последняя общая source-контрольная точка — [21c04e5](CHECKPOINT_21C04E5.md):
-11463 pure passed,323 CAD deselected /483,88 с, normal exit0; source/tests
+Последняя общая source-контрольная точка — [8544742](CHECKPOINT_8544742.md):
+11501 pure passed,323 CAD deselected /485,88 с, normal exit0; source/tests
 заморожены на время прогона. Installed unarmed seam/metadata diagnostics
 приняты в своём без-CAD scope. B2 positive1 завершился normal exit0:
 2/2,6023,32 с, actual SQL6/3committed, own cleanup/baseline подтверждены,
