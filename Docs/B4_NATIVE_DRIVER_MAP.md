@@ -329,3 +329,23 @@ close/EOF, фактический exit0 и complete actual journal=[] подтв
 CAD/job calls=[]; SolidWorks не подключался. **Принят только metadata-only
 launch/close bridge.** Native Q, controlled unfinished exit, recovery/restart
 и reconciliation всё ещё not_run; B4-N4/общий B4 этим не закрываются.
+
+## Armable store/factory seam — source58,14.10.2026
+
+Отдельный verifier_b4_installed_finish.py подключает ровно один исходный
+JobStore proxy и Runtime через server factories до main. Owner позднее arm
+ровно один новый request/operation/payload с prepared document/config/revision/
+object. Уже существующий target, changed payload и foreign runtime/runner/
+inner store/factory отвергаются. Остальные jobs делегируются исходному store.
+
+**58 related pure passed/1,97 с**, normal exit0. Реальные Runtime.read/mutate,
+JobRunner/PythonWorker и SQLite подтвердили prepare→arm→running/prepared
+с committed verification→existing FinishBarrierStore→explicit release.
+Исходный finish вызывается один раз; waiting нельзя автоматически release,
+close или принять за Q. Test callbacks искусственные, CAD не вызывался.
+
+Actual installed injection пока not_run. Следующий ограниченный шаг —
+metadata-only профиль установленного launcher с доказанным original proxy/
+runtime wiring. Actual native prepare/dispatch/Q, controlled unfinished exit,
+restart/hold/reconciliation/own cleanup остаются отдельными gates. Код wheel,
+production API и frozen B2 helpers этим source блоком не изменены.

@@ -26,6 +26,12 @@ not_run, B4 открытый. [Доказательства и границы](B
 [Сводка checkpoint](CHECKPOINT_7F376C8.md). Следующий armable finish-store
 seam готовится отдельным offline блоком; текущий native B2 не затронут.
 
+Armable finish-store/factory source блок завершён:58 related pure/1,97 с,
+реальные Runtime/JobRunner/PythonWorker/SQLite, искусственные callbacks,
+exact prepare→arm→held finish→explicit release. Installed injection/native Q/
+stop/restart/reconciliation этим не приняты. Следующая integration готовится
+metadata-only; wheel и текущие B2 frozen helpers не менялись.
+
 CI-import source-кандидат34ccab5 прошёл один финальный full pure:
 **11274 passed,323 CAD deselected /478,61 с**, normal exit0, без изменения
 source/tests в прогоне. До него root214 related/11,72 с без PYTHONPATH passed.
