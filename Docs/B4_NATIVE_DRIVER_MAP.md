@@ -408,3 +408,16 @@ Actual installed/native подключение пока not_run. Этот return
 один вход для будущего Q producer; независимые postconditions, закрытый
 admission, отсутствие других queued/live CAD и процессный gate остаются
 обязательными. Native Q/stop/restart/cleanup flags false/not_run.
+
+Совместная source-цепочка компонентов проверена отдельно:75 related pure
+passed /1,30 с. Штатный dimension facade с реальными Runtime/JobRunner/
+PythonWorker/SQLite вызывает исходный dimension domain; guard и return receipt
+предшествуют held finish. Из действительного ответа получен JobStore ID,
+bound polling сохраняет running/prepared и committed verification, explicit
+release завершает original finish, replay не делает второй setter. Другой
+SQLite не заимствуется и не меняется. CAD искусственный, JSON-RPC messages
+типизированы, SDK transport/actual installed native здесь не запускались.
+Первый integration run1failed/74passed и diagnostic run1failed сохранены:
+fixture ошибочно передала DocumentCatalog с другого потока. Исправлен setup
+на создание нового каталога и discovery на собственном worker; owning-thread
+проверки не ослаблены. Тесты независимы от текущего native B2-владельца.
