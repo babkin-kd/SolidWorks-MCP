@@ -44,3 +44,15 @@ Probe2 остановился на Python TypeError из-за пропущенн
 N5 failure, сохранив producer error без новых getters после отказа. Нет
 доказательства, позволяющего ослабить owner/CAN/PID checks или объявить
 исправление. N5, public B2 и общий gate остаются открытыми.
+
+Source collector и wrapper теперь сохраняют dimension_read_failure: роль
+width/height/depth/plane_offset, boundary и конкретный этап read, уже известные
+original/current anchors, тип/code/message исходного исключения. Поле отделено
+от admission и permission proofs; acceptance/cleanup flags false. Если current
+anchor ещё не читался, сохраняется None; дополнительного getter после отказа
+нет. Диагностическая ошибка не заменяет producer exception.
+
+Root target/native-wrapper/session integration: **148 pure passed /38,73 с**,
+normal exit0, внешний basetemp, без CAD. Реальный искусственный JobRunner/SQLite
+сохранил setup unknown/unresolved и original producer error; refusal batch и
+cleanup не вызваны. Это диагностическая подготовка, не исправление native mismatch.

@@ -207,6 +207,38 @@ def test_equation_file_is_exclusive_private_and_exact_before_any_cad(b2_private_
     with pytest.raises(FileExistsError):helper.prepare_equation_file(b2_private_dir)
 
 
+def test_returned_dimension_failure_is_preserved_in_wrapper_without_refusal_or_cleanup(native_case):
+    from solidworks_mcp.jobs import ExecutionFailure
+    x=native_case
+    error=ExecutionFailure('persistent_reference_mismatch',
+        'Dimension no longer belongs to the persistent owner feature.')
+    failures=[]
+    class Session(helper.B2ImpactSession):
+        def capture(self,*args,**kwargs):
+            def reject(*_):
+                failures.append(error)
+                raise error
+            self.target.adapter.dimension_reference_is_current=reject
+            return super().capture(*args,**kwargs)
+    hook=x.make_hook(session_factory=Session)
+    with pytest.raises(ValueError,match='setup terminal'):
+        hook.retire(x.sw,None,x.binding.model,[x.binding.model],x.owned,lambda _:None)
+    report=hook.report
+    diagnostic=report['dimension_read_failure']
+    assert failures==[error]
+    assert diagnostic==hook.session.target.dimension_read_failure
+    assert diagnostic['stage']=='dimension_reference_is_current'
+    assert diagnostic['dimension_role'] in ('width','height','depth')
+    assert diagnostic['boundary']=='current_capture'
+    assert diagnostic['exception_code']==error.code and diagnostic['exception_message']==str(error)
+    assert all(diagnostic[k] is False for k in ('accepted','native_b2_accepted','cleanup_authorized'))
+    assert report['independent_read_exception_returned']['message']==str(error)
+    assert report['fixture_setup_job']['status']=='unknown'
+    assert report['fixture_setup_job']['mutation']['phase']=='unresolved'
+    assert report['fixture_setup_job']['mutation']['reconciliation'] is None
+    assert 'refusal_batch' not in report and x.delegations==[]
+
+
 def test_equation_file_creation_outside_work_is_rejected(b2_outside_dir):
     with pytest.raises(ValueError,match='private fixture state'):
         helper.prepare_equation_file(b2_outside_dir)

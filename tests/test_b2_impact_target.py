@@ -182,3 +182,109 @@ def test_explicit_native_equivalence_uses_current_body_and_rejects_change_during
         assert result['accepted'] is False and result['cleanup_authorized'] is False
         assert x.topology_calls[0][0] is current
     assert x.collector.body is original and x.write_calls==writes
+
+
+@pytest.mark.parametrize('role', ['width', 'height', 'depth', 'plane_offset'])
+@pytest.mark.parametrize('stage,method', [
+    ('dimension_reference_is_current', 'dimension_reference_is_current'),
+    ('resolve', 'resolve_dimension_id'), ('current_summary', 'dimension_summary')])
+def test_dimension_failure_identifies_original_or_own_plane_without_extra_adapter_reads(target, role, stage, method):
+    x = target
+    plane = own_plane_dimension(x)
+    record = plane if role == 'plane_offset' else x.collector.dimensions[x.collector.dimension_roles.index(role)]
+    error = ExecutionFailure('persistent_reference_mismatch', 'Artificial normally returned owner mismatch.')
+    calls, after_failure = [], []
+    failed = False
+    adapter = x.c.adapter
+    # Observe all adapter calls, not just the failing getter: no retry, replacement
+    # summary, PID resolution or independent inspection may follow the exception.
+    for name in dir(adapter):
+        original = getattr(adapter, name)
+        if name.startswith('__') or not callable(original):
+            continue
+        def observed(*args, _name=name, _original=original, **kwargs):
+            nonlocal failed
+            if failed:
+                after_failure.append(_name)
+            calls.append(_name)
+            selected = (_name == method and
+                (args[1] == record.anchor if method == 'resolve_dimension_id' else
+                 args[0 if method == 'dimension_summary' else 1] is record))
+            if selected:
+                failed = True
+                raise error
+            return _original(*args, **kwargs)
+        setattr(adapter, name, observed)
+    with pytest.raises(ExecutionFailure) as caught:
+        x.collector.capture()
+    assert caught.value is error
+    assert after_failure == [] and calls[-1] == method
+    context = x.collector.dimension_read_failure
+    assert context['dimension_role'] == role and context['stage'] == stage
+    assert context['boundary'] == 'current_capture'
+    assert context['original_anchor'] == context['current_anchor'] == record.anchor
+    assert context['exception_type'] == 'ExecutionFailure'
+    assert context['exception_code'] == error.code and context['exception_message'] == str(error)
+    assert all(context[key] is False for key in ('accepted', 'native_b2_accepted', 'cleanup_authorized'))
+    # Diagnostic anchors are detached Python values, no retained mutable alias.
+    record.anchor['test_change'] = True
+    assert 'test_change' not in context['original_anchor']
+    assert x.c.native_calls[-1] == 'watch_closed'
+
+
+@pytest.mark.parametrize('role', ['width', 'plane_offset'])
+def test_closing_dimension_failure_does_not_claim_an_unread_current_anchor(target, role):
+    x = target
+    plane = own_plane_dimension(x)
+    record = plane if role == 'plane_offset' else x.collector.dimensions[x.collector.dimension_roles.index(role)]
+    original = x.c.adapter.dimension_reference_is_current
+    count = 0
+    error = ValueError('Artificial closing failure')
+    def fail_on_closing(model, current, anchor):
+        nonlocal count
+        if current is record:
+            count += 1
+            if count == 2:
+                raise error
+        return original(model, current, anchor)
+    x.c.adapter.dimension_reference_is_current = fail_on_closing
+    with pytest.raises(ValueError) as caught:
+        x.collector.capture()
+    assert caught.value is error
+    context = x.collector.dimension_read_failure
+    assert context['boundary'] == 'closing_capture' and context['dimension_role'] == role
+    assert context['original_anchor'] == record.anchor and context['current_anchor'] is None
+    assert context['exception_code'] is None
+
+
+def test_new_plane_anchor_failure_does_not_invent_a_retained_anchor(target):
+    x = target
+    record = own_plane_dimension(x)
+    original = x.c.adapter.dimension_persistent_id
+    error = ExecutionFailure('persistent_reference_unavailable', 'Artificial plane anchor failure.')
+    def fail(model, current):
+        if current is record:
+            raise error
+        return original(model, current)
+    x.c.adapter.dimension_persistent_id = fail
+    with pytest.raises(ExecutionFailure) as caught:
+        x.collector.capture()
+    assert caught.value is error and x.collector.plane_dimension is None
+    context = x.collector.dimension_read_failure
+    assert context['dimension_role'] == 'plane_offset' and context['stage'] == 'current_anchor'
+    assert context['original_anchor'] is None and context['current_anchor'] is None
+
+
+def test_diagnostic_formatting_failure_preserves_the_exact_original_exception(target):
+    class UnformattableError(Exception):
+        def __str__(self):
+            raise RuntimeError('Diagnostic message unavailable')
+    x = target
+    x.helper.add_unused_equation()
+    error = UnformattableError()
+    def fail(*args):
+        raise error
+    x.c.adapter.dimension_reference_is_current = fail
+    with pytest.raises(UnformattableError) as caught:
+        x.collector.capture()
+    assert caught.value is error and x.collector.dimension_read_failure is None

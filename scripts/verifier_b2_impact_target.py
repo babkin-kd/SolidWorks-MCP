@@ -27,6 +27,8 @@ class B2ImpactTarget:
         self.extrusion = extrusion
         self.topology = topology
         self.body_bridge = body_bridge
+        # Python-only failure context, never an admission/cleanup proof.
+        self.dimension_read_failure = None
         require(fixture.used is False, 'Retain the original census before fixture preparation.')
         self.parent = validated_rectangle_snapshot(parent_snapshot)
         require(self.parent['clone_state']['profile'] == BASE, 'Original complete BASE required.')
@@ -41,18 +43,23 @@ class B2ImpactTarget:
         require(len(self.dimensions) == 3, 'Three original native driving dimensions required.')
         self.dimension_identities = tuple(a.identity(a.dimension_object(d)) for d in self.dimensions)
         self.anchors = tuple(a.dimension_persistent_id(b.model, d) for d in self.dimensions)
+        self.dimension_roles = tuple(next((row['role'].removeprefix('dimension:')
+            for row in self.parent['references'] if row['kind'] == 'dimension'
+            and row['token'] == _json(anchor)), None) for anchor in self.anchors)
         roles = {row['full_name']: row['role'].removeprefix('dimension:')
                  for row in self.parent['native_observations']['qualified_dimensions']}
         require(set(roles.values()) == {'width', 'height', 'depth'}, 'Exact original dimension roles required.')
         self.roles = roles
         self.plane_dimension = None
-        for record, anchor in zip(self.dimensions, self.anchors):
-            summary = a.dimension_summary(record, [b.configuration])
+        for index, (record, anchor) in enumerate(zip(self.dimensions, self.anchors)):
+            role = self.dimension_roles[index]
+            summary = self._dimension_read('current_summary', role, anchor, anchor,
+                lambda: a.dimension_summary(record, [b.configuration]), boundary='original_census')
             matches = [row for row in self.parent['references'] if row['kind'] == 'dimension'
                        and row['role'] == 'dimension:' + roles.get(summary['full_name'], '')]
             require(type(anchor) is dict and len(matches) == 1 and _json(anchor) == matches[0]['token'],
                     'Current dimension must retain its actual original primary anchor.')
-            self._dimension(record, anchor)
+            self._dimension(record, anchor, role=role, boundary='original_census', current_anchor=anchor)
         bodies = a.bodies(b.model, 'all')
         require(type(bodies) in (list, tuple) and len(bodies) == 1, 'Exact original solid census required.')
         self.body = bodies[0]
@@ -74,10 +81,34 @@ class B2ImpactTarget:
                 'Only the original unsaved single active configuration is supported.')
         return observed
 
-    def _dimension(self, record, anchor):
+    def _dimension_read(self, stage, role, original_anchor, current_anchor, read, *, boundary):
+        try:
+            return read()
+        except Exception as exc:
+            # Only data already retained/read by the caller. Diagnostic formatting
+            # must never replace the original adapter exception or perform CAD I/O.
+            try:
+                self.dimension_read_failure = json.loads(_json(dict(
+                    scope='b2_dimension_read_failure_diagnostic_v1', boundary=boundary,
+                    dimension_role=role, stage=stage, original_anchor=original_anchor,
+                    current_anchor=current_anchor, exception_type=type(exc).__name__,
+                    exception_code=vars(exc).get('code'), exception_message=str(exc),
+                    accepted=False, native_b2_accepted=False, cleanup_authorized=False)))
+            except Exception:
+                pass
+            raise
+
+    def _dimension(self, record, anchor, *, role=None, boundary='current_capture', current_anchor=None):
         a, b = self.adapter, self.binding
-        require(a.dimension_reference_is_current(b.model, record, anchor) is True
-                and a.identity(a.resolve_dimension_id(b.model, anchor)) == a.identity(a.dimension_object(record)),
+        current = current_anchor
+        def reference():
+            return a.dimension_reference_is_current(b.model, record, anchor) is True
+        def resolve():
+            return a.identity(a.resolve_dimension_id(b.model, anchor)) == a.identity(a.dimension_object(record))
+        # Preserve short-circuit order and the exact original failure.
+        require(self._dimension_read('dimension_reference_is_current', role, anchor, current,
+                    reference, boundary=boundary)
+                and self._dimension_read('resolve', role, anchor, current, resolve, boundary=boundary),
                 'Original dimension/owner/PID membership changed.')
 
     def _current_body(self):
@@ -145,20 +176,27 @@ class B2ImpactTarget:
                 indexes = [i for i, token in enumerate(self.dimension_identities) if identity == token]
                 if indexes:
                     anchor = self.anchors[indexes[0]]
+                    role = self.dimension_roles[indexes[0]]
                 else:
+                    role = 'plane_offset'
                     require(f.case == 'child_plane' and record.owner is not None
                             and a.identity(record.owner) == record.owner_tree_identity == f.created_plane_identity
                             and f._pid(record.owner, 'feature') == f.created_plane_pid,
                             'Extra dimension must belong to the exact normally acknowledged plane.')
-                    anchor = a.dimension_persistent_id(b.model, record)
+                    anchor = self._dimension_read('current_anchor', role,
+                        self.plane_dimension[2] if self.plane_dimension is not None else None, None,
+                        lambda: a.dimension_persistent_id(b.model, record), boundary='current_capture')
                     require(type(anchor) is dict and bool(anchor), 'Own plane dimension needs a real primary anchor.')
                     if self.plane_dimension is None:
                         self.plane_dimension = (record, identity, json.loads(_json(anchor)))
                     require(identity == self.plane_dimension[1] and _json(anchor) == _json(self.plane_dimension[2]),
                             'Retained own plane dimension incarnation or anchor was replaced.')
-                require(_json(a.dimension_persistent_id(b.model, record)) == _json(anchor), 'Current primary anchor changed.')
-                self._dimension(record, anchor)
-                summary = a.dimension_summary(record, [b.configuration])
+                current_anchor = self._dimension_read('current_anchor', role, anchor, None,
+                    lambda: a.dimension_persistent_id(b.model, record), boundary='current_capture')
+                require(_json(current_anchor) == _json(anchor), 'Current primary anchor changed.')
+                self._dimension(record, anchor, role=role, current_anchor=current_anchor)
+                summary = self._dimension_read('current_summary', role, anchor, current_anchor,
+                    lambda: a.dimension_summary(record, [b.configuration]), boundary='current_capture')
                 if not indexes:
                     name = summary['full_name']
                     require(type(name) is str and bool(name) and name not in current_roles,
@@ -191,10 +229,11 @@ class B2ImpactTarget:
             controls = a.dimension_context(b.model)
             require(all(type(value) is dict and bool(value) for value in (sketch, extrusion, ancillary, controls)),
                     'Every current target inventory must be available; no replacement values.')
-            for record, anchor in zip(self.dimensions, self.anchors):
-                self._dimension(record, anchor)
+            for index, (record, anchor) in enumerate(zip(self.dimensions, self.anchors)):
+                self._dimension(record, anchor, role=self.dimension_roles[index], boundary='closing_capture')
             if self.plane_dimension is not None:
-                self._dimension(self.plane_dimension[0], self.plane_dimension[2])
+                self._dimension(self.plane_dimension[0], self.plane_dimension[2],
+                                role='plane_offset', boundary='closing_capture')
             closing_body=self._current_body()
             require(a.identity(closing_body)==current_body_identity,
                     'Body incarnation changed during ancillary collection.')

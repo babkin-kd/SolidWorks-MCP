@@ -229,6 +229,10 @@ class OwnImpactHook(OwnLeafPositiveHook):
         if self.fixture is not None:
             report['fixture_preparation_diagnostic']=detached(self.fixture.evidence())
             persist()
+        if self.session is not None:
+            # Held Python context only: never query CAD again after a failed read.
+            report['dimension_read_failure']=detached(getattr(self.session.target,'dimension_read_failure',None))
+            persist()
         report['fixture_setup_job']=detached(store.get(setup_job['operation_id']));persist()
         require(setup_job==report['fixture_setup_job'] and setup_job['status']=='succeeded' and setup_job['error'] is None
             and setup_job['mutation']['phase']=='committed' and setup_job['mutation']['verification']['outcome']=='committed'
