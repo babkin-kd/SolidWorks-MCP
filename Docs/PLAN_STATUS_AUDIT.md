@@ -2,6 +2,13 @@
 
 ## Текущий итог
 
+Следующее локальное B2-продолжение: executable passive terminal prerequisite
+audit,70 related pure/44,96 с, actual live faults refusal до candidate checks.
+Оригинальные validators/SQLite readers не подменены; report/parent/journal
+changes отклоняются. Native/process/cleanup полномочия отсутствуют, actual
+успешный faults gate пока pending. Это подготовка конечной очереди, не
+принятая CAD-операция; remote CI предыдущего пакета её не покрывает.
+
 Пассивная подготовка preview/delete дополнена [конечным чек-листом
 dispatch](B2_DEV97_DISPATCH_CHECKLIST.md): команды трёх N5 и public, actual
 terminal/cleanup/SQL gates, отдельные ограничения автоматического preflight.

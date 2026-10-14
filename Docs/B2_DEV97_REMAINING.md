@@ -52,6 +52,16 @@ native_calls_live=false не означает завершения процес�
 сам проверяет только positive; faults и terminal/cleanup предыдущего владельца
 проверяются отдельно. Public preflight не принимает три внутренних N5 и
 публичную N5 refusal chain автоматически; эти остатки остаются видимыми.
+
+Пассивный `scripts/verifier_b2_terminal_prerequisites.py` сводит actual
+positive/fault validators без metadata subprocess и COM. До candidate identity
+требует terminal reports/cleanup/baseline; сверяет exact wheel, оба parent
+reports и полные raw SQLite journals до/после проверки. Gate не разрешает
+dispatch/cleanup: original process exit всё равно наблюдает один владелец.
+70 связанных pure-тестов прошли /44,96 с на artificial domain и реальном
+SQLite, включая изменения отчётов/БД в ходе проверки. Actual незавершённый
+faults1 отклонён до candidate checks: CAD/process calls=[]. Положительный
+actual same-wheel gate ещё не запускался, пока текущий процесс выполняется.
 Собственные контрольные документы закрываются без сохранения после окончания
 вызовов и проверки владения; пользовательские документы не затрагиваются.
 Все частные модели, журналы и полные отчёты остаются вне публичного Git.
