@@ -293,3 +293,39 @@ normal exit0. Remote CI38495337250/job115629709085 на eaf5e5b завершил
 success: unit11274/323 deselected /979,00 с, lock/build/isolated install и
 metadata83 passed без CAD. Native B4 по-прежнему not_run; source-only
 переносимость подтверждена этим CI, actual Q/server/restart gates остаются.
+
+## Installed metadata launcher — подготовка 14.10.2026
+
+Новые отдельные scripts/verifier_b4_installed_child.py и tests поддерживают
+fixed direct-base child, original Popen handle/start/nonce, exact installed
+wheel/build/package/SDK и собственный metadata-only transport. SDK stdio_client
+не используется: его timeout shutdown может terminate/kill процесс.
+Normal EOF/server_v2.main return/exit0/complete empty journal — отдельное
+доказательство lifecycle; native Q/recovery/restart/reconciliation остаются not_run.
+
+Related71 pure passed/5,38 с без actual installed server/CAD. Root actual
+attempt1 на dev97 завершился failed до импорта entrypoint: -S не добавил
+pywin32 paths, ModuleNotFoundError: pywintypes. Child-ready был записан слишком
+рано. Отдельный read-only audit подтвердил, что исходный child уже завершён
+и server/jobs.sqlite не создан; CAD/job calls не было. Исходный failed report
+сохранён. Исправляются explicit installed Windows dependencies и ready ordering;
+actual launch/close этим ещё не принят. Текущий B2 native owner не затронут.
+
+Attempt2 actual installed server/SDK metadata и normal EOF/exit0 прошли, но
+post-exit collector failed: sibling import не зарегистрировал модуль для
+dataclasses. Отдельный root audit подтвердил sdk_closed/eof_sent, точный
+normal-server-return identity, exit0,83 tools и пустой journal; исходный
+failed receipt оставлен failed, lifecycle gate им не принят.
+
+После explicit anchored pywin32 paths/DLL module-file hashes и исправления
+sibling registration — related90 pure passed/5,56 с. Ready публикуется после
+импорта реального entrypoint, .pth/user site не выполняются; при import failure
+старый module binding восстанавливается. Helpers зафиксированы до integration.
+
+Fresh attempt3 на exact installed dev97 завершился normal exit0:
+metadata_process_passed=true,83 tools, exact original PID/start/nonce/wheel/
+package/SDK/Windows dependency identity, normal server_v2.main return, SDK
+close/EOF, фактический exit0 и complete actual journal=[] подтверждены.
+CAD/job calls=[]; SolidWorks не подключался. **Принят только metadata-only
+launch/close bridge.** Native Q, controlled unfinished exit, recovery/restart
+и reconciliation всё ещё not_run; B4-N4/общий B4 этим не закрываются.

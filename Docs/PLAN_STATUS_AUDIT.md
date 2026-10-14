@@ -14,6 +14,13 @@ probe normal247,71 с:59 returned steps,15 current anchors и retained anchors,
 доказательством, unknown не повторялся; рабочая v1 сохранена.
 [Точная подготовка и очередь dev97](CANDIDATE_DEV97_PREPARATION.md).
 
+Независимый B4 installed metadata bridge принят в ограниченном actual scope:
+source90 related pure, fresh attempt3 actual dev97 SDK83 tools, normal
+server_v2.main return/EOF/exit0, original process identity и пустой actual
+journal. CAD/job calls=[]; B2 владелец не затронут. Attempt1 import pywintypes
+и attempt2 module-loader failures сохранены. Native Q/restart/reconciliation
+not_run, B4 открытый. [Доказательства и границы](B4_NATIVE_DRIVER_MAP.md).
+
 CI-import source-кандидат34ccab5 прошёл один финальный full pure:
 **11274 passed,323 CAD deselected /478,61 с**, normal exit0, без изменения
 source/tests в прогоне. До него root214 related/11,72 с без PYTHONPATH passed.
