@@ -1,5 +1,12 @@
 # Конечная карта native-драйвера B4
 
+14.10.2026 подготовлен [MCP protocol bridge](B4_PROTOCOL_BRIDGE_ACCEPTANCE.md):
+268 related pure/15,51 с, actual ClientSession/FastMCP memory+original
+controller/host/worker/SQLite artificial-CAD late-result chain. Реальный
+queued/running first response и два bound polls подтверждены в source scope.
+Actual installed native child transport, independent Q/postconditions и
+native N3/recovery остаются not_run; metadata-only launcher CAD не допускает.
+
 14.10.2026 подготовлен [finite live command host](B4_LIVE_COMMAND_HOST_ACCEPTANCE.md):
 265 related pure/15,13 с, original host/controller/worker/SQLite artificial-CAD
 arm→held finish→release→normal close. Actual installed metadata attempt11:

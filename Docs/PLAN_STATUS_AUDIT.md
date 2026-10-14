@@ -2,6 +2,12 @@
 
 ## Текущий итог
 
+Новое локальное B4-продолжение: [protocol bridge](B4_PROTOCOL_BRIDGE_ACCEPTANCE.md),
+268 related pure/15,51 с; actual SDK memory first queued/running, original
+held finish, atomic release, два bound polls и source one-setter/no-replay-effect.
+CAD/physical writer искусственные; actual installed native transport/Q не приняты.
+Нового wheel/push/CI нет. B2 native ещё live: stale/foreign passed, no-effect pending.
+
 Последующее локальное B4-продолжение: [live command host](B4_LIVE_COMMAND_HOST_ACCEPTANCE.md),
 265 related pure/15,13 с и actual metadata attempt11 SDK83/exit0/journal=[];
 inspect при открытом Runtime, original host thread return и manifests проверены.
