@@ -374,3 +374,27 @@ Installed native transport этим ещё не реализован. Следу
 integration gate — one-shot привязка target operation_id из проверенного
 actual structured response, затем observation polling и original finish seam.
 Будущий job ID не придумывается; неизвестные операции не допускаются.
+
+## Исходный dimension callback и guard — source, 14.10.2026
+
+DimensionReturnObserver из verifier_b4_dimension_return.py устанавливается
+на уже подготовленные исходные Runtime/DimensionCatalog. Он оборачивает
+один exact dimension.set_value callback, вызывает исходный метод и возвращает
+исходный результат. Штатный ApplicationModelMutationGuard выполняется без
+изменений; receipt копирует сохранённые acquisition/release/UI/selection
+наблюдения, не добавляя CAD reads и не создавая native ledger events.
+Проверяются original request/operation/payload/store/epoch и running/prepared
+checkpoint с committed verification до terminal finish.
+
+38 related pure passed /1,08 с вместе с existing finish seam: настоящий
+Runtime/domain/guard/SQLite, искусственный CAD. Потерянный или deferred persist
+acknowledgement оставляет unknown/unresolved и committed verification;
+replay не вызывает вторую запись. Live callback нельзя unwire, foreign guard
+и retired catalog не принимаются. Первый запуск5passed/1failed сохранил
+ошибочное ожидание теста о допустимости uninstall retired catalog; ожидание
+исправлено, исходные проверки wiring не ослаблены.
+
+Actual installed/native подключение пока not_run. Этот return receipt —
+один вход для будущего Q producer; независимые postconditions, закрытый
+admission, отсутствие других queued/live CAD и процессный gate остаются
+обязательными. Native Q/stop/restart/cleanup flags false/not_run.
