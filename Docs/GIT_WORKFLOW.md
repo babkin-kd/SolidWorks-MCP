@@ -117,3 +117,10 @@ readiness; локальный source PYTHONPATH и чистый CI editable-inst
 отдельно. Failed log сохранён в private work/, PR body обновлён direct API.
 Повтор CI не запускать без проверенного исправления; новый push накапливается
 по прежнему пакетному правилу. Native66780 не прерывался.
+
+После исправления importer и root214 pure без PYTHONPATH финальный source34ccab5
+принят full11274/323 CAD deselected (478,61 с). Один последующий packet push
+eaf5e5b выполнен; PR15 draft/open, Checks38495337250/job115629709085 actual
+created. Lock passed, unit in_progress, build/install/metadata pending.
+Failed run38491234891 не перезапускался. Ordinary post-push CI receipt
+сохраняется локально без ещё одного push/CI.
