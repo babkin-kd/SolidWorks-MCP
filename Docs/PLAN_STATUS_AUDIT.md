@@ -2,6 +2,12 @@
 
 ## Текущий итог
 
+Один пакет25df8a6 отправлен в stage-1-fixes нашего форка; actual head PR15
+подтверждён прямым API. Обязательный Checks38510604543 для этого head создан
+и выполняется (conclusion=null); прежний CIeaf не принимается за новый.
+PR остаётся draft, main3ab795e/merge/release не изменялись. Native faults1
+продолжается последовательно; отправка его не прерывала.
+
 Последняя общая source-контрольная точка — [8544742](CHECKPOINT_8544742.md):
 11501 pure passed,323 CAD deselected /485,88 с, normal exit0; source/tests
 заморожены на время прогона. Installed unarmed seam/metadata diagnostics
