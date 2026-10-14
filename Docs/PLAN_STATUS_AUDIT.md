@@ -2,6 +2,13 @@
 
 ## Текущий итог
 
+CI-import source-кандидат34ccab5 прошёл один финальный full pure:
+**11274 passed,323 CAD deselected /478,61 с**, normal exit0, без изменения
+source/tests в прогоне. До него root214 related/11,72 с без PYTHONPATH passed.
+[Контрольная точка](CHECKPOINT_34CCAB5.md). Исправление готовится к одному
+пакетному push с накопленным CI audit; новый CI ещё не создан. Native
+child-plane-5 продолжает BASE-preparation,32 helpers не менялись.
+
 Новый source-кандидат4ec13fb принят одним full pure:
 **11271 passed,323 CAD deselected /477,04 с**, normal exit0; исполняемые
 source/tests не менялись. [Контрольная точка](CHECKPOINT_4EC13FB.md).

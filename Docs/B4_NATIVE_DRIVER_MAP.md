@@ -287,3 +287,7 @@ Historical CI причина без child stderr остаётся гипотез
 **214 pure passed /11,72 с**, normal exit0, все synthetic children terminal,
 без CAD. Exact handle/start/nonce и native_false gates сохранены. Итоговый
 source/CI-кандидат этого исправления ещё должен пройти общий checkpoint.
+
+Финальный source34ccab5 full pure принят11274/323 CAD deselected /478,61 с,
+normal exit0. Это source checkpoint после CI-регрессии; повторный remote
+CI пока не принят и native B4 по-прежнему not_run.
