@@ -8,6 +8,11 @@
 package __version__ ещё dev96. Прогон не засчитан; изменяется только версия
 пакета, затем выполняется новый full согласованного source-кандидата.
 
+Full00b8f0d завершился normal exit1:11312 passed/1 failed/323 CAD deselected,
+477,79 с. Единственный отказ — packaging registry template оставался dev96.
+Кодовые проверки прошли, но full checkpoint не принят. Исправляется версия
+непубликуемого template; packaging subset выполняется до нового full.
+
 ## Законченный блок исправления
 
 Dimension compound anchor разрешает owner feature через существующий строгий
