@@ -8,8 +8,10 @@ source/tests не менялись. [Контрольная точка](CHECKPOI
 Fresh child-plane-5 выполняется на exact installed dev96 после подтверждённой
 очистки и коротких probes, с отдельным journal и32 frozen helpers. Новый
 dimension-read context сохраняется без дополнительных getters после отказа.
-Native pending; предыдущие unknown остаются unresolved. Пакет готов к одному
-push с сохранением draft PR и открытых native-gates.
+Native pending; предыдущие unknown остаются unresolved. Пакет отправлен одним
+push745502e с сохранением draft/open PR15. Прямой API подтвердил новый
+Checks38491234891/job115616648083: lock passed, unit tests in_progress,
+build/install/metadata pending. CI result ещё не принят; native-gates открыты.
 
 Финальный source-кандидат0ec9ab9 прошёл один full pure:
 **11237 passed,323 CAD deselected /475,02 с**, normal exit0, без изменения

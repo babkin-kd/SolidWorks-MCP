@@ -101,3 +101,12 @@ L3-P1/B1–B5 и стадия1 остаются открыты. Native L3-I1 dev
 `unit-and-build` и обязательные lock/unit/build/install/metadata этапы
 завершились success. Этот CI относится к head9489360; native gates остаются
 отдельными. Merge/main и публикация не выполнялись.
+
+14.10.2026: накопленный пакет body binding/B3 maintenance/B4 own-child/B2
+diagnostics отправлен одним push745502e после source4ec13fb full11271/323
+CAD deselected (477,04 с). Прямой API подтвердил draft/open PR15 и
+Checks38491234891/job115616648083: lock passed, unit in_progress,
+build/install/metadata pending. Native child-plane-5 выполняется отдельно;
+unknown предыдущего прогона сохранён, own cleanup/baseline подтверждены.
+Этот журнал отправки сохраняется локально для следующего пакета; отдельный
+push документации не нужен. Новый CI пока не объявляется успешным.

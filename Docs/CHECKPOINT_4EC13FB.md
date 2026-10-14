@@ -24,7 +24,11 @@ Fresh child-plane-5 начат с новой диагностикой, отде�
 32 frozen helpers. Native результат pending; source full его не принимает.
 [Доказательства и границы](B2_DIMENSION_OWNER_DIAGNOSTIC.md).
 
-Этот кандидат готовится к одной пакетной отправке. PR15 остаётся draft:
+Пакет отправлен одним push с head745502e2e89ae248c12bb47a623fff35810044b0.
+Прямой API подтвердил draft/open PR15 с этим head и base main3ab795e.
+Checks run38491234891/job115616648083 созданы: lock passed, unit tests выполняются,
+build/install/installed metadata ещё pending. Это не успешный итог CI.
+PR15 остаётся draft:
 B2/public/N5, B3 actual SDK/13 groups, B4 native и B5 остаются открытыми.
-Новый CI должен проверяться по фактическому pushed head; старый green771befa
+Новый CI проверяется по фактическому pushed head; старый green771befa
 не переносится на новый пакет. Merge/main/release не выполняются.
