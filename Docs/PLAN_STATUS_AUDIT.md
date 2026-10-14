@@ -8,6 +8,13 @@
 PR остаётся draft, main3ab795e/merge/release не изменялись. Native faults1
 продолжается последовательно; отправка его не прерывала.
 
+Последующее локальное B4-продолжение: integrated child control+launcher
+138 related pure/4,72 с и actual metadata attempt6 exact installed dev97
+normal exit0/SDK83/journal=[]; original cold runtime/proxy/durable close и
+factories подтверждены. CAD/job calls=[], native Q/recovery не приняты.
+Это новый локальный блок после опубликованного25df, remote CI его не покрывает;
+отдельного push/CI нет. [Точные границы](B4_NATIVE_DRIVER_MAP.md).
+
 Последняя общая source-контрольная точка — [8544742](CHECKPOINT_8544742.md):
 11501 pure passed,323 CAD deselected /485,88 с, normal exit0; source/tests
 заморожены на время прогона. Installed unarmed seam/metadata diagnostics

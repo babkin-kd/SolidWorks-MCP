@@ -421,3 +421,30 @@ SQLite не заимствуется и не меняется. CAD искусс�
 fixture ошибочно передала DocumentCatalog с другого потока. Исправлен setup
 на создание нового каталога и discovery на собственном worker; owning-thread
 проверки не ослаблены. Тесты независимы от текущего native B2-владельца.
+
+## Integrated child-owned control — source и installed metadata
+
+InstalledDimensionControl соединяет original store/runtime seam и callback/
+guard observer в одном own-root controller. Arm однократен после terminal
+discovery/reads; actual whole journal и original prepared catalog/epoch/target
+проверяются без новых COM/getters. Сохраняются отдельные durable callback-return
+и finish-barrier receipts, связанные с immutable launch version/nonce/root.
+Release завершает только исходный held finish; перед normal shutdown observer
+снимается, normal close сверяет журнал/holds и восстанавливает factories.
+Unknown/failed persist, foreign wiring и launch-manifest drift не повторяются.
+
+Agent related78/5,03 с — real Runtime/domain/SQLite, artificial CAD; root
+controller+launcher138/4,72 с — source/pure без процессов/CAD. Metadata-only
+профиль dimension_control проверяет cold original Runtime (runner/catalog/
+dimensions absent), unarmed proxy, normal close, durable original close receipt
+и factories restored. Missing/foreign/changed close evidence отвергается отдельно
+от metadata success.
+
+Fresh actual installed dev97 attempt6 завершился normal exit0: SDK83,
+metadata_process_passed/profile_passed/dimension_control_wiring_passed=true,
+actual journal=[], CAD/job calls=[]. Сверены original process/wheel/package/
+dependency/helper identities; контрольные файлы callback/finish не создавались.
+SolidWorks не подключался; exact wheel/native B2 и working v1 не менялись.
+Принята только integrated unarmed startup/close wiring. Actual native arm/
+dispatch, independent postconditions, callback/admission Q, stop/restart/
+reconciliation остаются отдельными открытыми gates; native authority false.

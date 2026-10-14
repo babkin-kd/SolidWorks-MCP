@@ -43,7 +43,8 @@ class FakeProcess:
 
 @pytest.fixture
 def harness(tmp_path, monkeypatch):
-    candidate = dict(wheel={'wheel_sha256': 'a' * 64, 'package_version': 'pure', 'git_sha': 'b' * 40},
+    candidate = dict(wheel={'wheel_sha256': 'a' * 64, 'package_version': 'pure', 'git_sha': 'b' * 40,
+                           'source_digest': 'c' * 64},
         wheel_path='pure-wheel', package_root='pure/site-packages/solidworks_mcp',
         dependency_root='pure/site-packages', console_entrypoint='pure-v2', sdk_version='pure-sdk')
     launches = []
@@ -497,12 +498,15 @@ def test_failed_sibling_import_restores_exact_registry_and_search_path(tmp_path,
         assert name not in sys.modules
 
 
-@pytest.mark.parametrize('profile', ['metadata', 'finish_seam'])
+@pytest.mark.parametrize('profile', ['metadata', 'finish_seam', 'dimension_control'])
 def test_profile_binds_fixed_helper_manifest_spec_and_original_identity(harness, tmp_path, profile):
     child = helper.InstalledMetadataChild(tmp_path / ('profile-' + profile), wheel_path='pure',
         expected_version='pure', expected_git_sha='b' * 40, expected_wheel_sha256='a' * 64, profile=profile)
     assert child.profile == child.spec['profile'] == child.identity['profile'] == profile
-    assert set(child.helpers) == set(helper.HELPERS) | (set(helper.SEAM_HELPERS) if profile == 'finish_seam' else set())
+    extras = {'metadata': (), 'finish_seam': helper.SEAM_HELPERS,
+              'dimension_control': helper.SEAM_HELPERS + ('verifier_b4_installed_dimension_control.py',
+                                                        'verifier_b4_dimension_return.py')}
+    assert set(child.helpers) == set(helper.HELPERS) | set(extras[profile])
     with pytest.raises(AttributeError):
         child.profile = 'other'
 
@@ -620,3 +624,133 @@ def test_parent_seam_wiring_is_separate_from_metadata_success(harness, tmp_path,
     assert result['metadata_process_passed'] is True
     assert result['finish_seam_wiring_passed'] == result['profile_passed'] == (seam_valid is True)
     false_native(result)
+
+
+def valid_control_receipt(child):
+    closed = dict(scope='b4_installed_dimension_control_closed_v1',
+        lineage=helper.control_lineage(child.identity, child.path), target=None, journal=[],
+        original_factories_restored=True, **helper.CONTROL_AUTHORITY)
+    return dict(scope='b4_installed_unarmed_dimension_control_v1', identity=deepcopy(child.identity),
+        journal_path=str((child.path / 'server' / 'jobs.sqlite').resolve()), complete_journal=[],
+        controller_receipt=closed, **{key: True for key in helper.CONTROL_CHECKS}, **helper.flags())
+
+
+@pytest.mark.parametrize('change', ['missing', 'extra', 'foreign_lineage', 'target', 'journal',
+    'bool_as_int', 'native_q', 'postconditions', 'false_close', 'source_digest', 'pid'])
+def test_unarmed_control_receipt_rejects_incomplete_foreign_or_native_claim(harness, change):
+    child = harness[0]
+    value = valid_control_receipt(child)
+    closed = value['controller_receipt']
+    if change == 'missing': value.pop('controller_closed_normally')
+    elif change == 'extra': closed['native_verified'] = True
+    elif change == 'foreign_lineage': closed['lineage']['nonce'] = 'foreign'
+    elif change == 'target': closed['target'] = {'request_id': 'forbidden'}
+    elif change == 'journal': closed['journal'] = [{'status': 'unknown'}]
+    elif change == 'bool_as_int': value['catalog_absent'] = 1
+    elif change == 'native_q': closed['native_q'] = 'proven'
+    elif change == 'postconditions': closed['independent_postconditions'] = 'proven'
+    elif change == 'false_close': closed['original_factories_restored'] = False
+    elif change == 'source_digest': closed['lineage']['source_digest'] = 'f' * 64
+    else: closed['lineage']['owner_pid'] = True
+    with pytest.raises(helper.InstalledChildError):
+        helper.validate_control_receipt(value, identity=child.identity, path=child.path)
+
+
+@pytest.mark.parametrize('control_valid', [True, False, 'missing', 'missing_closed', 'changed_closed',
+                                         'unexpected_callback', 'unexpected_barrier'])
+def test_parent_control_wiring_is_separate_from_metadata_success(harness, tmp_path, monkeypatch, control_valid):
+    _, process, _, _ = harness
+    child = helper.InstalledMetadataChild(tmp_path / 'control-profile-exit', wheel_path='pure', expected_version='pure',
+        expected_git_sha='b' * 40, expected_wheel_sha256='a' * 64, profile='dimension_control')
+    ready(child)
+    child.catalog, child.sdk_closed, child.eof_sent = {'pure_catalog': True}, True, True
+    process.code = 0
+    helper.owned._write(child.path / 'child-normal-return.json', dict(identity=child.identity,
+                                                                  normal_server_return=True, **helper.flags()))
+    value = valid_control_receipt(child)
+    if control_valid is False: value['controller_receipt']['original_factories_restored'] = False
+    if control_valid != 'missing': helper.owned._write(child.path / 'dimension-control-wiring.json', value)
+    if control_valid != 'missing_closed':
+        closed = deepcopy(value['controller_receipt'])
+        if control_valid == 'changed_closed': closed['lineage']['nonce'] = 'foreign'
+        helper.owned._write(child.path / 'dimension-control-closed.json', closed)
+    if control_valid in ('unexpected_callback', 'unexpected_barrier'):
+        name = 'callback-return.json' if control_valid == 'unexpected_callback' else 'finish-barrier.json'
+        helper.owned._write(child.path / name, {'pure': 'unexpected'})
+    monkeypatch.setattr(helper, 'sibling', lambda *args: SimpleNamespace(read_journal=lambda path: []))
+    result = child.observe_exit(0)
+    assert result['metadata_process_passed'] is True
+    assert result['dimension_control_wiring_passed'] == result['profile_passed'] == (control_valid is True)
+    false_native(result)
+
+
+def test_control_profile_installs_before_actual_runtime_and_completes_only_after_normal_main(tmp_path, monkeypatch):
+    from solidworks_mcp.jobs import JobStore
+    from solidworks_mcp.runtime_v2 import Runtime
+    path = tmp_path / 'source-control-entrypoint'
+    path.mkdir()
+    package = tmp_path / 'pure-package'
+    module = SimpleNamespace(JobStore=JobStore, Runtime=Runtime, __file__=str(package / 'server_v2.py'))
+    original_sibling = helper.sibling
+    events = []
+
+    class FakeControl:
+        # Real underlying seam/store/Runtime; artificial control lineage owner,
+        # no processes or CAD. Actual controller tests remain separate.
+        def __init__(self, server, *, state_root, lineage):
+            self.lineage = lineage
+            self.seam = original_sibling('verifier_b4_installed_finish.py', '_source_control_wrapper_seam').InstalledFinishSeam(
+                server, journal_path=state_root / 'server' / 'jobs.sqlite', persist=lambda value: pytest.fail('No arm'))
+
+        def install(self):
+            events.append('install')
+            self.seam.install()
+            return self
+
+        @property
+        def runtime(self):
+            return self.seam.runtime
+
+        @property
+        def proxy(self):
+            return self.seam.proxy
+
+        def complete_normal(self):
+            events.append('complete_normal')
+            assert self.runtime._closed and self.proxy._closed
+            self.seam.uninstall()
+            closed = dict(scope='b4_installed_dimension_control_closed_v1', lineage=deepcopy(self.lineage),
+                target=None, journal=[], original_factories_restored=True, **helper.CONTROL_AUTHORITY)
+            helper.owned._write(path / 'dimension-control-closed.json', closed)
+            return closed
+
+        def inspect_state(self):
+            return dict(phase='closed', fault=None, target=None,
+                persist_attempted={'callback': False, 'finish': False},
+                receipts={'callback': None, 'finish': None}, return_observation=None, barrier_state=None)
+
+    def main():
+        events.append('main')
+        assert (path / 'child-ready.json').exists()
+        assert module.JobStore is not JobStore and module.Runtime is not Runtime
+        store = module.JobStore(path / 'server' / 'jobs.sqlite')
+        runtime = module.Runtime(store)
+        assert runtime._runner is None and runtime._catalog is None
+        assert runtime.shutdown() is True
+        events.append('main_return')
+
+    module.main = main
+    monkeypatch.setattr(helper.importlib, 'import_module', lambda name: module)
+    monkeypatch.setattr(helper, 'sibling', lambda filename, name: SimpleNamespace(InstalledDimensionControl=FakeControl)
+        if filename == 'verifier_b4_installed_dimension_control.py' else original_sibling(filename, name))
+    monkeypatch.setattr(sys, 'argv', list(sys.argv))
+    identity = dict(profile='dimension_control', pid=777, nonce='a' * 64,
+        candidate=dict(wheel=dict(package_version='pure', git_sha='b' * 40,
+                                 wheel_sha256='c' * 64, source_digest='d' * 64)))
+    expected = {'console_entrypoint': 'pure-v2', 'windows_dependencies': {'windows': False}}
+    assert helper.run_verified_entrypoint(path, package, expected, identity, profile='dimension_control') == 0
+    assert events == ['install', 'main', 'main_return', 'complete_normal']
+    receipt = helper.owned._read(path / 'dimension-control-wiring.json')
+    assert helper.validate_control_receipt(receipt, identity=identity, path=path) == receipt
+    assert module.JobStore is JobStore and module.Runtime is Runtime
+    false_native(receipt)
