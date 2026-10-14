@@ -20,7 +20,10 @@ unresolved, read-only producer сообщил persistent_reference_mismatch дл
 принадлежности размера исходному persistent owner feature. Все шесть native
 setup pairs и84 captures вернулись; actual SQL содержит6 jobs без running/
 queued. Unknown и original creation history сохраняются, повтор запрещён.
-Own maintenance ещё проверяется; N5 не принят.
+Own maintenance затем подтверждена: две модели закрыты без сохранения,
+baseline восстановлен, historical unknown неизменён. Короткие проверки
+dimension-owner mismatch не воспроизвели; N5 не принят.
+[Подробности](B2_DIMENSION_OWNER_DIAGNOSTIC.md).
 
 Локальные коммиты после последнего packet head771befa пока не отправлены.
 Green CI38479280563 относится к771befa и не подтверждает этот source-кандидат

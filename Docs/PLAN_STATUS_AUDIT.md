@@ -12,6 +12,14 @@ unknown/unresolved,6 native pairs/84 captures и actual SQL6 jobs без active
 read-only own inspection перед maintenance выполняется. Unknown не повторяется,
 N5 не принят. Installed dev96 и production source не менялись.
 
+Independent own inspection и maintenance child-plane-4 завершились normal:
+два equal current captures, exact PID/windows, close2 controls без сохранения,
+baseline/CIPFalse/non-STL и historical SQL сохранены. Короткие dimension-owner
+probe1/3/4 завершились с own cleanup; mismatch не воспроизведён ни для простого,
+ни для fully-defined B1 profile с retained anchors, ни с CIPFalse reads.
+Проверки owner/CAN/PID не ослаблялись; требуется конкретная read диагностика.
+[Фактические результаты и границы](B2_DIMENSION_OWNER_DIAGNOSTIC.md).
+
 Конечная оставшаяся очередь preview/delete зафиксирована отдельно:
 [B2 dev96 — остатки](B2_DEV96_REMAINING.md). Дополнительный пассивный preflight
 подтвердил exact installed wheel, фактические positive/fault SQL, неизменный
