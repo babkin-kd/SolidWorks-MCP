@@ -1,5 +1,14 @@
 # Разработка нашего форка
 
+Следующая [локальная контрольная точка da7eb7f](CHECKPOINT_DA7EB7F.md):
+11862 pure passed/323 CAD deselected /587,81 с, normal exit0; source/tests/HEAD
+неизменны. Три связанных source-блока готовы к одному пакетному push в draft
+PR15; actual installed metadata attempt12 SDK83/exit0/empty journal. Exact
+native wheel49b/dev97 сохранён; native faults1 ещё live, не прерывается.
+Успешный CI0ea40eb относится к прежнему пакету; новый CI ожидается после push.
+
+## Предыдущие контрольные точки
+
 Выполнена одна следующая пакетная отправка после трёх связанных source-блоков:
 [checkpoint9be9c7a](CHECKPOINT_9BE9C7A.md),11688 pure passed/323 CAD deselected
 /544,68 с, normal exit0, замороженные source/tests/HEAD. Exact wheel49b/dev97

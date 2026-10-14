@@ -24,6 +24,14 @@ N5/public и общий B2 не приняты. [Конечная очередь
 в draft PR15 после full11501; CI38510604543 завершился success (unit11501,
 build/isolated install/metadata83). Native-остатки этим не закрываются.
 
+Следующий [source checkpoint da7eb7f](Docs/CHECKPOINT_DA7EB7F.md):11862 pure
+passed/323 CAD deselected /587,81 с и actual installed metadata attempt12
+SDK83/exit0/empty journal. Native faults1 dev97 продолжает исходный процесс,
+3/5 cases passed; N5/public/B2–B5 открыты. Public N5 refusal chain имеет
+[отдельный конечный остаток](Docs/B2_PUBLIC_N5_IMPLEMENTATION.md), не заменяется
+положительным public-сценарием. Три связанных блока отправляются одним пакетом;
+приёмка нового CI и native остаётся обязательной.
+
 L2 закрыт в принятом ограниченном объёме: **13 внутренних и 11 публичных
 native-случаев на одном установленном dev87**, сохранность соседей и исходной
 сессии подтверждена. Новые режимы открытия — D2-LOADREF. Повторять приёмку

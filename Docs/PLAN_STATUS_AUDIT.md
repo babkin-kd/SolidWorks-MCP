@@ -2,6 +2,17 @@
 
 ## Текущий итог
 
+[Контрольная точка da7eb7f](CHECKPOINT_DA7EB7F.md):11862 pure passed/323 CAD
+deselected /587,81 с, normal exit0 и frozen source/tests/HEAD. Накоплены finite
+host, protocol bridge и original live publication; actual installed metadata
+attempt12 SDK83/exit0/empty journal. Native B4 Q/recovery не приняты.
+Текущий native faults1 dev97 live: stale/foreign/no-effect passed (3/5),
+observation_unknown выполняется. N5/public/B2–B5 и стадия1 остаются открыты;
+[public N5 остаток](B2_PUBLIC_N5_IMPLEMENTATION.md) видим отдельной задачей.
+Один следующий пакет готовится в draft PR15; CI0ea40eb проверил прежний пакет.
+
+## Предыдущие срезы подготовки и отправок
+
 Новое локальное B4-продолжение: [protocol bridge](B4_PROTOCOL_BRIDGE_ACCEPTANCE.md),
 268 related pure/15,51 с; actual SDK memory first queued/running, original
 held finish, atomic release, два bound polls и source one-setter/no-replay-effect.
