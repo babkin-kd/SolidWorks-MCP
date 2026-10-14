@@ -375,6 +375,16 @@ integration gate — one-shot привязка target operation_id из пров
 actual structured response, затем observation polling и original finish seam.
 Будущий job ID не придумывается; неизвестные операции не допускаются.
 
+Последующий source binding завершён:66 related pure passed /0,81 с.
+При явном target_poll_limit=1…64 controller однократно получает target job ID
+из original dimension_set_value RPC reply после normal write/flush и strict
+envelope/context проверки. По умолчанию budget0, binding выключен.
+Dynamic job_get допускается только для этого ID, последовательно и в конечном
+бюджете; actual JobStore DTO/request/operation/payload/context проверяются.
+Foreign/duplicate reply и unknown transport не дают bind/retry/Q. Тесты
+используют настоящие UUID/DTO JobStore с искусственным транспортом; installed
+SDK/native подключение и независимо доказанный Q по-прежнему not_run.
+
 ## Исходный dimension callback и guard — source, 14.10.2026
 
 DimensionReturnObserver из verifier_b4_dimension_return.py устанавливается

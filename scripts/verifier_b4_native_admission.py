@@ -1,13 +1,14 @@
 """Finite dimension-only MCP transport admission; never native Q/stop proof.
 
 One exact dimension_set_value, optionally preceded by dimension_get. Observation
-requests (system_get_info/job_get) are fixed in advance. A future actual target
-operation_id is NOT fabricated or bound here: polling it needs a separate
-one-shot binding from a verified structured response in installed integration.
+requests are fixed in advance. Optional bounded target polling binds the actual
+job ID once from the original validated mutation response, never from caller
+input. Native admission/callback/guard Q and installed integration stay separate.
 """
 from copy import deepcopy
 import hashlib
 import inspect
+import re
 from threading import RLock
 
 from mcp.types import JSONRPCMessage, CallToolResult
@@ -92,7 +93,9 @@ class DimensionAdmission:
     observe_response is transport evidence only, not a callback/guard Q producer.
     """
 
-    def __init__(self, *, cad_requests, observation_requests, target_operation, target_payload):
+    def __init__(self, *, cad_requests, observation_requests, target_operation, target_payload, target_poll_limit=0):
+        require(type(target_poll_limit) is int and 0 <= target_poll_limit <= 64,
+                'Target poll limit must be an explicit integer 0..64 (default disabled).')
         require(type(cad_requests) is tuple and 1 <= len(cad_requests) <= 2, 'Finite one/two CAD requests required.')
         require(type(observation_requests) is tuple and len(observation_requests) <= 32, 'Finite observations required.')
         self._cad = tuple(plan(value) for value in cad_requests)
@@ -121,6 +124,58 @@ class DimensionAdmission:
         self._records = []
         self._rpc_ids = set()
         self._write_active = False
+        self._target_poll_limit = target_poll_limit
+        self._target_poll_emitted = 0
+        self._target_binding = None
+        self._target_poll_failed = False
+
+    def _bind_target_from_record(self, record):
+        if self._target_poll_limit == 0 or record['name'] != 'dimension_set_value' or not record.get('response_validated'):
+            return
+        if record['write_state'] == 'started':
+            return  # Early reply is observed; binding waits for original flush.
+        require(not self._unknown and record['write_state'] == 'emitted' and not self._target_poll_failed,
+                'Known original mutation write/flush evidence required for target binding.')
+        require(self._target_binding is None, 'Original target job binding is one-shot; no replacement.')
+        operation_id = record['response_operation_id']
+        require(type(operation_id) is str and re.fullmatch(r'job_[0-9a-f]{32}', operation_id) is not None,
+                'Actual current JobStore job identity required; no guessed target IDs.')
+        self._target_binding = dict(scope='b4_transport_target_job_binding_v1', operation_id=operation_id,
+            rpc_id=record['rpc_id'], request_id=record['arguments']['request_id'], operation=self._target_operation,
+            payload=deepcopy(self._target_payload), transport_only=True)
+
+    def _validate_target_job(self, response):
+        binding = self._target_binding
+        require(binding is not None and not self._target_poll_failed and not self._unknown,
+                'Original target job binding and known transport required.')
+        row = response.data
+        keys = {'operation_id', 'request_id', 'operation', 'payload', 'status', 'created_at', 'updated_at', 'result', 'error'}
+        require(type(row) is dict and set(row) in (keys, keys | {'mutation'}), 'Exact public JobStore DTO required.')
+        require(response.operation_id == row['operation_id'] == binding['operation_id']
+                and row['request_id'] == binding['request_id'] and row['operation'] == binding['operation']
+                and _json(row['payload']) == _json(binding['payload'])
+                and _json(response.context) == _json(binding['payload']['context'])
+                and response.status == row['status'], 'Original target job operation/request/payload/context lineage differs.')
+        require(all(type(row[key]) in (int, float) and row[key] >= 0 for key in ('created_at', 'updated_at'))
+                and (row['result'] is None or type(row['result']) is dict)
+                and (row['error'] is None or type(row['error']) is dict), 'Exact finite job timestamps/result/error required.')
+        envelope_error = None if response.error is None else response.error.model_dump(mode='json')
+        require(_json(envelope_error) == _json(row['error']), 'Target job envelope/error differs from original DTO.')
+        if 'mutation' in row:
+            mutation = row['mutation']
+            mutation_keys = {'operation_id', 'connection_epoch', 'document_id', 'configuration', 'expected_revision',
+                             'before_state', 'phase', 'verification', 'reconciliation', 'updated_at'}
+            require(type(mutation) is dict and set(mutation) == mutation_keys
+                    and mutation['operation_id'] == binding['operation_id']
+                    and all(mutation[key] == binding['payload']['context'][key]
+                            for key in ('document_id', 'configuration', 'expected_revision'))
+                    and type(mutation['connection_epoch']) is str and bool(mutation['connection_epoch'])
+                    and type(mutation['before_state']) is dict
+                    and mutation['phase'] in ('prepared', 'committed', 'rolled_back', 'not_started', 'unresolved', 'reconciled')
+                    and all(mutation[key] is None or type(mutation[key]) is dict for key in ('verification', 'reconciliation'))
+                    and type(mutation['updated_at']) in (int, float) and mutation['updated_at'] >= 0,
+                    'Target checkpoint DTO scope/shape differs; no mutation/reconciliation authority.')
+        _json(row)
 
     def _reject(self, message):
         self._closed = True
@@ -151,13 +206,30 @@ class DimensionAdmission:
                 kind = 'observation' if value['name'] in ('system_get_info', 'job_get') else 'cad'
                 require(not self._unknown, 'Unknown partial write retains transport; no further sends.')
                 if kind == 'cad':
+                    target_poll = False
+                    dynamic_target_poll = False
                     require(not self._closed and self._cad_next < len(self._cad), 'CAD admission permanently closed/exhausted.')
                     require(not any(record['kind'] == 'cad' and record.get('server_status') != 'succeeded'
                                     for record in self._records), 'Prior CAD request not confirmed succeeded; no parallel CAD.')
                     expected = self._cad[self._cad_next]
                 else:
-                    require(self._observation_next < len(self._observations), 'Observation plan exhausted.')
-                    expected = self._observations[self._observation_next]
+                    next_observation = self._observations[self._observation_next] if self._observation_next < len(self._observations) else None
+                    target_poll = value['name'] == 'job_get' and self._target_binding is not None \
+                        and value['arguments']['operation_id'] == self._target_binding['operation_id']
+                    known_match = next_observation is not None and _json(value) == _json(next_observation)
+                    dynamic_target_poll = target_poll and not known_match
+                    if target_poll:
+                        require(not self._target_poll_failed, 'Target polling unavailable after invalid response.')
+                        require(not any(record.get('target_poll') and not record['response_observed'] for record in self._records),
+                                'Original target poll response still in flight; no overlapping target polls.')
+                    if known_match:
+                        expected = next_observation
+                    elif dynamic_target_poll:
+                        require(self._target_poll_emitted < self._target_poll_limit, 'Target finite budget exhausted.')
+                        expected = dict(name='job_get', arguments={'operation_id': self._target_binding['operation_id']})
+                    else:
+                        require(next_observation is not None, 'Observation plan exhausted; target job unbound.')
+                        expected = next_observation
                 require(_json(value) == _json(expected), 'Owner plan name/typed payload drift.')
                 require(all(callable(function) and not inspect.iscoroutinefunction(function)
                             and not inspect.isgeneratorfunction(function) and not inspect.isasyncgenfunction(function)
@@ -167,7 +239,8 @@ class DimensionAdmission:
             except Exception as exc:
                 return self._reject(str(exc))
             record = dict(sequence=len(self._records) + 1, rpc_id=rpc_id, kind=kind,
-                          name=value['name'], arguments=value['arguments'], write_state='started', response_observed=False)
+                          name=value['name'], arguments=value['arguments'], write_state='started', response_observed=False,
+                          target_poll=target_poll, dynamic_target_poll=dynamic_target_poll)
             self._records.append(record)
             self._rpc_ids.add(rpc_key)
             self._write_active = True
@@ -189,7 +262,15 @@ class DimensionAdmission:
                 self._cad_next += 1
             else:
                 self._observation_emitted += 1
-                self._observation_next += 1
+                if dynamic_target_poll:
+                    self._target_poll_emitted += 1
+                else:
+                    self._observation_next += 1
+            try:
+                self._bind_target_from_record(record)
+            except Exception as exc:
+                self._target_poll_failed = True
+                return self._reject(str(exc))
             return dict(sequence=record['sequence'], emitted=True, payload_sha256=hashlib.sha256(payload).hexdigest())
 
     def observe_response(self, message):
@@ -203,12 +284,14 @@ class DimensionAdmission:
                            and record['rpc_id'] == raw['id']]
                 require(len(matches) == 1 and not matches[0]['response_observed'], 'Original unseen response required.')
             except Exception as exc:
+                self._target_poll_failed = True
                 return self._reject(str(exc))
             record = matches[0]
             record['response_observed'] = True
             record['response_validated'] = False
             try:
                 if 'error' in raw:
+                    require(not record.get('target_poll'), 'Target poll requires its exact structured JobStore DTO.')
                     record['server_status'] = None
                 else:
                     result = CallToolResult.model_validate(raw['result'], strict=True)
@@ -222,11 +305,17 @@ class DimensionAdmission:
                                 and _json(response.context) == _json(expected_context),
                                 'Original CAD response job/context binding required.')
                     record['server_status'] = response.status
-                    record['response_validated'] = True
                     if response.status == 'succeeded':
                         require(response.error is None, 'Succeeded response cannot hide an error.')
+                    if record.get('target_poll'):
+                        self._validate_target_job(response)
+                    record['response_operation_id'] = response.operation_id
+                    record['response_validated'] = True
+                    self._bind_target_from_record(record)
             except Exception as exc:
                 record['server_status'] = None
+                record['response_validated'] = False
+                self._target_poll_failed = True
                 return self._reject(str(exc))
             # A late reply never manufactures missing write+flush evidence.
             if record['kind'] == 'cad' and record['server_status'] != 'succeeded':
@@ -243,4 +332,6 @@ class DimensionAdmission:
                 in_flight_observations=sum(record['kind'] == 'observation' and not record['response_observed'] for record in self._records),
                 records=deepcopy(self._records), accepted=False, native_q='not_run', native_admission='not_run',
                 process_stop_authorized=False, restart_authorized=False, cad_cleanup_authorized=False,
-                target_job_observation_binding='not_run')
+                target_job_observation_binding='not_run' if self._target_binding is None else deepcopy(self._target_binding),
+                target_poll_limit=self._target_poll_limit, target_poll_emitted=self._target_poll_emitted,
+                target_poll_failed=self._target_poll_failed)

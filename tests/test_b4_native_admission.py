@@ -6,6 +6,7 @@ from threading import Event, Thread
 
 from mcp.types import JSONRPCMessage
 import pytest
+from solidworks_mcp.jobs import JobStore
 
 
 spec = importlib.util.spec_from_file_location('_b4_native_admission_tests',
@@ -23,9 +24,10 @@ TARGET = dict(arguments={key: value for key, value in SET['arguments'].items() i
               context=CONTEXT, mutates=True)
 
 
-def controller(*, with_get=False, cad=None, observations=OBSERVATIONS, target=TARGET):
+def controller(*, with_get=False, cad=None, observations=OBSERVATIONS, target=TARGET, target_poll_limit=0):
     return helper.DimensionAdmission(cad_requests=cad if cad is not None else (GET, SET) if with_get else (SET,),
-        observation_requests=observations, target_operation='dimension.set_value', target_payload=target)
+        observation_requests=observations, target_operation='dimension.set_value', target_payload=target,
+        target_poll_limit=target_poll_limit)
 
 
 def request(value, rpc_id=1):
@@ -286,3 +288,226 @@ def test_reentrant_physical_writer_cannot_send_second_cad_even_with_early_reply(
     current.write_message(request(GET), write, lambda: None)
     assert denied and 'reentrant' in denied[0] and len(pipe) == 1
     assert current.receipt()['emitted'] == 1 and current.receipt()['admission_closed']
+
+
+@pytest.fixture
+def real_job(tmp_path):
+    # Genuine JobStore-generated ID and public DTO, synthetic operation only.
+    # This fixture does not execute a CAD callback or create a native receipt.
+    store = JobStore(tmp_path / 'own-jobs.sqlite')
+    row, created = store.create(SET['arguments']['request_id'], 'dimension.set_value',
+                               TARGET['arguments'], TARGET['context'], mutates=True)
+    assert created and row['operation_id'].startswith('job_')
+    yield store, row['operation_id']
+    store.close()
+
+
+def envelope(row, rpc_id, *, mutation_reply=False):
+    data = row['result'] if mutation_reply else row
+    return JSONRPCMessage.model_validate(dict(jsonrpc='2.0', id=rpc_id, result={
+        'content': [], 'structuredContent': dict(status=row['status'], operation_id=row['operation_id'],
+            context=row['payload']['context'], data=data, error=row['error'], diagnostics=[])}))
+
+
+def bound_controller(real_job, *, limit=2):
+    store, oid = real_job
+    current, pipe = controller(target_poll_limit=limit), []
+    current.write_message(request(SET), write_to(pipe), lambda: None)
+    current.observe_response(envelope(store.get(oid), 1, mutation_reply=True))
+    return current, pipe
+
+
+def poll(oid, rpc_id):
+    return request(dict(name='job_get', arguments={'operation_id': oid}), rpc_id)
+
+
+def test_one_shot_original_mutation_response_binds_real_job_id_and_lineage(real_job):
+    current, pipe = bound_controller(real_job)
+    _, oid = real_job
+    value = current.receipt()['target_job_observation_binding']
+    assert value == dict(scope='b4_transport_target_job_binding_v1', operation_id=oid, rpc_id=1,
+        request_id=SET['arguments']['request_id'], operation='dimension.set_value', payload=TARGET, transport_only=True)
+    assert current.receipt()['admission_closed']  # queued reply closes CAD, not polls.
+    current.write_message(poll(oid, 2), write_to(pipe), lambda: None)
+    assert current.receipt()['target_poll_emitted'] == 1
+    assert current.receipt()['in_flight_observations'] == 1 and len(pipe) == 2
+    current.observe_response(envelope(real_job[0].get(oid), 2))
+    assert current.receipt()['in_flight_observations'] == 0
+    assert current.receipt()['native_q'] == 'not_run'
+    assert not current.receipt()['process_stop_authorized']
+
+
+def test_default_polling_disabled_even_with_real_valid_target_reply(real_job):
+    current, pipe = bound_controller(real_job, limit=0)
+    assert current.receipt()['target_job_observation_binding'] == 'not_run'
+    with pytest.raises(helper.AdmissionError):
+        current.write_message(poll(real_job[1], 2), write_to(pipe), lambda: None)
+    assert len(pipe) == 1
+
+
+@pytest.mark.parametrize('limit', [-1, 65, True, 1., '2', None])
+def test_only_owner_supplied_finite_integer_poll_limit(limit):
+    with pytest.raises(helper.AdmissionError, match='integer 0..64'):
+        controller(target_poll_limit=limit)
+
+
+def test_bound_target_polls_are_finite_serial_and_preserve_known_observation_plan(real_job):
+    store, oid = real_job
+    current, pipe = bound_controller(real_job, limit=2)
+    current.close_admission()
+    current.write_message(poll(oid, 2), write_to(pipe), lambda: None)
+    current.observe_response(envelope(store.get(oid), 2))
+    current.write_message(request(OBSERVATIONS[0], 3), write_to(pipe), lambda: None)
+    current.observe_response(reply(3, context={}))
+    current.write_message(request(OBSERVATIONS[1], 4), write_to(pipe), lambda: None)
+    current.observe_response(reply(4, context={}))
+    current.write_message(poll(oid, 5), write_to(pipe), lambda: None)
+    current.observe_response(envelope(store.get(oid), 5))
+    with pytest.raises(helper.AdmissionError, match='budget exhausted'):
+        current.write_message(poll(oid, 6), write_to(pipe), lambda: None)
+    assert current.receipt()['target_poll_emitted'] == 2 and len(pipe) == 5
+
+
+def test_no_overlapping_bound_target_polls(real_job):
+    current, pipe = bound_controller(real_job)
+    current.write_message(poll(real_job[1], 2), write_to(pipe), lambda: None)
+    with pytest.raises(helper.AdmissionError, match='still in flight'):
+        current.write_message(poll(real_job[1], 3), write_to(pipe), lambda: None)
+    assert current.receipt()['target_poll_emitted'] == 1 and len(pipe) == 2
+
+
+def test_unbound_foreign_job_id_never_uses_dynamic_poll_budget(real_job):
+    current, pipe = bound_controller(real_job)
+    with pytest.raises(helper.AdmissionError):
+        current.write_message(poll('job_' + 'f' * 32, 2), write_to(pipe), lambda: None)
+    assert current.receipt()['target_poll_emitted'] == 0 and len(pipe) == 1
+
+
+@pytest.mark.parametrize('change', ['request', 'operation', 'payload', 'context', 'oid', 'envelope_status',
+                                   'extra_dto', 'missing_dto', 'bool_timestamp', 'mutation_scope'])
+def test_bound_poll_exact_public_dto_lineage_checked(real_job, change):
+    store, oid = real_job
+    store.start(oid)
+    store.prepare_mutation(oid, connection_epoch='pure-epoch', **{key: CONTEXT[key] for key in
+        ('document_id', 'configuration', 'expected_revision')}, before_state={'synthetic': True})
+    current, pipe = bound_controller(real_job, limit=2)
+    current.write_message(poll(oid, 2), write_to(pipe), lambda: None)
+    raw = envelope(store.get(oid), 2).model_dump(mode='json')
+    outer = raw['result']['structuredContent']
+    row = outer['data']
+    if change == 'request': row['request_id'] = 'foreign'
+    elif change == 'operation': row['operation'] = 'feature.rename'
+    elif change == 'payload': row['payload']['arguments']['value'] = 13.
+    elif change == 'context': outer['context']['configuration'] = 'foreign'
+    elif change == 'oid': row['operation_id'] = 'job_' + 'e' * 32
+    elif change == 'envelope_status': outer['status'] = 'succeeded'
+    elif change == 'extra_dto': row['digest'] = 'not-public'
+    elif change == 'missing_dto': row.pop('updated_at')
+    elif change == 'bool_timestamp': row['created_at'] = True
+    else: row['mutation']['document_id'] = 'foreign'
+    with pytest.raises(helper.AdmissionError):
+        current.observe_response(JSONRPCMessage.model_validate(raw))
+    assert current.receipt()['target_poll_failed']
+    with pytest.raises(helper.AdmissionError):
+        current.write_message(poll(oid, 3), write_to(pipe), lambda: None)
+    assert len(pipe) == 2 and not current.receipt()['cad_cleanup_authorized']
+
+
+def test_real_unknown_job_dto_can_be_observed_without_native_acceptance(real_job):
+    store, oid = real_job
+    current, pipe = bound_controller(real_job)
+    store.start(oid)
+    store.prepare_mutation(oid, connection_epoch='pure-epoch', **{key: CONTEXT[key] for key in
+        ('document_id', 'configuration', 'expected_revision')}, before_state={'synthetic': True})
+    store.finish(oid, 'unknown', error={'code': 'pure-uncertain', 'message': 'own synthetic unknown'})
+    current.write_message(poll(oid, 2), write_to(pipe), lambda: None)
+    observed = current.observe_response(envelope(store.get(oid), 2))
+    assert observed['server_status'] == 'unknown' and observed['response_validated']
+    assert current.receipt()['native_q'] == 'not_run' and not current.receipt()['restart_authorized']
+
+
+def test_duplicate_target_response_cannot_replace_binding_or_reopen_polls(real_job):
+    current, pipe = bound_controller(real_job)
+    original = deepcopy(current.receipt()['target_job_observation_binding'])
+    changed = envelope(real_job[0].get(real_job[1]), 1, mutation_reply=True).model_dump(mode='json')
+    changed['result']['structuredContent']['operation_id'] = 'job_' + 'f' * 32
+    with pytest.raises(helper.AdmissionError, match='unseen response'):
+        current.observe_response(JSONRPCMessage.model_validate(changed))
+    assert current.receipt()['target_job_observation_binding'] == original
+    with pytest.raises(helper.AdmissionError):
+        current.write_message(poll(real_job[1], 2), write_to(pipe), lambda: None)
+    assert len(pipe) == 1
+
+
+def test_unknown_write_late_target_reply_does_not_bind_or_authorize_poll(real_job):
+    current, pipe = controller(target_poll_limit=2), []
+    def bad_flush(): raise OSError('synthetic-lost-flush')
+    with pytest.raises(helper.AdmissionError, match='unconfirmed'):
+        current.write_message(request(SET), write_to(pipe), bad_flush)
+    with pytest.raises(helper.AdmissionError, match='write/flush evidence'):
+        current.observe_response(envelope(real_job[0].get(real_job[1]), 1, mutation_reply=True))
+    assert current.receipt()['unknown_transport'] and current.receipt()['target_job_observation_binding'] == 'not_run'
+    with pytest.raises(helper.AdmissionError):
+        current.write_message(poll(real_job[1], 2), write_to(pipe), lambda: None)
+    assert len(pipe) == 1 and current.receipt()['emitted'] == 0
+
+
+def test_early_target_reply_binds_only_after_original_successful_flush(real_job):
+    current, pipe = controller(target_poll_limit=1), []
+    def write(payload):
+        pipe.append(payload)
+        current.observe_response(envelope(real_job[0].get(real_job[1]), 1, mutation_reply=True))
+        assert current.receipt()['target_job_observation_binding'] == 'not_run'
+        return len(payload)
+    current.write_message(request(SET), write, lambda: None)
+    assert current.receipt()['target_job_observation_binding']['operation_id'] == real_job[1]
+
+
+def test_existing_known_target_observation_slot_is_preserved_separately_from_extra_poll_budget(real_job):
+    store, oid = real_job
+    observations = (dict(name='job_get', arguments={'operation_id': oid}),)
+    current, pipe = controller(observations=observations, target_poll_limit=1), []
+    current.write_message(request(SET), write_to(pipe), lambda: None)
+    current.observe_response(envelope(store.get(oid), 1, mutation_reply=True))
+    current.write_message(poll(oid, 2), write_to(pipe), lambda: None)
+    assert current.receipt()['target_poll_emitted'] == 0
+    assert current.observe_response(envelope(store.get(oid), 2))['target_poll'] is True
+    current.write_message(poll(oid, 3), write_to(pipe), lambda: None)
+    current.observe_response(envelope(store.get(oid), 3))
+    assert current.receipt()['target_poll_emitted'] == 1 and current.receipt()['observation_emitted'] == 2
+    with pytest.raises(helper.AdmissionError, match='budget exhausted'):
+        current.write_message(poll(oid, 4), write_to(pipe), lambda: None)
+
+
+def test_target_poll_partial_flush_after_binding_keeps_unknown_and_late_dto_cannot_resume(real_job):
+    store, oid = real_job
+    current, pipe = bound_controller(real_job)
+    def failed_flush(): raise OSError('pure-poll-lost-flush')
+    with pytest.raises(helper.AdmissionError, match='unconfirmed'):
+        current.write_message(poll(oid, 2), write_to(pipe), failed_flush)
+    with pytest.raises(helper.AdmissionError, match='known transport'):
+        current.observe_response(envelope(store.get(oid), 2))
+    assert current.receipt()['unknown_transport'] and current.receipt()['target_poll_emitted'] == 0
+    with pytest.raises(helper.AdmissionError):
+        current.write_message(poll(oid, 3), write_to(pipe), lambda: None)
+    assert len(pipe) == 2 and not current.receipt()['process_stop_authorized']
+
+
+def test_foreign_target_context_cannot_create_binding(real_job):
+    current, pipe = controller(target_poll_limit=2), []
+    current.write_message(request(SET), write_to(pipe), lambda: None)
+    raw = envelope(real_job[0].get(real_job[1]), 1, mutation_reply=True).model_dump(mode='json')
+    raw['result']['structuredContent']['context']['object_id'] = 'foreign'
+    with pytest.raises(helper.AdmissionError, match='context binding'):
+        current.observe_response(JSONRPCMessage.model_validate(raw))
+    assert current.receipt()['target_job_observation_binding'] == 'not_run'
+    with pytest.raises(helper.AdmissionError):
+        current.write_message(poll(real_job[1], 2), write_to(pipe), lambda: None)
+
+
+def test_guess_in_original_reply_not_current_job_id_format_cannot_bind():
+    current, pipe = controller(target_poll_limit=1), []
+    current.write_message(request(SET), write_to(pipe), lambda: None)
+    with pytest.raises(helper.AdmissionError, match='JobStore job identity'):
+        current.observe_response(reply(context=CONTEXT))
+    assert current.receipt()['target_job_observation_binding'] == 'not_run'
