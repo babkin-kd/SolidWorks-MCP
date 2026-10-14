@@ -2,6 +2,15 @@
 
 ## Текущий итог
 
+Новый source-кандидат4ec13fb принят одним full pure:
+**11271 passed,323 CAD deselected /477,04 с**, normal exit0; исполняемые
+source/tests не менялись. [Контрольная точка](CHECKPOINT_4EC13FB.md).
+Fresh child-plane-5 выполняется на exact installed dev96 после подтверждённой
+очистки и коротких probes, с отдельным journal и32 frozen helpers. Новый
+dimension-read context сохраняется без дополнительных getters после отказа.
+Native pending; предыдущие unknown остаются unresolved. Пакет готов к одному
+push с сохранением draft PR и открытых native-gates.
+
 Финальный source-кандидат0ec9ab9 прошёл один full pure:
 **11237 passed,323 CAD deselected /475,02 с**, normal exit0, без изменения
 source/tests в прогоне. [Контрольная точка](CHECKPOINT_0EC9AB9.md).
@@ -65,11 +74,11 @@ related523 pure/54,38 с принят, full нового source-кандидат
 
 Кандидат39eeb8d прошёл один full pure без CAD: **11104 passed,323 CAD
 deselected /470,01 с**, normal exit0. Source/tests не менялись в этом прогоне.
-Fresh N5 child-plane-4 выполняется после own cleanup и короткой native-пробы:
+Fresh N5 child-plane-4 был запущен после own cleanup и короткой native-пробы:
 exact dev96/accepted positive gate подтверждены,32 helper hashes зафиксированы,
-начальная phase fixture_creation. Source full принят; terminal native gate
-ещё pending, последняя наблюдавшаяся phase extrusion_job.32 helper files текущего native не
-меняются; нового push нет.
+начальная phase fixture_creation. Последующий returned dimension-owner отказ
+и own cleanup этого прогона описаны выше; N5 не принят.32 helper files нового
+child-plane-5 зафиксированы отдельно; исходный failed отчёт не изменяется.
 
 Независимый source-блок B3 probe подготовлен в двух новых файлах:
 standalone original-owner setup/maintenance driver и pure tests. Root combined

@@ -43,6 +43,12 @@ native captures: пустой список, неверный тип и непо�
 Связанные driver/route проверки: **120 pure passed /12,07 с**, normal exit0,
 без CAD. Исправление не входит в32 frozen helpers live N5 и не изменяет wheel.
 
+После own cleanup child-plane-4 и коротких probes начат fresh child-plane-5
+с отдельным private journal и32 frozen helpers. Новая Python-only диагностика
+прошла root148 related pure; финальный source4ec13fb — **11271 full pure passed,
+323 CAD deselected /477,04 с**, normal exit0. Native pending, N5 не принят;
+прежние unknown и обязательные remaining gates не меняются.
+
 Source-кандидат `c229bc4` объединяет четыре подготовительных блока B3.
 Один итоговый pure-набор завершился normal exit0: **11054 passed,323 CAD
 deselected /465,28 с**, CAD-фильтр и внешний basetemp; executable source/tests
