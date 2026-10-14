@@ -29,7 +29,7 @@ Lock check --offline passed. Предыдущие failed/stopped прогоны 
 | Короткий native owner/prefix probe | Normal exit0,247,71 с,59 returned steps;15 current anchors/четыре фазы и retained anchors разрешились; own cleanup/baseline; не приёмка B2 |
 | B2 positive prerequisite | Positive1 terminal/normal exit0,2/2,6023,32 с; actual SQL6/3committed, own cleanup/baseline и пассивный exact gate подтверждены |
 | B2 faults/N5/public gates | Fresh faults1 запущен после positive/cleanup; итог pending. N5/public не приняты; dev96 receipts не подставляются |
-| GitHub | Один пакетный push25df8a6; actual PR CI38510604543 in_progress, PR15 draft, main не изменён |
+| GitHub | Один пакетный push25df8a6; actual PR CI38510604543 success:unit11501/1502,07 с, build/isolated install/metadata83; PR15 draft, main не изменён |
 
 ## Законченный блок исправления
 

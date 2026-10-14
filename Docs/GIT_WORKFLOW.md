@@ -3,7 +3,8 @@
 Последняя пакетная отправка — 14.10.2026, head25df8a6. После локального
 full source8544742 (11501 passed/323 CAD deselected /485,88 с), exact installed
 dev97 metadata и native positive2/2/6023,32 с выполнен один push в draft PR15.
-Actual Checks38510604543 создан/in_progress; conclusion пока отсутствует.
+Actual Checks38510604543 завершился success: unit11501/323 deselected
+/1502,07 с, lock/build/wheel+sdist/isolated install/metadata83 passed.
 CI wheel этого head не подменяет native build49b899c. Main/merge/release
 не выполнялись. Эта запись сохраняется локально для следующего пакета;
 отдельный push документации/повторный CI не требуется.

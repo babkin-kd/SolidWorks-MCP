@@ -3,8 +3,10 @@
 ## Текущий итог
 
 Один пакет25df8a6 отправлен в stage-1-fixes нашего форка; actual head PR15
-подтверждён прямым API. Обязательный Checks38510604543 для этого head создан
-и выполняется (conclusion=null); прежний CIeaf не принимается за новый.
+подтверждён прямым API. Обязательный Checks38510604543/job115677980955 для
+этого head завершился success: actual11501 unit passed/323 CAD deselected
+/1502,07 с, lock/build/wheel+sdist/isolated install/metadata83 passed.
+CI относится только к25df, не принимает последующие локальные изменения.
 PR остаётся draft, main3ab795e/merge/release не изменялись. Native faults1
 продолжается последовательно; отправка его не прерывала.
 
