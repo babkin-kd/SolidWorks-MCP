@@ -26,6 +26,16 @@ SDK обеих сессий закрыт. `verify_timing_storage_fault.py` пр�
 N2/N3/N5 остаются открыты; искусственные или отсутствующие COM timings
 не засчитываются.
 
+На точном installed dev97/build49b899c повторены только обязательные
+metadata-only gates нового wheel: enabled/disabled по20 запросов,22 actual
+timing records при включении и0 при выключении, обе SDK-сессии закрыты.
+Отдельный storage fault сохранил metadata/job_not_found/invalid-filter
+контракт, available=false, storage_failures>=1, sample_count0; обязательный
+journal schema3 остался доступен с jobs0/mutations0. Оба прогона normal exit0,
+accepted=true в своём metadata-only scope, native_acceptance=false.
+CAD не подключался; новые native mutation/restore/hold и реальные интервалы
+N2/N3/N5 остаются открытыми. Полные receipts сохранены в private work/.
+
 ## Что исторические результаты не закрывают
 
 [Приёмка dev69](DIAGNOSTICS_TIMINGS_ACCEPTANCE.md) подтверждает свой wheel,

@@ -35,6 +35,12 @@ normal close, пустой journal и восстановление factories. me
 wiring gates passed; SDK83, CAD/job calls=[]. Native Q/stop/restart/
 reconciliation остаются not_run; wheel и B2 frozen helpers не менялись.
 
+Metadata-only диагностика exact installed dev97 принята: enabled/disabled
+по20 запросов,22/0 timing records и normal SDK close; недоступное timing
+хранилище сохранило metadata/job_not_found/filter outcomes и обязательный
+journal schema3 (jobs0/mutations0). CAD не подключался, native B4-N6 остаётся
+открытым. [Границы проверок B4](B4_ACCEPTANCE_MAP.md).
+
 CI-import source-кандидат34ccab5 прошёл один финальный full pure:
 **11274 passed,323 CAD deselected /478,61 с**, normal exit0, без изменения
 source/tests в прогоне. До него root214 related/11,72 с без PYTHONPATH passed.
