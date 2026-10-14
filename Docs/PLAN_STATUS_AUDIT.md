@@ -2,6 +2,12 @@
 
 ## Текущий итог
 
+Последняя общая source-контрольная точка — [21c04e5](CHECKPOINT_21C04E5.md):
+11463 pure passed,323 CAD deselected /483,88 с, normal exit0; source/tests
+заморожены на время прогона. Installed unarmed seam/metadata diagnostics
+приняты в своём без-CAD scope; B2 positive продолжается, подготовка удаления
+succeeded, итог delete/cleanup/baseline pending. Стадия1 остаётся открытой.
+
 **Текущая dev-установка — dev97**, build49b899c, wheel SHA
 702b7e18c9cafaafb14f8ca800ff4c3c361d44ed87abeb8d87e01df6992c382b.
 Owner dimension anchor использует существующий строгий feature resolver;
