@@ -7,16 +7,32 @@ CI-import source-кандидат34ccab5 прошёл один финальны�
 source/tests в прогоне. До него root214 related/11,72 с без PYTHONPATH passed.
 [Контрольная точка](CHECKPOINT_34CCAB5.md). Пакет отправлен одним push eaf5e5b,
 draft/open PR15 и Checks38495337250/job115629709085 подтверждены direct API:
-lock passed, unit in_progress, build/install/metadata pending. Native
-child-plane-5 продолжает BASE-preparation,32 helpers не менялись.
+все обязательные этапы завершились success. Actual CI11274 passed,
+323 deselected /979,00 с; build/isolated install/metadata83 accepted без CAD.
+CI wheel с build eaf5e5b не заменяет native wheel f80ee6d, хотя версия dev96
+одинакова. Native
+child-plane-5 завершился failed до preview/delete. Returned diagnostic:
+plane_offset/current_capture/current_anchor, persistent_reference_mismatch;
+original/current anchors ещё None. Все84 captures/6 setup pairs вернулись,
+actual SQL6 terminal jobs содержит unknown/unresolved setup.32 helpers
+не менялись. Independent own inspection и cleanup завершены: закрыты две
+собственные детали, baseline/CIPFalse/non-STL восстановлены, historical SQL
+неизменён; N5 не принят.
+
+Короткий двухдокументный probe7 завершился normal за67,54 с:55 returned steps,
+15 current anchors и retained anchors разрешились в четырёх фазах; owner
+mismatch не воспроизведён. Собственные две детали закрыты, baseline/CIPFalse/
+non-STL восстановлены. Probe6 перед ним failed из-за Python assertion в
+выборе размера до создания плоскости, own cleanup подтверждён; failed receipt
+сохранён. Эти probe не принимают N5; длительный прогон не повторён.
 
 Новый source-кандидат4ec13fb принят одним full pure:
 **11271 passed,323 CAD deselected /477,04 с**, normal exit0; исполняемые
 source/tests не менялись. [Контрольная точка](CHECKPOINT_4EC13FB.md).
-Fresh child-plane-5 выполняется на exact installed dev96 после подтверждённой
+Fresh child-plane-5 выполнялся на exact installed dev96 после подтверждённой
 очистки и коротких probes, с отдельным journal и32 frozen helpers. Новый
-dimension-read context сохраняется без дополнительных getters после отказа.
-Native pending; предыдущие unknown остаются unresolved. Пакет отправлен одним
+dimension-read context сохранил место отказа без дополнительных getters.
+Native failed; предыдущие unknown остаются unresolved. Пакет отправлен одним
 push745502e с сохранением draft/open PR15. Прямой API подтвердил новый
 Checks38491234891/job115616648083 завершились failure: lock passed,
 unit11250 passed/21 failed/4 errors, build/install/metadata skipped. Все

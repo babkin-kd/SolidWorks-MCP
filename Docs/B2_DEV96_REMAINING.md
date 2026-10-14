@@ -43,11 +43,27 @@ native captures: пустой список, неверный тип и непо�
 Связанные driver/route проверки: **120 pure passed /12,07 с**, normal exit0,
 без CAD. Исправление не входит в32 frozen helpers live N5 и не изменяет wheel.
 
-После own cleanup child-plane-4 и коротких probes начат fresh child-plane-5
-с отдельным private journal и32 frozen helpers. Новая Python-only диагностика
-прошла root148 related pure; финальный source4ec13fb — **11271 full pure passed,
-323 CAD deselected /477,04 с**, normal exit0. Native pending, N5 не принят;
-прежние unknown и обязательные remaining gates не меняются.
+После own cleanup child-plane-4 и коротких probes fresh child-plane-5
+завершился failed до preview/delete. Python-only диагностика указала
+plane_offset/current_capture/current_anchor; создание первичного anchor
+размера новой плоскости вернуло persistent_reference_mismatch. Все84 captures
+и6 setup pairs вернулись; SQLite6 terminal jobs, setup unknown/unresolved.
+Independent own inspection и cleanup завершены: закрыты две собственные
+детали, baseline/CIPFalse/non-STL восстановлены, historical SQL неизменён.
+Короткий probe6 failed до создания плоскости из-за Python assertion в выборе
+размера; own cleanup/baseline подтверждены. Fresh probe7 завершился normal
+за67,54 с: две fully-defined детали, четыре фазы,15 current dimension anchors
+и retained anchors разрешились без owner mismatch;55 native steps вернулись.
+Собственная очистка и baseline подтверждены. N5 mismatch не воспроизведён;
+unknown N5 job не повторялся. Длительный N5 не перезапущен.
+Root148 related pure и source4ec13fb full11271 остаются source evidence;
+N5 не принят, unknown и обязательные remaining gates не меняются.
+
+Следующий длительный N5 не запускать только на основании successful short
+probe: сопоставить его owner/anchor факты с точным boundary child-plane-5.
+Preview/delete остаются запрещены до terminal succeeded/committed setup.
+После принятого child-plane выполнить два отдельных finite equation cases,
+затем публичную цепочку и общий B2 gate. Новые классы зависимостей не добавлять.
 
 Source-кандидат `c229bc4` объединяет четыре подготовительных блока B3.
 Один итоговый pure-набор завершился normal exit0: **11054 passed,323 CAD

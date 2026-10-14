@@ -24,9 +24,15 @@ cause ещё не доказана. Source-механизм импорта во�
 
 Пакет отправлен одним push: eaf5e5b4cd5df0e0cae826a1232768151b49ef4b.
 Прямой API подтвердил этот head в draft/open PR15. Новый Checks38495337250 /
-job115629709085 создан: lock passed, unit tests in_progress; build/install/
-metadata pending. Это не итоговый success; старый failed run не перезапускался.
+job115629709085 завершился success: lock, unit, build, isolated install и
+metadata passed. Actual CI log: **11274 passed,323 deselected /979,00 с**;
+metadata83 tools, native_acceptance=false, cad_tools_called=[].
+Старый failed run не перезапускался. CI wheel относится к pushed eaf5e5b,
+не подменяет установленный native wheel f80ee6d с той же версией dev96.
 
-Native child-plane-5 продолжает BASE-preparation на exact dev96 с32 frozen
-helpers; B4 source-правки в этот manifest не входят. Старые unknown сохраняются,
+Native child-plane-5 завершился failed до preview/delete: новое diagnostic
+plane_offset/current_capture/current_anchor локализовало returned mismatch.
+Все84 captures/6 pairs вернулись; independent inspection и own cleanup/baseline
+подтверждены.32 helpers не менялись; B4 source-правки в manifest не входят.
+Старые unknown сохраняются,
 N5/public B2 и B3/B4/B5 gates открыты. PR остаётся draft; merge/main/release нет.

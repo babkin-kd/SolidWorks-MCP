@@ -124,3 +124,10 @@ eaf5e5b выполнен; PR15 draft/open, Checks38495337250/job115629709085 act
 created. Lock passed, unit in_progress, build/install/metadata pending.
 Failed run38491234891 не перезапускался. Ordinary post-push CI receipt
 сохраняется локально без ещё одного push/CI.
+
+Фактический итог Checks38495337250/job115629709085 на eaf5e5b — success:
+lock, unit11274/323 deselected (979,00 с), build, isolated install и metadata83
+прошли. Native CAD не вызывался. PR15 подтверждён draft/open/head eaf5e5b;
+body обновлён прямым API, без новой отправки исходников и нового CI.
+CI wheel eaf5e5b и native wheel f80ee6d различаются build identity при одной
+версии dev96; native-приёмка не переносится между ними по номеру версии.

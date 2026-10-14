@@ -289,5 +289,7 @@ Historical CI причина без child stderr остаётся гипотез
 source/CI-кандидат этого исправления ещё должен пройти общий checkpoint.
 
 Финальный source34ccab5 full pure принят11274/323 CAD deselected /478,61 с,
-normal exit0. Это source checkpoint после CI-регрессии; повторный remote
-CI пока не принят и native B4 по-прежнему not_run.
+normal exit0. Remote CI38495337250/job115629709085 на eaf5e5b завершился
+success: unit11274/323 deselected /979,00 с, lock/build/isolated install и
+metadata83 passed без CAD. Native B4 по-прежнему not_run; source-only
+переносимость подтверждена этим CI, actual Q/server/restart gates остаются.
