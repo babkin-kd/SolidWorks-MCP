@@ -1,0 +1,55 @@
+{
+  "acceptance_scope": "Registry snapshot integrity only; not native CAD acceptance",
+  "cad_called": false,
+  "capabilities_sha256": "c1f1ebed02feaba848ea1d609eff7a989ba09ac55cb193ac031e8b25508e4c62",
+  "files": {
+    "SKILL.md": "d6a15703fd3435d876b7c12a23e24c8a50fd183eaf8fe17219061c573d358f8a",
+    "references/SW-PART-001.md": "c06dc8174167059fee85f841163886521550a905d449d43882f456719e973253",
+    "references/SW-PART-002.md": "8edb86eebb7babb08b5ad9933045648673e582b8abd427b4b5d1ebd2ad260211",
+    "references/SW-PART-003.md": "323a012ea75c921c9bfed04a5a0bb166b3bcb8ed88c9fc213c2e83a497a583e7",
+    "references/SW-PART-004.md": "928a55247a6d2d282ffb4b27f7d7ae39dc9d82d679076555a1f898df8f92dc8f",
+    "references/SW-PART-005.md": "4c64802e0d1085baa0cc5b78f00e44b18e9e2f159995e077c7dded9bbd465867",
+    "references/SW-PART-006.md": "592c2c288f79b5265522605275946a167601c05c18ed60e9dc8346ee774d5dab",
+    "references/SW-PART-007.md": "754baf76427bd0a3a3dda79a0079150de572c58691871b8bc52bce4e07f1935c",
+    "references/SW-PART-008.md": "cd27f0050a519e206b39827b8816409b401ef98928efc4872fd61f9b80be9490",
+    "references/capabilities.json": "61f676ccdb141f8d13a3af4acd0dcb9993aede98808c092a4e291005db14ff74"
+  },
+  "generator": "scripts/build_best_practices_skill.py",
+  "practices": [
+    {
+      "id": "SW-PART-001",
+      "version": "1.0.0"
+    },
+    {
+      "id": "SW-PART-002",
+      "version": "1.0.0"
+    },
+    {
+      "id": "SW-PART-003",
+      "version": "1.0.0"
+    },
+    {
+      "id": "SW-PART-004",
+      "version": "1.0.0"
+    },
+    {
+      "id": "SW-PART-005",
+      "version": "1.0.0"
+    },
+    {
+      "id": "SW-PART-006",
+      "version": "1.0.0"
+    },
+    {
+      "id": "SW-PART-007",
+      "version": "1.0.0"
+    },
+    {
+      "id": "SW-PART-008",
+      "version": "1.0.0"
+    }
+  ],
+  "registry_sha256": "d458ceb85f0072b45b2f6e281f63b5b81f6fbb5062b2b12b067ccef90d7cb227",
+  "schema_version": "1.0",
+  "skill_version": "1.0.0"
+}

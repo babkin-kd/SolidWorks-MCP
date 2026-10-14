@@ -1,0 +1,124 @@
+# Локальная контрольная точка dev91: exact-owned annotation views B1
+
+Исправление bounded rectangle stages установлено только в dev-окружение;
+рабочая v1 сохранена. Открытие L2 не расширено. **B1 не принят:** положительный
+сценарий, отказы/восстановление и public MCP требуют native-свидетельств этого wheel.
+
+## Точный кандидат
+
+- Версия: `2.0.0.dev91`.
+- Git: `301edeabb5f298b52ef7471b65417fc6db3af22f`, clean build.
+- Source digest: `4440a0d5adf967c0e2656883a9e879ccfdae42ee21a2ab04d875e904c5699017`.
+- Wheel SHA256: `09ba36986ef44ba6a7605b61c9cd50ae4dcaa5536a4a8ac7626b9df0322beedd`.
+- Full source pure: **6567 passed /323 CAD deselected, 138,38 с**.
+- Offline wheel gate и installed metadata/stdio: **79 tools /25 mutations**,
+  schema/provenance приняты, без source `PYTHONPATH`. CAD tools не вызывались.
+
+Private evidence: `work/pytest-dev91-full-1.log`, `work/wheel-dev91-report-1.json`,
+`work/metadata-dev91-report-1.json`. Полные journals/models остаются вне Git.
+
+## Изменение и граница доказательств
+
+Отдельные sketch/extrusion receipts сохраняют baseline views. Actual dimensions
+нового элемента связывают один новый view; tree feature selection подтверждает
+точную native identity. После доказанного geometry inverse удаляется только этот
+пустой unused view. Полный restored разрешён лишь после возврата baseline views
+и независимого whole-session gate. Journal labels уникальны, inverse one-shot;
+lost/false ACK, чужая замена и неполный readback удерживают unknown без повторов.
+
+Short interop dev90 подтвердил связку и удаление двух своих views со всеми
+baseline/cleanup, но использовал прежний box-builder. Это не приёмка новых
+sketch/extrusion tools; [факты и SHA256](CHECKPOINT_DEV90.md#exact-owned-view-retirement-interop-и-source-интеграция).
+Historical dev90 unknown сохранён, его request не повторяется.
+
+## Остаток
+
+Конечные B1 N1…N5: independent sketch-only → blind extrusion 40×20×10/8000,
+точная plane/neighbor, русские имена и stable result IDs, stale/replay/unsupported
+отказы, полный scoped restoration либо ожидаемый unknown/hold fault-case.
+Internal native и public MCP проверяются на этом exact wheel; installed metadata
+и source pure не заменяют их. B2…B5 и перенесённые D2/D3 задачи остаются.
+Изменения накапливаются локально; нового push/CI нет.
+
+## Текущий native-прогон
+
+Запущен `verify_rectangle_stages_positive.py` на exact installed dev91;
+private `work/native-rectangle-dev91-positive-1/report.json`, один CAD-владелец.
+Пока `positive_case_passed=false` и `accepted=false`, ни один native gate B1
+не закрыт. Runtime/helper hashes фиксированы; работающий wheel и helpers
+не изменяются. Остальные fault/public условия остаются после этого finite positive.
+
+## Подготовленный следующий блок, не запущен
+
+Для N5 внешний restoration gate учитывает точный ledger двух отдельных stages:
+максимум32 rows sketch и34 extrusion после добавления обязательных view steps.
+Related93 pure/6,04 с проверили actual JobStore/artificial baseline, native-shaped
+step sequence и отказ overflow/duplicate/lost acknowledgement. Это не новая
+native-приёмка восстановления. Этот verifier не используется live positive;
+ни один helper его frozen manifest не изменён.
+
+Добавлены passive `verifier_rectangle_positive_acceptance.py` и отдельный
+`verify_rectangle_stages_faults.py`. Gate связывает exact wheel/helper hashes,
+четыре positive labels, оба committed jobs, borrowed sketch ID, native readback
+и original cleanup baseline; running/partial/foreign reports не допускаются.
+Driver содержит четыре stale/foreign prewrite случая и два controlled observation
+faults после нормально завершившегося native snapshot, с отдельным own restoration
+эскиза/выдавливания и replay. Он не имитирует реальный COM throw. Его native
+приёмка **не запускалась**. Pure preflight/ledger105 passed/6,08 с; driver/preflight/
+restoration56 passed/4,49 с. Наборы пересекаются и не суммируются.
+
+По запросу пользователя следующий native-блок не запускается. После завершения
+текущего прогона, проверки очистки и локальной фиксации разработка ставится на паузу.
+
+## Пауза разработки по запросу пользователя
+
+Кодовый блок и подготовленные внешние gates зафиксированы локально. Из-за
+длительности native-приёмки агент ставится на паузу до окончания всего прогона;
+уже запущенный verifier оставлен завершаться в фоне, COM не прерывается.
+Это заменяет прежнее намерение ждать полный прогон в активном чате. SolidWorks
+остаётся занят этим verifier; очистка и полный baseline пока не подтверждены.
+
+На последнем наблюдении отдельный sketch job и replay прошли; driver перешёл
+к extrusion job. Полный positive/N1…N3 ещё не принят, N4/N5 и public MCP
+не запускались. Ни одна стадия не закрыта. Push/CI не выполнялись.
+
+При возобновлении **сначала** проверить прежний unified session65655 и private
+`work/native-rectangle-dev91-positive-1/report.json`, actual journal и ownership.
+Не запускать новый CAD-процесс из-за тайм-аута или отсутствия свежего отчёта.
+Если verifier terminal — проверить полный результат, cleanup/baseline и helper
+hashes; если retained/unknown — согласовать точное состояние по доказательствам,
+сохраняя исторический исход. Wheel/helpers этой проверки не менять до quiescence.
+Только после этого продолжать finite N4/N5 и public B1.
+
+## Результат после возобновления
+
+Прежний driver завершился **failed /positive_case_passed=false**, 3312,68 с:
+sketch committed/replay приняты, extrusion unknown/unresolved. Его12 journal rows
+paired pending/returned,70 snapshots returned, live native=false. Getter dimensions
+одного extrusion вернул3 вместо ожидаемого1; binding отказал до выбора view,
+а независимый effect proof не разрешил inverse. Report preserved retained_process
+как исторический факт; после возобновления actual process отсутствовал.
+
+Пассивное независимое наблюдение подтвердило **GetDocuments пуст, ActiveDoc=None,
+CommandInProgress=false**, полный original baseline/application/non-STL preferences
+и их сохранность при повторном чтении. Fixtures уже отсутствовали; root не
+выполнял CloseDoc и не приписывает их исчезновение accepted cleanup старого driver.
+Quiescence report SHA256:
+`dc6fd4b5a19798428674752f755c408fecda0a4f45eb4710993b3cab1e1b61dd`.
+Private mutation reconciled по accept_current_state, historical job status
+**unknown сохранён**. Старый request не повторяется; B1 не принят.
+
+Короткая interop-проба на собственной box fixture installed dev91 (terminal/exit0,
+baseline restored) подтвердила: singleton extrusion enumeration возвращает depth
+с владельцем Extrusion и width/height с владельцем ProfileFeature, но последние
+без singleton owner_tree proof. Complete-tree enumeration даёт всех3 с точными
+owner identities. Эта проба не является native-приёмкой нового B1.
+
+Source исправлен: complete-tree dimensions, proof владельца каждой записи,
+отбор только actual owned feature; borrowed dimensions требуют старые baseline
+annotation views. Related73 pure/0,27 с. Public supervisor подключён отдельно
+без generic guard fallback: related267/14,63 с и neighbor56/6,94 с, artificial CAD
+с real JobStore. Frozen installed dev91 не менялся; следующий кандидат — dev92.
+
+Итог source dev92 после интеграции: **6686 passed /323 CAD deselected,153,31 с**,
+terminal/exit0; `work/pytest-dev92-full-1.log`. Это не installed/native dev92 gate.

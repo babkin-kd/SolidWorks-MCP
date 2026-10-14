@@ -1,0 +1,530 @@
+"""Passive full oracle for the first-save rectangular-base profile.
+
+No activation, rebuild, selection, cached-property evaluation or file write.
+The domain brackets two captures with the complete session census. Unsupported
+geometry, feature/control/data inventories fail closed before Copy.
+"""
+from copy import deepcopy
+import math
+from pathlib import Path
+
+from . import binding
+from .documents import rejected
+from .jobs import _json
+from .sketches import rectangle_parameters
+
+
+SCOPE = 'native_first_save_part_snapshot_v1'
+FOLDERS = frozenset(('CommentsFolder', 'FavoriteFolder', 'HistoryFolder',
+    'SelectionSetFolder', 'SensorFolder', 'DocsFolder', 'DetailCabinet',
+    'SurfaceBodyFolder', 'SolidBodyFolder', 'EnvFolder', 'InkMarkupFolder',
+    'EqnFolder', 'MaterialFolder'))
+DISPLAY_FEATURES = frozenset(('NotesAreaFtrFolder','AmbientLight','DirectionLight'))
+
+
+def _fail(message):
+    raise rejected('first_save_snapshot_unsupported', message)
+
+
+def _array(value, maximum=128):
+    if value is None:
+        return []
+    if type(value) not in (tuple, list) or len(value) > maximum:
+        _fail('A complete bounded native array is required.')
+    return list(value)
+
+
+def _number(value):
+    if type(value) not in (float, int) or not math.isfinite(value):
+        _fail('An exact finite native number is required.')
+    return float(value).hex()
+
+
+def _typed(value, kind):
+    if type(value) is not kind or (kind is str and ('\0' in value or len(value) > 16384)):
+        _fail('A bounded exact native scalar is required.')
+    return value
+
+
+def _pid(adapter, model, obj, kind, role, references, interface=None):
+    token = adapter.persistent_id(model, obj)
+    if type(token) is not bytes or not token:
+        _fail('Every declared current reference needs a native persistent ID.')
+    if interface is None:
+        current = adapter.resolve_persistent_id(model, token, kind)
+    else:
+        raw, status = adapter._extension(model).GetObjectByPersistReference3(adapter._persistent_variant(token))
+        if type(status) is not int or status != 0 or raw is None:
+            _fail('Declared reference did not resolve with status zero.')
+        if interface=='IAnnotation':
+            try:
+                current=binding.queried(raw,adapter._module.IAnnotation)
+            except binding.pythoncom.com_error as error:
+                if error.hresult != -2147467262:
+                    raise
+                display=binding.queried(raw,adapter._module.IDisplayDimension)
+                current=binding.queried(display.GetAnnotation(),adapter._module.IAnnotation)
+        else:
+            current = binding.wrap(raw, getattr(adapter._module, interface))
+    if (adapter.identity(current) != adapter.identity(obj)
+            or adapter.persistent_id(model, current) != token):
+        _fail('Declared persistent reference must round-trip its exact native object.')
+    row = dict(kind=kind, role=role, token=token.hex())
+    if any(old['token'] == row['token'] or (old['kind'], old['role']) == (kind, role) for old in references):
+        _fail('Complete reference roles and native tokens must be unique.')
+    references.append(row)
+    return row
+
+
+def _properties(adapter, model, configuration):
+    result = {}
+    for name in ('', configuration):
+        manager = binding.wrap(adapter._extension(model).CustomPropertyManager(name), adapter._module.ICustomPropertyManager)
+        count = _typed(manager.Count, int)
+        names = _array(manager.GetNames())
+        if not 0 <= count <= 128 or len(names) != count or len(set(names)) != count:
+            _fail('Custom-property names/count must form a complete unique inventory.')
+        rows = []
+        for field in names:
+            _typed(field, str)
+            raw = manager.Get6(field, True)  # Use cached data: never activate/evaluate another configuration.
+            if type(raw) is not tuple or len(raw) != 5:
+                _fail('Complete cached custom-property outputs are required.')
+            code, value, resolved, was_resolved, linked = raw
+            _typed(code, int); _typed(value, str); _typed(resolved, str)
+            _typed(was_resolved, bool); _typed(linked, bool)
+            if linked or value != resolved:
+                _fail('Linked/evaluated properties require a separate first-save data profile.')
+            rows.append(dict(name=field, type=_typed(manager.GetType2(field), int),
+                value=value, resolved=resolved, was_resolved=was_resolved, linked=linked, cached_result=code))
+        if manager.Count != count or _array(manager.GetNames()) != names:
+            _fail('Property inventory changed during the passive read.')
+        result[name] = sorted(rows, key=lambda row: row['name'])
+    return result
+
+
+def _extrusion(adapter, feature):
+    data = binding.wrap(feature.GetDefinition(), adapter._module.IExtrudeFeatureData2)
+    if data is None:
+        _fail('A complete native extrusion definition is required.')
+    booleans = ('BothDirections', 'ReverseDirection', 'Merge', 'FeatureScope', 'AutoSelect',
+                'FromOffsetReverse', 'FlipSideToCut', 'NormalCut', 'LinkToThickness', 'CapEnds')
+    integers = ('FromType', 'ThinWallType')
+    numbers = ('FromOffsetDistance', 'CapThickness')
+    result = {name: _typed(getattr(data, name), bool) for name in booleans}
+    result.update({name: _typed(getattr(data, name), int) for name in integers})
+    result.update({name: _number(getattr(data, name)) for name in numbers})
+    result['thin_feature'] = _typed(data.IsThinFeature(), bool)
+    result['contour_count'] = _typed(data.GetContoursCount(), int)
+    result['directions'] = []
+    for forward in (True, False):
+        result['directions'].append(dict(forward=forward,
+            end_condition=_typed(data.GetEndCondition(forward), int),
+            depth=_number(data.GetDepth(forward)), draft_angle=_number(data.GetDraftAngle(forward)),
+            draft_enabled=_typed(data.GetDraftWhileExtruding(forward), bool),
+            draft_outward=_typed(data.GetDraftOutward(forward), bool),
+            reverse_offset=_typed(data.GetReverseOffset(forward), bool),
+            translate_surface=_typed(data.GetTranslateSurface(forward), bool),
+            wall_thickness=_number(data.GetWallThickness(forward))))
+    if (result['BothDirections'] or result['ReverseDirection'] or result['thin_feature'] or result['FeatureScope']
+            or result['FromType'] != 0 or result['contour_count'] != 0
+            or result['directions'][0]['end_condition'] != 0
+            or any(row['draft_enabled'] for row in result['directions'])):
+        _fail('First save currently supports one positive, unthinned, undrafted blind base.')
+    return result
+
+
+def _dimension_roles(dimensions, parameters, feature_roles, namespace):
+    """Bound native records become width/height/depth roles, never name lookup."""
+    if len(dimensions) != 3 or type(namespace) is not str or not namespace:
+        _fail('Exactly three bound dimensions and an explicit document namespace are required.')
+    axes=parameters['axes']
+    if set(axes)!={'width','height'} or len(set(axes.values()))!=2:
+        _fail('The proven rectangle axes must bind two distinct native dimensions.')
+    roles={axes[axis]:'dimension:'+axis for axis in ('width','height')}
+    remaining=[row for row in dimensions if row['full_name'] not in roles]
+    if len(remaining)!=1:
+        _fail('The exact native base depth must be the sole remaining dimension.')
+    roles[remaining[0]['full_name']]='dimension:depth'
+    evidence=[]
+    for row in dimensions:
+        full_name,name=_typed(row['full_name'],str),_typed(row['name'],str)
+        owner=row['owner']
+        if (not name or '@' in name or owner is None or owner['native_id'] not in feature_roles
+                or full_name!=name+'@'+owner['name']+'@'+namespace+'.Part'):
+            _fail('Every qualified dimension name must agree with its proven native owner and document namespace.')
+        evidence.append(dict(role=roles[full_name],full_name=full_name,name=name,
+                             owner_role=feature_roles[owner['native_id']]))
+    if len({row['full_name'] for row in evidence})!=3 or len({row['role'] for row in evidence})!=3:
+        _fail('The complete dimension role/name inventory must be bijective.')
+    return roles,sorted(evidence,key=lambda row:row['role'])
+
+
+def _point(vertex):
+    values = _array(vertex.GetPoint(), 3)
+    if len(values) != 3:
+        _fail('Exact topology vertex coordinates are required.')
+    return [_number(value) for value in values]
+
+
+def _annotations(adapter, model, dimensions, references):
+    """Complete annotation census; only exact own dimension displays allowed."""
+    extension=adapter._extension(model)
+    count=_typed(extension.GetAnnotationCount(),int)
+    native=_array(extension.GetAnnotations(),128)
+    if not 0 <= count <= 128 or len(native)!=count:
+        _fail('Complete native annotation count and array must agree.')
+    candidates=[]
+    rows=[]
+    for item in dimensions:
+        for display in item.displays:
+            annotation=binding.wrap(display.GetAnnotation(),adapter._module.IAnnotation)
+            if annotation is None:_fail('Every display dimension needs its exact annotation.')
+            identity=adapter.identity(annotation)
+            if any(identity==old for old in candidates):continue
+            candidates.append(identity)
+            matches=[raw for raw in native if adapter.identity(raw)==identity]
+            # Feature-owned display dimensions need not occur in the document
+            # annotation array (SW2023 returns an empty array for a normal base).
+            # Both inventories are complete and independently bound below.
+            if len(matches)>1:
+                _fail('Global annotation membership must not contain duplicate native objects.')
+            position=_array(annotation.GetPosition(),3)
+            if len(position)!=3:_fail('Full dimension annotation position is required.')
+            text_format=binding.wrap(display.GetTextFormat(),adapter._module.ITextFormat)
+            if text_format is None:_fail('Full dimension text format is required.')
+            values=_array(text_format.GetAllValues(),128)
+            if not values or any(type(value) not in (str,int,float,bool) for value in values):
+                _fail('Complete typed native text-format values are required.')
+            role='annotation:'+_typed(annotation.GetName(),str)
+            _pid(adapter,model,annotation,'annotation',role,references,'IAnnotation')
+            rows.append(dict(role=role,type=_typed(annotation.GetType(),int),
+                visible=_typed(annotation.Visible,int),position=[_number(value) for value in position],
+                display_type=_typed(display.Type2,int),text=_typed(display.GetText(0),str),
+                use_document_format=_typed(display.GetUseDocTextFormat(),bool),text_format=values))
+    if any(sum(adapter.identity(raw)==token for token in candidates)!=1 for raw in native) or extension.GetAnnotationCount()!=count:
+        _fail('Unknown notes/annotations or a changing inventory require a separate data profile.')
+    closing=_array(extension.GetAnnotations(),128)
+    if len(closing)!=count or any(sum(adapter.identity(raw)==adapter.identity(old) for raw in closing)!=1 for old in native):
+        _fail('Annotation membership changed during the passive read.')
+    return sorted(rows,key=lambda row:row['role'])
+
+
+def _configuration(adapter, model, name):
+    config=binding.wrap(model.GetConfigurationByName(name),adapter._module.IConfiguration)
+    if config is None:_fail('The exact named native configuration is required.')
+    token=adapter.identity(config)
+    fields={'Name':str,'Description':str,'Comment':str,'AlternateName':str,
+        'BOMPartNoSource':int,'Type':int,'Lock':bool,'UseAlternateNameInBOM':bool,
+        'UseDescriptionInBOM':bool,'SuppressNewFeatures':bool,'HideNewComponentModels':bool,
+        'SuppressNewComponentModels':bool,'RepresentationShared':bool}
+    values={key:_typed(getattr(config,key),kind) for key,kind in fields.items()}
+    count=_typed(config.GetParameterCount(),int)
+    raw=config.GetParameters()
+    if type(raw) is not tuple or len(raw)!=2 or not 0 <= count <= 128:
+        _fail('Complete bounded configuration parameter outputs are required.')
+    names,parameters=(_array(column,128) for column in raw)
+    if (len(names)!=count or len(parameters)!=count or len(set(names))!=count
+            or any(type(key) is not str for key in names)
+            or any(type(value) not in (str,int,float,bool) for value in parameters)):
+        _fail('Configuration parameter names and values must be complete and unique.')
+    values['parameters']=sorted(zip(names,parameters))
+    displays=_array(config.GetDisplayStates(),16)
+    if (not displays or len(displays)!=_typed(config.GetDisplayStatesCount(),int)
+            or any(type(value) is not str for value in displays) or len(set(displays))!=len(displays)
+            or config.GetChildrenCount()!=0 or config.GetParameterCount()!=count
+            or adapter.identity(model.GetConfigurationByName(name))!=token):
+        _fail('Complete native configuration/display-state membership must remain unchanged.')
+    values['display_states']=displays
+    return values
+
+
+def _empty_auxiliary_data(adapter, model, features, summaries):
+    extension=adapter._extension(model)
+    attachments=extension.GetAttachments()
+    if (type(attachments) is not tuple or len(attachments)!=2
+            or _typed(extension.GetAttachmentCount(),int)!=0
+            or any(_array(column) for column in attachments)):
+        _fail('Embedded attachments require a separate complete data profile.')
+    for feature,row in zip(features,summaries):
+        if row['feature_type']=='CommentsFolder':
+            folder=binding.wrap(feature.GetSpecificFeature2(),adapter._module.ICommentFolder)
+            if folder is None:
+                _fail('The exact native comments folder must be available.')
+            count=_typed(folder.GetCommentCount(),int)
+            comments=_array(folder.GetComments())
+            # SW2023's empty default folder returns -1 but GetComments is a
+            # complete empty enumeration. Never infer emptiness from -1 alone:
+            # bind the exact folder feature and independently require no rows.
+            owner=binding.wrap(folder.GetFeature(),adapter._module.IFeature)
+            if (count not in (0,-1) or comments or owner is None
+                    or adapter.identity(owner)!=adapter.identity(feature)
+                    or folder.GetCommentCount()!=count or _array(folder.GetComments())):
+                _fail('Comments must be independently proven empty in the initial data profile.')
+        elif row['feature_type']=='SelectionSetFolder':
+            folder=binding.wrap(feature.GetSpecificFeature2(),adapter._module.ISelectionSetFolder)
+            if folder is None or _array(folder.GetSelectionSets()):
+                _fail('Named selection sets require a separate complete data profile.')
+    return dict(attachments=0,comments=0,named_selection_sets=0)
+
+
+def _display_data(adapter,model,features,summaries):
+    """Capture default template lights and empty annotation views completely.
+
+    These are part of the real full traversal, not new engineering operations.
+    They cannot be silently omitted merely because they are below folders.
+    LightSourcePropertyValues is the documented complete array of 19 doubles.
+    """
+    extension=adapter._extension(model)
+    light_features=[row for row in summaries if row['feature_type'] in ('AmbientLight','DirectionLight')]
+    count=_typed(model.GetLightSourceCount(),int)
+    if not 0<=count<=16 or len(light_features)!=count:
+        _fail('Full light feature census must match the bounded native light count.')
+    lights=[]
+    for index in range(count):
+        name=_typed(model.GetLightSourceName(index),str)
+        user_name=_typed(model.LightSourceUserName(index),str)
+        values=_array(model.LightSourcePropertyValues(index),19)
+        if len(values)!=19 or not name or not user_name:
+            _fail('Every template light requires its name and all 19 native property values.')
+        matched=[row for row in light_features if row['name']==user_name]
+        if len(matched)!=1:
+            _fail('Light user names must bind unique members of the complete feature tree.')
+        lights.append(dict(index=index,name=name,user_name=user_name,
+            values=[_number(value) for value in values],
+            locked_to_model=_typed(model.IsLightLockedToModel(index),bool),
+            feature_native_id=matched[0]['native_id']))
+    if len({row['user_name'] for row in lights})!=count or model.GetLightSourceCount()!=count:
+        _fail('The complete light inventory changed during the passive capture.')
+    view_count=_typed(extension.AnnotationViewCount,int)
+    native=_array(extension.AnnotationViews,16)
+    if not 0<=view_count<=16 or len(native)!=view_count:
+        _fail('Annotation view count and complete native array must agree.')
+    views=[]; identities=[]
+    for raw in native:
+        view=binding.wrap(raw,adapter._module.IAnnotationView)
+        token=adapter.identity(view)
+        if any(token==old for old in identities):
+            _fail('Annotation view canonical identities must be unique.')
+        identities.append(token)
+        if _typed(view.AnnotationCount,int)!=0 or _array(view.Annotations):
+            _fail('Nonempty annotation views require a separate complete data profile.')
+        rotation=_array(view.GetViewRotation(),9)
+        if len(rotation)!=9:
+            _fail('Every annotation view needs its complete rotation matrix.')
+        views.append(dict(always_2d=_typed(view.Always2D,bool),
+            flat_pattern=_typed(view.FlatPatternView,bool),unassigned=_typed(view.UnassignedView,bool),
+            shown=_typed(view.IsShown(),bool),angle=_number(view.AngleMadeWithViewHorizontal),
+            rotation=[_number(value) for value in rotation],annotation_count=0))
+    closing=_array(extension.AnnotationViews,16)
+    if extension.AnnotationViewCount!=view_count or len(closing)!=view_count or any(
+            sum(adapter.identity(raw)==token for raw in closing)!=1 for token in identities):
+        _fail('Native annotation view membership changed during the passive capture.')
+    return dict(lights=lights,annotation_views=views)
+
+
+def _topology(adapter, model, body, boundary, references):
+    """Bind unique analytical roles, never enumeration order, names or PID bytes."""
+    expected_edges = {_json(sorted([boundary['vertices'][row['start']], boundary['vertices'][row['end']]]))
+                      for row in boundary['edges']}
+    expected_faces = {_json(sorted({tuple(boundary['vertices'][coedge['start']])
+                       for loop in row['loops'] for coedge in loop['coedges']})) for row in boundary['faces']}
+    for kind, expected in (('edge', expected_edges), ('face', expected_faces)):
+        objects = adapter.topology(body, kind)
+        if len(objects) != len(expected):
+            _fail('Native topology census must agree with the complete analytical boundary.')
+        seen = set()
+        for obj in objects:
+            if adapter.identity(adapter.owner_body(obj, kind)) != adapter.identity(body):
+                _fail('A declared topology object belongs to another body.')
+            if kind == 'edge':
+                vertices = [binding.wrap(obj.GetStartVertex(), adapter._module.IVertex),
+                            binding.wrap(obj.GetEndVertex(), adapter._module.IVertex)]
+                key = _json(sorted(_point(vertex) for vertex in vertices))
+            else:
+                vertices = set()
+                for raw_edge in _array(obj.GetEdges(), 12):
+                    edge = binding.wrap(raw_edge, adapter._module.IEdge)
+                    for getter in ('GetStartVertex', 'GetEndVertex'):
+                        vertex = binding.wrap(getattr(edge, getter)(), adapter._module.IVertex)
+                        vertices.add(tuple(_point(vertex)))
+                key = _json(sorted(vertices))
+            if key not in expected or key in seen:
+                _fail('Topology must have unique complete analytical incidence roles.')
+            seen.add(key)
+            _pid(adapter, model, obj, kind, 'body:0/' + key, references)
+        if seen != expected:
+            _fail('Topology roles do not cover the entire supported boundary.')
+
+
+def _sketch(adapter, model, feature, feature_roles, references):
+    snapshot, members = adapter.sketch_snapshot(model, feature)
+    result = deepcopy(snapshot)
+    bindings = [('feature_pid_hex', result['feature_native_id']),
+                ('reference_plane', result['reference_plane']['native_id']),
+                ('model_origin', result['model_origin']['feature_native_id'])]
+    for key, native_id in bindings:
+        role = feature_roles[native_id]
+        token = result[key] if key == 'feature_pid_hex' else result[key]['pid_hex']
+        if not any(row['kind'] == 'feature' and row['role'] == role and row['token'] == token for row in references):
+            _fail('Sketch plane/origin/owner must bind the exact declared feature inventory.')
+        if key == 'feature_pid_hex':
+            result[key] = {'reference_role': role}
+        else:
+            result[key]['pid_hex'] = {'reference_role': role}
+    entities = result.pop('entity_references')
+    for row in entities:
+        interface = 'ISketchPoint' if row['kind'] == 'point' else 'ISketchSegment' if row['kind'] == 'segment' else None
+        if interface is None:
+            _fail('Only complete own linear sketch points/segments can be bound.')
+        raw, status = adapter._extension(model).GetObjectByPersistReference3(adapter._persistent_variant(bytes.fromhex(row['pid_hex'])))
+        if type(status) is not int or status != 0 or raw is None:
+            _fail('Sketch entity persistent reference did not resolve.')
+        current = binding.wrap(raw, getattr(adapter._module, interface))
+        roles = [key for key, token in members if adapter.identity(current) == token
+                 and (key == 'model_origin' or key.startswith('point:') or key.startswith('line:'))]
+        if len(roles) != 1:
+            _fail('Sketch entity must map bijectively to an exact captured structural role.')
+        _pid(adapter, model, current, 'sketch_' + row['kind'], 'sketch:0/' + roles[0], references, interface)
+    return result
+
+
+class CadNativeFirstSaveSnapshotMixin:
+    def first_save_part_snapshot(self, model):
+        opening=self.snapshot(model)
+        if opening['document_type']!='part':
+            _fail('The complete first-save oracle supports native parts only.')
+        watch=self.watch_part(model)
+        try:
+            sequence=watch.poll()
+            identity=self.identity(model)
+            configuration_identity=self.configuration_identity(model,opening['active_configuration'])
+            result=self._first_save_part_snapshot(model)
+            # Retain native incarnations throughout all getter calls. The
+            # event envelope also rejects edit-and-undo (ABA), even if final
+            # scalar metadata/geometry happens to equal the opening snapshot.
+            same=(self.identity(model)==identity and self.snapshot(model)==opening
+                and self.configuration_identity(model,opening['active_configuration'])==configuration_identity)
+            if not same or watch.poll()!=sequence:
+                _fail('Native model/configuration or revision events changed during the full capture.')
+            return result
+        finally:
+            watch.close()
+
+    def _first_save_part_snapshot(self, model):
+        before = self.snapshot(model)
+        configuration = before['active_configuration']
+        if before['document_type'] != 'part' or before['configurations'] != [configuration]:
+            _fail('The complete first-save oracle supports one native part configuration.')
+        features = self.features(model)
+        feature_identities=tuple(self.identity(feature) for feature in features)
+        summaries = [self.feature_summary(feature) for feature in features]
+        kinds = [row['feature_type'] for row in summaries]
+        if (len(features) > 64 or kinds.count('RefPlane') != 3 or kinds.count('OriginProfileFeature') != 1
+                or kinds.count('ProfileFeature') != 1 or sum(kinds.count(k) for k in ('Extrusion', 'Boss')) != 1
+                or any(k not in FOLDERS | DISPLAY_FEATURES | {'RefPlane', 'OriginProfileFeature', 'ProfileFeature', 'Extrusion', 'Boss'} for k in kinds)
+                or any(row['suppressed'] or row['error_code'] for row in summaries)):
+            _fail('The initial complete profile is three native planes, origin, rectangular sketch and blind base.')
+        bodies = self.bodies(model, 'all')
+        body_identities=tuple(self.identity(body) for body in bodies)
+        if len(bodies) != 1 or bodies[0].GetType() != 0 or bodies[0].IsMeshBody() is not False:
+            _fail('One exact native solid body is required.')
+        context = self.dimension_context(model)
+        if (context['editing_sketch'] or context['external_reference_count'] or context['equation_count']
+                or context['equations_linked'] or context['design_table'] or context['unsafe_feature_types']
+                or any(context['configuration_needs_rebuild'].values())):
+            _fail('Editing/rebuild/equation/external/design-table controls are unsupported.')
+        inventories = self.feature_deletion_context(model)
+        equations = inventories['equations']
+        if (equations['enumerated_count'] or equations['disabled_count']
+                or not equations['disabled_definitions_captured']
+                or inventories['external_references']['count'] or inventories['auxiliary_references']['count']):
+            _fail('All enabled/disabled equations and external reference inventories must be empty.')
+        feature_refs = self.feature_external_references(features)
+        if feature_refs['total_reference_rows']:
+            _fail('Per-feature external references are not supported by this first-save profile.')
+        geometry = self.dimension_geometry_snapshot(model)
+        if geometry['representation'] != 'planar_polyhedral_brep_v1':
+            _fail('The rectangular-base profile requires a complete planar analytical boundary.')
+        native_dimensions = self.dimensions(model, features)
+        dimensions = [self.dimension_summary(item, [configuration]) for item in native_dimensions]
+        sketch_feature = features[kinds.index('ProfileFeature')]
+        original_sketch, _ = self.sketch_snapshot(model, sketch_feature)
+        parameters = rectangle_parameters(original_sketch, dict(dimensions=dimensions, context=context, geometry=geometry),
+                                          configuration, require_editable=False)
+        references = []
+        roles = {row['native_id']: 'feature:' + str(index) for index, row in enumerate(summaries)}
+        namespace=Path(before['path']).stem if before['path'] else before['title']
+        dimension_roles,dimension_evidence=_dimension_roles(dimensions,parameters,roles,namespace)
+        for feature, row in zip(features, summaries):
+            if row['feature_type'] not in FOLDERS | DISPLAY_FEATURES:
+                _pid(self, model, feature, 'feature', roles[row['native_id']], references)
+        body = bodies[0]
+        _pid(self, model, body, 'body', 'body:0', references)
+        _topology(self, model, body, geometry['bodies'][0], references)
+        sketch = _sketch(self, model, sketch_feature, roles, references)
+        for item, row in zip(native_dimensions, dimensions):
+            anchor = self.dimension_persistent_id(model, item)
+            resolved = self.resolve_dimension_id(model, anchor)
+            if (self.identity(resolved) != self.identity(self.dimension_object(item))
+                    or not self.dimension_reference_is_current(model, item, anchor)):
+                _fail('Every dimension anchor must round-trip the exact current dimension and owner.')
+            references.append(dict(kind='dimension', role=dimension_roles[row['full_name']], token=_json(anchor)))
+        # Incarnation counters are retained by the session oracle, not treated
+        # as persisted CAD parameters. No opaque IDs are generically stripped.
+        clone_dimensions = [{key: deepcopy(value) for key, value in row.items() if key != 'owner_update_stamp'} for row in dimensions]
+        for row in clone_dimensions:
+            row['full_name']={'reference_role':dimension_roles[row['full_name']]}
+        for row in sketch['relations']:
+            if row['dimension_full_name'] is not None:
+                name=row['dimension_full_name']
+                if name not in dimension_roles:
+                    _fail('A sketch dimension relation must bind a complete current dimension role.')
+                row['dimension_full_name']={'reference_role':dimension_roles[name]}
+        parameters=deepcopy(parameters)
+        parameters['axes']={axis:{'reference_role':dimension_roles[name]} for axis,name in parameters['axes'].items()}
+        extrusion=_extrusion(self, features[next(i for i,k in enumerate(kinds) if k in ('Extrusion','Boss'))])
+        # API documents AutoSelect as available only when FeatureScope=True.
+        # The supported single-base profile has that scope disabled. Retain
+        # the raw boolean for source preservation, but never treat it as an
+        # available persisted CAD control or silently remove an active value.
+        native_observations=dict(document_dimension_namespace=namespace,
+            qualified_dimensions=dimension_evidence,unavailable_extrusion_auto_select=extrusion['AutoSelect'])
+        extrusion['AutoSelect']={'availability':'unavailable_feature_scope_disabled_v1'}
+        part = binding.wrap(model, self._module.IPartDoc)
+        material = part.GetMaterialPropertyName2(configuration)
+        body_material = body.GetMaterialPropertyName(configuration)
+        if any(type(value) is not tuple or len(value) != 2 or any(type(v) is not str for v in value)
+               for value in (material, body_material)):
+            _fail('Complete native model/body material name and database outputs are required.')
+        units = _array(model.GetUnits(), 16)
+        if not units or any(type(value) not in (int, float, bool) for value in units):
+            _fail('The complete native units array is required.')
+        clone = dict(profile='single_rectangular_blind_base_v1', features=summaries,
+            dependencies=self.feature_dependencies(features), geometry=geometry,
+            dimensions=clone_dimensions, sketch=sketch, parameters=parameters,
+            extrusion=extrusion,
+            controls={key: deepcopy(value) for key,value in context.items() if key not in ('active_document','read_only')},
+            equation_reference_inventory=inventories, feature_external_reference_inventory=feature_refs,
+            planes=[dict(role=roles[row['native_id']], transform=[_number(value) for value in self.reference_plane_transform(feature)])
+                    for feature,row in zip(features,summaries) if row['feature_type']=='RefPlane'],
+            properties=_properties(self, model, configuration), units=units,
+            annotations=_annotations(self,model,native_dimensions,references),
+            configuration_state=_configuration(self,model,configuration),
+            auxiliary_data=_empty_auxiliary_data(self,model,features,summaries),
+            display_data=_display_data(self,model,features,summaries),
+            material=list(material), body_material=list(body_material),
+            body=dict(name=_typed(body.Name,str), visible=_typed(body.Visible,bool)))
+        selection = binding.wrap(model.SelectionManager, self._module.ISelectionMgr)
+        count = _typed(selection.GetSelectedObjectCount2(-1), int)
+        closing_features=tuple(self.identity(feature) for feature in self.features(model))
+        closing_bodies=tuple(self.identity(body) for body in self.bodies(model,'all'))
+        if (not 0 <= count <= 256 or closing_features!=feature_identities
+                or closing_bodies!=body_identities or self.snapshot(model) != before):
+            _fail('Native source changed during the complete passive capture.')
+        result = dict(scope=SCOPE, configuration=configuration, configurations=[configuration],
+            solid_body_count=1, selection_count=count, clone_state=clone,
+            references=sorted(references,key=lambda row:(row['kind'],row['role'])),
+            native_observations=native_observations)
+        _json(result)
+        return result

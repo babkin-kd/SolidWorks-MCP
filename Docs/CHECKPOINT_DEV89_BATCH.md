@@ -1,0 +1,63 @@
+# Пакет dev85–dev89: lifecycle и граница стадии 1
+
+Контрольная точка после трёх законченных связанных блоков. Пакет отправлен
+одним push в черновой PR №15 нашего форка: head
+`9489360a6ff090b0c1f9514feb628d5d86339274`. Main не принимается до закрытия стадии 1.
+Публичные отчёты содержат только обезличенные результаты. CAD-файлы, полные
+журналы, SQLite и шаблоны остаются в игнорируемом work/.
+
+| Блок | Фактический результат | Точное свидетельство |
+| --- | --- | --- |
+| Clean close dev85 | Internal12/public10 accepted; точное закрытие собственных документов, dirty сосед и исходная сессия сохранены | [Приёмка закрытия](NATIVE_DOCUMENT_CLOSE_ACCEPTANCE.md) |
+| Bounded open L2 dev87 | Internal13/public11 accepted; resolved part/assembly/drawing, new/borrowed refs, read-only/configuration, CWD и baseline подтверждены | [Приёмка открытия](NATIVE_DOCUMENT_OPEN_ACCEPTANCE.md) |
+| Part activation S1-B5-ACT dev89 | Четыре internal случая и public MCP/native accepted в ограниченном part scope; no-op/replay/stale и controlled unknown/reconciliation различены | [Приёмка активации](NATIVE_PART_ACTIVATION.md), [артефакт dev89](CHECKPOINT_DEV89.md) |
+
+Это отдельные scoped приёмки своих wheel. Они не суммируются в итоговую
+same-wheel приёмку S1-B5. Управляемое исключение после нормального native return
+не выдаётся за настоящий COM throw; исторические unknown/failed сохранены.
+
+## Остатки и обязательные проверки
+
+L2 закрыт без расширения объёма. Остаются L3 и S1-B1…S1-B5. Внутренний L3
+принят на dev88; публичная цепочка L3-P1 и внутренний gate нового кандидата
+ещё не приняты. После отправки пакета отдельная L3-I1 dev89 прошла980,22 с:
+terminal/exit0, actual committed predicate, independent full readback/mapping41,
+131 captures returned, own cleanup/baseline и current helper hashes подтверждены.
+L3-I2 dev89 прошла685,28 с: existing/stale, Copy0 и own baseline.
+L3-I3 dev89 прошла868,76 с: actual race/no-overwrite, known rollback,
+preservation/own baseline. I4 warning_after_copy dev89 прошёл757,18 с:
+original normal Copy, controlled unknown/hold/replay, independent clone41,
+reconciliation/empty baseline. False/throw/incomplete идут последовательно;
+весь L3/public не принят. Это результат
+после отправленного head9489360; [факты L3](NATIVE_FIRST_SAVE_PROGRESS.md)
+накапливаются локально для следующего пакета, отдельного push нет.
+
+Минимальный цикл детали, обязательные гарантии безопасности, поддержанные
+случаи и конечные критерии каждого остатка заданы в [плане](../PLAN.md),
+[матрице](STAGE_1_REQUIREMENTS_MATRIX.md) и [приёмке блоков](STAGE_1_BLOCK_ACCEPTANCE.md).
+Все 22 прежних требования прослеживаются; 20 переносов остаются открытыми
+задачами стадий 2/3. Импорт/экспорт/STL отложены. Рабочая установка v1 сохранена.
+
+## Локальный пакет и CI
+
+Предыдущий отправленный head — d57e524; CI run38146512142 завершился failure
+из-за отсутствующего ignored work/ в SQLite-тесте чистого checkout. Исправление
+88e479a включено в этот пакет, обязательный workflow не отключается.
+
+Полный pure-набор контрольной точки: **6151 passed /323 CAD deselected,
+126,39 с**, `work/pytest-checkpoint-dev89-final-1.log`, с `-m "not solidworks"`.
+Это исходники и искусственные доменные сценарии, не новая CAD-приёмка.
+Исполняемый пакет dev89 после его сборки не менялся; installed/native
+свидетельства привязаны к его Git ea93a0b и точным digest/hash из сводки dev89.
+Новый CI оценивается только после
+одной пакетной отправки и по её точному head; локальный успех его не заменяет.
+Native-владелец продолжает свой прогон; отправка Git не отменяет COM-вызов.
+
+Прямая API-проверка после push подтвердила draft/open PR15, точный head и
+неизменный base `3ab795ec9d75e8a0055d41554cd439737b8b82f8`. Название и описание
+PR обновлены под окончательный пакет. [CI run38193016491](https://github.com/babkin-kd/SolidWorks-MCP/actions/runs/38193016491)
+завершился **success** по прямой API-проверке. `unit-and-build` и все обязательные
+этапы — lock, unit tests, wheel/sdist build, отдельная установка wheel,
+installed metadata/stdio — прошли. Описание PR обновлено по этому результату.
+CI подтверждает именно отправленный head9489360; native-приёмка и завершение
+стадии 1 из этого не следуют. PR остаётся draft/open, main не объединён.

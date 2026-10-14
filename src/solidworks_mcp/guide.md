@@ -349,6 +349,37 @@ a proven battery socket:
 
 ## 7. Limits and housekeeping
 
+### Local sheet-metal tools (SolidWorks 2023 verified)
+
+Use `add_sheet_metal_base` in an empty part for a closed XY polygon, or
+`add_sheet_metal_profile` for an open L/U/Z section extended along +Z. For an
+80 × 25 × 40 mm U bracket use points `[[0,25],[0,0],[80,0],[80,25]]`,
+depth 40, thickness 2, radius 2, K-factor 0.5 and `reverse_thickness=true`.
+The latter puts material to the left of the directed polyline (false: right),
+verified with native U-shaped base flanges in SolidWorks 2023.
+For a closed sheet true grows along +Z; false along -Z.
+
+For doors and other perimeter folds, `add_sheet_metal_edge_flange` creates one
+native edge flange. Use a fresh zero-based `list_edges` index for each call.
+It inherits the sheet-metal radius and allowance, positions material inside,
+measures length to the outer virtual sharp and trims adjoining side bends.
+Use the outside top edge of an existing wall with `flip=true` for an inward
+second return. SolidWorks controls the generated edge-flange profile sketches.
+
+`convert_to_sheet_metal` runs Insert Bends on one existing uniform-thickness
+body; `fixed_face="+y:inner"` selects the inside floor of the extruded U bracket.
+Closed shells need rip cuts first. `get_sheet_metal_info` reports actual native
+parameters, body bounds, flat-pattern names/states and rebuild errors.
+`set_sheet_metal_flattened` unfolds/refolds a native FlatPattern, checking its
+state and returning measured bounds. Generated bend-line and bounding-box
+sketches may be under-defined; the source sketches remain fully defined.
+
+Save as `.SLDPRT`, then use `export_sheet_metal_dxf` for a single sheet-metal
+body. Optional bend lines and sketches are supported. Export preserves the
+folded/flat state and refuses an existing file unless overwrite is explicit.
+K-factor 0.5 is a modelling assumption: use calibrated material/tooling values
+for production bend development.
+
 - Not available: importing meshes as bodies (slice them instead), sketches on
   arbitrary planes (a person's planes work in `add_mirror` and
   `cut_profile_through_plane`), free arcs inside polygon profiles (round corners with

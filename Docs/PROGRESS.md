@@ -1,3 +1,22 @@
+Dev76: point boundary distance/native location для resolved part instance принят:
+4287 pure/323 CAD deselected (53,93с), installed metadata61/18,
+internal native19/public MCP6 accepted=true на одном wheel; exact4-owned
+cleanup, baseline и non-STL preferences подтверждены. Hidden rotated
+inside/outside/boundary, explicit frame/trimmed corner, nested/multibody,
+solid cylinder и hollow cavity/material, old replaced body/face rejection.
+[Контракт](COMPONENT_POINT_DISTANCE.md), [точная приёмка](COMPONENT_POINT_DISTANCE_ACCEPTANCE.md).
+Axis distance, aggregate subassembly targets, named native frames и общий
+N0–N6 остаются; стадия1 открыта, расширения2 отложены.
+
+Dev75: расстояние между двумя resolved экземплярами деталей принято:
+4236 pure/323 CAD deselected (53,88с), installed metadata60/18,
+internal native13/public MCP6 accepted=true на одном wheel; exact-owned cleanup
+и baseline подтверждены. Hidden rotated/multibody15 мм, nested70 мм,
+curved overlap/tangent0, native move14 мм, cylinder gap24 мм вместо axis36 мм.
+[Контракт](COMPONENT_DISTANCE.md), [точная приёмка](COMPONENT_DISTANCE_ACCEPTANCE.md).
+S1-16/S1-06 частично: point/axis distance, агрегат подсборки, native named
+frames и общий N0–N6 остаются; стадии1/2 не объявлены завершёнными.
+
 # SolidWorks MCP — Progress log
 
 ## Environment (verified 2026-06-25)

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.babkin-kd/solidworks-mcp",
+  "title": "SolidWorks MCP v2 (development template)",
+  "description": "Development API v2 for explicit part reads, guarded renaming, dimensions and exports (Windows).",
+  "repository": {
+    "url": "https://github.com/babkin-kd/SolidWorks-MCP",
+    "source": "github"
+  },
+  "version": "2.0.0.dev97",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "__FORK_PYPI_PACKAGE__",
+      "version": "2.0.0.dev97",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

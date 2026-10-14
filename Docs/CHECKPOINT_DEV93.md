@@ -1,0 +1,246 @@
+# Кандидат dev93: сохранение вида и native-постусловия отдельного выдавливания
+
+Цель возобновлена после пользовательской паузы. Последний dev92 positive
+завершился failed; historical extrusion unknown сохранён, hold reconciled
+только после независимой quiescence и собственных CloseDoc с полным baseline.
+Старый request не повторяется. [Предыдущая контрольная точка](CHECKPOINT_DEV92.md).
+
+## Исправления по сохранённым доказательствам
+
+Detached replay фактического dev92 checkpoint/readback выявил три расхождения:
+автоматический isometric/zoom первого тела, inactive ThinWallType=-1 и дополнительные
+подтверждённые parent links от той же плоскости и начала координат к extrusion.
+
+1. Исходный target model view сохраняется в native receipt с canonical model/view
+   identity. Под тем же guard однократно возвращаются Orientation3, Scale2 и
+   Translation3, только если изменились. Используются double SAFEARRAYs; созданные
+   MathTransform/MathVector и полный конечный readback проверяются точно. Каждая
+   запись имеет pending/returned journal pair. Lost ack, storage или readback
+   uncertainty удерживают эффект и запрещают blind inverse/retry.
+2. Постусловия допускают ровно inactive ThinWallType=-1/0 при IsThinFeature=False,
+   нулевой толщине обеих стенок и cap, без link/draft/reverse и с полным solid BREP.
+   -1 — наблюдение SW2023, не объявленное значение thin-wall enum. Документация
+   [ThinWallType](https://help.solidworks.com/2019/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IExtrudeFeatureData2~ThinWallType.html?format=P&value=)
+   описывает эту настройку для thin base; признак отсутствия thin feature проверяется
+   отдельно [IsThinFeature](https://help.solidworks.com/2026/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IExtrudeFeatureData2~IsThinFeature.html).
+3. Дополнительные direct parent links разрешены лишь для independently bound
+   plane/origin заимствованного эскиза, уже имеющих подтверждённую baseline связь
+   с ним. Parent/child census совпадает, старые ссылки сохраняются, absorbed link
+   только owned extrusion→borrowed sketch. Произвольные ancestors не допускаются.
+
+Точные view setters подтверждены официальными свойствами
+[Orientation3](https://help.solidworks.com/2025/english/api/sldworksapi/SOLIDWORKS.Interop.sldworks~SOLIDWORKS.Interop.sldworks.IModelView~Orientation3.html),
+[Scale2](https://help.solidworks.com/2010/English/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IModelView~Scale2.html)
+и [Translation3](https://help.solidworks.com/2021/English/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IModelView~Translation3.html).
+Read-only getters на соседях/полные геометрические proofs не ослаблены; view не
+включён в volatile fields. Новых инструментов/профилей/режимов не добавлено.
+
+## Доказательства до итоговой сборки
+
+- Related extrusion/postconditions: **95 passed /1,49 с**.
+- Related bridge/executor/native-step journal: **161 passed /3,10 с** с перекрытием
+  предыдущего набора. Related view/protocol/supervisor: **235 passed /28,90 с**.
+  Это pure/domain evidence с искусственным CAD, не native-приёмка.
+- Short interop на установленном dev92, typed setters: **terminal/accepted**,52
+  pending/returned rows, own_count0, полный baseline/non-STL восстановлен;
+  view совпал до и после release. SHA256 private report
+  `1ee5b64dcfd118db88163a121299eb50b3157252f55309e230c1b54f7b4ff126`.
+  Это проверка зарегистрированных COM-сигнатур и inverses, не приёмка dev93/B1.
+- Первая short попытка с untyped Python-list выявила неверный Translation3
+  readback. Все её вызовы вернулись; собственная единственная fixture закрыта
+  после независимой проверки с полным исходным baseline. Не засчитана passed.
+- Detached replay сохранённого dev92 стал admitted лишь при диагностической
+  подстановке сохранённого исходного view. Это условное объяснение дефекта,
+  исходный failed report/unknown не переписан и не объявлен успешным.
+
+Новый public driver готовит одну конечную stdio-цепочку на exact installed wheel,
+после strict same-wheel positive/N4/N5 preflight. Создание документа связывается
+через committed opaque ID/receipt, unchanged same-connection preparation,
+ID-bound HWND и независимую canonical identity; creation DTO сам HWND не содержит.
+Публичные отрицательные physical cases не дублируют внутренний N4/N5.
+Full SQL row сверяется с job_get published projection без единственного private
+digest; сам digest пересчитывается и проверяется. Независимые av_UUID namespaces
+сравниваются через bijection полных view rows и assigned axis partitions; внутри
+root adapter EMPTY→SKETCH→BASE сохраняются реальные local view identities и
+borrowed bindings. Остальные поля snapshot сравниваются точно. Related public:
+**213 passed /23,76 с**, включая64 новых случая; tests artificial/SQLite, не CAD.
+Отдельный durable unknown/hold/no-retry при unconfirmed view проверен в related
+execution32/1,60 с. Наборы перекрываются и не суммируются.
+
+Internal drivers дополнительно сохраняют HWND/metadata нормально возвращённых
+собственных fixtures до дальнейших операций. Эти данные дополняют retained
+canonical COM ownership, а не разрешают adoption по имени или roster delta.
+
+## Следующие конечные gates
+
+Полный итоговый source pure-набор: **6824 passed /323 CAD deselected /163,45 с**,
+exit0. Private log `work/pytest-dev93-full-1.log`. CAD cases в этом запуске
+исключены и не засчитываются passed. Исполняемые файлы после этого набора
+не менялись; агент завершён, интеграцией и native по-прежнему управляет root.
+
+## Точный установленный wheel и текущая native-проверка
+
+- Версия `2.0.0.dev93`, clean build Git
+  `5710f6395c84ecff01d014fffafe932d2c66b797`.
+- Source digest `f87391ff089daf16f79da1be075d22b69d6a215f9d4d37cac97a148f1ad993e0`.
+- Wheel SHA256 `af09a868c8718ac74a44dda6f807edb59a7179206bd48a78281e1435cead6a4e`.
+- Offline artifact и installed metadata/stdio приняты, **79 tools /25 mutations**;
+  никакие CAD tools при metadata-проверке не вызывались. Установка только в
+  проектной dev .venv; рабочая v1 сохранена. Source PYTHONPATH отсутствует.
+
+Private evidence: `work/wheel-dev93-report-1.json`,
+`work/metadata-dev93-report-1.json`, wheel в `work/wheels-dev93/`.
+Positive domain driver запущен в свежем state
+`work/native-rectangle-dev93-positive-1`; unified session **15395**.
+Один CAD-владелец, новый connection/request scope; старый unknown не повторяется.
+Wheel/десять positive helpers фиксированы до terminal/quiescence. Running не
+засчитывается как accepted и не разрешает следующий N4/N5/native/public запуск.
+
+Промежуточный фактический результат этого same-wheel прогона: отдельный sketch
+и replay прошли, job succeeded/committed,22 строки/11 пар pending→returned. Строгий detached
+journal gate повторно подтвердил весь job; независимый native snapshot показал
+`closed_rectangular_sketch_v1` и solid_body_count0, сосед сохранён. Драйвер
+перешёл к extrusion preparation. Этот промежуточный статус заменён итоговым
+positive-результатом ниже; N4/N5/public и весь B1 ещё не приняты.
+
+## Фактический positive domain native результат
+
+Exact installed dev93 positive завершён **exit0/terminal/positive_case_passed=true**,
+**3977,95 с**,75 snapshot captures returned. Приняты четыре конечных labels:
+separate sketch/replay, separate extrusion/replay, независимый exact base/dirty
+neighbor и собственная cleanup/baseline. Независимый объём
+**8000,000000000001 мм³**, один native solid40×20×10 мм. Оба committed jobs
+прошли строгие full checkpoint/geometry/guard/ledger gates, русский naming и
+borrowed sketch сохранены. Source/short interop результаты этим не подменялись.
+
+Оба собственных документа закрыты, owned_documents=[], native_calls_live=false;
+полный original baseline/application/non-STL preferences восстановлен. Terminal
+процесс завершился штатно, retained/unknown отсутствует. Независимый passive
+positive gate подтвердил wheel и все десять actual helper hashes.
+Private report SHA256:
+`1645ad860d6394c07a3435a99e4d84802ff585822aaaa2aeb8af3965cbc7085b`;
+`work/dev93-positive-preflight.json` accepted. Сам gate сохраняет
+`native_b1_accepted=false`: finite N4/N5 и public stdio ещё обязательны.
+
+После terminal/exit0 и проверки positive gate запущен единственный N4/N5
+процесс: `work/native-rectangle-dev93-faults-1`, unified session **36515**.
+Его preflight потребовал именно этот positive report/wheel/current helper hashes
+до CoInitialize/fixture creation. Новые собственные fixtures и state/request;
+real COM throw не инжектируется. Helpers этого прогона и wheel фиксированы
+до terminal/quiescence. Running не означает passed; public пока не запускался.
+
+Полный pure-набор → clean-source commit → один wheel dev93/installed metadata →
+positive domain native → N4/N5 с независимыми snapshots/dispatch counts →
+public stdio B1. Всё последовательно в одной CAD-сессии, helpers/wheel frozen
+до terminal/quiescence. Итоговые данные добавляются по фактическим результатам;
+source/interop не переносят автоматически приёмку на новый wheel.
+
+B1–B5 и стадия1 остаются открытыми. L2/L3/S1-B5-ACT scope не расширяется,
+imports/export/STL отложены. Нового push/CI нет; локальный пакет накапливается.
+
+## Пауза по решению пользователя — 12.10.2026
+
+Разработка и новые проверки приостановлены по прямому запросу пользователя.
+При проверке состояния unified session36515 подтвердил живой процесс;
+native N4/N5 ещё не завершён. В журнале `sketch_positive_prepare` имеет статус
+running, последний snapshot capture также running. Поле native_calls_live=false
+в промежуточном отчёте не доказывает quiescence всего драйвера.
+
+Фактически пройдены B1-N4-stale-sketch, B1-N4-foreign-plane и
+B1-N5-owned-sketch-restoration. Последний job завершён failed/rolled_back;
+контролируемая Python-ошибка после возврата native-вызова и полное собственное
+восстановление проверены, real COM throw не инжектировался. Весь fault-прогон
+по-прежнему accepted=false; остальные случаи и public не приняты.
+
+Две собственные контрольные детали остаются у работающего драйвера.
+Внешний CloseDoc и остановка процесса не выполнялись: безопасная очистка пока
+не доказана. Уже запущенный конечный драйвер не прерывался и содержит штатную
+очистку после завершения своих случаев. После паузы сначала проверить его
+terminal/exit, журнал, владение и итоговый baseline; новый native/public прогон
+без возобновления разработки не запускать. Wheel и helpers не изменены.
+
+## Возобновление по решению пользователя — 12.10.2026
+
+После команды «Продолжай» проверен тот же session36515: процесс жив, текущий
+шаг setup_sketch_job, новый прогон не запускался. Passive audit сохранённых
+данных повторно подтвердил строгие prewrite gates двух N4-случаев, нулевые
+dispatch counts и точное равенство их полных before/after snapshots; строгий
+restoration gate N5-sketch также принят. Все фактические helper hashes
+совпадают с замороженным manifest. Private сводка
+`work/dev93-partial-fault-preflight.json`; это частичный gate, не приёмка
+fault-прогона или B1. Очистка до terminal/quiescence не выполняется.
+
+Один независимый поток готовит только конечную карту оставшейся B3-приёмки,
+без COM, тестов и правок исполняемых файлов. CAD и интеграцией управляет root.
+
+## Независимая подготовка B3/B4 во время native B1
+
+После прямого решения пользователя продолжать независимую работу реализованы
+в новых внешних files B3 finite manifest/scheduling, exact27 public contracts,
+independent full DTO/SQLite binding, replay и pure metric/frame/axis witnesses.
+Итоговый related-набор **294 passed /18,44 с**; installed offline preflight dev93
+принят с актуальными helper hashes, без нового SDK/CAD workload. accepted
+preflight не означает native_acceptance. Подробности: [карта B3](B3_ACCEPTANCE_MAP.md).
+
+Отдельный агент подготовил passive B4 restart receipt gate, сохраняя реальные
+JobStore/SQLite checkpoints/history/holds. Related **92 passed /3,59 с**,62 новых
+cases. Kill/cleanup/native acceptance этот gate не разрешает.
+[Карта B4](B4_ACCEPTANCE_MAP.md). Во время этих проверок один CAD-владелец root,
+активный N4/N5 тот же36515; новый native/public не запускался. Последняя фаза —
+B1-N4-stale-extrusion; три sketch cases подтверждены, весь fault-прогон открыт.
+
+Установленный wheel93, исполняемые package sources и frozen native helpers
+не изменены; их hashes повторно сверены. Документы/кандидат/current CAD session
+не закрывались внешним потоком. Статусы B1–B5 остаются открытыми. Нового push/CI
+нет: подготовленные проверки входят в следующий локальный пакет, а не подменяют
+обязательные native handlers/public цепочки и общий release gate.
+
+В следующем независимом блоке добавлен B3 tracked reader: первоначальный
+tool response, late operation polling, whole job_get/SQL proof и replay
+связаны одним исходным запросом. Найденное расхождение failed outer envelope
+исправлено через настоящую facade-проверку. После uncertainty дальнейший dispatch
+того же маршрута запрещён. Одновременно подготовлен B4 pre-finish barrier
+с полной coherent journal/history проверкой; он не выдаёт kill/cleanup permits.
+Итоговая интеграция89 pure/5,03 с, актуальный offline installed B3 preflight
+`work/b3-preflight-dev93-reader-final.json`; native_acceptance=false.
+
+Native N4/N5 продолжает тот же36515, последняя фаза —
+B1-N5-owned-extrusion-restoration. Четыре N4 prewrite cases и N5 sketch повторно
+прошли passive exact gates; private `work/dev93-five-cases-preflight.json`.
+Полный fault/public B1 пока не принят. Нового native процесса/установки/push нет.
+
+## Итог N4/N5: failed/unknown, безопасная очистка подтверждена
+
+Fault driver завершил сценарий с ошибкой на6787,81 с;175 captures нормально
+вернулись. Пять cases подтверждены: четыре prewrite N4 и owned sketch restoration.
+N5 extrusion не принят: общий JobStore limit32 остановил запись следующего
+native-step event. В реальном журнале32 paired pending/returned rows, последний
+`rectangle_restore_rebuild` returned. Extrusion удалён и rebuild вернулся, но
+следующее удаление пустого annotation view не началось. Historical job
+unknown/unresolved с mutation_rollback_unconfirmed; success не опубликован.
+
+Независимая read-only проверка подтвердила HWND/metadata/full native inventory
+и стабильность обеих собственных моделей, сохранность sketch/neighbor, отсутствие
+блокировок и CommandInProgress=false. Остался ровно один пустой added annotation
+view в target; его полная строка сохранена в private receipt. Это не полное
+восстановление target и не N5 acceptance. Независимые av_UUID namespaces
+сопоставлены по полным view rows/axis partitions, реальные snapshots сохранены.
+
+После подтверждения returned calls, terminal failure/retained Python loop и
+точного CIM process identity остановлен только verifier worker; launcher также
+завершился. Две собственные контрольные детали закрыты без сохранения с
+canonical retirement checks. Пустая исходная session/application/non-STL
+preferences восстановлены и повторно прочитаны; CIP=false. Explicit
+accept_current_state reconciliation снял только hold; historical status unknown
+сохранён, mutation phase reconciled. Старый request не повторялся.
+
+Private evidence в state `work/native-rectangle-dev93-faults-1`:
+`cleanup-quiescence.json`, `process-quiescence.json`, `independent-cleanup.json`,
+`independent-reconciliation.json`; первоначальное расхождение annotation view
+сохранено в `cleanup-state-difference.json`. Failed original report не переписан.
+
+Следующий кандидат dev94 исправляет exact-operation budgets44/46 для rectangle
+sketch/extrusion, оставляя32 для остальных. Related123 pure/4,86 с, включая
+реальные JobStore/coordinator/RectangleConstructionExecution на искусственном
+CAD с максимальным inverse ledger. Установка/native dev94 ещё не выполнены;
+приёмка positive dev93 на новый wheel не переносится. Полный B1/стадия1 открыты.

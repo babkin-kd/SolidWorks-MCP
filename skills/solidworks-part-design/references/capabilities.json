@@ -1,0 +1,293 @@
+{
+  "assessed_on": "2026-10-11",
+  "baseline": {
+    "installed_metadata": {
+      "build_git_sha": "6437b337b01300a73c3b97a7604c2fb5cad58729",
+      "build_source_digest": "ec4e6a56d215a6d3e37b447cc4125635ebd05e495b3fdc16f940fcd50f97caa2",
+      "build_source_dirty": false,
+      "method": "Read distribution/build_info.json using .venv Python -I; no CAD or runtime creation",
+      "package_version": "2.0.0.dev87"
+    },
+    "public_registration": "src/solidworks_mcp/server_v2.py and registered tool facades",
+    "source_commit": "506e50617489d7ed233393f246dc0706987b7bfc",
+    "source_package_worktree_dirty": false
+  },
+  "limitations": [
+    "Draft assessment of source registration/contracts; not installed-wheel, MCP-chain or native acceptance of any practice.",
+    "partial means supporting operations exist within bounded contracts; it does not mean the complete practice can be executed.",
+    "guidance_only means procedural selection is available as advice, without a server implementation of that methodology.",
+    "unsupported means the defining action or verification is absent from the public MCP; listed tools provide context only.",
+    "Public names below are MCP tools, not dotted internal domain operations or general SolidWorks COM methods.",
+    "Observation, feature-tree, dimension and operation-specific revisions are distinct; no generic mutation/rebuild permission is implied.",
+    "Read-only summaries and internal BREP proofs are not an arbitrary public complete-body certificate.",
+    "Existing native save writes only an already-bound native file. First save of a new unsaved model is absent from this assessed baseline.",
+    "Pilot prerequisites are native W dependency, full W-edit-after-two-holes revision/shape scope, and first-save/reopen lifecycle with fresh references. Base-only W editing does not cover a perforated part.",
+    "Official source recommendations and internal/upstream examples do not establish public tool support, compatible COM calls or native acceptance. Stage 2.1 implementation follows the formal stage transition in PLAN.md.",
+    "Registry lifecycle and verification statuses remain unchanged; no practice becomes native_accepted through this assessment."
+  ],
+  "practices": [
+    {
+      "missing": [
+        "General creation/readback of chosen dimensional dependencies",
+        "Native symmetry/equation/centering construction",
+        "Width editing of a base after adding holes or patterns within a complete guarded scope"
+      ],
+      "practice_id": "SW-PART-001",
+      "practice_version": "1.0.0",
+      "scope": "Read supported dimensions/linear sketch and change independent parameters in their separate scopes. General dimension_set_value rejects sketch, linked, driven, equation and unsupported dependency contexts. Choosing engineering intent remains a skill procedure.",
+      "source_refs": [
+        "src/solidworks_mcp/server_v2.py",
+        "src/solidworks_mcp/sketch_tools_v2.py",
+        "src/solidworks_mcp/dimension_tools_v2.py",
+        "src/solidworks_mcp/part_hole_tools_v2.py",
+        "Docs/SKETCHES.md",
+        "Docs/PART_HOLE_EDIT.md"
+      ],
+      "stage": "2.1",
+      "status": "partial",
+      "tools": [
+        "system_get_info",
+        "feature_list",
+        "dimension_list",
+        "dimension_get",
+        "sketch_get",
+        "sketch_prepare_dimension_change",
+        "sketch_set_dimension",
+        "dimension_set_value",
+        "part_prepare_hole_dimension_change",
+        "part_set_hole_dimension",
+        "job_get"
+      ]
+    },
+    {
+      "missing": [
+        "Two-hole dependency x1=e, x2=W-e expressed and read in the native model",
+        "Width mutation after holes with full guarded two-hole state",
+        "Complete postconditions and persistence proof for the dependent pair",
+        "First native save of a new unsaved part"
+      ],
+      "practice_id": "SW-PART-002",
+      "practice_version": "1.0.0",
+      "scope": "A rectangular base and one independent X/Y/diameter through-hole are available. LPattern can create a second instance at a fixed supplied spacing, but that is not a width-dependent constant-edge-offset pair. Creating a second independent hole on an already holed body is outside the single-hole contract. Existing file lifecycle tools do not prove the dependent scenario.",
+      "source_refs": [
+        "src/solidworks_mcp/server_v2.py",
+        "src/solidworks_mcp/part_hole_tools_v2.py",
+        "src/solidworks_mcp/part_pattern_tools_v2.py",
+        "src/solidworks_mcp/native_document_save_tools_v2.py",
+        "Docs/PART_CREATION.md",
+        "Docs/PART_HOLE.md",
+        "Docs/PART_PATTERN.md",
+        "Docs/NATIVE_DOCUMENT_SAVE.md",
+        "Docs/NATIVE_DOCUMENT_OPEN.md"
+      ],
+      "stage": "2.1",
+      "status": "partial",
+      "tools": [
+        "document_list_templates",
+        "document_prepare_create_part",
+        "document_create_part",
+        "feature_list",
+        "part_prepare_base_extrusion",
+        "part_create_base_extrusion",
+        "part_prepare_through_hole",
+        "part_create_through_hole",
+        "part_prepare_linear_hole_pattern",
+        "part_create_linear_hole_pattern",
+        "document_prepare_save_native",
+        "document_save_native",
+        "document_prepare_close_native",
+        "document_close_native",
+        "document_prepare_open_native",
+        "document_open_native",
+        "job_get"
+      ]
+    },
+    {
+      "missing": [
+        "Pair centering dependency x1=(W-P)/2, x2=(W+P)/2",
+        "Supported base/hole/pattern editing after array creation",
+        "Independent parameter P editing with complete dependent-state proof"
+      ],
+      "practice_id": "SW-PART-003",
+      "practice_version": "1.0.0",
+      "scope": "LPattern supplies a native fixed spacing and 2..64 instances along positive local X/Y, seeded by an independent hole. The seed remains anchored by its X/Y. Fixed spacing does not imply centering under W changes; later editing is explicitly excluded.",
+      "source_refs": [
+        "src/solidworks_mcp/part_hole_tools_v2.py",
+        "src/solidworks_mcp/part_pattern_tools_v2.py",
+        "Docs/PART_HOLE.md",
+        "Docs/PART_PATTERN.md"
+      ],
+      "stage": "2.1",
+      "status": "partial",
+      "tools": [
+        "feature_list",
+        "edge_list",
+        "dimension_list",
+        "part_prepare_through_hole",
+        "part_create_through_hole",
+        "part_prepare_linear_hole_pattern",
+        "part_create_linear_hole_pattern",
+        "job_get"
+      ]
+    },
+    {
+      "missing": [
+        "Arbitrary reference plane/origin creation and choice",
+        "General creation of positional sketch relations",
+        "Centered or custom datum profile construction within an accepted scope"
+      ],
+      "practice_id": "SW-PART-004",
+      "practice_version": "1.0.0",
+      "scope": "A supported origin reference plane is an explicit persistent target. Base extrusion creates a fully defined rectangle with its corner at the true model origin; sketch_get reads the supported linear sketch including origin, plane and relations. This covers one corner-based method, not arbitrary datum selection.",
+      "source_refs": [
+        "src/solidworks_mcp/part_tools_v2.py",
+        "src/solidworks_mcp/sketch_tools_v2.py",
+        "Docs/PART_CREATION.md",
+        "Docs/SKETCHES.md"
+      ],
+      "stage": "2.1",
+      "status": "partial",
+      "tools": [
+        "feature_list",
+        "feature_get",
+        "part_prepare_base_extrusion",
+        "part_create_base_extrusion",
+        "sketch_get",
+        "sketch_prepare_dimension_change",
+        "sketch_set_dimension"
+      ]
+    },
+    {
+      "missing": [
+        "General selected relation creation/editing",
+        "Symmetry/equality/shared-parameter construction",
+        "Read and conflict analysis across arbitrary curved/external sketches"
+      ],
+      "practice_id": "SW-PART-005",
+      "practice_version": "1.0.0",
+      "scope": "sketch_get reads complete supported planar linear points, lines, constrained status and relations; it rejects curved and unsupported external entities. Own circle constraints are read inside bounded hole preparation, not via sketch_get. Rectangle and circle creation generate fixed supported networks; no general relation editor is exposed.",
+      "source_refs": [
+        "src/solidworks_mcp/sketch_tools_v2.py",
+        "src/solidworks_mcp/part_hole_tools_v2.py",
+        "Docs/SKETCHES.md",
+        "Docs/PART_HOLE.md",
+        "Docs/PART_HOLE_EDIT.md"
+      ],
+      "stage": "2.1",
+      "status": "partial",
+      "tools": [
+        "sketch_get",
+        "dimension_list",
+        "dimension_get",
+        "part_prepare_base_extrusion",
+        "part_create_base_extrusion",
+        "sketch_prepare_dimension_change",
+        "sketch_set_dimension",
+        "part_prepare_through_hole",
+        "part_prepare_hole_dimension_change"
+      ]
+    },
+    {
+      "missing": [
+        "Feature construction dependent on rounded geometry",
+        "Public parent-child dependency graph",
+        "Radius editing or subsequent feature construction on an already rounded body",
+        "Multiple fillets or arbitrary feature reordering"
+      ],
+      "practice_id": "SW-PART-006",
+      "practice_version": "1.0.0",
+      "scope": "One constant-radius full cuboid edge fillet is prepared/created and verified inside its bounded contract. The source is one plain rectangular base. No tangent propagation, face/variable/full-round fillets, further editing or form-generating fillet/boss chain is supported by this scope.",
+      "source_refs": [
+        "src/solidworks_mcp/server_v2.py",
+        "src/solidworks_mcp/part_fillet_tools_v2.py",
+        "Docs/PART_FILLET.md"
+      ],
+      "stage": "2.1",
+      "status": "partial",
+      "tools": [
+        "feature_list",
+        "feature_get",
+        "body_list",
+        "edge_list",
+        "geometry_get",
+        "part_prepare_edge_fillet",
+        "part_create_edge_fillet",
+        "job_get"
+      ]
+    },
+    {
+      "missing": [
+        "Server selection/comparison of methods against engineering purpose",
+        "Shell and Rib construction/readback through public MCP",
+        "General composed feature scenarios and comparison under expected edits"
+      ],
+      "practice_id": "SW-PART-007",
+      "practice_version": "1.0.0",
+      "scope": "The skill may inspect the implemented catalog and select among bounded alternatives: rectangular extrusion, full-turn base cylinder, corner through-cut, one hole, linear hole pattern or single-edge fillet. These are distinct source states, not freely composable tools. The Shell/Rib recommendation is advice with no executor in this catalog.",
+      "source_refs": [
+        "src/solidworks_mcp/server_v2.py",
+        "src/solidworks_mcp/part_tools_v2.py",
+        "src/solidworks_mcp/part_revolve_tools_v2.py",
+        "src/solidworks_mcp/part_cut_tools_v2.py",
+        "src/solidworks_mcp/part_hole_tools_v2.py",
+        "src/solidworks_mcp/part_pattern_tools_v2.py",
+        "src/solidworks_mcp/part_fillet_tools_v2.py",
+        "Docs/PART_REVOLVE.md",
+        "Docs/PART_CUT.md",
+        "Docs/PART_HOLE.md",
+        "Docs/PART_PATTERN.md",
+        "Docs/PART_FILLET.md"
+      ],
+      "stage": "2.1",
+      "status": "guidance_only",
+      "tools": [
+        "system_get_info",
+        "feature_list",
+        "feature_get",
+        "part_prepare_base_extrusion",
+        "part_create_base_extrusion",
+        "part_prepare_base_revolve",
+        "part_create_base_revolve",
+        "part_prepare_corner_cut",
+        "part_create_corner_cut",
+        "part_prepare_through_hole",
+        "part_create_through_hole",
+        "part_prepare_linear_hole_pattern",
+        "part_create_linear_hole_pattern",
+        "part_prepare_edge_fillet",
+        "part_create_edge_fillet"
+      ]
+    },
+    {
+      "missing": [
+        "Public closed parent-child dependency graph and mutation planner",
+        "Public complete equation/external-reference graph",
+        "Arbitrary feature reordering and dependent-parent edits",
+        "Save/reopen proof for the full proposed dependency scenario"
+      ],
+      "practice_id": "SW-PART-008",
+      "practice_version": "1.0.0",
+      "scope": "Public tools read feature-tree metadata, explicit references, supported dimensions/sketch relations and durable outcomes. Internal feature.dependencies/dependency context has its own historical evidence but is not a registered MCP tool. feature_list is not a complete dependency graph, and summaries are not a deletion or reorder preview.",
+      "source_refs": [
+        "src/solidworks_mcp/server_v2.py",
+        "src/solidworks_mcp/features.py",
+        "src/solidworks_mcp/sketch_tools_v2.py",
+        "Docs/API_V2.md",
+        "Docs/SKETCHES.md"
+      ],
+      "stage": "2.1",
+      "status": "partial",
+      "tools": [
+        "feature_list",
+        "feature_get",
+        "geometry_get",
+        "dimension_list",
+        "dimension_get",
+        "sketch_get",
+        "job_get",
+        "job_list"
+      ]
+    }
+  ],
+  "schema_version": "1.0"
+}

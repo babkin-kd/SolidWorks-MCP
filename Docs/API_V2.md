@@ -1,0 +1,652 @@
+# API v2: текущий кандидат первой стадии
+
+**Текущие исходники B2 (13.10.2026): 83 инструмента /27 операций записи.**
+Добавлены `feature_prepare_suppression` и `feature_set_suppressed`, область
+`owned_rectangular_blind_base_suppression_v1`. Это подавление/возврат только
+собственного основания B1 в исходной живой сессии: одна конфигурация,
+несохранённая активная деталь, полный прямоугольный профиль, без ссылок.
+Полный снимок, журнал, проверка post-release, сохранение исходного имени тела
+и отказ при неполных DIM/annotation-данных входят в домен. ID геометрии после
+перехода аннулируются; владение не восстанавливается после переподключения.
+Dev95 содержит81/26; его positive internal suppression/return
+принят, negative/public B2 ещё остаются. Это не приёмка следующего wheel.
+
+В исходниках добавлены `feature_prepare_leaf_deletion` / `feature_delete_leaf`,
+область `owned_rectangular_leaf_extrusion_deletion_v1`: read-only preview и
+одноразовое удаление собственного исходного B1-основания без зависимостей.
+Полная BASE→SKETCH проверка сохраняет исходный эскиз/PID, соседей, файлы/UI;
+удалённая адресная ссылка и её индекс аннулируются. Original creation receipt
+не используется повторно и не изменяется. Unknown сохраняет application hold,
+без Undo/recreate/retry. Source runtime/MCP и pure-проверки отдельно от
+installed/native: удаление не входит в wheel95. Новый exact dev96 установлен,
+metadata83/27 приняты; native positive удаления выполняется, в CAD ещё не принят.
+Принятым B1 остаётся точный dev94. Ниже сохранены результаты прежних кандидатов.
+
+**Исходный кандидат dev90, B1:** реализованы отдельные
+`sketch_prepare_rectangle` / `sketch_create_rectangle` и
+`part_prepare_rectangle_extrusion` / `part_extrude_rectangle`.
+Runtime, CAD adapter и MCP-фасады подключены; источник содержит79 tools/25
+mutations. Подготовка read-only; записи требуют document/configuration/object ID,
+полной revision и request_id. Создание эскиза возвращает закрытый sketch без тела
+и `data.value.sketch_object_id`; затем новая подготовка выдавливания использует
+этот ID как baseline. Выдавливание возвращает `feature_object_id`; поддержан
+только прямоугольник на origin plane, одна конфигурация и один blind solid.
+Восстановление сохраняет заимствованный эскиз. Обе операции имеют application
+checkpoint, native pending/returned journal и независимые post-release proof.
+Связанные294 source pure прошли13,28 с; full6390/323 CAD deselected прошёл139,96 с.
+Dev90 собран/установлен, metadata/stdio79/25 принят без source `PYTHONPATH`;
+native B1 ещё не принят. [Точная привязка](CHECKPOINT_DEV90.md).
+[Scope и остатки](PART_CREATION.md).
+
+**L3 принят на dev89:** семь внутренних отчётов и public4/4/3183,64 с,
+saved-file ACT/Save3, independent disk readback и полный baseline подтверждены.
+[Привязка к wheel и ограничения](NATIVE_FIRST_SAVE_DEV89_ACCEPTANCE.md).
+Пять блоков B1…B5 остаются. Следующие записи dev88 и более ранних кандидатов
+сохранены как история, без переноса их статусов на dev90.
+
+L2 bounded native open принят на exact installed dev87: metadata71/21,
+internal13/13 (210,07 с), public MCP11/11 (189,68 с), оба accepted=true.
+Полный source pure5560 passed/323 CAD deselected (77,43 с); external cleanup
+regressions — related499 passed (1,15 с). Полный baseline/CWD, dirty сосед,
+resolved new/borrowed references и own cleanup подтверждены. Исторические
+failed/unknown отчёты сохранены; они не переписаны и не повторены.
+[Точная приёмка](NATIVE_DOCUMENT_OPEN_ACCEPTANCE.md),
+[контракт](NATIVE_DOCUMENT_OPEN.md).
+
+**Установленный кандидат dev88, L3 ещё открыт:** зарегистрированы
+`document_prepare_first_save_native` и `document_first_save_native`;
+операции `document.prepare_first_save_native` / `document.first_save_native`,
+revision scope `native_first_save_replace_part_v1`. Runtime лениво создаёт домен
+на своём STA, использует общий durable journal/connection epoch и сбрасывает
+кеш при завершении соединения. Discovery не подключается к SolidWorks.
+MCP возвращает новый document_id и явный retirement исходных object IDs;
+параметры документа/конфигурации/пути/ревизии передаются без скрытого выбора цели.
+Связанный source pure-набор366 passed (26,07 с), включая фактический stdio
+discovery/schema/guide. Теперь dev88 собран и установлен в dev-среду:
+metadata/stdio accepted73 tools/22 mutations без source PYTHONPATH; итоговый
+source pure5978/323 CAD deselected. Installed L3-I1 прошёл (1008,63 с),
+independent full readback/mapping41 и cleanup/baseline подтверждены. L3-I2 прошёл
+(686,00 с): existing/stale, Copy0, cleanup/baseline. L3-I3 прошёл (874,27 с): actual
+no-replace collision/rollback/replay, foreign preserved и cleanup/baseline. L3-I4 warning
+прошёл (757,28 с): unknown/hold/replay и independent own reconciliation;
+L3-I4 false прошёл (756,52 с): unknown/hold/replay, independent clone41 и
+reconciliation/baseline. Throw прошёл (757,30 с): unknown/hold/replay, clone41 и
+reconciliation/baseline. Incomplete прошёл (726,39 с): controlled bridge receipt,
+unknown/hold/replay, clone41, reconciliation/baseline. Общий detached preflight
+семи внутренних отчётов dev88 принят 12.10.2026; публичная MCP-цепочка
+и необходимый bounded S1-B5-ACT не приняты. Исторический dev87 сохраняет свой
+accepted scope71/21. [Артефакт и контрольная точка dev88](CHECKPOINT_DEV88.md).
+[Прогресс и обязательные оставшиеся gates](NATIVE_FIRST_SAVE_PROGRESS.md).
+
+Граница стадии 1 — семь конечных блоков и сценарий простой детали:
+[матрица](STAGE_1_REQUIREMENTS_MATRIX.md), [критерии](STAGE_1_BLOCK_ACCEPTANCE.md).
+L2 закрыт, L3/B1–B5 открыты; первое сохранение не подменяется Save3.
+Гарантии безопасности не отложены. Широкие возможности видны как D2/D3;
+количество tools не означает приёмку стадии. Ниже исторические кандидаты:
+их прежние широкие gates и «20 из22» относятся к прежней границе.
+
+Dev85: clean native close принят:4673 pure перед wheel; final пакет4677/323 CAD deselected (60,07с). Installed metadata69/20,
+internal12/public MCP10 accepted=true на одном точном wheel. Полный retirement
+assembly+explicit hidden collateral, part/drawing, dirty сосед, replay/stale,
+explicit survivor activation и empty/free baseline подтверждены.
+[Контракт](NATIVE_DOCUMENT_CLOSE.md), [приёмка](NATIVE_DOCUMENT_CLOSE_ACCEPTANCE.md).
+First save/open, dirty-owned/retained-reference close и общий N6 остаются;
+стадия1 открыта,20 из22 требований по-прежнему открыты полностью/частично.
+Прежние scoped результаты привязаны к своим wheel; legacy20/20 отдельно.
+
+
+Dev82: current native file Save3 принят для явного документа; каталог67/19.
+Internal10/public5 accepted=true на одном wheel. [Приёмка](NATIVE_DOCUMENT_SAVE_ACCEPTANCE.md).
+Первое сохранение/open/close остаются обязательными; стадия1 открыта.
+Принятый dev79 ниже относится к своему точному wheel.
+
+Dev79: расстояния от полного solid-агрегата part/subassembly до точки
+и бесконечной оси приняты:4409 pure/323 CAD deselected (57,25 с), installed
+metadata65/18, internal native24/public MCP8 accepted=true на одном wheel.
+Exact4-owned cleanup, пустой/free baseline и non-STL preferences подтверждены.
+Hidden cylinder3/6/0 мм для точки и2/0 мм для оси, explicit rigid frame,
+native configuration replacement, multibody3/2 и replay проверены.
+[Контракт](COMPONENT_AGGREGATE_PROBES.md), [точная приёмка](COMPONENT_AGGREGATE_PROBES_ACCEPTANCE.md).
+Native named frames, остальные состояния/измерения сборок, масштаб1000+
+и общий N0–N6 остаются. Следующий обязательный блок — native open/save/close
+S1-15. Стадия1 открыта, расширения2 отложены; legacy20/20 учитывается отдельно.
+
+
+
+Исторический dev78: расстояние между полными solid-агрегатами part/subassembly принято:
+4365 pure/323 CAD deselected (54,78с), installed metadata63/18,
+internal native19/public MCP6 accepted=true на одном wheel. Exact4-owned
+cleanup, пустой/free baseline и non-STL preferences подтверждены. Полный
+leaf census/все пары, hidden cylinder minimum84 мм, shared descendant0,
+explicit rigid frame, native смена конфигурации/rename/move проверены.
+[Контракт](COMPONENT_AGGREGATE_DISTANCE.md), [точная приёмка](COMPONENT_AGGREGATE_DISTANCE_ACCEPTANCE.md).
+На момент dev78 point/axis distance агрегатов, native named frames и общий N0–N6 оставались;
+S1-06/S1-16 и стадия1 открыты. Legacy-пилот учитывается отдельно.
+
+
+Исторический dev77: расстояние resolved экземпляра детали до бесконечной оси принято:
+4335 pure/323 CAD deselected (54,63с), installed metadata62/18,
+internal native18/public MCP6 accepted=true на одном wheel; exact4-owned
+cleanup, baseline и non-STL preferences подтверждены. Exact directional
+supports + memory-only wire, hidden/rotated/nested instances, oblique axis,
+explicit rigid frame, far origin/reversed direction, cylinder surface gap/tangency.
+[Контракт](COMPONENT_AXIS_DISTANCE.md), [точная приёмка](COMPONENT_AXIS_DISTANCE_ACCEPTANCE.md).
+На момент dev77 aggregate subassembly, named native frames и общий N0–N6 оставались;
+S1-06/S1-16 и стадия1 открыты, расширения2 отложены. Старые приёмки ниже
+относятся к их wheel и не засчитываются в итоговый gate текущего кандидата.
+
+Исторический dev76: point boundary distance/native location для resolved part instance принят:
+4287 pure/323 CAD deselected (53,93с), installed metadata61/18,
+internal native19/public MCP6 accepted=true на одном wheel; exact4-owned
+cleanup, baseline и non-STL preferences подтверждены. Hidden rotated
+inside/outside/boundary, explicit frame/trimmed corner, nested/multibody,
+solid cylinder и hollow cavity/material, old replaced body/face rejection.
+[Контракт](COMPONENT_POINT_DISTANCE.md), [точная приёмка](COMPONENT_POINT_DISTANCE_ACCEPTANCE.md).
+На момент dev76 axis distance, aggregate subassembly targets, named native frames и общий
+N0–N6 остаются; стадия1 открыта, расширения2 отложены.
+
+| Инструмент | Реализованная операция |
+| --- | --- |
+| `measurement_get_component_axis_distance` | Native infinite-line minimum для explicit resolved part instance; exact supports/memory-only edge; input/root assembly witnesses мм; frame optional, hidden solids, surfaces excluded. |
+| `measurement_get_component_point_distance` | Explicit instance/point/frame; minimum до normal solid boundaries и native ENTER/EXIT location, original closest body/face IDs, closing snapshots. Hidden solids включены, surface исключены; boundary inside=null. |
+
+Dev75: расстояние между двумя resolved экземплярами деталей принято:
+4236 pure/323 CAD deselected (53,88с), installed metadata60/18,
+internal native13/public MCP6 accepted=true на одном wheel; exact-owned cleanup
+и baseline подтверждены. Hidden rotated/multibody15 мм, nested70 мм,
+curved overlap/tangent0, native move14 мм, cylinder gap24 мм вместо axis36 мм.
+[Контракт](COMPONENT_DISTANCE.md), [точная приёмка](COMPONENT_DISTANCE_ACCEPTANCE.md).
+На момент dev75 S1-16/S1-06 частично: point/axis distance, агрегат подсборки, native named
+frames и общий N0–N6 остаются; стадии1/2 не объявлены завершёнными.
+
+| Инструмент | Реализованная операция |
+| --- | --- |
+| `measurement_get_component_distance` | Два explicit resolved part-instance ID; native minimum и две ближайшие точки в root assembly мм. Hidden normal solids включены, surface исключены; без UI selection/activation. Snapshot/moments/configuration/transform closing gates, request replay; не classifier пересечений. |
+
+Исторический кандидат dev72: measurement_get_bounds,52 инструмента/18 guarded
+операций;4122 pure/323 CAD deselected, installed metadata/internal14/public6
+accepted=true на одном wheel. Own cleanup/baseline подтверждены.
+[Контракт](BOUNDS_MEASUREMENTS.md), [приёмка](BOUNDS_MEASUREMENTS_ACCEPTANCE.md).
+S1-16/S1-06 и общий gate остаются открытыми. Dev71/dev69 ниже — история их wheel.
+
+Исторический кандидат dev71: публичное измерение массы детали с durable UI guard.
+51 инструмент/18 guarded операций;4072 pure/323 CAD deselected, metadata
+и internal22/public6 accepted=true на одном wheel, cleanup/baseline подтверждены.
+[Контракт](MASS_MEASUREMENT_V2.md), [приёмка](MASS_MEASUREMENT_ACCEPTANCE.md).
+Историческая dev69 ниже сохраняется.
+
+Установленный dev74 принят для `component_face_list`, `component_edge_list`,
+`component_topology_get`: metadata59/18,4210 pure/323 CAD deselected,
+internal native21/public MCP8 accepted=true на одном wheel; own cleanup/baseline.
+[Контракт](COMPONENT_TOPOLOGY.md), [точная приёмка](COMPONENT_TOPOLOGY_ACCEPTANCE.md).
+Scoped resolved/normal body topology, включая hidden/curved BREP и native
+rename/delete/recreate отказы, не закрывает прочие состояния/измерения и общий
+gate стадии1. Dev73 ниже — принятая история его wheel.
+
+Установленный dev73 принят для четырёх passive component-чтений: metadata56/18,
+4175 pure passed/323 CAD deselected, internal native15/public MCP6 accepted=true
+на одном wheel, own cleanup и baseline подтверждены. [Контракт](COMPONENT_READS.md),
+[точная приёмка](COMPONENT_READS_ACCEPTANCE.md). Native область ограничена resolved
+instances/normal solid-surface bodies; component topology/прочие состояния,
+измерения сборок и общий gate стадии1 остаются. Dev72 ниже — история габаритов.
+
+Блок диагностики dev69 стадии 1 принят в ограниченном scope:
+`diagnostics_get_timings`, bounded private store/CLI, JobRunner/MutationCoordinator
+и выбранные COM/rebuild intervals. Полный pure4031/323 CAD deselected;34 новых
+timing tests. На одном installed wheel: metadata49/17, stdio modes, native20
+reads и internal4 basic accepted=true; собственные модели закрыты, baseline
+восстановлен. Полный COM/геометрические workload-сценарии и общий N0–N6 остаются
+открытыми. [Контракт](DIAGNOSTICS_TIMINGS.md), [приёмка](DIAGNOSTICS_TIMINGS_ACCEPTANCE.md).
+
+В исходниках подготовлен кандидат **dev68**: `sheet_prepare_flange_flat_state` /
+`sheet_set_flange_flat_state`, scope `single_u_sheet_flat_state_v1`, каталог48
+инструментов /17 мутаций. Домен/native bridge/MCP-фасад реализованы одним блоком;
+3997 pure passed /323 CAD deselected (50,43 с). Установленный wheel
+подтвердил metadata48/17; internal9/public10 accepted=true на одном wheel, own cleanup и baseline
+подтверждены. [Свидетельство](SHEET_FLANGE_FLAT_ACCEPTANCE.md).
+Контракт: [SHEET_FLANGE_FLAT_STATE](SHEET_FLANGE_FLAT_STATE.md).
+Принятая приёмка dev67 ниже сохраняется только для своего точного wheel.
+
+Принят ограниченный инженерный блок **dev67**: `sheet_prepare_edge_flange` /
+`sheet_create_edge_flange`, каталог46 инструментов /16 мутаций. Scope
+`single_l_sheet_edge_flange_v1`: одна отбортовка90° внутрь на явном продольном
+ребре собственного согнутого L-профиля, одна конфигурация/тело, явные вылет,
+радиус и K2. На одном установленном wheel: **3897 pure/323 CAD deselected**,
+metadata46/16 accepted, **internal native8/public MCP7 accepted=true**.
+Подтверждены полная U-форма, профиль/размеры, русские имена, исходные параметры,
+оба пути scoped restoration, invalid/stale и request_id. Свои модели закрыты,
+baseline пуст/free, новых unknown нет. Общая приёмка всех ранее перенесённых
+scope на dev67 не выполнена; стадии плана остаются открытыми.
+Контракт: [SHEET_EDGE_FLANGE](SHEET_EDGE_FLANGE.md),
+[свидетельства](SHEET_EDGE_FLANGE_ACCEPTANCE.md).
+
+Ранее принятый инженерный блок — **dev63**, `sheet_prepare_parameters` и
+`sheet_set_parameters`, scope `single_l_sheet_parameters_v1`: редактирование t/r/K
+одного существующего native L-профиля. На одном точном установленном wheel:
+**3545 pure passed /323 CAD deselected (42,53с)**, metadata44 инструментов /15
+мутаций, **internal native8/public MCP10 passed, оба accepted=true**.
+Подтверждены изменение согнутого профиля, развёртка с новыми параметрами, сгиб,
+возврат исходных значений, request_id, stale и known restoration. Свои документы
+закрыты, baseline пуст/free, все задания terminal, новых unknown нет.
+Прямая запись параметров в развёрнутом состоянии ещё требует native-приёмки.
+Контракт: [SHEET_PARAMETERS.md](SHEET_PARAMETERS.md).
+
+Ранее принятый инженерный блок — **dev62**, `sheet_prepare_flat_state` и
+`sheet_set_flat_state`, scope `single_l_sheet_flat_state_v1`.
+Контракт: [SHEET_FLAT_STATE.md](SHEET_FLAT_STATE.md).
+
+**dev62 принят** на одном точном установленном wheel: **3435 pure passed /323 CAD
+deselected (39,86с)**, metadata42 инструментов /14 мутаций, **internal native7 /
+public MCP8 passed, оба accepted=true**. Свои документы закрыты, baseline пуст/free,
+guard released; все задания terminal, новых unknown нет. Рабочая v1 сохранена.
+Приёмка ограничена одним самостоятельным L-профилем/телом/конфигурацией с одним
+сгибом90°. Импорт/экспорт отложены; все стадии плана остаются открытыми.
+
+Приёмка подтверждает создание folded-профиля, native-развёртку и обратный сгиб,
+полную форму и исходные имена/размеры/K, stale/known restoration/request_id.
+Произвольные профили/несколько сгибов и конфигураций — отдельные области.
+Исторические операции скругления/массива/отверстия не повторялись в этом блоке.
+
+Ранее dev61: folded L-профиль, scope `empty_part_sheet_l_profile_v1`,
+3284 pure /323 CAD deselected, metadata40/13, internal6/public6 на его wheel.
+Контракт: [SHEET_PROFILE.md](SHEET_PROFILE.md).
+
+| Инструмент | Реализованная операция |
+| --- | --- |
+| `sheet_prepare_parameters` | Два полных read-only снимка существующего L-профиля и template/allowance/options; явные t/r/K, ожидаемая folded/flat форма и ревизия. |
+| `sheet_set_parameters` | Изменение t/r/K по ревизии/request_id; checkpoint/guard, полный native BREP, сохранение исходного эскиза, состояния и имён; scoped restoration известного сбоя. |
+| `sheet_prepare_flat_state` | Два полных read-only снимка существующего L-профиля, K/fixed-face/форма/ревизия. |
+| `sheet_set_flat_state` | Flat/fold по ревизии/request_id; checkpoint/guard, полный native BREP и исходные имена; scoped restoration известного сбоя. |
+| `sheet_prepare_l_profile` | Read-only полная подготовка пустой детали/плоскости, размеров и K; ожидаемая форма и ревизия. |
+| `sheet_create_l_profile` | Создание по той же ревизии и request_id; native folded sheet metal, русские имена, полная проверка и scoped restoration при доказанном известном сбое. |
+
+Ранее принятый dev60: 3111 pure /323 CAD deselected, installed metadata38,
+internal7/public7 на его wheel. Контракт: [PART_FILLET.md](PART_FILLET.md).
+
+| Инструмент | Реализованная операция |
+| --- | --- |
+| `part_prepare_edge_fillet` | Read-only подготовка полного явного ребра прямоугольного основания, радиуса и русской метки; собственная ревизия полного источника и ожидаемой формы. |
+| `part_create_edge_fillet` | Постоянное скругление по той же ревизии и request_id; полный finite-arc BREP, selected-edge/native proof, сохранение исходного эскиза/размеров и scoped restoration. |
+
+Ранее принятый **dev58**: добавлены
+`part_prepare_linear_hole_pattern` и `part_create_linear_hole_pattern`, каталог
+36 инструментов /11 мутаций. Pure3023 passed /323 CAD deselected, installed
+metadata36 принят; **internal native8 /public MCP9 passed, оба accepted=true**
+на одном точном wheel. Сохранение исходной модели, own cleanup и free baseline
+подтверждены. Новый контракт: [PART_PATTERN.md](PART_PATTERN.md).
+Исправлено дублирующее поле native_id окружности; его CAD-проверка прошла внутри блока
+массива. Все стадии и импорт/экспорт сохраняют согласованный статус.
+
+
+Ранее принятый установленный кандидат **dev56** добавляет
+`part_prepare_hole_dimension_change` и `part_set_hole_dimension`: собственные
+X/Y центра и диаметр существующего единственного сквозного отверстия в явной
+прямоугольной базе. Каталог **34 инструмента / 10 мутаций**, новая область
+`single_base_circular_through_hole_dimension_v1`. **2940 pure passed / 323 CAD
+deselected**, installed metadata принят; **internal native10 / public MCP9
+passed, оба accepted=true** на одном точном wheel. Контрольные документы закрыты,
+baseline восстановлен. Контракт: [PART_HOLE_EDIT.md](PART_HOLE_EDIT.md).
+Стадии остаются открытыми. Выявленное в dev56 diagnostic-поле
+native_id окружности исправлено и подтверждено в native/MCP-блоке dev58. Следующее описание dev55 сохраняет
+предыдущий принятый результат, отдельный от dev56.
+
+Ранее установленный **dev55** принят в ограниченной инженерной цепочке новая деталь → пластина40 × 20 × 10 мм → Ø6 при X=10/Y=10. **2906 pure passed, 323 CAD deselected; metadata32 tools; internal native10 / public MCP stdio7 passed, оба accepted=true** на одном точном wheel. Общий guard проверен также на толщине12→10, русском rename, busy-отказе, stale и scoped restoration после намеренного сбоя. Собственные контрольные документы закрыты, CommandInProgress восстановлен, сессия пуста/free. Новых инструментов нет: каталог32/9; рабочая v1 и исторические wheel сохранены. Стадии открыты. Для model-мутаций собственный CommandInProgress включается после durable checkpoint; existing True отклоняется как application_busy без записи, unconfirmed release оставляет unknown/application hold. Подготовительные read jobs не переключают флаг. Приёмка dev55 относится к названным native-сценариям, не распространяется автоматически на экспорт или все прошлые операции. Точные артефакты и времена: [ENGINEERING_BENCHMARKS.md](ENGINEERING_BENCHMARKS.md).
+
+Установленный **dev54** прошёл ограниченную приёмку цепочки создания одного сквозного отверстия: `part_prepare_through_hole`, `part_create_through_hole`. Каталог — **32 tools/9 mutations**; **2885 pure passed, 323 CAD deselected; internal native6 и public MCP stdio7 passed, оба accepted=true** на одном точном wheel. Проверены полный профиль/BREP, stale, scoped restoration и повтор request_id. Ограничения и точный артефакт: [PART_HOLE.md](PART_HOLE.md). Рабочая v1 не изменена, стадии открыты. Остальные исторические native-результаты не переобъявлены приёмкой dev54.
+
+Установленный **dev52** принят для цепочки «новая деталь → полное вращение прямоугольного профиля, радиус 10 мм, высота 30 мм»: **2521 pure passed, 323 CAD deselected; fresh same-wheel internal 5 native passed и public MCP stdio 7 native passed, оба accepted=true**. Каталог — **30 инструментов, 8 mutations**. Подтверждены полностью определённый собственный профиль и ось, полный цилиндрический BREP (0 вершин, 2 замкнутых круговых ребра, 3 грани), независимые native объём около 9424,777961 мм³ и площадь 2513,274123 мм², stale-отказ до записи, scoped restoration после реального создания вращения и повтор request_id без второй операции. Исходная деталь, выделение/marks, вид и non-STL настройки сохранены; свои модели закрыты, сессия свободна. Приёмка ограничена этой цепочкой: исторические проверки других scope не засчитываются за новые прогоны dev52. Импорт/экспорт отложены; стадии плана остаются открытыми. См. [контракт вращения](PART_REVOLVE.md).
+
+| Новый инструмент dev52 | Назначение |
+| --- | --- |
+| `part_prepare_base_revolve` | Read-only подготовка полного вращения основания, собственная ревизия параметров и оси. |
+| `part_create_base_revolve` | Создание по ревизии и request_id, полное цилиндрическое BREP/constraint/native ownership proof и восстановление. |
+
+Историческая приёмка dev51 для цепочки «новая деталь → пластина 40 × 20 × 10 мм → сквозной угловой вырез 10 × 5 мм»: **2426 pure passed, 323 CAD deselected; fresh same-wheel internal 6 native passed и public MCP stdio 7 native passed, оба accepted=true**. Каталог — **28 инструментов, 7 mutations**. Подтверждены полный L-образный BREP (12 вершин, 18 рёбер, 8 граней), независимые native объём около 7500 мм³ и площадь 2700 мм², internal stale-отказ и scoped restoration после настоящего создания выреза, публичный повтор request_id без второй операции и сохранность исходной детали/выделения/вида. Свои модели закрыты, флаг свободен, non-STL настройки сохранены. Это ограниченная приёмка указанной цепочки; исторические проверки других scope не засчитываются за новые прогоны dev51. Импорт/экспорт отложены, стадия 1 открыта. См. [PART_CUT.md](PART_CUT.md).
+
+## Сквозной угловой вырез — dev51
+
+| Инструмент | Назначение |
+| --- | --- |
+| `part_prepare_corner_cut` | Полное read-only чтение базы/плоскости/controls и параметров выреза; собственная ревизия и ожидаемый L-профиль. |
+| `part_create_corner_cut` | Создание полностью определённого собственного эскиза и through-all выреза по той же ревизии и request_id; полные постусловия и scoped restoration. |
+
+Scope `single_base_rectangular_corner_through_cut_v1` требует явные document/configuration, opaque `object_id` исходного эскиза и `plane_object_id` его точной текущей плоскости. Размеры в мм, не меньше 0,001 мм; по каждой оси остаётся минимум 0,001 мм материала. Тайм-аут ограничивает ожидание, а не отменяет COM. Каталог не объявляет произвольные вырезы, отверстия, поверхности или редактирование размеров базы после добавления выреза. Instant3D `ICE` подтверждается как Cut через `GetTypeName` у точного собственного handle.
+
+Историческая приёмка dev49: **2380 pure passed, 323 CAD deselected; fresh same-wheel internal 11 native passed и public MCP stdio 11 native passed, оба accepted=true**. Каталог сохраняет **26 инструментов, 6 mutations**. MCP создаёт документ и пластину 40 × 20 × 10 мм, меняет ширину на 45 мм, высоту на 25 мм и толщину на 12 мм: независимый native объём `13500.000000000004` мм³. Подтверждены stale-отказ до записи, отсутствие повторной записи request_id, сохранность исходной детали/выделения/вида и internal scoped restoration после настоящего setter/rebuild. Свои контрольные модели закрыты, флаг свободен, non-STL настройки сохранены. Импорт/экспорт отложены, стадия 1 открыта. См. [SKETCHES.md](SKETCHES.md).
+
+Предыдущий принятый результат:
+
+Установленный dev41 содержит 23 инструмента, включая `document_list_templates`, `document_prepare_create_part`, `document_create_part`. Принята вся MCP-цепочка: настроенный `.prtdot` → новая пустая деталь → пластина 40 × 20 × 10 мм → толщина 12 мм, 9600 мм³. **2290 pure passed/323 CAD deselected; fresh same-wheel internal и public MCP stdio — по 6 native passed, accepted=true**. Исходные детали/выделения/виды сохранены, собственные модели закрыты. Baseline первого scope ограничен пустой сессией или открытыми деталями без редактируемого эскиза, шаблоном пустой детали с одной конфигурацией, русскими заголовком и конфигурацией. Сборки/чертежи в исходной сессии, произвольные шаблоны и размеры эскиза пока вне принятого scope. Импорт/экспорт отложены, mass v2 не опубликован, стадия 1 открыта. См. [PART_CREATION.md](PART_CREATION.md).
+
+Для нового документа явной целью служит `application_id`, возвращённый текущим соединением. Подготовка связывает шаблон/его SHA256, русские имена и область metadata/активации/видимости/видов существующих документов с ревизией `new_empty_part_document_v1`. `document_create_part` отображает application ID в durable `context.document_id` при `configuration=""`; настоящий новый ID находится в `data.after.created_document_id`. Checkpoint предшествует NewDocument/изменениям UI, guard не заимствует уже установленный command flag. Известный сбой восстанавливается только закрытием точного собственного нового документа; unknown не повторяется. Документ остаётся в памяти, без сохранения файла.
+
+Контур упаковки/выпуска проверяет wheel offline и metadata-only stdio; исторический каталог соответствующего wheel содержал23 реализованных инструмента. Registry descriptor является справочным шаблоном, публичная публикация пакета форка не объявляется. Артефакт/metadata smoke отдельно не расширяет native scope и не завершает стадию. См. [FORK_RELEASE.md](FORK_RELEASE.md).
+
+Локальная доработка тестового контура требует `--run-solidworks` для legacy CAD-тестов и свободной пустой CAD-сессии. Правильный pure-фильтр — `not solidworks`. Изолированная копия/удаление исследуются отдельным native-пробником: получены частичные наблюдения, но полная приёмка с восстановлением сессии пока не пройдена и публичных инструментов не добавлено. Отключённые определения уравнений остаются неподтверждёнными; native `Invalid` не выдаётся за флаг `Deleted`. См. [NATIVE_TESTING.md](NATIVE_TESTING.md). Последняя принятая сборка и её scope ниже не расширяются этой диагностикой.
+
+**Историческое подтверждённое состояние: dev27 (10.10.2026).** Чистый установленный wheel из `8cf1e42226bc17e5975c5570cadf3dd1046f2422`, SHA-256 `ec7eae97e4c809d2f52022dcc34380161b6588a13a279815691710204a9394d9`. Общий STA frame устранил вложенный полный обход графа в контексте: два полных tree snapshots и два чтения relations/inventories закрываются одной проверкой canonical identity, конфигурации, полной tree revision и event sequence. Ошибочный outer context не коммитит dependency census cache. Native-регрессия сохранила граф из 25 узлов, четыре structural options, доступную строку уравнения/disabled counter и устойчивую привязку внешней ссылки на derived part из 36 узлов. Все 10 измеренных чтений graph/structure/context подтвердили по 2 полных перечисления дерева.
+
+Контролируемое сравнение одного и того же сценария derived part (36 узлов, одна внешняя ссылка), два чтения на каждую сборку:
+
+| Метрика одного чтения контекста | dev26 | dev27 |
+| --- | --- | --- |
+| Полные перечисления дерева | 4 | 2 |
+| Чтения метаданных элементов | 156 | 84 |
+| Явные Python → COM dispatches | 2308–2368 | 1561–1621 |
+| Время, с | 16,80–17,47 | 10,77–11,38 |
+
+Это измерения контрольных part-моделей; внутренних native RPC/C-slot comparisons и производительности сборок >1000 компонентов они не доказывают. Данные/ревизии при повторном чтении совпали; исходные документы, файлы, UI и собранные non-STL-настройки сохранены, собственные детали закрыты, пустая CAD-сессия подтверждена. **1966 pure passed, 321 native deselected**; публичный MCP stdio подтвердил 18 инструментов/outputSchema и корректный build metadata. Публичные размеры/переименование на dev27 ещё не прогонялись. Полное воздействие/удаление не реализовано и не разрешено; открыты отключённые определения и связи уравнений, другие конфигурации, непустые вспомогательные ссылки, аннотации/чертежи, входящие зависимости, native эффект/восстановление удаления, перенос базовых операций и остальные пункты стадий 1–3. STL остаётся отложенным; рабочая v1 сохранена. Новые агенты, push и CI не запускались. Ниже — история кандидатов.
+
+**Кандидат dev27: общий frame графа и контекста.** Контекст больше не вызывает самостоятельный `dependencies` внутри своих границ: граф, native equation/reference inventories и per-feature привязки объединены одним одноразовым STA frame. Остаются два полных обхода дерева и два полных чтения relations/inventories; canonical identity, конфигурация, неизменяемая ревизия полного tree snapshot и завершающий event poll проверяются до возврата. Ошибка outer context не коммитит внутренний dependency census cache. Повторное выполнение фаз frame запрещено. Модель не изменяется, graph/context scopes сохраняются; полного воздействия/удаления по-прежнему нет.
+
+На установленном чистом dev26 отдельно измерен baseline на собственном derived part: два последовательных чтения контекста подтвердили по **4 полных перечисления дерева**, с подсчётом явных Python → COM dispatches и QueryInterface. Это проверка исходного поведения, не приёмка новой оптимизации. **1966 pure passed, 321 native deselected**; Native-проверка dev27 должна подтвердить по 2 полных перечисления дерева, сохранение данных/ревизий и исходного состояния. Измерение явных dispatches не объявляется подсчётом внутренних native RPC и C-slot canonical comparisons. Старые native-приёмки не переносятся на новую сборку; каталог остаётся из 18 публичных инструментов. Все незавершённые пункты стадий 1–3 и решение отложить STL сохраняются.
+
+**Историческое подтверждённое состояние: dev26 (10.10.2026).** Чистый установленный wheel из `b7cd2a81caf3f9e06bd136fa4a257cc1ff8f1e0f`, SHA-256 `39b291336c3859583c612330ae99af5c351a6bf48acf06764bf283458f6d71f6`. Привязка исходящих внешних ссылок реализована в `part_feature_deletion_context_v3`: прямые per-feature inventories связаны с закрытым native census и устойчивыми `object_id`, с учётом multiplicity/ambiguity и общего бюджета текста. В native-проверке собственной производной детали 36 узлов и одна внешняя ссылка дали единственное соответствие native ID 46 и восстановленный persistent target; все остальные узлы явно прочитаны с count=0. Два контекста совпали, исходный source-файл не менялся при чтениях. Это приёмка указанного part scope на контрольной модели; произвольные типы ссылок, другие конфигурации и входящие документы этим сценарием не проверены.
+
+Отдельная same-wheel native-проверка приняла граф из 25 узлов, четыре structural options и контекст с доступной строкой уравнения и disabled counter. Отсутствующие определения отключённых уравнений остаются blocker. Обе проверки восстановили исходные документы/UI и non-STL-настройки, закрыли свои контрольные детали; после подтверждена пустая CAD-сессия. **1949 pure passed, 321 native deselected.** Настоящий MCP stdio подтвердил 18 инструментов/outputSchema и корректный build metadata dev26; публичные CAD-операции размеров/переименования на dev26 ещё не прогонялись. `deletion_impact_complete=false`, `deletion_authorized=false`, `stl_preferences_verified=false`; удаления и полного preview нет. Открыты уравнения/конфигурации, непустые вспомогательные ссылки, аннотации/чертежи, входящие зависимости, эффект/восстановление удаления и остальные пункты первой стадии. Следующая работа — объединение чтений графа/контекста в два полных снимка по границам, без повторных полных обходов внутри одного чтения; требуемые проверки контекста и canonical identity сохраняются. Весь план стадий 1–3 остаётся в силе, STL отложен. Новые агенты, push и CI не запускались. Ниже сохранена история кандидатов.
+
+**Кандидат dev26: привязка исходящих внешних ссылок к элементам.** `feature.deletion_context` получает scope `part_feature_deletion_context_v3`; дополнительно дважды читаются прямые `IFeature.ListExternalFileReferencesCount/ListExternalFileReferences2` для каждого узла закрытого native census. Последние два OUT-значения feature API — скаляры, в отличие от document API. Native IDs служат только проверяемыми hints census; выбор writable объекта остаётся по `object_id` и persistent reference. Имена и индексы не являются writable anchors.
+
+Сопоставление document/feature inventories сохраняет кратность одинаковых записей. Отсутствующие/лишние строки, неоднозначные соответствия и недоступный persistent target показываются отдельными blockers; вариант не выбирается произвольно. Ревизия включает оба полных снимка, граф и результат привязок; изменения между границами, canonical identity/конфигурации или событиями отклоняются. До 5000 узлов/суммарных feature reference rows, 16384 символа в поле и 2 Mi символов совместного equation/reference текста. Внешние документы не открываются, уравнения не решаются, записи модели не выполняются. **1949 pure passed, 321 native deselected**; Общая native-приёмка новой привязки ещё впереди; принятая проверка dev25 не переносится на dev26. Каталог по-прежнему 18 публичных инструментов, полное воздействие/удаление не опубликовано и не разрешено; остальные требования стадий 1–3 сохраняются.
+
+**Текущее подтверждённое состояние (10.10.2026): dev25.** Исправлена native-семантика счётчиков уравнений; отключённые определения явно помечаются как недоступные и остаются в плане полного воздействия удаления. На чистом установленном wheel из `1425a5c` прошли две разные native-приёмки: граф/structural options/доступная строка уравнения/disabled counter и непустая внешняя ссылка собственной производной детали. Независимые document и feature API вернули одну и ту же запись с конфигурацией «Основная»; persistent target элемента восстановлен. Повторные полные context inventories совпали. Исходные документы и UI восстановлены, non-STL-настройки совпали, собственный source-файл при чтениях не изменился; обе проверки закрыли свои контрольные детали. Дополнительно подтверждена пустая CAD-сессия.
+
+**1908 pure passed, 321 native deselected.** Настоящий MCP stdio установленного dev25 подтвердил 18 инструментов с outputSchema, `system_get_info`, версию, Git SHA и совпадение digest сборки. Это проверка каталога и диагностики; публичные CAD-операции размеров и переименования на dev25 ещё не прогонялись, их прежняя native-приёмка относится к dev21. Общая native-привязка внешних ссылок к устойчивым элементам, непустые вспомогательные ссылки, отключённые определения/связи уравнений, остальные конфигурации, аннотации, входящие ссылки, эффект и восстановление удаления остаются открыты. `deletion_impact_complete=false`, `deletion_authorized=false`; внутренний контекст не опубликован. Стадия 1 и все последующие стадии сохраняются в полном объёме. STL отложен, рабочая v1 и пользовательские правки сохранены, дополнительные агенты не запускались; коммиты локальные, push/CI не было. Ниже — история предыдущих кандидатов.
+
+**Native-приёмка dev25 принята (10.10.2026):** чистый установленный wheel из `1425a5c95d734c2e11339524c2cecc9ed9fdfc38`, SHA-256 `70cf66dbe751567aaf37c8bc15314c733e02224e9bedc0657697b80d11e9790d`. На собственных моделях в SolidWorks 2023 подтверждены граф из 25 узлов, четыре сочетания structural options, доступная строка уравнения и отдельный счётчик отключённых уравнений; два context inventories и повторное чтение совпали. Пустые native-массивы обычных и вспомогательных ссылок проверены. Определение отключённого уравнения не прочитано; непустые внешние и вспомогательные ссылки пока не приняты. Исходные документы, геометрия, UI и non-STL-настройки сохранены; новые контрольные детали закрыты. `stl_preferences_verified=false`; полное воздействие и исполнение удаления не приняты. Публичный каталог остаётся из 18 инструментов; эти чтения внутренние. Подготовлена следующая отдельная проверка непустых внешних ссылок на собственной производной детали; её подготовка не является native-приёмкой. **1908 pure passed, 321 native deselected**; 25 новых pure-тестов проверили независимый oracle OUT-типов, конфигурационные скаляры feature API и отказ по чужому пути/элементу, неполному снимку или ложной authority. Push и CI не запускались. Стадия 1 открыта.
+
+**Кандидат dev25 (10.10.2026), исправление после native dev24:** SolidWorks 2023 на двух созданных уравнениях после отключения одного вернул `GetCount=1`, `GetDisabledEquationCount=1`. Через ранее созданный отключённый индекс `Equation` вернул пустую строку; определение не считается прочитанным. Неверное предположение dev24 о включении отключённых строк в GetCount удалено. Scope изменён на `part_feature_deletion_context_v2`: `enumerated_count` и `disabled_count` разделены; `disabled_definitions_captured=false` и blocker `disabled_equation_definitions_unavailable` явно сохраняют непокрытую область. Определения отключённых уравнений остаются обязательной частью полного воздействия удаления, а не исключаются из плана.
+
+Неуспешная native-проверка dev24 и её частные журналы сохранены без переписывания и повторения операций. После отдельного запроса пользователя две удержанные контрольные детали закрыты без сохранения: проверены точные имена, canonical identity, неизменённые stamps, конфигурации и ранее прочитанные уравнения; отсутствие документов подтверждено. Новая проверка dev25 будет использовать отдельные модели и журнал. **1883 pure passed, 321 native deselected**; полный локальный набор завершён успешно. Native dev25 ещё не принят, чтение непустых внешних/вспомогательных ссылок и полный preview не подтверждены. Каталог остаётся из 18 публичных инструментов; `feature.deletion_context` внутренний, `deletion_impact_complete=false`, `deletion_authorized=false`. Ниже сохранена история предыдущих кандидатов; более ранние статусы не описывают текущее состояние.
+
+**Исходный кандидат dev24:** добавлено внутреннее чтение `feature.deletion_context(document_id, configuration)` со scope `part_feature_deletion_context_v1`. Два полных снимка native equation/reference inventories связаны с согласованным графом элементов и закрываются проверками canonical identity, конфигурации, документа и событий. Фиксируются строки/disabled/global-variable/configuration option уравнений, параметры связи с equation file, обычные внешние и вспомогательные ссылки. Повтор request_id читает прежний результат без нового обхода; запись этой операцией отклоняется до worker. Не вызываются EvaluateAll, обновление уравнений из файла, rebuild, активация или открытие зависимостей. Бюджеты: до 5000 строк каждой категории, 16384 символа в строке, суммарно 2 Mi символов. Имена и row_index не являются writable anchors.
+
+Это очередной слой полного воздействия удаления из 1.4. Связи уравнение–размер–элемент, точный состав конфигураций уравнений, другие конфигурации дерева, аннотации/чертежи, входящие ссылки внешних документов, native привязка внешних ссылок к элементам и эффект/восстановление удаления остаются blockers. `deletion_impact_complete=false`, `deletion_authorized=false`; операция не опубликована. **1883 pure passed, 321 native deselected**; связанные 55 тестов проверили схему, изменение контекста, неизменяемый первый снимок, late notifications, idempotency, отсутствие native import в pure domain и остановку собственного equation setup без повторения после ошибки. Native-проверка нового wheel ещё впереди; установленный dev23 и его прежняя приёмка не подменяют dev24.
+
+API-сигнатуры сверены с зарегистрированным SW31 и официальным описанием [IEquationMgr](https://help.solidworks.com/2025/English/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IEquationMgr_members.html), [Disabled](https://help.solidworks.com/2025/English/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IEquationMgr~Disabled.html) и [вспомогательных ссылок](https://help.solidworks.com/2023/English/api/sldworksapi/SOLIDWORKS.Interop.sldworks~SOLIDWORKS.Interop.sldworks.IModelDoc2~ListAuxiliaryExternalFileReferences.html). Проверка зарегистрированных сигнатур не является native-приёмкой.
+
+**Текущий итог (10.10.2026):** установлен чистый dev23 из `3a62dd3bb113f365ccb41e8176e2fb3f7f67b287`. Его внутренние `feature.dependencies` и `feature.deletion_structure` прошли native-проверку: 25 узлов, 6 parent links, 6 child links, 7 absorbed links, без parent/child расхождений. Независимые GetParents/GetChildren/GetOwnerFeature и восстановление persistent target совпали; повторное чтение сохранило граф и ревизию. Четыре сочетания children/absorbed вернули 1/1/2/2 структурных кандидата; каждое чтение заняло около 8 секунд. Исходные документы, геометрия, UI и non-STL-настройки сохранены, новые собственные детали закрыты. Уравнения, другие конфигурации, аннотации, внешние ссылки, точный результат удаления и восстановление после удаления ещё не охвачены; полного preview/удаления и публичной регистрации этих операций пока нет.
+
+На предыдущем установленном dev21 приняты публичные размеры и переименование в каталоге из 18 инструментов: реальный MCP stdio, устойчивые ссылки, отсутствие повторной записи, stale/foreign/configuration отказы, история после перезапуска и восстановление исходной сессии. Эти свидетельства относятся к dev21 и не подменяют собственную публичную регрессию dev23. **1842 pure passed, 321 native deselected**. STL отложен по решению пользователя. По отдельному запросу закрыты без сохранения шесть старых тестовых деталей: точные имена, native-метаданные и элементы тестовых моделей проверены до закрытия, отсутствие документов подтверждено после. Последующая native-проверка dev23 восстановила исходную пустую сессию. Рабочая установка v1 сохранена; push и CI не запускались. Стадия 1 открыта.
+
+**Актуальное решение пользователя (10.10.2026): STL отложен.** Доработка экспорта STL и выяснение изменения `stl_deviation` перенесены в стадию 3, пункт 3.2. Они не блокируют размеры, переименование и остальные работы стадии 1. В свежих проверках этих операций строго сравниваются все собранные настройки вне восьми известных STL-полей; полные исходные снимки сохраняются, но восстановление/приёмка настроек STL не заявляется. Прежние неуспешные проверки и журналы неизменны. Пользователь дополнительно подтвердил закрытие деталей второй попытки и сохранение текущей точности STL. Подтверждение сохранено отдельно; текущая проверка не перезапускается. Все документы, открытые на её старте, входят в неизменяемый исходный набор; используются отдельные собственные детали и журнал. Публичные размеры/переименование приняты на dev21; внутренний граф и структурный расчёт приняты на dev23. Далее — расширение полного воздействия удаления и собственная публичная регрессия dev23; импорт и базовые операции остаются в плане. Стадия 1 остаётся открытой.
+
+**Новая публичная native-приёмка размеров принята на установленном dev21 (`f3f3001`).** Через настоящий MCP stdio подтверждены 18 инструментов, размер 7 → 9 мм, независимая геометрия 5 × 6 × 9 мм и объём 270 мм³, persistent reference после rebuild, отказ по неверному документу/конфигурации/единицам и stale revision. Повтор request_id и история после перезапуска не создают второй записи: в журнале ровно одна committed mutation. Исходные документы, файлы и UI восстановлены, новые собственные детали закрыты; non-STL-настройки совпали точно. `stl_preferences_verified=false`, восстановление STL-настроек не заявляется. Это приёмка поддерживаемого scope размеров, а не signed/sketch dimensions, произвольного BREP или ошибки native COM. Прежние неуспешные попытки сохранены.
+
+Подготовлена отдельная native-проверка `scripts/verify_feature_dependencies.py`: чистый установленный wheel, две свежие собственные детали, два одинаковых закрытых графа, независимые GetParents/GetChildren/GetOwnerFeature, persistent target и четыре комбинации children/absorbed. Геометрия, исходные документы, UI и собранные non-STL-настройки проверяются отдельно; native-удаление не выполняется. При ошибке проверки собственные модели сохраняются. **67 связанных pure-тестов прошли**, общий набор **1842 passed, 321 native deselected**. Этот статус отражает подготовку сценария; native-приёмка графа ещё не выполнена.
+
+Исходный кандидат: `2.0.0.dev23`; установленный чистый wheel: `2.0.0.dev21`, код `f3f300188c21bf098535084d3ee75d8c8704128d`. В публичном каталоге 18 инструментов. На установленном wheel приняты внутренний и публичный экспорт пяти вариантов и внутреннее изменение/восстановление размера. Первая публичная размерная проверка не принята: committed запись завершилась с guard 0 → 2 → 0, затем независимое сравнение общих настроек не прошло. Причина и поля расхождения той попытки неизвестны. Пользователь подтвердил закрытие контрольных деталей и сохранение текущей точности STL; для свежей последовательной проверки принято новое исходное состояние. Прежний журнал неизменен, повтор записи не выполняется. Новая попытка также не принята: запись succeeded/committed, затем `stl_deviation` изменился с 0,10488088481701517 до 0,11916375287812985 мм; quality=3 (Custom) и остальные 18 проверяемых настроек совпали. Точные снимки сохранены. Две новые контрольные детали оставлены, последующие CAD-вызовы остановлены до согласования состояния. Причина изменения не доказана. Публичная регрессия переименования ещё впереди. Стадия 1 открыта.
+
+Внутренняя операция `feature.dependencies`, подготовленная в dev22, возвращает два согласованных полных снимка прямых native-связей, поглощения и метаданных дерева с ревизией `part_feature_dependency_graph_v1`. Узлы имеют persistent `object_id` только при подтверждённой native-ссылке; `node_index` описывает топологию и не разрешает запись. В ревизии учитывается incarnation canonical identity; коллизии, изменения контекста и поздние уведомления отклоняются. Расхождения parent/child возвращаются явно. `deletion_impact_complete=false`, `deletion_authorized=false`: уравнения, аннотации, внешние файлы и полный эффект удаления не охвачены. Операция не зарегистрирована как публичный MCP-инструмент, не является delete preview и ещё не прошла native-приёмку. Для исходного dev22 было **1767 pure passed, 321 native deselected**; установленный wheel не заменён.
+
+В dev23 подготовлено внутреннее чтение `feature.deletion_structure(document_id, configuration, object_ids, include_children, include_absorbed)`. Нужны 1–200 уникальных persistent `object_ids` и два явных boolean-флага; неверные аргументы отклоняются до чтения графа. Результат имеет scope `part_feature_deletion_structure_v1`, ревизию исходного графа, консервативные структурные кандидаты с причинами, оставшиеся связи/узлы и blockers. Флаги native children=1/absorbed=2 возвращаются только как параметры будущего исполнения. Имена и `node_index` не используются как writable anchors. Уравнения, другие конфигурации, аннотации/чертежи, внешние ссылки, точный native-результат удаления и восстановление остаются unverified scopes. `deletion_authorized=false`, `deletion_impact_complete=false`, `native_deletion_result_predicted=false`. Это основа полного preview, а не готовый preview или удаление. Операция не опубликована, native-приёмка не выполнена. **53 связанных pure-теста прошли**; общий набор — **1814 pure passed, 321 native deselected**. Каталог содержит прежние 18 инструментов.
+
+Публичные `export_prepare`/`export_part` проверены на SolidWorks 2023 SP2.1 через настоящий stdio, со same-wheel internal gate, точными файлами/хешами, сохранением координат/масштаба и исходной аналитической геометрии, временных настроек, UI и результатов после перезапуска. Исходная сессия обеих экспортных проверок восстановлена. Один пустой staging каждой проверки оставлен с independently verified `retained_empty_directory`. Только поддерживаемые planar polyhedral тела; STEP/Parasolid roundtrip не выполнен. Источники и журналы приватные.
+
+Исправление скрипта размеров сохраняет exact scalar preference snapshots/changed fields при прежнем строгом сравнении. Новый failure path записывает отчёт даже при ошибке и сохраняет первичное исключение при отказе записи; после hold дополнительных CAD-чтений/восстановления нет. **1745 pure passed, 321 native deselected**. Прежнее отсутствие raw снимков не заполняется выдуманными значениями; сохранён отдельный частный summary terminal traceback/read-only journal. Новая native-проверка этого скрипта ещё не выполнена. Пакет wheel не пересобирался и рабочая v1 не менялась.
+
+В исходном dev20 подготовлен внутренний сборщик `IFeature.GetParents`, `GetChildren` и `GetOwnerFeature` для будущего предварительного просмотра удаления. Связи родителей/детей и поглощённых элементов сохраняются отдельно; несовпадение встречных связей явно отмечается. Native ID используется только для поиска кандидата, принадлежность каждой ссылки проверяется canonical identity; чужие ссылки, коллизии и превышение бюджетов отклоняются. Максимум 5000 элементов и 100000 прочитанных связей. Индексы относятся только к одному снимку: интеграция с устойчивыми ссылками, закрывающей проверкой ревизии и анализом последствий удаления ещё впереди. **27 целевых pure-тестов passed**; native-приёмка сборщика не выполнена; на момент подготовки dev20 публичный каталог содержал 13 инструментов. Установленный dev19 для проверки экспорта не содержит этого изменения.
+Контракт инструментов: [guide_v2.md](../src/solidworks_mcp/guide_v2.md).
+
+Установленный чистый dev19 (`e32cfb3`) прошёл внутреннюю native-проверку пяти экспортов: STL мм/м/дюймы, STEP, Parasolid. Все пять операций committed; подтверждены исходная аналитическая геометрия, настройки, UI guard, отсутствие повторного dispatch после переоткрытия журнала и восстановление исходной сессии. Один пустой staging оставлен с независимо проверенной identity/пустотой и `retained_empty_directory` в манифесте. Roundtrip STEP/Parasolid и произвольный BREP не проверены. Это приёмка внутреннего пути установленного dev19; публичный API и исходный dev20 требуют собственной приёмки. Прежнее unknown задание dev18 сохранено без replay или снятия hold после принятия оператором нового исходного состояния.
+Инвентаризация переноса: [MIGRATION_V2.md](MIGRATION_V2.md), все 92 legacy-регистрации с текущим статусом.
+
+## Реализованный каталог
+
+Dev39: четыре инструмента журнала/диагностики, два чтения документов, четыре чтения геометрии, три работы с элементами, три размера, два экспорта и два инструмента основания детали. Четыре операции изменений: `feature.rename`, `dimension.set_value`, `export.execute`, `part.create_base_extrusion`. Native-приёмка dev39 здесь подтверждает ограниченную цепочку пластины; исторические результаты других scope не переносятся автоматически.
+
+### Историческая регистрация dev21
+
+Для регистрации dev21 пройдены **1737 pure-тестов, 321 native deselected**, включая настоящий MCP stdio с ровно 18 инструментами/outputSchema/guide, строгие числовые типы новых аргументов и отказ обоих экспортных инструментов до создания CAD-потока/задания при отсутствии `--output-dir`. Верификатор публичного экспорта отдельно отклоняет отсутствующее/ложное `export_output_configured`. Это локальная проверка контракта; native-приёмка установленного dev21 ещё впереди.
+
+- Отдельный сервер v2 без legacy-алиасов: 18 инструментов — четыре журнала/диагностики, два чтения документов, четыре чтения геометрии, три работы с элементами детали, три размера и два экспорта. `system_get_info` сообщает три точные операции изменений и их отдельные области ревизии; `export_output_configured` означает наличие операторской настройки, не проверку доступности каталога.
+- Размеры и экспорт подключены к публичному runtime после внутренней native-приёмки dev19. Подробные параметры, ограничения, последовательность prepare/execute, работа при timeout/unknown и смысл `staging_cleanup` описаны в guide. Публичная native-приёмка нового установленного кандидата не заменяется этой регистрацией.
+- `feature_list`/`feature_get` читают дерево и устойчивые ссылки; `feature_rename` переименовывает явный элемент в явной активной конфигурации детали. Имя на русском языке, `expected_revision`, `request_id`, durable checkpoint, повторная проверка перед записью и независимые постусловия обязательны. Не поддерживающие корректную native persistent reference служебные узлы показываются без writable `object_id`, с причиной отказа.
+- Ревизия `part_feature_tree_v1` охватывает дерево, имена/типы/подавление/владельцев/ошибки элементов, наблюдаемое состояние документа, incarnation конфигурации и native уведомления. Это область операции переименования, а не универсальная ревизия геометрии, размеров, материалов, add-ins или внешних файлов. Native `GetID` используется только для контроля обхода; разные COM identity с одинаковым ID отклоняют весь снимок.
+- Повторная проверка ревизии и setter — разные native-вызовы. В dev7 они выполняются внутри native UI lock с подтверждёнными состояниями `0 → 2 → 0`. Это блокировка интерактивного редактирования; исключение сторонних COM-клиентов/add-in не гарантируется. Счётчик уведомлений сам по себе не доказывает атомарность.
+- Native persistent references для твёрдых/поверхностных тел, граней и рёбер. Непрозрачные ID связаны с документом, объектом конфигурации и родительским телом; восстанавливаются через API, без поиска по имени/индексу. Удалённые/подавленные/чужие объекты и пересозданные конфигурации отклоняются. Списки постраничные, с ограничением размера ответа и бюджета удерживаемых снимков/ссылок.
+- Геометрия читается только в явной активной конфигурации детали при совпадении токена наблюдения и отсутствии необходимости перестроения. Координаты модели сохраняются; длины/площади в мм/мм², bounding box явно приблизительный. Это ещё не полная ревизия/защита изменений или геометрия компонентов сборки.
+- `document_list` возвращает непрозрачные ID открытых документов, их конфигурации и метаданные; `document_get` принимает явные `document_id` и `configuration`. Чтение не активирует документ/конфигурацию, не сохраняет модели, не раскрывает компоненты и не меняет видимость приложения.
+- ID связан с COM identity документа в текущем соединении, а не с путём, именем или индексом. Повторное открытие другого COM-объекта по тому же пути и перезапуск сервера дают новые ID. Неизвестный/закрытый ID и отсутствующая конфигурация отклоняются.
+- `observation_revision` учитывает ID открытия, наблюдаемый счётчик, update stamp, заголовок, путь, флаг сохранения, список и активную конфигурацию. Это токен наблюдаемого состояния, **не `expected_revision` для изменений**: он не покрывает произвольные свойства, имена операций, материалы, внешние зависимости и другие метаданные. Для `feature_rename` нужна отдельная ревизия `part_feature_tree_v1` из чтения элементов.
+- Общая типизированная схема результата публикуется как MCP `outputSchema`; клиент получает `structuredContent`.
+- SQLite-журнал с `synchronous=FULL`, атомарными переходами и OS-lock единственного живого владельца.
+- Идентичные `request_id`/операция/аргументы/контекст не исполняются повторно; изменённые параметры отклоняются.
+- Сохранение позднего результата, независимый от STA опрос, отмена только очереди, неопределённость незавершённых заданий после аварии.
+- Исполнитель `JobRunner` использует существующий единственный STA worker. Для изменения обязателен verifier; неподтверждённый исход — `unknown`. Доменные операции отвечают за геометрические постусловия и проверенный откат.
+- Инициализация COM-потока сообщает ошибку вместо бесконечного ожидания; shutdown сохраняет владение журналом, если операция ещё выполняется.
+- Данные сборки: Git SHA, признак изменённых исходников, digest файлов пакета и версия. Диагностика сверяет их с фактически загруженными файлами; hash каталога схем вычисляется из реального `tools/list`.
+
+## Проверка и сборка
+
+### Протокол изменений и блокировки (dev4)
+
+Внутренний `MutationCoordinator` выполняет подготовку цели/ревизии на STA, сохраняет JSON-состояние до первого native-изменения, повторно проверяет цель после записи на диск и проверяет фактический результат. При ошибке вызывает только восстановление конкретных значений, принадлежащих операции, с отдельным чтением результата. Универсальный Undo не применяется. В dev5 протокол подключён к `feature_rename`; каждая следующая операция должна реализовать собственную ревизию, ссылки, постусловия и восстановление.
+
+Схема SQLite — 3. Переход из схем 1/2 сохраняет задания; старые неопределённые мутации без checkpoint импортируются как блокирующие записи с `checkpoint_unavailable`. Новый checkpoint содержит документ, конфигурацию, серверную эпоху соединения, ожидаемую ревизию, состояние до изменения и свидетельство проверки. `job_get`/`job_list` включают поле `mutation`, когда такая запись существует. Схема 3 добавляет семантику области побочных эффектов: серверная `PreparedMutation.effect_scope='application'` записывает защищённый маркер и блокирует изменения во всех документах при prepared/unknown. Начало такой операции требует отсутствия любых прежних блокировок. Старые runtimes со схемой 2 не должны открывать новый журнал: номер схемы повышен намеренно.
+
+Статус задания и блокировка завершаются в одной транзакции. Одного `failed` или `succeeded` недостаточно: без соответствующей подтверждённой записи проверки исход становится `unknown`. `prepared`/`unresolved` блокируют новые записи в тот же документ, включая другие конфигурации. После потери соединения старые непрозрачные ID нельзя безопасно сопоставить новым моделям, поэтому старое неподтверждённое изменение блокирует все новые мутации до согласования; чтение и опрос журнала остаются доступны.
+
+Согласование — внутренний вход для доверенной доменной реализации, после наблюдения/проверки фактического состояния и явного выбора принятого результата. Клиентского инструмента «снять блокировку» пока нет. Оно снимает только конкретную блокировку и сохраняет исторический статус задания `unknown`. Протокол не делает `observation_revision` полной ревизией и не утверждает, что восстановление одного поля восстанавливает весь документ, флаг сохранения или историю Undo.
+
+Проверка `scripts/verify_mutation_protocol.py` использует установленный пакет, реальный STA и два одноразовых документа. Проверяет только область имени элемента и неизменность геометрии; ошибки после COM-записи/при восстановлении намеренно внедрены сценарием. Это отдельная проверка внутреннего протокола, а не приёмка MCP-мутаций, полного `expected_revision`, ошибки native-перестроения или полного отката модели.
+
+Native API геометрии: [GetPersistReference3](https://help.solidworks.com/2023/english/api/sldworksapi/SolidWorks.interop.sldworks~SolidWorks.interop.sldworks.IModelDocExtension~GetPersistReference3.html), [GetObjectByPersistReference3](https://help.solidworks.com/2023/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IModelDocExtension~GetObjectByPersistReference3.html), [состояния persistent references](https://help.solidworks.com/2023/english/api/swconst/SolidWorks.Interop.swconst~SolidWorks.Interop.swconst.swPersistReferencedObjectStates_e.html?id=2.10.1.571). Ссылки привязаны к модели; сериализация ID может измениться после перестроения. Сравнение идёт через `IsSamePersistentID`, и `swObjectUnsupported=2` не трактуется как равенство.
+
+1. Запустить unit-тесты: `python -m pytest -m "not solidworks"`.
+2. Сформировать данные сборки: `python scripts/write_build_info.py`.
+3. Собрать wheel: `python -m pip wheel --no-deps --no-build-isolation --wheel-dir work/wheels .`.
+4. Установить wheel в отдельное dev-окружение, проверить `system_get_info`, `tools/list`, журнал и guide через настоящий stdio-клиент без `PYTHONPATH` исходного проекта.
+
+В CI данные сборки формируются перед `uv build`. `source_dirty=true` явно означает сборку незакоммиченных исходников. Отсутствующие данные сборки не подменяются выдуманным Git SHA.
+
+Unit-тесты используют искусственные доменные операции и COM apartment lifecycle без запуска SolidWorks. Отдельный дочерний процесс аварийно завершается через `os._exit`, после чего проверяются журнал, сохранённые результаты и отсутствие повторного исполнения. Через настоящий MCP stdio проверяются типизированные ответы, русский guide, восстановление журнала и отсутствие legacy-инструментов.
+
+Read-only native-проверка установленного wheel: `python scripts/verify_document_reads.py --state-dir work/native-document-state` (без `PYTHONPATH`). Нужны запущенный SolidWorks и минимум два открытых документа. Проверка читает независимое исходное/конечное состояние, проверяет явные цели, повторы запросов, ошибки, сохранение исторических результатов и новые ID после перезапуска MCP. Отчёт не содержит названий и путей пользовательских моделей; приватный журнал остаётся вне Git. Проверка не создаёт/закрывает модели, не меняет конфигурации и не доказывает безопасность мутаций.
+
+Проверка геометрии установленного wheel: `python scripts/verify_geometry_reads.py --state-dir work/native-geometry-state`. Создаёт две одноразовые несохранённые модели: два твёрдых тела, прямоугольная поверхность и вторая конфигурация; настройки ввода размеров временно восстанавливаются в `finally`. Через MCP проверяет чтение геометрии, размеры/площади, курсоры, восстановление ссылок, чужой документ и неактивную конфигурацию. Затем native COM удаляет поверхность **только в принадлежащей тесту модели**: старый токен и удалённая грань должны отклоняться. Закрываются только точные созданные документы, исходный активный документ возвращается без перестроения; независимое сравнение подтверждает исходное состояние. Native setup/edit в этом верификаторе не доказывают готовность MCP-мутаций.
+
+Основание границ ревизии: [официальное описание IModelDoc2.GetUpdateStamp](https://help.solidworks.com/2025/english/api/sldworksapi/SOLIDWORKS.Interop.sldworks~SOLIDWORKS.Interop.sldworks.IModelDoc2~GetUpdateStamp.html). В библиотеке установленного SolidWorks 2023 наличие метода проверено отдельно. Он отслеживает изменения геометрии/состояния, но не все изменения имён и оформления. Равенство COM identity проверяется через canonical IUnknown; эти объекты остаются в STA и не записываются в журнал.
+
+### Подтверждённый результат кандидата dev2
+
+Проверен коммит `bc46e2fd26e17c75c5dc876e377273ba33b13b23` на SolidWorks 2023 SP2.1 (`31.2.1`), 09.10.2026:
+
+- 430 unit-тестов пройдены; 321 тест с маркером `solidworks` исключён из unit-запуска. Они не засчитаны как native-приёмка.
+- Установлен отдельный wheel `2.0.0.dev2`, без `PYTHONPATH` исходников. `build_matches_source=true`, `source_dirty=false`; Git SHA и digest соответствуют сборке.
+- GitHub CI тестов и сборки для этого коммита завершён успешно: [Checks #8](https://github.com/babkin-kd/SolidWorks-MCP/actions/runs/37958152891).
+- Через console entry point и MCP stdio прочитаны 22 открытых документа, проверены две явные цели, повтор чтения без повторного исполнения, ошибки неизвестного ID/конфигурации, новые ID после перезапуска MCP и сохранность исторических заданий.
+- Независимое сравнение до/после подтвердило неизменность активного документа, открытых документов, их update stamps, конфигураций, флагов сохранения и видимости приложения.
+
+Native-проверка ограничена чтением метаданных. Закрытие/повторное открытие по тому же пути, изменение конфигураций и ревизий проверены пока на fake adapter. Безопасность изменений реальных моделей, геометрические ссылки, полная защита ревизий и неактивная геометрия этой проверкой не подтверждены. Приватный JSON-отчёт и SQLite-журнал хранятся в игнорируемом `work/`.
+
+### Подтверждённый результат кандидата dev3
+
+Проверен коммит `4c175cb10afbb1918e49cabda6e4523a7373ab89`, SolidWorks 2023 SP2.1 (`31.2.1`), 09.10.2026:
+
+- 453 unit-теста пройдены; 321 native-тест исключён из unit-запуска. [GitHub Checks #12](https://github.com/babkin-kd/SolidWorks-MCP/actions/runs/37962715865) завершён успешно.
+- Установленный wheel `2.0.0.dev3` проверен без `PYTHONPATH`; `source_dirty=false`, `build_matches_source=true`, каталог MCP содержит 10 инструментов с `outputSchema`.
+- Повторены native-проверки 22 исходных открытых документов, двух явных целей и перезапуска MCP.
+- На двух принадлежащих тесту несохранённых моделях проверены два твёрдых тела 20×10×5 мм со смещением 40 мм, поверхность 15×10 мм, две конфигурации и чужой документ. Для блока: 6 граней, 12 рёбер, суммарная площадь 700 мм² и длина рёбер 140 мм. Для поверхности: площадь 150 мм² и 4 ребра общей длиной 50 мм.
+- Проверены страницы граней без пропусков/дубликатов, шесть восстановлений тела/грани/ребра твёрдого и поверхностного тела, чужая ссылка, неактивная конфигурация и старый токен. После native-подавления и удаления поверхности чтение её ссылки отклонено; в данной установке результат — `object_reference_invalid`, а не доказательство отдельных native-кодов suppressed/deleted.
+- После cleanup независимое сравнение подтвердило восстановление исходного активного/открытых документов, их конфигураций, update stamps, флагов сохранения, видимости и настройки ввода размеров. Рабочая v1 и её незакоммиченные документы не изменены.
+
+Native setup/edit в тесте выполняет COM-код, а v2 пока только читает. Сценарии `native status=OK`, но отсутствующая в активной конфигурации/текущем теле геометрия, пересозданная одноимённая конфигурация и специальные статусы подавления/удаления проверены на fake adapter; отдельная native-приёмка этих сочетаний ещё нужна. Сборки/экземпляры, полные ревизии мутаций и откат не считаются готовыми. Приватные отчёты/журналы — в `work/`.
+
+### Подтверждённый локальный результат кандидата dev4
+
+Проверен локальный коммит `f1acff90dff9b01b09491be378a669805d7dec34`, SolidWorks 2023 SP2.1 (`31.2.1`), 09.10.2026:
+
+- 483 unit-теста пройдены; 321 native-тест исключён из unit-запуска. Wheel `2.0.0.dev4` собран из чистого коммита, установлен отдельно; `build_matches_source=true`, схема журнала 2.
+- На двух одноразовых моделях внутренний протокол выполнил реальные COM-записи русского имени элемента. Проверены чтение результата, устаревший токен в этой области, восстановление конкретного имени после намеренно вызванной ошибки и неизменность геометрии.
+- При намеренно неподтверждённом восстановлении получен `unknown`; запись в тот же документ заблокирована, второй документ доступен в прежнем соединении. Новая эпоха соединения не обходит блокировку. После native-наблюдения и внутреннего согласования конкретной операции новые записи разрешены; исторический `unknown` сохранён.
+- Через console entry point/MCP stdio повторены чтения 22 исходных документов, две явные цели, каталог из 10 инструментов, повтор запросов, новые ID после перезапуска и сохранность исторических заданий. Исходное native-состояние не изменено.
+- После закрытия только одноразовых моделей восстановлены исходный набор пользовательских документов, их stamps/конфигурации/флаги сохранения, активная цель, видимость приложения и настройка ввода размеров. Рабочая v1 и две существовавшие локальные правки её документации сохранены.
+
+Приватные отчёты: `work/native-mutation-protocol-dev4-1.report.json`, `work/native-documents-dev4-1.report.json`. Область восстановления — имя элемента и неизменность геометрии; оно не восстанавливает флаг сохранения/историю Undo тестового документа и не доказывает полный откат модели. Ошибки после записи/при восстановлении внедрены сценарием, а не выданы native-перестроением. Публичный каталог всё ещё содержит 10 инструментов чтения/журнала, `cad_mutations=false`. GitHub CI для этого локального пакета ещё не запускался: связанные изменения накапливаются перед общей отправкой по решению пользователя.
+
+### Подтверждённый локальный native-результат dev5
+
+Установленный wheel из чистого коммита `a9de9d37536f02580ffb743e27168dc473fcadca`, SolidWorks 2023 SP2.1 (`31.2.1`), 09.10.2026; `source_dirty=false`, `build_matches_source=true`. Через настоящий MCP stdio проверены 13 инструментов с `outputSchema`, полное дерево и страницы двух принадлежащих тесту деталей, явные ссылки и русское переименование элемента. Подтверждены durable checkpoint/committed, сохранность ссылки после переименования, отказ чужого документа/неактивной конфигурации/занятого или нерусского имени, отсутствие второй записи при повторе запроса после `timeout_s=0`.
+
+Ручное native-переименование в собственной тестовой детали **не изменило update stamp**, но старый `expected_revision` был отклонён. После native-удаления именно тестового элемента старая ссылка отклонена как `object_reference_invalid`; отдельный native-код deleted не заявляется. Второй документ и активный документ не изменены MCP. После закрытия только собственных временных моделей независимое сравнение подтвердило восстановление исходного native-состояния сессии. Приватный отчёт — `work/native-features-dev5-4.report.txt`, журнал вне Git. До этого проверка отчёта завершилась ошибкой тестового клиента после успешной записи; клиент исправлен, полный сценарий повторён и завершён с кодом 0.
+
+Результат относится к области `part_feature_tree_v1`, не к полной ревизии любых CAD-данных, универсальному Undo или гарантиям исключения других API-клиентов. Новые исправления cleanup, внутренние размеры/экспорт и application holds после этого коммита требуют собственных проверок. GitHub CI нового локального пакета не запускался: отправка остаётся пакетной.
+
+### Локальная интеграция результатов трёх агентов (dev6)
+
+652 unit-теста пройдены; 321 native-тест исключён. Исправлены коллизия native ID при обходе дерева и аварийное освобождение всех STA-ресурсов. Подготовлены внутренние `DimensionCatalog` и `ExportCatalog`; они не подключены к runtime/public MCP. Для размеров обязательны собственный scope, явные mm/deg, guard и проверка восстановления; native запись пока ограничена активной одноконфигурационной деталью и проверяемыми владельцами, эскизы read-only. Для экспорта подготовлены STL/STEP/Parasolid, отдельный BREP scope, manifest, staging и no-overwrite публикация. Все общие настройки проверяются перед каждым setter и восстанавливаются с readback. Неподтверждённая публикация, включая ошибку после фактического `os.link`, сохраняет файл и application hold; проверенная чужая запись не удаляется.
+
+Размерные body streams, размеры/rebuild и экспортные SaveAs3/профили/единицы/координаты пока проверены только через искусственные адаптеры и зарегистрированные сигнатуры. Они требуют отдельной native-приёмки. Manifest не заявляет geometry roundtrip; единицы Parasolid пока не подтверждены. UI lock и полноценное согласование неопределённых операций остаются в плане.
+
+Чистый коммит `6b612935283874adf330bdd9c72e41c270eb739f` собран в отдельный wheel dev6 и установлен в dev-окружение без `PYTHONPATH`; `source_dirty=false`, `build_matches_source=true`. Через MCP stdio прочитаны 22 исходных документа, проверены две явные цели, 13 инструментов, повторы, перезапуск/новые ID и сохранение исторических результатов. Журнал использует схему 3. Независимое сравнение подтвердило неизменность исходного CAD-состояния; рабочая v1 и её существовавшие правки сохранены. Это повторная приёмка чтения установленного пакета, не native-приёмка размерного/экспортного кандидата или общей записи настроек. Приватный отчёт — `work/native-documents-dev6-1.report.json`.
+
+## Что ещё требуется до приёмки стадии 1
+
+### Подтверждённый native-результат dev7 и открытая геометрическая проверка
+
+Чистый wheel из `c2578b011bbf7e9108402b7ef352d5b47a84105a`, `source_dirty=false`, `build_matches_source=true`, SolidWorks 2023 SP2.1 (`31.2.1`): через настоящий MCP stdio повторно подтверждены переименование, persistent reference, stale/foreign/inactive отказ, `timeout_s=0` и отсутствие дубликата. Durable application checkpoint и `execution_guard={original_state:0,locked_state:2,released_state:0}` подтверждены в результате и журнале. Проверены неизменность blocking/selection state всех исходных документов и восстановление native baseline. Приватный отчёт: `work/native-features-dev7-1.report.txt`.
+
+Диагностика `work/native-domain-preflight-dev7-2.report.json` прочитала 5/6/7 мм и подтвердила display PID (52 байта) всех трёх размеров, но direct `IDimension` PID пуст. Исходники получили compound anchor через display PID + точный API slot + owner PID + strong native identity; это ещё требует native-проверки установленной новой сборки.
+
+`work/native-body-streams-dev7-1.report.json` выявил нестабильность нового `Copy` и `Copy2(True)`: повторные streams одной копии совпадают, новые копии неизменного тела отличаются тремя байтами при неизменных model/body stamps. Поэтому SHA opaque stream **не считается каноническим хешем текущей геометрии**. Байты не маскируются. Готовится аналитический полный boundary/topology scope для многогранников; произвольный BREP/криволинейные поверхности остаются в плане. Размерные/экспортные public tools до собственной приёмки не добавлены.
+
+В dev7 `feature.rename` использует STA UI guard: durable application checkpoint → `Lock`/state 2 → повторная проверка → запись/проверка/при необходимости scoped restoration → `UnLock`/state 0 → terminal job. Подтверждение освобождения сохраняется в `execution_guard` успешного результата и в `mutation.verification.evidence.execution_guard`; при проверенном отказе/откате — в журнале. Это блокировка интерактивного редактирования, без гарантии исключения сторонних COM-клиентов/add-in. Ошибка освобождения сохраняет unknown и application hold. Для этого кандидата пройдены 713 локальных unit-тестов и вышеописанная native-приёмка переименования; 321 native-тест исключён из unit-запуска.
+
+До полной приёмки нужны ревизии и проверенные native guard остальных изменений, ссылки в контексте компонентов сборки, публичное согласование неопределённых операций, перенос создания/редактирования/размеров/экспорта и native-приёмка на SolidWorks 2023. Подтверждены чтение явных деталей и переименование элемента; это не приёмка всей стадии. Чтение неактивной геометрии и создание моделей ещё не приняты. Журнал заданий не является заменой этих проверок. Первый рабочий выпуск для моделирования по-прежнему включает блоки геометрии и изготовления стадии 2.
+
+GitHub используется напрямую через подключение и Git; браузерная автоматизация для него больше не применяется.
+
+### Внутренняя native-проверка аналитического scope dev9
+
+Установленный чистый wheel из `7e86d48d1449d7ef71edfb52b67ddd0c0e9cdbb4` проверен на собственном прямоугольном теле в SolidWorks 2023 SP2.1. Полный `planar_polyhedral_brep_v1` совпадает после задержки и `Copy`/`Copy2`; перемещение временной копии обнаруживается. Исходная модель и сессия восстановлены. Это проверка блока и перемещения, без объявления приёмки произвольного BREP, криволинейных поверхностей, native-полостей или разделения граней. Отчёт: `work/native-planar-brep-dev9-1.report.json`.
+
+Отдельный preflight подтвердил повторяемость снимков домена размеров и источника экспорта, `GetLoop`, парный UI guard `0 → 2 → 0` и три compound-ссылки размеров. Прямой PID `IDimension` отсутствует; ссылка использует PID `IDisplayDimension`, точный слот и владельца, с проверкой native identity. Глубина выдавливания имеет подтверждённую ссылку без write blockers; размеры эскиза пока read-only. Отчёт: `work/native-domain-preflight-dev9-1.report.json`. Запись/перестроение/откат размера и фактический экспорт требуют отдельной приёмки; публичный каталог остаётся из 13 инструментов.
+
+Первая native-запись размера dev9 завершилась `unknown / mutation_rollback_unconfirmed`; её приватный журнал и application hold сохранены. Диагностика на другой новой собственной модели показала, что `EditRebuild3=True` не гарантирует обновления геометрии после `SetSystemValue3`: значение стало 9 мм, а блок остался глубиной 7 мм и требовал перестроения. Восстановление значения 7 мм также не сбросило этот флаг. Это отказ приёмки, без публичного инструмента размеров и без автоматического повтора неизвестной операции. Проверяется `ForceRebuild3` с независимыми габаритами/объёмом и полным снимком восстановления.
+
+### Кандидат dev10: перестроение и согласованность снимков
+
+Отдельная диагностика на новой собственной модели подтвердила `ForceRebuild3(False)`: глубина 7 → 9 → 7 мм, объём 210 → 270 → 210 мм³; полный аналитический снимок после восстановления совпал с исходным. Исходная пользовательская сессия восстановлена. Это проверка native API, ещё не приёмка размерного инструмента через журнал/MCP. Исторический `unknown` dev9 не повторялся и не согласовывался автоматически.
+
+В dev10 размерный адаптер требует точный `True` от принудительного перестроения и подтверждение отсутствия pending rebuild. Чтение размеров использует два полных снимка вместо четырёх, сохраняя проверку геометрии, владельцев и strong native identity. Последний poll уведомлений выполняется после всех native getters; результат и baseline берутся из проверенного снимка. Уже типизированные COM wrappers повторно не создаются; это не заменяет проверки identity/liveness. Пройдены **966 локальных unit-тестов**, 321 native-тест исключён. Производительность и весь путь записи/восстановления требуют проверки установленного dev10.
+
+### Подготовленные изменения dev11
+
+Ранний namespace guard размеров только отклоняет неизвестный/чужой ID до тяжёлого чтения; он не заменяет последующую проверку incarnation, PID, владельца и ревизии. Завершающий poll экспорта перенесён после всех native getters. Внутри одного перечисления размеров удерживаются strong canonical identities: повторные явные adapter.identity старых записей исключены; новый обход получает новые identity, а обе ссылки фаски, циклы и лимиты сохраняются.
+
+Числовые JSON-аргументы MCP больше не преобразуют строки/логические значения в числа перед доменными проверками. Допустимые целые JSON-тайм-ауты сохранены. `--output-dir` задаёт доверенный каталог только оператором сервера; без него runtime отклоняет экспорт до запуска STA. Клиент не передаёт каталог или overwrite.
+
+Подготовлены отдельные модули регистрации `dimension_list/get/set_value` и `export_prepare/part`, но они **не подключены** к `create_app`: публичный каталог остаётся из 13 инструментов. Подключение, объявления capabilities и actual MCP-проверка выполняются после соответствующей native-приёмки. Native-сценарий dev10 завершён: запись 9 мм и объём 270 мм³, повтор запроса, отказ stale, проверенное восстановление 9 мм после намеренной Python-ошибки вслед за setter, полное совпадение геометрии до/после восстановления, освобождение UI guard и исходный baseline. Это приёмка внутреннего домена на одноразовом блоке, без публикации размерных MCP tools или заявления о реальной native COM-ошибке.
+
+Для исходного dev11 пройдены **1155 unit-тестов**, 321 native-тест исключён. Artificial COM-shaped тест с 40 размерами подтверждает 121 explicit identity call внутри перечисления вместо дополнительных 780 запросов предыдущих записей. Это проверка количества вызовов на искусственном адаптере, не измерение native-ускорения. Native-verifier теперь записывает provenance установленного пакета, время каждого полного capture и фактическое число setter/rebuild; полный BREP и парные снимки сохранены.
+
+### Скрытые native-сравнения: кандидат dev12
+
+Исходники pywin32 b312 подтверждают два QueryInterface и два Release внутри сравнения PyIUnknown, даже для канонических интерфейсов. Поэтому explicit adapter.identity counter не равен общему числу COM-вызовов; equality-поиски остаются квадратичными. Native/RPC-ускорение не объявляется. В dev12 завершающий poll переносится после этих сравнений, включая сравнение двух полных captures и финальное разрешение цели перед подготовкой/валидацией/восстановлением. Это дополнительная проверка согласованности, без исключения геометрии или прежних guards. [PyIUnknown.cpp](https://github.com/mhammond/pywin32/blob/b312/com/win32com/src/PyIUnknown.cpp#L75-L94), [PyComHelpers.cpp](https://github.com/mhammond/pywin32/blob/b312/com/win32com/src/PyComHelpers.cpp#L305-L339).
+
+Отчёт внутренней приёмки dev10: `work/native-dimensions-dev10-1.report.json`; установленный чистый wheel — commit `7cbfc16353a7b58d1984fc080c57a3f9441aafa0`, source digest `47979ecb8abdd7e34563b275e079e040947786e134921147a370a2a76eab5742`. Старый unknown dev9 и его журнал сохранены; проверка использовала новую собственную модель и новый журнал, без повторения старой операции.
+
+Полный локальный запуск исходного dev12: **1190 unit-тестов пройдены**, 321 native-тест исключён. Новые regressions воспроизводят уведомления внутри equality, поздние проверки ссылки перед записью и отказ восстановления после такого изменения. Независимый обзор подтвердил сохранение парных полных snapshots, формулы ревизии и ограничений scoped restoration. Последовательная native-проверка установленного dev12 ещё требуется.
+
+### Повторная native-приёмка MCP dev12
+
+Чистый wheel из `bd5d81024b1f1a07fd3e3416a3588e89a9a15324`, installed source digest `edcee87ebd97fdf38d6965cf6cf4b47a0e8795ccf82b223a4a5c5941f3e89eee`, проверен на SolidWorks 2023 SP2.1 через настоящий MCP stdio. Подтверждены 13 tools/output schemas, русское переименование, persistent reference, stale без роста update stamp, foreign/inactive отказ, timeout 0 с последующим результатом без дубликата, удалённая ссылка, durable checkpoint/guard и восстановление исходных metadata/UI/selection. Это повторная приёмка feature.rename; публичные dimension/export tools отсутствуют. Приватный отчёт: `work/native-features-dev12-1.report.txt`.
+
+Первый internal-export verifier dev12 остановился при подготовке новой собственной детали, до JobStore/SaveAs3: профиль настроек до/после setup не совпал. Выходные каталоги пусты. Это не результат экспорта. Старая попытка сохранена, никаких файлов или запросов экспорта не повторялось.
+
+Отдельная диагностика на новой собственной детали показала изменение только `stl_deviation` после удаления/создания тела: после окончательного rebuild отличие составило два ULP. После закрытия тестовых документов исходные настройки и metadata документов совпали точно. Причина внутри SolidWorks не объявляется установленной; в вызываемых legacy-методах setter этой настройки отсутствует. Приватный отчёт: `work/export-fixture-preferences-dev12-1.report.json`. Baseline экспортной операции следует фиксировать после завершения подготовки её геометрии. Это не разрешает округлять ревизию, игнорировать изменение настройки при самом экспорте или записывать старое deviation поверх нового значения.
+
+В исходном dev13 добавляется точное чтение всего желаемого профиля после последнего setter и native preflight, непосредственно перед SaveAs3. Искусственный контрпример независимого обзора: поздний setter меняет ранее установленную настройку обратно к baseline; индивидуальные readbacks и успешное восстановление не обнаруживают неверный профиль при экспорте. Это подтверждённый дефект алгоритма, а не утверждение о конкретном связывании настроек в SolidWorks. Verifier фиксирует baseline после подготовки тестовой геометрии и при ошибке отдельно читает исходные metadata, настройки, UI/selection и metadata пользовательских файлов. Публичный каталог сохраняет 13 инструментов; native-экспорт dev13 ещё не принят.
+
+Общий локальный запуск dev13: **1198 unit-тестов пройдены**, 321 native-тест исключён. Публичный размерный verifier до CAD-чтений требует успешный внутренний отчёт именно установленного чистого wheel: совпадение версии, Git SHA и фактического source digest плюс прежние native-гейты. Исторический dev10 и его отдельный sidecar не заменяют свежую приёмку нового пакета.
+
+Дополнительно сохранены и отдельно проверены **66 чистых регрессий самих верификаторов**: строгость same-wheel gate до CAD, fixture baseline и независимые cleanup-флаги при сохранении исходного исключения. Они извлекают определения через AST и не импортируют CAD-модули. Эти дополнительные тесты не изменяют установленный пакет и не считаются native-приёмкой.
+
+Первый internal-export запуск установленного dev13 остановился до входа в экспортный адаптер при сравнении независимых mass facts после переключения собственных тестовых документов. Файлов и экспортных вызовов — ноль; исходные документы, настройки, UI/selection и metadata файлов восстановлены точно. Отдельная диагностика на новой fixture доказала: полный поддерживаемый аналитический снимок совпадает точно, изменяются только вычисляемые значения `GetMassProperties(1)` на соседние double при повторных чтениях. `1` здесь — плотность, не точность. [IBody2.GetMassProperties](https://help.solidworks.com/2023/English/api/sldworksapi/SOLIDWORKS.Interop.sldworks~SOLIDWORKS.Interop.sldworks.IBody2~GetMassProperties.html) Приватные отчёты: `work/native-internal-exports-dev13-1.report.json`, `work/export-source-activation-dev13-1.report.json`. Эти вычисляемые данные не являются канонической геометрической ревизией. Допуск независимой численной проверки должен быть объявлен отдельно; exact BREP, metadata, extrema и настройки не ослабляются. Экспорт ещё не принят.
+
+Верификаторы теперь сравнивают первые шесть вычисляемых mass values с относительным допуском `1e-12` и нулевым абсолютным; для шести моментов инерции абсолютный допуск `1e-25` учитывает отмену близких величин около нуля. Все 12 значений должны быть конечными native doubles; исходные readings сохраняются без округления. Остальные поля независимого снимка сравниваются точно. Отдельный exact полный аналитический BREP внутреннего теста сохранён; публичный тест не объявляет независимую полную BREP-проверку. Пройдены **132 изолированных теста верификаторов**, включая 66 новых проверок mass drift и существенных изменений. Это изменение скриптов приёмки; установленный dev13 из `407eafd24c40f2b3d1ba0f8bb1c51bcd14810388` не менялся.
+
+Повторная попытка internal export dev13 прошла отказы stale revision и существующему файлу, но первое экспортное задание остановилось на проверке повторной записи `coordinate_system`, уже совпадающего с желаемым пустым значением. Подтверждены полный scoped rollback, освобождение UI guard и точное восстановление исходных metadata, настроек, UI/selection и metadata пользовательских файлов. Экспортный файл не создан, контрольный sentinel сохранён. Вход в адаптер не доказывает SaveAs3; failure-report оставляет фактический счётчик неопределённым, а ветка ошибки находится до SaveAs3. Приватный отчёт: `work/native-internal-exports-dev13-2.report.json`.
+
+В dev14 готовится пропуск setter только после точного pre-setter baseline guard, когда значение уже равно desired. Запись отличающегося значения по-прежнему требует native True и точного readback; false не засчитывается как успех. Завершающая проверка полного профиля сохранена. Новая native-приёмка и публичное подключение инструментов ещё впереди.
+
+Локальный dev14 прошёл **1359 unit-тестов**, 321 native-тест исключён. No-op patch прошёл независимый обзор: pre-setter guard сохранён, пропущенное значение не считается принадлежащим восстановлению, полный профиль проверяется перед SaveAs3, а domain rollback проверяет и пропущенные настройки. Внутренний verifier отдельно наблюдает границу вызова SaveAs3 через делегирующий proxy без дополнительных native getters между финальным profile gate и SaveAs3. Отчёт разделяет входы адаптера, попытки SaveAs3 и независимо подтверждённые результаты; короткая ошибка не выводит полную геометрию checkpoint. Это подготовка новой native-проверки, не приёмка экспорта.
+## Последняя проверка экспорта
+
+Кандидат dev15 проверяет разные native return contracts: Toggle должен вернуть `None`, String/Integer/Double — строго `True`; для обоих путей требуется точный readback. Непредусмотренные возвращаемые значения и COM-исключения не маскируются. Полный профиль перед SaveAs3, проверки stale, no-op и владение scoped restoration сохранены. Добавлены 29 регрессий; полный локальный запуск — **1388 passed**, 321 native-тест исключён. Это локальная проверка исходников; новую native-приёмку установленного dev15 ещё требуется выполнить. Публичный каталог — 13 инструментов.
+
+Internal export dev14 (`33a140b08d20e151450b7230dfb64f6f0f0fa5e3`) завершился `failed / rolled_back` до `SaveAs3`: наблюдатель зарегистрировал **0 попыток SaveAs3 и 0 фактических экспортов**. Причина — общий адаптер требовал `True` от `ISldWorks.SetUserPreferenceToggle`, хотя установленная type library 31.0 объявляет `VT_VOID`, а официальная документация — `void/Sub`. Остальные три setter возвращают Boolean. Подтверждены полный scoped rollback, UI guard `0 → 2 → 0`, исходные metadata документов, настройки, UI/selection и metadata пользовательских файлов. Приватный отчёт: `work/native-internal-exports-dev14-1.report.json`. Исправление контракта не является native-приёмкой экспорта. [SetUserPreferenceToggle](https://help.solidworks.com/2023/English/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.ISldWorks~SetUserPreferenceToggle.html).
+
+Аудит будущих публичных верификаторов выявил, что общий тайм-аут либо исключение после dispatch могли закрыть stdio-сервер до terminal proof и затем запустить native fixture cleanup. До следующих публичных тестов изменений требуется supervisor: учёт запроса до отправки, наблюдение журнала без повторной мутации, ожидание завершения до выхода из SDK и запрет автоматической очистки при неопределённом результате. Текущая внутренняя проверка использовала последовательный синхронный worker без такого общего тайм-аута; эти ограничения не переопределяют исторические отчёты.
+
+Внутренний экспортный верификатор теперь использует sticky cleanup gate: до dispatch очистка запрещена; разрешение требует совпавшей durable terminal записи, корректного checkpoint outcome, точного guard `0 → 2 → 0` и отсутствия любых application holds. `unknown`, ошибка dispatch/readback либо несогласованная запись сохраняют открытые собственные модели и запрещают следующий dispatch. Shared fixtures принимают optional callable gate: только точный `True` разрешает CloseDoc/восстановление настроек/активацию; при ошибке gate или другом результате выполняется только Python-уведомление с количеством сохранённых моделей. Основная ошибка не маскируется. При hold независимые native baseline readings пропускаются, их значения остаются неопределёнными; полный исходный document baseline не восстановлен, если собственные модели остались открыты. **134 целевых pure-теста passed**, 59 новых; отдельный независимый обзор пройден. Этот inline gate не заменяет supervisor публичного асинхронного MCP.
+
+Подготовлен `scripts/verifier_lifecycle.py`, первоначальные **42 pure-теста passed** с независимым обзором. `open_supervised_session` удерживает SDK вне тайм-аута тела проверки; каждый запрос учитывается до отправки, а потерянный acknowledgement восстанавливается только чтением точного durable payload. Отсутствие строки после потерянного ответа не разрешает teardown. Drain наблюдает журнал SQLite read-only и удерживает владельца при queued/running либо недоказанной отправке. Terminal unknown и потеря транспорта запрещают native fixture cleanup; ошибка SDK exit также отзывает разрешение и history seed. Исходная ошибка тела сохраняется после безопасного завершения SDK. Read-only restart принимает только неизменный in-memory history seed предыдущего подтверждённого drain и запрещает новые мутации до отправки.
+
+Dimension verifiers подключены к supervisor/inline gate: каждый новый durable RPC отзывает прежнее разрешение очистки до передачи запроса в transport; повторная мутация при неизвестном исходе запрещена. Native readback и активация собственных тестовых моделей требуют свежего coherent наблюдения. Закрытие обоих ресурсов выполняется до fixture cleanup, ошибки cleanup сохраняют первичную ошибку. **118 целевых pure-тестов passed**, независимый обзор пройден; публичная native-приёмка размеров ещё не выполнена.
+
+Export verifier сохраняет точный ordered UI snapshot и отдельно записывает ограниченные различия identity/count/order без native pointers, названий и вывода о причине. После любого guarded submit, включая исторический, требуются подтверждённое освобождение guard и отсутствие application holds: даже `succeeded` при held gate прекращает сценарий до native чтений. **155 целевых pure-тестов passed**, независимый обзор пройден. Первая проверка установленного dev15 остановилась из-за UI mismatch до adapter/SaveAs3; отдельная повторная диагностика чтений UI не изменила. Повторная export native-приёмка выполняется на новых собственных моделях и свежем журнале; старые журналы не переигрываются.
+
+Оптимизация reader использует уже доказанные глобальные identity keys как первоочередные кандидаты по роли, сохраняя fresh canonical identity и полный fallback. На одном native прямоугольном теле четыре чтения old/new/new/old дали полностью одинаковый снимок, EQ 8348 → 3596, identity acquisitions 339 и typed wraps 365 без изменений. Время 10,08–10,48 с не подтверждает заметного ускорения. Это сравнение исходного кандидата, не приёмка его установленного wheel и не доказательство поддержки произвольного BREP. Полный локальный прогон после этих изменений: **1545 passed, 321 native deselected**.
+
+
+Повторная внутренняя native-проверка dev15 завершилась `unknown/unresolved` до `SaveAs3` (0 попыток и 0 экспортов): deviation перестал совпадать с checkpoint и заданным значением. Тест сохранил две контрольные модели и отказался от автоматического восстановления, закрытия и последующих baseline getter. Отдельная явная read-only диагностика настроек дала стабильное третье значение. Затем пользователь закрыл контрольные детали и согласовал текущую точность как новое исходное состояние. Старое задание и journal не переиграны и не объявлены восстановленными.
+
+Кандидат dev16 меняет только STL resolution policy: `preserve_existing_native`. Quality/deviation/angle читаются и входят в точный checkpoint/revision; итоговый профиль перед SaveAs содержит их исходные значения вместе с управляемыми настройками. Эти три значения никогда не получают setter или право автоматического восстановления. Их drift остаётся отказом, неподтверждённое восстановление — unknown/hold. Manifest profile указывает `effective_resolution_reference=durable_before_state.preferences`. Индивидуальные tolerance controls не предоставляются; поддержка произвольной tessellation accuracy и geometry roundtrip не объявляется. Native-приёмка этого кандидата ещё не выполнена, каталог остаётся 13.
+
+Итоговый локальный прогон dev16: **1629 passed, 321 native deselected**. Public export verifier подключён к supervisor: explicit tracked preflight document_list предшествует первому native snapshot и созданию fixtures; SDK завершается до проверки их cleanup gate. Требуется успешный internal export report того же установленного clean wheel до любых CAD-чтений. Все файлы и журналы сохраняются, полного suite deadline нет. Проверки parsing/manifest сохранены, 31 новый lifecycle regression.
+
+После согласования нового исходного состояния установлен чистый dev16. Две попытки дошли до `SaveAs3` и завершились `failed/rolled_back` с полной проверкой исходных документов, настроек, UI и метаданных файлов. Диагностика сразу после SaveAs3 обнаружила единственный `model.STL`, идентичный запрошенному `model.stl`. Dev17 исправляет только проверку состава временного каталога: одна обычная запись должна совпасть по файловой identity с проверенным временным файлом; идентичность каталога проверяется повторно. Любая вторая запись, в том числе hard link того же файла, запрещена; подмена и reparse отклоняются. Локально **1634 passed, 321 native deselected**. Полная native-приёмка установленного dev17 ещё впереди; каталог сохраняет 13 инструментов.
+
+Установленный dev17 подтвердил STL мм/м/дюймы, но остановился на STEP unit declaration до публикации. Отказ известный, scoped rollback и исходное состояние подтверждены. Отдельная диагностика только STEP сохранила собственный файл; его `SI_UNIT ( .MILLI., .METRE. )` использует пробел перед скобкой. Общая пятиформатная приёмка не засчитывается; Parasolid ещё не проверен.
+
+Dev18 читает полный STEP до 4 МиБ и разрешает SI мм/м по ссылкам `GLOBAL_UNIT_ASSIGNED_CONTEXT` на `LENGTH_UNIT`/`SI_UNIT`. Отсутствующие, повторные или неоднозначные ссылки, несовместимые контексты и conversion-based длины отклоняются. Строки и комментарии исключены из разбора метаданных; байты файла сохраняются, кодировка русских имён не угадывается. Бюджет — 50000 записей. Это проверка единиц и структуры обменного файла, а не полная проверка STEP-схемы или геометрический roundtrip. Семантика ссылок описана в [GLOBAL_UNIT_ASSIGNED_CONTEXT](https://www.steptools.com/docs/stp_aim/html/t_global_unit_assigned_context.html), роль/prefix — в [SI_UNIT](https://www.steptools.com/docs/stp_aim/html/t_si_unit.html). Локально **1659 passed, 321 native deselected**; чтение сохранённого синтетического native STEP подтвердило мм. Новая installed-wheel/native-приёмка ещё не выполнена.
+
+Установленный dev18 подтвердил STL мм/м/дюймы и STEP; Parasolid дошёл до публикации, затем `rmdir` своего staging получил Windows error 32. Задание `unknown/unresolved`, 5 попыток SaveAs3 и 4 независимо подтверждённые операции. Исходная сессия после этого не объявляется восстановленной: тест оставил две собственные детали и артефакты, дальнейшие baseline getter запрещены. Отдельная явная read-only диагностика файлов и двух `ISldWorks.GetCurrentWorkingDirectory` не выполняла восстановления. Текущий API working directory не совпал со staging; первоначальное значение не было checkpointed. [Назначение getter](https://help.solidworks.com/2023/English/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.ISldWorks~GetCurrentWorkingDirectory.html) не доказывает причину файловой блокировки.
+
+Dev19 отделяет проверенную публикацию от оставленного пустого каталога. `staging_cleanup.status=removed` означает удалённый staging; `retained_empty_directory` допускается только при Windows error 32 после подтверждённой публикации, с точной identity, отсутствием reparse, временного файла и любых записей. В этом случае manifest указывает каталог, identity и причину; `staging_clean=false` остаётся честным в durable after-state. Последующее inspection повторно проверяет пустоту/ownership, файл, исходную геометрию, настройки и guard release. Удержанный пустой каталог не разрешает игнорировать другие ошибки, неизвестную публикацию, лишний файл или подмену; rollback прежнего неизвестного задания не меняется. Оба верификатора сверяют manifest с durable after-state и независимой файловой системой; same-wheel gate требует эти свидетельства и точный count оставленных каталогов. Локально **1688 passed, 321 native deselected**. Чистый установленный dev19 впоследствии прошёл внутреннюю пятиформатную native-проверку; исходная сессия восстановлена, один пустой собственный каталог оставлен с независимой проверкой и явным статусом. Публичные MCP-команды не приняты.
+
+На том же чистом установленном dev19 (`e32cfb3`) принята внутренняя операция размеров: физически проверено 7 → 9 мм и scoped restoration 11 → 9 мм после искусственной Python-ошибки за реальным setter. Подтверждены устойчивая ссылка после rebuild, отсутствие повторной записи, stale revision отказ, durable UI guard и восстановление исходной сессии. Выполнено 3 native записи и 2 rebuild; native COM-ошибка не инъецировалась. Публичная MCP-приёмка размеров и приёмка исходного dev20 не выполнены.
+
+
+Dev64 terminal-аудит подтвердил совпадение исходного эскиза и strong members,
+различаются только5 original:relation: wrappers. Full L сохранён; свои документы
+закрыты, empty/free baseline восстановлен, unknown-журнал не изменён.
+**Dev65:3872 pure passed /323 CAD deselected (47,30с)** перед сборкой.
+Dev65 metadata46/16 accepted; internal native6 passed, затем unknown при completed
+restoration. Terminal-аудит подтвердил исходный эскиз/fixed-face и полную U-форму;
+свои документы закрыты, empty/free baseline восстановлен, журнал не изменён.
+Публичная MCP-приёмка dev65 не запускалась; wheel не принят.
+
+Dev66 перед сборкой: **3880 pure passed /323 CAD deselected (48,52с)**.
+Installed metadata/native/public MCP приёмка ещё выполняется.
+
+
+Dev66: 3880 pure/323 CAD deselected, metadata46/16 accepted; internal native6
+passed, включая input restoration. Привязка fixed-face расширенного тела прошла;
+completed restoration отклонена строгим доменным переходом, job unknown.
+Read-only terminal-аудит подтвердил полный U-BREP, исходные эскиз/параметры
+и три новых размера: профиль13 мм, радиус OneBend2,5 мм и угол90°.
+Домен учитывал только размер профиля. Свои документы закрыты, empty/free baseline
+восстановлен; unknown-журнал не изменён. Публичная MCP-приёмка не запускалась.
+
+Dev67 требует ровно два дополнительных размера точного собственного OneBend:
+полный owner descriptor, type/unit, радиус/90°, driving/control flags, одна явная
+конфигурация, native display semantics и отсутствие tolerance/links. Только после
+этих проверок они исключаются из сравнения исходных размеров; произвольные
+добавленные или изменённые размеры запрещены. Связанные тесты:119 passed,
+включая missing/duplicate/foreign/control/value/owner regressions.
+Приёмка установленного wheel ещё нужна; принятым остаётся dev63.
+
+Dev67 перед сборкой: **3897 pure passed /323 CAD deselected (47,59с)**.
+
+
+**Установленный кандидат dev89:** bounded S1-B5-ACT реализован в домене/runtime/MCP;
+75 tools/23 mutations, full pure6075/323 CAD deselected (104,01 с).
+Installed metadata/stdio75/23 принят без source PYTHONPATH. Положительный native
+ACT-N1 прошёл (1027,38 с), ACT-N2 already-active прошёл (1018,36 с). Stale/foreign
+прошёл (675,30 с); controlled failure прошёл (696,41 с). Actual four-report
+preflight принят; public MCP/native ACT принят (2049,55 с). Сквозной
+saved-file L3-P1/B5 ещё открыт, L2 не расширен, стадия1 не закрыта.
+[Контрольная точка dev89](CHECKPOINT_DEV89.md).

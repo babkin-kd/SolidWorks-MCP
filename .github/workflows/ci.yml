@@ -1,0 +1,63 @@
+# Unit/build/installed metadata only; no native CAD/PDM/Simulation acceptance.
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  unit-and-build:
+    if: github.repository == 'babkin-kd/SolidWorks-MCP'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          version: '0.13.0'
+      - name: Check dependency lock
+        run: uv lock --check
+      - name: Unit tests (runner has no SolidWorks)
+        run: uv run --frozen --python 3.12 --extra dev pytest -m "not solidworks"
+      - name: Build fork wheel and source distribution
+        run: |
+          uv run --frozen --python 3.12 scripts/write_build_info.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv build
+      - name: Install candidate wheel in a separate environment
+        run: |
+          $candidateWheels = @(Get-ChildItem -LiteralPath dist -Filter '*.whl')
+          if ($candidateWheels.Count -ne 1) { throw 'Expected exactly one candidate wheel.' }
+          uv venv --python .venv\Scripts\python.exe work\wheel-smoke
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv export --frozen --no-dev --no-emit-project --no-hashes --output-file work\wheel-runtime.requirements.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv pip install --python work\wheel-smoke\Scripts\python.exe --requirement work\wheel-runtime.requirements.txt $candidateWheels[0].FullName
+      - name: Verify installed console and public metadata without CAD calls
+        run: |
+          $candidateWheels = @(Get-ChildItem -LiteralPath dist -Filter '*.whl')
+          if ($candidateWheels.Count -ne 1) { throw 'Expected exactly one candidate wheel.' }
+          $candidateWheel = $candidateWheels[0]
+          $candidateVersion = & .venv\Scripts\python.exe -c "import pathlib,tomllib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf8'))['project']['version'])"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:PYTHONPATH = $null
+          & work\wheel-smoke\Scripts\python.exe scripts\verify_installed_metadata.py --wheel $candidateWheel.FullName --expected-version $candidateVersion --expected-git-sha $env:GITHUB_SHA --state-dir work\wheel-metadata-state --report work\installed-wheel-metadata.report.json
+      - name: Keep candidate artifacts on an explicit manual run
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: SolidWorks-MCP-candidate-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+            work/installed-wheel-metadata.report.json

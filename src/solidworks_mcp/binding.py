@@ -65,16 +65,35 @@ def _load_module(revision):
 def wrap(obj, cls):
     """Re-wrap a raw or dynamic dispatch as an early-bound generated class.
 
-    Idempotent. Returns None unchanged so callers can guard on falsy COM returns
-    (many SolidWorks methods return None/False on failure without raising).
+    Idempotent for an object of the exact requested generated class. This is
+    not a native liveness or identity check; subclasses/other interfaces still
+    pass through their requested constructor. Returns None unchanged so callers
+    can guard on falsy COM returns (many SolidWorks methods return None/False on
+    failure without raising).
     """
     if obj is None:
         return None
+    if type(obj) is cls:
+        return obj
     oleobj = getattr(obj, "_oleobj_", obj)
     return cls(oleobj)
 
 
-def connect():
+def queried(obj, cls):
+    """Query the actual dual interface, retaining its own dispatch pointer.
+
+    wrap() intentionally only constructs a generated wrapper. It cannot prove
+    that a PID-returned object's default dispatch supports the requested type.
+    The second IID requests Python's registered IDispatch wrapper for the
+    native dual interface, rather than an unregistered custom Python type.
+    """
+    if obj is None:
+        return None
+    oleobj = getattr(obj, '_oleobj_', obj)
+    return cls(oleobj.QueryInterface(cls.CLSID, pythoncom.IID_IDispatch))
+
+
+def connect(*, show: bool = True):
     """Attach to a running SolidWorks and return an early-bound ISldWorks.
 
     Also loads the wrapper module matching that release, which module() returns.
@@ -92,5 +111,6 @@ def connect():
     revision = win32com.client.dynamic.DumbDispatch(raw._oleobj_).RevisionNumber
     _mod = _load_module(revision)
     sw = wrap(raw, _mod.ISldWorks)
-    sw.Visible = True
+    if show:
+        sw.Visible = True
     return sw
