@@ -102,3 +102,27 @@ Private child-plane-5 independent inspection SHA256:
 `3cbeb588d6966de903568c84eda4bbff6977abfd2887e0b4ae572c5aa1917868`;
 own cleanup SHA256:
 `529ca5d9d0594f4b494af308fe52c7f4b47496379d2927e193231bdce7691262`.
+
+## Проверка последовательности чтений и resolver — 14.10.2026
+
+Probe8 включил фактический pre-dimension prefix target: полное дерево с
+PID roundtrips, analytical BREP и native привязки шести граней/12 рёбер.
+В четырёх фазах 15 current anchors и исходные retained anchors разрешились;
+display PID/slot/dimension/owner совпали. Normal exit0,187,46 с,59 returned
+steps, own cleanup и baseline. Это более узкое доказательство совместимости,
+не воспроизведение отказа полного N5 session collector.
+
+Отдельная пустая собственная деталь: три standard planes проверены через
+installed dimension-owner resolver и exact-member feature resolver. Все три
+совпали с текущим feature; normal exit0,9,56 с, собственная cleanup/baseline.
+Текущий probe не доказал, что alias IRefPlane вызвал child-plane-5 failure.
+
+При сравнении кода выявлено расхождение: dimension owner PID разрешается
+через `binding.wrap(raw, IFeature)`, тогда как общий feature resolver уже
+проверяет complete current membership/exact PID и учитывает фактический
+IRefPlane-specific return. Реализовано использование того же строгого resolver
+для dimension owner. Canonical принадлежность размера, display slot/PID и
+owner membership остаются обязательными. Это production change: после pure
+нужен новый exact wheel и native-проверка; dev96 этим не объявляется исправленным.
+Source133 related pure passed/3,29 с; [кандидат dev97](CANDIDATE_DEV97_PREPARATION.md)
+не принят до полного source/installed/native gate.

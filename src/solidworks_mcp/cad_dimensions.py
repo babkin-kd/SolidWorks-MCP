@@ -46,6 +46,10 @@ class CadDimensionsMixin:
         return record.dimension
 
     def _resolve_dimension_anchor_object(self, model, persistent_hex, cls):
+        if cls is self._module.IFeature:
+            # Owner PIDs share the strict current-member feature contract,
+            # including a native RefPlane PID returning its specific interface.
+            return self.resolve_persistent_id(model, bytes.fromhex(persistent_hex), 'feature')
         raw, status = self._extension(model).GetObjectByPersistReference3(
             self._persistent_variant(bytes.fromhex(persistent_hex)))
         if status != 0 or raw is None:

@@ -7,6 +7,7 @@ import pythoncom
 
 from solidworks_mcp import binding
 from solidworks_mcp.cad_dimensions import CadDimensionsMixin, NativeDimension
+from solidworks_mcp.cad_geometry import CadGeometryMixin
 from solidworks_mcp.jobs import ExecutionFailure
 
 
@@ -64,13 +65,23 @@ class Feature(Wrapper):
     CLSID = 'fake-IFeature'
 
 
-class Adapter(CadDimensionsMixin):
-    _module = NS(IDisplayDimension=Display, IAnnotation=Annotation, IDimension=Dimension, IFeature=Feature)
+class RefPlane(Wrapper):
+    CLSID = 'fake-IRefPlane'
+
+
+class Adapter(CadDimensionsMixin, CadGeometryMixin):
+    _module = NS(IDisplayDimension=Display, IAnnotation=Annotation, IDimension=Dimension,
+                 IFeature=Feature, IRefPlane=RefPlane)
 
     def __init__(self, refs):
         self.refs = refs
         self.lookups = []
         self.pid_reads = []
+        self.members = [binding.wrap(refs[b'owner'], Feature)]
+        self.statuses = {}
+        self.feature_reads = []
+        self.same_calls = []
+        self._sw = NS(IsSame=self.native_same)
 
     def _extension(self, model):
         return self
@@ -81,13 +92,21 @@ class Adapter(CadDimensionsMixin):
 
     def GetObjectByPersistReference3(self, token):
         self.lookups.append(token)
-        return self.refs[token], 0
+        return self.refs.get(token), self.statuses.get(token, 0)
+
+    def features(self, model):
+        self.feature_reads.append(model)
+        return list(self.members)
+
+    def native_same(self, left, right):
+        self.same_calls.append((left, right))
+        return 1 if left.native_plane is right.native_plane else 0
 
     @staticmethod
     def identity(obj):
         return obj.canonical
 
-    def persistent_id(self, model, obj):
+    def GetPersistReference3(self, obj):
         self.pid_reads.append(obj)
         return obj.pid
 
@@ -112,7 +131,22 @@ def fixture(*, annotation_pid=True):
         owner_tree_identity=owner_data.canonical)
     return NS(a=adapter, anchor=anchor, record=record, owner=owner, dimension=dimension,
               display=display, annotation=annotation, display_data=display_data,
-              annotation_data=annotation_data, dimension_data=dimension_data)
+              annotation_data=annotation_data, dimension_data=dimension_data, owner_data=owner_data)
+
+
+def plane_fixture(*, annotation_pid=True):
+    x = fixture(annotation_pid=annotation_pid)
+    native_plane = object()
+    raw = Dispatch(NS(canonical=object(), pid=b'owner', native_plane=native_plane), RefPlane.CLSID)
+    specific = Dispatch(NS(canonical=object(), pid=b'owner', native_plane=native_plane), RefPlane.CLSID)
+    x.owner_data.GetTypeName2 = lambda: 'RefPlane'
+    x.owner_data.GetSpecificFeature2 = lambda: specific
+    x.a.refs[b'owner'] = raw
+    # A separate current member proves resolution is not a traversal ordinal.
+    neighbor = Dispatch(NS(canonical=object(), pid=b'neighbor'), Feature.CLSID)
+    x.a.members.insert(0, binding.wrap(neighbor, Feature))
+    x.raw_plane, x.specific_plane = raw, specific
+    return x
 
 
 def test_actual_queried_helper_requests_class_iid_and_dispatch_wrapper_iid():
@@ -156,6 +190,76 @@ def test_annotation_pid_roundtrips_to_exact_display_dimension_owner_and_slot():
     assert x.display._oleobj_.queries == [(Display.CLSID, pythoncom.IID_IDispatch)]
     assert x.a.dimension_persistent_id(object(), x.record) == x.anchor
     assert x.a.dimension_reference_is_current(object(), x.record, x.anchor) is True
+
+
+@pytest.mark.parametrize('annotation_pid', [False, True])
+def test_plane_specific_owner_pid_uses_exact_current_feature_resolver_before_owner_comparison(annotation_pid):
+    x = plane_fixture(annotation_pid=annotation_pid)
+    model = object()
+    # Blindly rewrapping the plane-specific pointer preserves the wrong canonical
+    # identity, the precise failure addressed by the shared feature resolver.
+    assert x.a.identity(binding.wrap(x.raw_plane, Feature)) != x.record.owner_tree_identity
+    resolved = x.a._resolve_dimension_anchor_object(model, b'owner'.hex(), Feature)
+    assert resolved is x.a.members[1] and x.a.identity(resolved) == x.record.owner_tree_identity
+    assert x.a.feature_reads == [model] and x.a.lookups == [b'owner']
+    assert x.a.same_calls[0][0] is x.raw_plane
+    assert x.a.same_calls[0][1]._oleobj_ is x.specific_plane._oleobj_
+    assert x.a.resolve_dimension_id(model, x.anchor).canonical == x.dimension.canonical
+    assert x.a.dimension_persistent_id(model, x.record) == x.anchor
+    assert x.a.dimension_reference_is_current(model, x.record, x.anchor) is True
+
+
+@pytest.mark.parametrize('status,code', [(4, 'object_deleted'), (2, 'object_suppressed'), (1, 'object_reference_invalid')])
+def test_plane_owner_pid_unavailable_state_never_adopts_a_current_member(status, code):
+    x = plane_fixture();x.a.statuses[b'owner'] = status
+    with pytest.raises(ExecutionFailure) as exc:
+        x.a.resolve_dimension_id(object(), x.anchor)
+    assert exc.value.code == code
+    assert not x.a.feature_reads and not x.a.same_calls
+
+
+@pytest.mark.parametrize('fault', ['stale_member', 'foreign_raw', 'duplicate_pid', 'specific_pid',
+                                  'missing_specific', 'nonplane_member', 'wrong_owner', 'missing_owner'])
+def test_plane_specific_owner_anchor_keeps_exact_pid_membership_native_and_dimension_owner_checks(fault):
+    x = plane_fixture()
+    if fault == 'stale_member':
+        x.a.members.pop()
+    elif fault == 'foreign_raw':
+        x.raw_plane._oleobj_.payload.native_plane = object()
+    elif fault == 'duplicate_pid':
+        x.a.members.append(binding.wrap(Dispatch(NS(canonical=object(), pid=b'owner'), Feature.CLSID), Feature))
+    elif fault == 'specific_pid':
+        x.specific_plane._oleobj_.payload.pid = b'foreign'
+    elif fault == 'missing_specific':
+        x.owner_data.GetSpecificFeature2 = lambda: None
+    elif fault == 'nonplane_member':
+        x.owner_data.GetTypeName2 = lambda: 'Boss'
+    elif fault == 'wrong_owner':
+        x.dimension_data.GetFeatureOwner = lambda: Dispatch(NS(canonical=object()), Feature.CLSID)
+    else:
+        x.dimension_data.GetFeatureOwner = lambda: None
+    with pytest.raises(ExecutionFailure) as exc:
+        x.a.resolve_dimension_id(object(), x.anchor)
+    assert exc.value.code == 'persistent_reference_mismatch'
+    if fault in ('stale_member', 'duplicate_pid', 'specific_pid', 'missing_specific', 'nonplane_member'):
+        assert not x.a.same_calls
+
+
+@pytest.mark.parametrize('same', [0, 2, True, False, 1.0, '1', None])
+def test_plane_owner_native_same_requires_exact_supported_integer_result(same):
+    x = plane_fixture();x.a._sw.IsSame = lambda left, right: same
+    with pytest.raises(ExecutionFailure) as exc:
+        x.a.dimension_persistent_id(object(), x.record)
+    assert exc.value.code == 'persistent_reference_mismatch'
+
+
+def test_direct_dimension_pid_keeps_direct_resolution_without_owner_feature_enumeration():
+    x = fixture();x.dimension_data.pid = b'dimension';x.a.refs[b'dimension'] = x.dimension
+    anchor = dict(strategy='direct_dimension_v1', dimension_pid_hex=b'dimension'.hex())
+    assert x.a.dimension_persistent_id(object(), x.record) == anchor
+    assert x.a.dimension_reference_is_current(object(), x.record, anchor) is True
+    assert x.a.lookups == [b'dimension', b'dimension']
+    assert not x.a.feature_reads and not x.a.same_calls
 
 
 @pytest.mark.parametrize('annotation_type', [1, 3, True, False, '4', 4.0, None])

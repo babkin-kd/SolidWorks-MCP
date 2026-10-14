@@ -1,6 +1,7 @@
 """Actual ownership/SQLite/context graph; artificial handles, never native CAD."""
 from copy import deepcopy
 import hashlib
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -158,6 +159,8 @@ def fixture(leaf):
     def recorder(name,phase,evidence):
         if x.fault=='ledger_returned' and name.endswith('insert_plane') and phase=='returned':
             raise OSError('Artificial durable insertion acknowledgement loss')
+        if x.fault=='equation_ledger_returned' and name.endswith('add_unused_global') and phase=='returned':
+            raise OSError('Artificial durable equation acknowledgement loss')
         x.store.record_mutation_step(x.operation_id,name=name,phase=phase,evidence=evidence)
     def query(raw,interface):
         if interface=='IFeature':
@@ -275,14 +278,22 @@ def test_unused_global_and_actual_file_link_are_distinct_verified_native_manager
     x=fixture;original=receipt_evidence(x)
     if linked:
         path=b2_private_dir/'owned-equations.txt';path.write_text('"Контрольная независимая величина" = 3',encoding='utf8')
-        raw=path.read_bytes();result=x.helper.link_equation_file(path,expected_sha256=hashlib.sha256(raw).hexdigest())
+        raw=path.read_bytes();before=path.stat()
+        result=x.helper.link_equation_file(path,expected_sha256=hashlib.sha256(raw).hexdigest())
         assert path.read_bytes()==raw and x.manager.FilePath==str(path.resolve())
+        assert result['equation_file']==dict(path=str(path.resolve()),sha256=hashlib.sha256(raw).hexdigest(),
+            bytes=len(raw),identity=[before.st_dev,before.st_ino],mtime_ns=before.st_mtime_ns,ctime_ns=before.st_ctime_ns)
     else:result=x.helper.add_unused_equation()
     assert result['fixture_prepared'] is True and result['linked_equation_fixture'] is linked
     assert result['after_deletion_context']['native_context']['equations']['rows']==[
         dict(row_index=0,expression=result['expression'],disabled=False,global_variable=True,configuration_option=1)]
     assert x.manager.LinkToFile is linked and x.write_calls==['Add2','EditRebuild3']
-    assert all(row['name'].startswith('impact_'+('linked_equation' if linked else 'unused_equation')+'_') for row in ledger(x))
+    names=['add_unused_global',*(['set_file_path','link_file'] if linked else []),'rebuild']
+    steps=ledger(x)
+    assert len(steps)==2*len(names)
+    for index,row in enumerate(steps):
+        assert row['sequence']==index+1 and row['name']=='impact_'+('linked_equation' if linked else 'unused_equation')+'_'+names[index//2]
+        assert row['phase']==('returned' if index%2 else 'pending') and row['evidence']
     assert result['full_refusal_context_available'] is False and result['accepted'] is False
     assert receipt_evidence(x)==original
     with pytest.raises(helper.FixtureGate):x.helper.add_unused_equation()
@@ -311,6 +322,45 @@ def test_linked_equation_outside_work_refuses_before_any_native_fixture_write(fi
     with pytest.raises(helper.FixtureGate,match='private existing'):
         x.helper.link_equation_file(path,expected_sha256=hashlib.sha256(path.read_bytes()).hexdigest())
     assert x.write_calls==[]
+
+
+@pytest.mark.parametrize('fault',['timestamps','replacement','bytes'])
+def test_linked_setup_retains_exact_file_identity_timestamps_and_bytes_before_native_steps(fixture,b2_private_dir,fault):
+    x=fixture;path=b2_private_dir/'owned-equations.txt'
+    raw='"Контрольная независимая величина" = 3'.encode('utf8');path.write_bytes(raw)
+    def rebuild():
+        x.write_calls.append('EditRebuild3')
+        if fault=='timestamps':
+            info=path.stat();os.utime(path,ns=(info.st_atime_ns,info.st_mtime_ns+1000000000))
+        elif fault=='replacement':
+            replacement=path.with_suffix('.replacement');replacement.write_bytes(raw)
+            # Retain the former file so inode reuse cannot mask the replacement.
+            path.rename(path.with_suffix('.original'));replacement.rename(path)
+        else:path.write_bytes(raw+b'\n')
+        return True
+    x.c.model.EditRebuild3=rebuild
+    with pytest.raises(helper.FixtureGate,match='preservation|bytes/SHA'):
+        x.helper.link_equation_file(path,expected_sha256=hashlib.sha256(raw).hexdigest())
+    assert x.helper.pending_native_step is None and x.helper.journal_failed is False
+    calls=list(x.write_calls)
+    with pytest.raises(helper.FixtureGate,match='one-shot'):x.helper.add_unused_equation()
+    assert x.write_calls==calls and len(ledger(x))==8
+
+
+@pytest.mark.parametrize('linked',[False,True])
+@pytest.mark.parametrize('fault',['equation_pending','equation_ledger_returned','rebuild_pending'])
+def test_equation_interruption_keeps_pending_receipt_and_never_dispatches_retry(fixture,b2_private_dir,linked,fault):
+    x=fixture;x.fault=fault
+    if linked:
+        path=b2_private_dir/'owned-equations.txt';path.write_text('"Контрольная независимая величина" = 3',encoding='utf8')
+        callback=lambda:x.helper.link_equation_file(path,expected_sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+    else:callback=x.helper.add_unused_equation
+    with pytest.raises((RuntimeError,OSError)):callback()
+    assert ledger(x)[-1]['phase']=='pending' and x.helper.pending_native_step is not None
+    assert x.helper.journal_failed is (fault=='equation_ledger_returned')
+    calls=list(x.write_calls)
+    with pytest.raises(helper.FixtureGate,match='one-shot'):x.helper.add_unused_equation()
+    assert x.write_calls==calls and x.manager.rows==([] if fault=='equation_pending' else ['"Контрольная независимая величина" = 3'])
 
 
 def test_requirements_never_claim_extra_plane_equations_or_ancillary_complete_scope():

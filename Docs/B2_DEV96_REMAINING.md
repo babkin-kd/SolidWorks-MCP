@@ -65,6 +65,17 @@ Preview/delete остаются запрещены до terminal succeeded/commi
 После принятого child-plane выполнить два отдельных finite equation cases,
 затем публичную цепочку и общий B2 gate. Новые классы зависимостей не добавлять.
 
+Linked-equation setup дополнен exact file fingerprint до native Add2 и
+после полного setup/context reads: identity, timestamps, bytes/SHA должны
+сохраниться. Native labels и owner binding path/SHA не изменены. Agent fixture/
+ancillary130 pure passed/5,80 с; root wrapper/session/refusal91 passed/31,41 с.
+Это искусственные native callbacks с реальным journal, не equation CAD-приёмка.
+Два первоначальных ACL-denied pytest запуска не засчитываются.
+
+Готовится production correction единого feature PID resolver для dimension
+owner. Следующий wheel потребует собственных metadata/native доказательств;
+принятые dev96 positive/fault отчёты остаются историческими и не переносятся.
+
 Source-кандидат `c229bc4` объединяет четыре подготовительных блока B3.
 Один итоговый pure-набор завершился normal exit0: **11054 passed,323 CAD
 deselected /465,28 с**, CAD-фильтр и внешний basetemp; executable source/tests

@@ -266,27 +266,32 @@ def test_chamfer_compound_slot_one_is_explicit_and_not_interchangeable_with_slot
 
 def native_anchor_fakes(monkeypatch):
     from solidworks_mcp import cad_dimensions
+    from solidworks_mcp.cad_geometry import CadGeometryMixin
     monkeypatch.setattr(cad_dimensions.binding, 'wrap', lambda obj, cls: obj)
     monkeypatch.setattr(cad_dimensions.binding, 'queried', lambda obj, cls: obj)
-    owner = SimpleNamespace(identity=object(), pid=b'owner-native',)
+    owner = SimpleNamespace(identity=object(), pid=b'owner-native', GetTypeName2=lambda: 'Boss')
     dim = SimpleNamespace(identity=object(), pid=b'', GetFeatureOwner=lambda: owner)
     display = SimpleNamespace(identity=object(), pid=b'display-native', GetType=lambda: 2,
                               GetDimension2=lambda index: dim)
     objects = {owner.pid: owner, display.pid: display}
-    class Adapter(cad_dimensions.CadDimensionsMixin):
-        _module = SimpleNamespace(IFeature=object, IDimension=object, IDisplayDimension=object)
+    class Adapter(cad_dimensions.CadDimensionsMixin, CadGeometryMixin):
+        _module = SimpleNamespace(IFeature=type('Feature', (), {}), IDimension=type('Dimension', (), {}),
+                                  IDisplayDimension=type('DisplayDimension', (), {}))
+        def __init__(self):
+            self.current_features = [owner]
+            self.feature_reads = []
         def identity(self, obj):
             return obj.identity
-        def persistent_id(self, model, obj):
-            return obj.pid
         def same_persistent_id(self, model, left, right):
             return left == right
         def _persistent_variant(self, value):
             return value
         def _extension(self, model):
-            return SimpleNamespace(GetObjectByPersistReference3=lambda pid: (objects.get(pid), 0 if pid in objects else 1))
+            return SimpleNamespace(GetObjectByPersistReference3=lambda pid: (objects.get(pid), 0 if pid in objects else 1),
+                                   GetPersistReference3=lambda obj: obj.pid)
         def features(self, model):
-            raise AssertionError('Reference validation must use the existing feature snapshot, not retraverse COM.')
+            self.feature_reads.append(model)
+            return list(self.current_features)
     return Adapter(), SimpleNamespace(), cad_dimensions.NativeDimension(
         dim, owner, [display], [(display, 0)], owner.identity), objects
 
@@ -340,32 +345,35 @@ def test_native_compound_anchor_rejects_bad_roundtrip_or_missing_owner_and_slot(
 
 
 @pytest.mark.parametrize('owner_in_tree', [False, True])
-def test_owner_membership_is_proven_once_by_supplied_snapshot_without_extra_feature_traversal(monkeypatch, owner_in_tree):
+def test_owner_enumeration_uses_supplied_snapshot_and_anchor_rechecks_current_feature_membership(monkeypatch, owner_in_tree):
     adapter, model, manual, _ = native_anchor_fakes(monkeypatch)
     display = manual.displays[0]
-    source = SimpleNamespace(identity=object(), GetFirstDisplayDimension=lambda: display,
+    source = SimpleNamespace(identity=object(), pid=b'source', GetFirstDisplayDimension=lambda: display,
                              GetNextDisplayDimension=lambda previous: None)
     owner = manual.owner
     owner.GetFirstDisplayDimension = lambda: None
     owner.GetNextDisplayDimension = lambda previous: None
     snapshot = [source, owner] if owner_in_tree else [source]
+    adapter.current_features = snapshot
     identity_calls = []
     original_identity = adapter.identity
     def identity(obj):
         identity_calls.append(obj)
         return original_identity(obj)
     adapter.identity = identity
-    # A generator proves the complete input is materialized once; no second
-    # traversal of the supplied iterable or adapter.features is permitted.
+    # Enumeration materializes this generator once and does not retraverse
+    # features. A later owner anchor uses the strict current-member resolver.
     records = adapter.dimensions(model, iter(snapshot))
     assert len(records) == 1
     record = records[0]
     assert sum(obj is source for obj in identity_calls) == 1
+    assert not adapter.feature_reads
     if owner_in_tree:
         assert record.owner_tree_identity == owner.identity
         anchor = adapter.dimension_persistent_id(model, record)
         for _ in range(3):
             assert adapter.dimension_reference_is_current(model, record, anchor)
+        assert adapter.feature_reads == [model] * 4
         replacement = SimpleNamespace(identity=object(), pid=owner.pid)
         record.owner = replacement
         assert not adapter.dimension_reference_is_current(model, record, anchor)
@@ -374,6 +382,7 @@ def test_owner_membership_is_proven_once_by_supplied_snapshot_without_extra_feat
         assert adapter.dimension_persistent_id(model, record) is None
         assert not adapter.dimension_reference_is_current(model, record, {
             'strategy': 'display_dimension_v1'})
+        assert not adapter.feature_reads
 
 
 @pytest.mark.parametrize('direct', [False, True])

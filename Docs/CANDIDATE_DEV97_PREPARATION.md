@@ -1,0 +1,47 @@
+# Подготовка кандидата dev97 — 14.10.2026
+
+Статус: source готовится к финальной полной проверке; wheel/metadata/native
+ещё не приняты. Стадия1 открыта. Dev96 остаётся отдельной исторической установкой
+и доказательствами; номер версии не переносит результаты между wheel.
+
+## Законченный блок исправления
+
+Dimension compound anchor разрешает owner feature через существующий строгий
+feature PID resolver. Единственный current member, точный PID, native IsSame=1
+для specific RefPlane и canonical принадлежность размера обязательны.
+Display PID/slot/dimension roundtrip и direct dimension strategy сохранены.
+Это устраняет расхождение resolver-контрактов; причина child-plane-5 N5 пока
+не доказана и его failed/unknown не переписывается.
+
+Linked-equation fixture удерживает exact file identity/timestamps/bytes/SHA
+до Add2 и проверяет их после полного setup. Native labels и owner binding
+не меняются; никаких новых инженерных операций или публичных инструментов.
+
+## Фактические проверки до полного кандидата
+
+| Область | Результат | Граница |
+| --- | --- | --- |
+| Equation fixture/ancillary | 130 pure passed /5,80 с, normal exit0 | Artificial native calls; CAD не запускался; два ACL-denied запуска не засчитаны |
+| Root equation wrapper/session/refusal | 91 pure passed /31,41 с, normal exit0 | Реальный journal и fake-native adapter; CAD не запускался |
+| Dimension owner/annotation/domain/enum | 133 pure passed /3,29 с, normal exit0 | Real production feature resolver с fake-native pointers; первый artificial fixture mismatch127/6failed сохранён отдельно |
+| Dev96 prefix/slot probe8 | Normal187,46 с,59 returned steps,15 anchors/четыре фазы, own cleanup/baseline | Exact installed dev96, mismatch не воспроизведён; не приёмка dev97 |
+| Dev96 empty-plane resolver probe | Normal9,56 с, три current planes, own cleanup/baseline | Exact installed dev96; текущий raw-specific alias не воспроизведён |
+
+## Следующие конечные действия
+
+1. Зафиксировать source/version/lock и выполнить один full pure с CAD exclusion
+   и fresh внешним basetemp. Во время проверки source/tests не менять.
+2. После normal full собрать и установить dev97 только в dev-окружение;
+   сохранить точные Git/source digest/wheel SHA. Проверить console/metadata
+   без source PYTHONPATH. Рабочую v1 сохранить.
+3. Выполнить короткую native-проверку изменённого owner resolver и полной
+   последовательности чтений; при отказе проверить исходное состояние и
+   собственную очистку, не повторять unknown операцию автоматически.
+4. Пройти обязательные внутренние B2 prerequisite gates на exact новом wheel,
+   затем finite child-plane/unused-equation/linked-equation и public B2.
+   Dev96 positive/fault receipts в gate dev97 не подставлять.
+5. Свести B2 и продолжить конечные B3/B4/B5 до сквозной приёмки стадии1.
+   Перенесённые D2/D3 остаются в PLAN.md. Source/CI-only проверки не заменяют native.
+
+Изменения накапливаются локально. Новый CI — после пакетной отправки,
+PR15 остаётся draft. Частные CAD, шаблоны, файлы уравнений и журналы вне Git.

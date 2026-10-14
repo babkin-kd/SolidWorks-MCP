@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import stat
 
 from solidworks_mcp.constants import SW_REF_PLANE_DISTANCE
 from solidworks_mcp.features import russian_name
@@ -47,6 +48,24 @@ def _array(value):
 def _number(value):
     require(type(value) in (int,float) and math.isfinite(value),'Strict finite native number required.')
     return float(value)
+
+
+def _equation_file_capture(path,expected_sha256):
+    """Read the explicitly supplied file without adopting redirects/replacements."""
+    from solidworks_mcp.exports_v2 import _is_reparse
+    require(not any(_is_reparse(item) for item in (path,*path.parents)),
+            'Only an exact private nonredirected equation fixture file is allowed.')
+    before=path.lstat()
+    require(stat.S_ISREG(before.st_mode) and 0<before.st_size<=16384,
+            'Bounded regular equation fixture file required.')
+    raw=path.read_bytes();after=path.lstat()
+    signature=lambda info:(info.st_dev,info.st_ino,info.st_size,info.st_mtime_ns,info.st_ctime_ns)
+    digest=hashlib.sha256(raw).hexdigest()
+    require(signature(before)==signature(after) and len(raw)==before.st_size
+        and type(expected_sha256) is str and digest==expected_sha256,
+        'Exact owned unused-equation file bytes/SHA required; file changed during capture.')
+    return raw,dict(path=str(path),sha256=digest,bytes=len(raw),
+        identity=[before.st_dev,before.st_ino],mtime_ns=before.st_mtime_ns,ctime_ns=before.st_ctime_ns)
 
 
 def end_face_reference(snapshot):
@@ -336,10 +355,14 @@ no subsequent cleanup/getter/mutation is dispatched by this helper.
         return self._equation_result(manager,expression,before,linked=False)
 
     def link_equation_file(self,path,*,expected_sha256,name='Контрольная независимая величина',value=3.):
-        path=Path(path).resolve(strict=True)
+        from solidworks_mcp.exports_v2 import _is_reparse
+        supplied=Path(path).absolute()
+        require(not any(_is_reparse(item) for item in (supplied,*supplied.parents)),
+                'Only an exact private nonredirected equation fixture file is allowed.')
+        path=supplied.resolve(strict=True)
         require(path.is_relative_to((Path.cwd()/'work').resolve()) and path.suffix.lower()=='.txt' and path.is_file(),
                 'Only an explicitly supplied private existing fixture equation file is allowed.')
-        original=path.read_bytes()
+        original,file_before=_equation_file_capture(path,expected_sha256)
         expression='"'+russian_name(name)+'" = 3'
         require(type(expected_sha256) is str and hashlib.sha256(original).hexdigest()==expected_sha256
             and original.decode('utf8').strip()==expression,'Exact owned unused-equation file bytes/SHA required.')
@@ -352,9 +375,12 @@ no subsequent cleanup/getter/mutation is dispatched by this helper.
         require(manager.LinkToFile is True,'Actual native LinkToFile=True readback required.')
         rebuilt=self._step('rebuild',lambda:self.binding.model.EditRebuild3(),dict(fixture_only=True),
                            lambda value:dict(returned=value is True))
-        require(rebuilt is True and path.read_bytes()==original,'Linked fixture rebuild/file preservation is unconfirmed.')
-        return dict(**self._equation_result(manager,expression,before,linked=True),
-                    equation_file=dict(path=str(path),sha256=expected_sha256,bytes=len(original)))
+        require(rebuilt is True,'Linked fixture rebuild/file preservation is unconfirmed.')
+        result=self._equation_result(manager,expression,before,linked=True)
+        current,file_after=_equation_file_capture(path,expected_sha256)
+        require(current==original and file_after==file_before,
+                'Linked fixture file identity/timestamps/bytes preservation is unconfirmed.')
+        return dict(**result,equation_file=file_after)
 
     def _equation_result(self,manager,expression,before,*,linked):
         after=self._context();equations=after['native_context']['equations']
