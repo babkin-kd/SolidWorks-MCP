@@ -462,3 +462,9 @@ SolidWorks не подключался; exact wheel/native B2 и working v1 не
 Принята только integrated unarmed startup/close wiring. Actual native arm/
 dispatch, independent postconditions, callback/admission Q, stop/restart/
 reconciliation остаются отдельными открытыми gates; native authority false.
+
+Последующая [публикация inspect](B4_LIVE_INSPECTION_PUBLICATION.md) проверяет
+исходный live process/ready/open SDK и immutable launch binding до единственной
+атомарной команды. Related169 passed; fresh installed metadata attempt12:
+SDK83/exit0/empty journal, control/inspection/host gates true. CAD/job calls=[],
+native Q и восстановление процесса этим не принимаются.

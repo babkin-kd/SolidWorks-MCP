@@ -489,6 +489,9 @@ class InstalledMetadataChild:
             candidate=self.candidate, helpers=self.helpers, state_dir=str(self.path), profile=self.profile)
         owned._write(self.path / 'launch-spec.json', self.spec)
         self.process = None
+        self._original_process = self._launch_identity = None
+        self._launch_spec = deepcopy(self.spec)
+        self._inspection_publication_attempted = False
         self.start = self.identity = self.ready = self.catalog = self.receipt = None
         self.launch_failed = None
         self.sdk_live = self.probe_attempted = self.eof_sent = False
@@ -504,8 +507,10 @@ class InstalledMetadataChild:
             with (self.path / 'child-stderr.log').open('xb') as stream:
                 self.process = subprocess.Popen(self.argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                     stderr=stream, env=environment)
+            self._original_process = self.process
             self.start = owned._process_start(self.process.pid, getattr(self.process, '_handle', None))
             self.identity = self._identity(self.start)
+            self._launch_identity = deepcopy(self.identity)
             owned._write(self.path / 'parent-launch.json', dict(identity=self.identity, argv=self.argv,
                 environment=dict(PYTHONPATH=None, PYTHONNOUSERSITE='1'), **flags()))
         except BaseException as exc:
@@ -602,6 +607,37 @@ class InstalledMetadataChild:
         self.eof_sent = True
         self.process.stdin.close()
 
+    def publish_live_inspection(self):
+        """One atomic request for this original ready/live child; no CAD action."""
+        try:
+            return self._publish_live_inspection_checked()
+        except Exception as error:
+            raise InstalledChildError('Original live inspection publication unconfirmed: ' + str(error),
+                                      retained_owner=self) from error
+
+    def _publish_live_inspection_checked(self):
+        require(not self._inspection_publication_attempted, 'Original inspection publication is one-shot; no retry.')
+        self._inspection_publication_attempted = True
+        require(self.profile == 'dimension_commands_live' and self.launch_failed is None
+                and self.process is self._original_process and self.process.poll() is None
+                and self.sdk_live is True and self.sdk_closed is False and not self.eof_sent and self.ready is not None,
+                'Original ready/live metadata child and open SDK required.')
+        require(owned._json(self.identity) == owned._json(self._launch_identity)
+                and owned._json(self._identity(self.start)) == owned._json(self._launch_identity)
+                and owned._json(self.ready['identity']) == owned._json(self._launch_identity)
+                and owned._json(self.spec) == owned._json(self._launch_spec)
+                and owned._json(owned._read(self.path / 'launch-spec.json')) == owned._json(self._launch_spec),
+                'Original process/nonce/candidate/launch binding changed.')
+        current = owned._process_start(self.process.pid, getattr(self.process, '_handle', None))
+        require(owned._json(current) == owned._json(self._launch_identity['start']),
+                'Original process start changed; no PID adoption.')
+        require(all(owned._file_sha(Path(__file__).with_name(name)) == digest
+                    for name, digest in self.helpers.items()), 'Original command helpers changed.')
+        host = sibling('verifier_b4_dimension_command_host.py', '_b4_parent_metadata_command_host')
+        return host.publish_command(self.path, dict(scope='b4_dimension_control_command_v1', sequence=1,
+            nonce=self.identity['nonce'], lineage=control_lineage(self.identity, self.path),
+            command='inspect', arguments={}))
+
     async def metadata_probe(self):
         import anyio
         from mcp import ClientSession
@@ -613,8 +649,7 @@ class InstalledMetadataChild:
                     request = dict(scope='b4_dimension_control_command_v1', sequence=1, nonce=self.identity['nonce'],
                                    lineage=control_lineage(self.identity, self.path), command='inspect', arguments={})
                     if self.profile == 'dimension_commands_live':
-                        host = sibling('verifier_b4_dimension_command_host.py', '_b4_parent_metadata_command_host')
-                        host.publish_command(self.path, request)
+                        self.publish_live_inspection()
                     else:
                         owned._write(self.path / 'dimension-command-0001.json', request)
                 async with self.transport() as (read, write):
